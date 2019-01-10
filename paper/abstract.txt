@@ -1,0 +1,12 @@
+We formalize the semantics of a fragment of the LLVM intermediate language in Isabelle/HOL.
+On top of this semantics, we have developed
+1) a code generator infrastructure, to translate from Isabelle/HOL to actual LLVM code; 
+2) a verification condition generator, to reason about LLVM programs inside Isabelle;
+3) a backend for the Isabelle Refinement Framework, to enable a high-level refinement based approach to developing verified LLVM programs.
+As an example, we adopt an existing refinement based formalization of the Knuth-Morris-Pratt string search algorithm to our new framework.
+The result is a verified LLVM program, which runs one order of magnitude faster and uses less memory than the original, which uses imperative Standard ML as backend.
+
+The trusted code base of our approach is the formalization of the semantics, which we have engineered for conciseness and readability, 
+and the code generator that translates from Isabelle to LLVM text, which is merely a pretty printer. 
+The other tools that we developed cannot compromise the soundness of the approach, as they only generate theorems that are proved via Isabelle's kernel.
+

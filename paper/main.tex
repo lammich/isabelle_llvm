@@ -1,0 +1,887 @@
+\documentclass[a4paper,oribibl,envcountsame]{llncs}
+\pagestyle{plain}
+\usepackage[T1]{fontenc}
+\usepackage[misc]{ifsym}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{bussproofs}
+\usepackage{cite}
+\usepackage{color}
+\usepackage{enumitem}
+%\let\vec=\undefined
+%\usepackage{mdsymbol}  %%% indirectly needs texlive-generic-extra
+\usepackage{stmaryrd}
+\usepackage{subfig}
+\usepackage{textcomp}
+\usepackage{url}
+\usepackage{xspace}
+\usepackage{mathtools}
+\usepackage{todonotes}
+\usepackage{enumitem}
+
+\usepackage{cprotect}
+\usepackage{listings}
+\usepackage{lstautogobble}
+
+\usepackage{array}
+\newcolumntype{x}[1]{>{\centering\arraybackslash\hspace{0pt}}b{#1}}
+\usepackage{diagbox}
+\usepackage{siunitx}
+
+\usepackage{tikz}
+\usetikzlibrary{positioning,shadows,decorations, arrows, shapes, decorations.markings,decorations.pathmorphing}
+
+\usepackage[final,tracking=true,kerning=true,spacing=true,stretch=10,shrink=10]{microtype}
+
+%% BEGIN Times font
+\usepackage{mathptmx}
+\usepackage[scaled=.82]{beramono}
+\usepackage[scaled=.86]{helvet}
+\DeclareSymbolFont{letters}{OML}{txmi}{m}{it}
+%% END Times font
+
+\newcommand\rulename[1]{\ensuremath{\mathsf{#1}}}
+
+\usepackage[
+   a4paper,
+   pdftex,
+   pdftitle={Isabelle LLVM},
+   pdfauthor={Peter Lammich},
+   pdfkeywords={},
+   pdfborder={0 0 0},
+   draft=false,
+   bookmarksnumbered,
+   bookmarks,
+   bookmarksdepth=2,
+   bookmarksopenlevel=2,
+   bookmarksopen]{hyperref}
+
+\hyphenation{Isa-belle Nieuw-en-huis meta-logic multi-set multi-sets}
+
+
+\include{lstisabelle}
+
+\lstset{autogobble}
+
+
+\begin{document}
+
+
+\title{Isabelle LLVM}
+\titlerunning{Isabelle LLVM}
+
+\author{Peter Lammich}
+\authorrunning {P. Lammich}
+\institute{
+  Technische Universit\"at M\"unchen, Munich, Germany \\
+  \email{lammich@in.tum.de}
+}
+
+\maketitle
+
+\setcounter{footnote}{0}
+
+\begin{abstract}
+We formalize the semantics of a fragment of the LLVM intermediate representation in Isabelle/HOL.
+On top of this semantics, we have developed
+\begin{enumerate}
+\item a code generator, to translate from Isabelle/HOL to actual LLVM text; 
+\item a verification condition generator, to reason about LLVM programs;
+\item a backend for the Isabelle Refinement Framework, to enable a high-level refinement based approach to developing verified LLVM programs.
+\end{enumerate}
+As an example, we adopt an existing formalization of the Knuth-Morris-Pratt string search algorithm to our new framework.
+With only slight changes to the original formalization, we obtain a verified LLVM implementation, which runs faster and uses less memory 
+than the originally verified Standard ML implementation.
+
+The trusted code base of our approach is the formalization of the semantics, which we have engineered for conciseness and readability, 
+and the code generator that translates from Isabelle to LLVM text, which is merely a pretty printer. 
+The other tools that we developed cannot compromise the soundness of the approach, as they only generate theorems that are proved via Isabelle's kernel.
+\end{abstract}
+
+
+\section{Introduction}
+\label{sec:introduction}
+The Isabelle Refinement Framework~\cite{LaTu12,La13} features a stepwise refinement approach to verified algorithms, using the Isabelle/HOL theorem prover~\cite{NPW02,NiKl14}.
+It has been successfully applied to verify many algorithms and software systems, 
+among them LTL and timed automata model checkers\cite{ELNN13,BrLa18,WiLa18}, network flow algorithms~\cite{LaSe17,LaSe16}, a verified SAT-solver certification tool~\cite{La17_CADE,La17_SAT}, and even a verified SAT solver~\cite{FBL18}.
+Using Isabelle/HOL's code generator~\cite{HKKN13}, the verified algorithms can be extracted to functional languages like Haskell or Standard ML.
+However, the code generator only provides partial correctness guarantees, i.e., termination of the generated code cannot be proved.
+Moreover, the generated code is typically much slower than the same algorithms implemented in C or Java. 
+
+The original Refinement Framework could only generate purely functional code. 
+The first remedy to the performance problem was to introduce array data structures that behave like a functional 
+list on the surface, but are implemented by a destructively updated array behind the scenes, similar to Haskell's now deprecated DiffArray.
+While this gained some performance, the array-based implementation itself was not verified, such that we had to trust its correctness. 
+Moreover, an array access still required a significant amount of overhead compared to a simple pointer dereference in C.
+
+The next step was the Sepref tool~\cite{La15}. It generates code for Imperative HOL~\cite{BKHEM08}, which provides a heap monad inside Isabelle/HOL, 
+and a code generator extension to generate code that uses the stateful arrays provided by ML, or the heap monad of Haskell.
+The Sepref tool performs automatic data refinement from abstract data types like maps or sets to concrete implementations like hash tables, which 
+can be placed on the heap and destructively updated. 
+Moreover, it provides tools~\cite{La16} to assist in the definition of new data structures, exploiting `free theorems'~\cite{Wad89} that it 
+obtains from parametricity properties of the abstract data types.
+%
+Using Imperative/HOL as backend, we gained some additional performance: For example, the GRAT tool~\cite{La17_SAT} provides a 
+verified checker for UNSAT certificates in the DRAT format~\cite{WHH14}. It is faster than the unverified state-of-the art 
+checker \textsc{drat-trim}~\cite{WHH14}, which is written in C. However, the GRAT tool spends most of its run time in an unverified 
+certificate preprocessor. Nevertheless, optimizing the verified part of the code is important: The very same technique was also implemented in Coq,
+using purely functional data structures~\cite{CMS17,CHHKS17}. There, the verified code was actually the 
+bottleneck\footnote{Later, the checker was rewritten in ACL2, also using imperative data structures~\cite{CHHKS17,HHKW17}}.
+
+This paper presents a next step towards efficient verified software: A refinement framework to generate verified code in LLVM intermediate representation~\cite{LLVM-manual} 
+with total correctness guarantees. LLVM is an imperative intermediate language with a powerful and well-tested optimizing compiler.
+We first formalize the semantics of a fragment\footnote{We support integer instructions, pointers, a simplified memory model, and simplified control flow. We expect this fragment to be sufficient for most algorithms that have already been verified with the refinement framework.} of LLVM in Isabelle/HOL, and provide a code generator to actual LLVM text (\S\ref{sec:semantics}). 
+On top of this semantics, we build a separation logic and a verification condition generator, which allows convenient reasoning about LLVM programs (\S\ref{sec:vcg}).
+Finally, we modify the Sepref tool to target our LLVM semantics instead of Imperative/HOL (\S\ref{sec:auto_ref}). 
+This way, we connect the Refinement Framework to our LLVM code generator. This only affects the last refinement step, 
+such that most parts of existing verifications can be reused. As a case study, we apply only minor modifications to an existing formalization~\cite{HeLa17} of
+the Knuth-Morris-Pratt string search algorithm~\cite{KMP77}, and obtain a verified 
+LLVM implementation that is an order of magnitude faster and uses less memory than the originally verified implementation in Standard ML.
+The Isabelle theories described in this paper are available at \url{http://www21.in.tum.de/~lammich/isabelle_llvm}. 
+
+
+
+\section{LLVM Semantics}\label{sec:semantics}
+\subsection{State Monad}
+The basis of our LLVM semantics is a state-error monad, which we use to conveniently model the preconditions of instructions, their effect 
+on memory, as well as arbitrary recursive programs. We define the algebraic data types
+\begin{lstlisting}
+('a,'s) M = M (run: "'s => ('a,'s) mres")              ('a,'s) mres = NTERM | FAIL | SUCC 'a 's
+\end{lstlisting}
+An entity of type \q{\is{('a,'s) M}} contains a function \q{\is{run}} that maps a start state of type \q{\is{'s}} to 
+a \emph{monad result} that indicates either nontermination, a failure, or a successful execution with a result of type \q{\is{'a}} and a new state.
+We define the standard monad combinators:
+\begin{lstlisting}
+  "return x  = M (%s. SUCC x s)"                                           "get   = M (%s. SUCC s s)"
+  "fail         = M (%_. FAIL)"                                                  "set s = M (%_. SUCC () s)"
+  "bind m f   = M (%s. case run m s of SUCC x s => run (f x) s | r => r)"
+  "assert \<Phi> = if \<Phi> then return () else fail"
+\end{lstlisting}
+That is, \q{\is{return x}} returns result \q{\is{x}} without changing the state, \q{\is{fail}} aborts the computation,
+\q{\is{get}} returns the current state, and \q{\is{set s}} updates the current state.
+Finally, \q{\is{bind m f}} first executes \q{\is{m}}, and then \q{\is{f}} with the result of \q{\is{m}}.
+If \q{\is{m}} fails or does not terminate, the whole bind fails or does not terminate.  
+The derived \q{\is{assert \<Phi>}} combinator can be conveniently used to abort the computation 
+if some precondition is violated, e.g., on division by zero.
+
+We use do-notation, i.e.\ \q{\is|do { x<-m; f x }|} is short for \q{\is{bind m (\<lambda>x. f x)}}.
+Moreover, we define a flat CCPO\cite{Mark76} on \q{\is{mres}}, with \q{\is{\<bot> := NTERM}}.
+We define \q{\is{REC F}} to be the least fixed point of a monotonic function \q{\is{F :: ('a => ('b,'s) M) => 'a => ('b,'s) M}}.
+As functions defined using the monad combinators are monotonic by construction~\cite{Kr10}, 
+we can define arbitrary recursive computations. The partial function package~\cite{Kr10} supports automation for monotonicity 
+proofs and for defining simple recursive functions. Mutual recursion still requires some manual effort, though it could be automated, too.
+
+% \subsubsection{Lenses}
+% Lenses \cite{FGMPS07} are a convenient tool to express positions in structured data, which can be read from and written to.
+% We define a notion of lenses that allows for the position to be invalid, depending on the data. 
+% For example, the position ``nth element'' may be valid or not, depending on the element of the list. 
+% A lens \q{\is{L}} is a pair of functions get and put, such that 
+% \begin{lstlisting}
+% get_put: "put L x s = Some s' ==> get L s' = Some x"
+% put_get: "get L s = Some x ==> put L x s = Some s"
+% put_put: "[|put L x s = Some s'; put L y s = Some s''|] ==> put L x s'' = Some s'"
+% 
+% put_indep: "put L y s != None <--> get L s != None"
+% \end{lstlisting}
+% 
+% The type of a lens is \q{\is{'s ==> 'b}}, where \q{\is{'s}} (small) is the type at the specified position, and \q{\is{'b}} is the type of the whole.
+% 
+% The first three laws formalize the intuition of a position which we can get a value from, and put a value to:
+% The value we get is the last one that we have put (\q{\is{get_put}}); if we put the value that is already there, nothing changes (\q{\is{put_get}}); 
+% and if we first put one value, and then another one, the first value is overwritten by the second one (\q{\is{put_put}}).
+% Finally, validity of a position does not depend on the value stored at this position (\q{\is{put_indep}}). 
+% 
+% Lenses can be composed. The lens \q{\is{L_1 \<bullet> L_2}} first focuses on a position using \q{\is{L_1}}, and then further focuses using \q{\is{L_2}}.
+% \begin{example}
+%   \q{\is{fstL :: 'a ==> 'a \x 'b}} is the lens that focuses on the first element of a pair, and \q{\is{idxL i :: 'a ==> 'a list}} is the lens that 
+%   focuses on the $i$th position of a list.
+%   That is, \q{\is{fstL\<bullet>idxL i :: 'a ==> 'a list \x 'b}} focuses on the ith position of the first element of a pair, e.g., we have
+%   \q{\is{put (fstL\<bullet>idxL 2) 42 ([0,1,2,3], y) = Some ([0,1,42,3],y)}} and \q{\is{get (idxL 2) [] = None}}.
+%   In the first example, we replace element 2 (indexing starts at 0) by 42, in the first element of the pair. 
+%   In the second example, the position is invalid.
+% \end{example}
+% 
+% We combine lenses and state monads by defining a \q{\is{zoom :: ('s ==> 'b) => ('a,'s,'f) M => ('a,'b,'f) M}} combinator.
+% \q{\is{zoom L m}} executes \q{\is{m}} on the position focused by \q{\is{L}} of the state. 
+% 
+% Moreover, we use shortcut notations for applying lenses to the current state: 
+% \q{\is{L:=x}} puts the value \q{\is{x}} into the part of the state focused by \q{\is{L}}, and \q{\is{use L}} gets the part of the state focused by \q{\is{L}}.
+% 
+% 
+
+
+\subsection{Memory Model}
+We use a high-level memory model that does not directly expose the bit-level representation of values, and assumes an infinite supply of memory. 
+The memory is modeled as a list of blocks. Each block is either deallocated, or it is a list of values.
+A value is a pair of values, a pointer, or an integer. We model memory by the following data types\footnote{We have simplified the presentation a bit. 
+The actual implementation defines the concepts memory, block, and value independently, in order to ease future extensions, to, e.g., arbitrary structs instead of pairs.
+% . The memory is parameterized over the block type, 
+% the block type is parameterized over the value type, and the value type is parameterized over the primitive value type. This allows to 
+% exchange parts of the memory model (e.g.\ include arbitrary structures instead of pairs) without breaking the rest of the memory model. 
+% What we present here is the instance of our generic memory model that we use for this project.
+}:
+\begin{lstlisting}
+memory = MEMORY (block option list)             block     = val list 
+val = PAIR val val | PRIM primval                     primval = PV_INT lint | PV_PTR rptr
+\end{lstlisting}
+%
+Here, the type \q{\is{lint}} is a fixed bit width integer type with a two's complement semantics, as used by LLVM. 
+The type \q{\is{rptr}} is either null, or an address. An address is a path through the memory structure to a value:
+\begin{lstlisting}
+rptr  = NULL | ADDR nat nat (va_dir list)                                 va_dir = PFST | PSND
+\end{lstlisting}
+An address consists of a \emph{block index}, a \emph{value index}, and a \emph{value address}, which is a list of directions 
+to either descend into the first or the second value of a pair.
+
+For the rest of this paper, we will use the state monad with a memory as state. Thus, we define the type \q{\is{'a llM = ('a,memory) M}}.
+It is straightforward to define functions \q{\is{load :: rptr => val llM}} and \q{\is{put :: val => rptr => unit llM}} to read/write a value from/to a pointer, 
+or fail if the pointer is invalid.
+For the actual store function, we check that the structure of the value does not change, i.e. pairs remain pairs, pointers remain pointers, and integers of width $w$ remain integers of width $w$.
+\begin{lstlisting}
+  store x p = do { y <- load p; assert (vstruct x = vstruct y); put x p }
+\end{lstlisting}
+%
+% 
+% 
+% Given a pointer \q{\is{p :: rptr}}, it is straightforward to define a lens \q{\is{ptr_L p :: val ==> memory}} that focuses on the pointed to value, 
+% or fails if the pointer is invalid (null pointer, pointer to deallocated block, index out of bounds).
+% Using this lens, we define a load and store function:
+% \begin{lstlisting}
+%   load p = use (ptr_L p)
+%   store x p = do { y <- use (ptr_L p); assert (vstruct x = vstruct y); ptr_L p := x }
+% \end{lstlisting}
+% The load function simply returns the pointed-to value. The store function additionally checks that the structure of the value does not change, i.e.,
+% pairs remain pairs, pointers remain pointers, and integers of width $w$ remain integers of width $w$. 
+% This check is important in order to map our memory model to the actual LLVM memory model, which allocates an amount of memory matching the type of the value.
+%
+Similarly, we define an allocate and a free function:\\[-2ex]
+\begin{minipage}[t]{.46\textwidth}
+\begin{lstlisting}
+  allocn v n = do {
+    blocks <- get; 
+    set (blocks@[Some (replicate n v)]);
+    return (ADDR |blocks| 0 []) }
+\end{lstlisting}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{.52\textwidth}
+\begin{lstlisting}
+  free (ADDR bi 0 []) = do {
+    blocks <- get; 
+    assert (bi < |blocks| \and blocks!bi ~= None);
+    set (blocks[bi:=None]) }
+  free _ = fail
+\end{lstlisting}
+\end{minipage}
+Here, \q{\is{l_1@l_2}} concatenates two lists, \q{\is{|l|}} is the length of list \q{\is{l}}, \q{\is{l!i}} is the $i$th 
+element of \q{\is{l}}, and \q{\is{l[i:=x]}} replaces the $i$th element of \q{\is{l}} by \q{\is{x}}.
+The allocate function takes an initial value and a block size, appends a new block to the memory, and returns a pointer to the start of the new block (value index $0$, and value address $[]$).
+The free function expects a pointer to the start of a block,
+checks that this block is not already deallocated, and then deallocates the block by setting it to \q{\is{None}}.
+
+\subsection{Towards a Shallow Embedding}
+While we explicitly model values in memory by the type \q{\is{val}}, we model values in registers in a more shallow fashion:
+We will identify LLVM registers with Isabelle variables that have a type of the shape \q{\is{T = T \x T | n word | T ptr}}. 
+Here, \q{\is{\x}} is Isabelle's product type, \q{\is{n word}} is the $n$ bit word type from Isabelle's word 
+library\cprotect\footnote{For convenient notation, we use the type \q{\is{n word}} as if it were a type depending on a variable $n$. 
+Isabelle/HOL is not dependently typed. Instead, $n$ is actually a type variable with type-class \q{\is{len}}, which provides a 
+function \q{\is{len_of :: 'a::len itself => nat}} to extract the length as a term.}, 
+and \q{\is{'a ptr}} is a pointer with an attached phantom type for the value pointed to (\q{\is{'a ptr = PTR rptr}}).
+%
+For each type \q{\is{'a}} of shape \q{\is{T}}, we define the functions:
+\begin{lstlisting}
+to_val      :: "'a => val"             struct_of :: "'a itself => vstruct"
+from_val :: "val => 'a"             init          :: 'a
+\end{lstlisting}
+such that
+\begin{lstlisting}
+"from_val o to_val = id"                "vstruct (to_val x) = (struct_of TYPE('a))"
+"to_val init             = zero_initializer (struct_of TYPE('a))"
+\end{lstlisting}
+Here, \q{\is{TYPE('a) :: 'a itself}} reflects type \q{\is{'a}} into a term.
+The functions \q{\is{to_val}} and \q{\is{from_val}} inject a T-shaped type \q{\is{'a}} into a value with structure \q{\is{struct_of TYPE('a)}}.
+Moreover, \q{\is{init::'a}} corresponds to the all-zeroes value, i.e., the value where all pointers are null pointers, and all integers are $0$.
+
+\subsection{LLVM Instructions}
+In a next step, we define the LLVM instructions. Each LLVM instruction is identified with an Isabelle function. For example, the load instruction
+is modeled by:
+\begin{lstlisting}
+  ll_load :: "'a ptr => 'a llM"
+  ll_load (PTR p) = do {
+    v <- load p;
+    assert (vstruct v = struct_of TYPE('a));
+    return (from_val v) }
+\end{lstlisting}
+It loads a value from the specified pointer, checks that its structure matches the expected type \q{\is{'a}}, and then 
+converts the value to \q{\is{'a}}. 
+
+For allocation and deallocation, we provide the instructions:
+\begin{lstlisting}
+  ll_malloc :: 'a itself => n word => 'a ptr llM            ll_free :: "'a ptr => unit llM"
+\end{lstlisting}
+Note that LLVM does not contain a heap manager. 
+Instead, we assume that the generated code will be linked with the C standard library, 
+and produce calls to \q{\is{calloc}} and \q{\is{free}}.
+
+We also define
+instructions to extract/insert the first/second element of a pair, to offset a pointer, and to advance a pointer to the first/second element.
+The code generator maps these instructions to the corresponding LLVM instructions \q{\is{getelementptr}}, \q{\is{insertvalue}}, and \q{\is{extractvalue}}.
+
+The non-memory-related instructions are defined directly on the shallow embedding. For example, we define:
+\begin{lstlisting}
+  ll_udiv :: "n word => n word => n word"
+  ll_udiv a b = do { assert (a ~= 0); return (a div b) }
+\end{lstlisting}
+where \q{\is{div}} is the unsigned division from the word library.
+Note that we use assertions to model undefined behavior in LLVM by failure in our semantics.
+Similarly, we define the other integer instructions.
+
+\subsection{Modeling Control Flow}\label{sec:modeling_ctrl_flow}
+Next, we put together instructions to form procedure bodies. Instead of arbitrary control flow graphs, 
+we only allow structured control flow via if-then-else, procedure calls, and sequential composition: The body of
+a procedure is modeled by an Isabelle term of type \q{\is{'a llM}} and shape \q{\is{block}}, where
+\begin{lstlisting}
+block = do { var <- cmd; block } | return var
+cmd = ll_<opcode> arg^* | proc_name arg^* | llc_if arg block block
+arg = var | number | null | init
+\end{lstlisting}
+and \q{\is{llc_if :: 1 word => 'a llM => 'a llM => 'a llM}} is defined as
+\begin{lstlisting}
+llc_if b t e = if b=1 then t else e
+\end{lstlisting}
+That is, a block is a list of commands whose results are bound to variables, terminated by a return instruction. 
+A command is either an instruction, a procedure call, or an \q{\is{llc_if}}. 
+The arguments of instructions and procedure calls, as well as the condition of an \q{\is{llc_if}}, must be variables or constants (numbers, the null pointer, or a zero-initialized value).
+%
+A program is represented by a set of (monomorphic) theorems of the shape
+\q{\is{proc\_i x_1 ... x\_n = cmd}},
+where the \q{\is{proc\_i}} are Isabelle functions, the \q{\is{x\_i}} are variables, and all free variables on the right hand side are among the \q{\is{x\_i}}.
+As our monad allows arbitrary recursive definitions, we can define arbitrary recursive programs.
+
+\begin{figure}
+\centering
+\begin{minipage}[t]{.39\textwidth}
+  \begin{lstlisting}
+    fib:: 64 word => 64 word llM
+    fib n = do {
+      t <- ll_icmp_ule n 1;
+      llc_if t (return n) (do {
+        n_1 <- ll_sub n 1;
+        a   <- fib n_1;
+        n_2 <- ll_sub n 2;
+        b   <- fib n_2;
+        c   <- ll_add a b;
+        return c
+      })
+    }    
+  \end{lstlisting}
+  \caption{Program in Isabelle}\label{fig:fib_isabelle}
+\end{minipage}
+\hspace*{.09\textwidth}
+\begin{minipage}[t]{.5\textwidth}
+  \begin{lstlisting}[language=LLVM, literate={}]
+  define i64 @fib(i64 %x) {
+    start:
+      %t = icmp ule i64 %x, 1
+      br i1 %t, label %then, label %else
+    then:
+      br label %ctd_if
+    else:
+      %n_1 = sub i64 %x, 1
+      %a     = call i64 @fib (i64 %n_1)
+      %n_2 = sub i64 %x, 2
+      %b     = call i64 @fib (i64 %n_2)
+      %c     = add i64 %a, %b
+      br label %ctd_if
+    ctd_if:
+      %x1a = phi i64 [ %x, %then ], [ %c, %else ]
+      ret i64 %x1a
+  }  
+  \end{lstlisting}
+  \caption{Generated LLVM text}\label{fig:fib_llvm}
+\end{minipage}
+\end{figure}
+
+\begin{example}\label{ex:fib_isabelle}
+  Figure~\ref{fig:fib_isabelle} shows the Isabelle specification of a procedure named \q{\is{fib}}, 
+  which takes a 64 bit integer argument, and returns a 64 bit integer. 
+  Our semantics can be directly executed inside Isabelle. The following Isabelle command evaluates our function on the first few natural numbers, and an empty memory:
+  \begin{lstlisting}
+    value \<open>map (%n. run (fib n) (MEMORY [])) [0,1,2,3]\<close>
+    (* output: [SUCC 0 (MEMORY []), SUCC 1 ..., SUCC 1 ..., SUCC 2 ...] *)
+  \end{lstlisting}
+\end{example}
+
+
+\subsection{Code Generation}
+The LLVM intermediate representation \cite{LLVM-manual} is a strongly typed control flow graph (CFG) based intermediate language 
+that uses single static assignment (SSA) form~\cite{CFRWZ91}.
+A procedure is a list of basic blocks, the first block in the list being the entry point of the procedure. 
+A basic block is a list of instructions, finished by a terminator instruction that determines the next basic block to execute (or to return from the current procedure).
+Each non-void instruction defines a fresh register containing its result. A register can only be accessed in the part of the CFG that is dominated by its definition.
+To transfer values from registers to other parts of the CFG, $\phi$-instructions have to be used. 
+A $\phi$-instruction must be located at the start of a basic block. 
+It lists, for each possible predecessor block, an accessible register in this predecessor block. 
+The $\phi$-instruction then evaluates to the value of the register from those predecessor block from which execution was actually transferred. 
+As for all instructions, the result of the $\phi$-instruction is bound to a fresh register, which can then be accessed from the current basic block.
+
+
+It is straightforward to map a program defined in Isabelle to an actual LLVM program.
+Each equation of the form \q{\is{proc x_1 .. x\_n = block}} is mapped to an LLVM procedure named \q{\is{proc}}. 
+A block is mapped to a control flow graph. Instructions and procedure calls are directly mapped to LLVM instructions and calls.
+An \q{\is{x <- llc_if b t e}} is translated to conditional branching, using a $\phi$-instruction to define the result register \q{\is{x}} when joining the control flow.
+
+
+% 
+% A command is mapped to a set of basic blocks and a register that holds the return value. 
+% To concisely implement the translation, we use a builder pattern, that keeps track of the current basic block it is emitting instructions to.  
+% The function \q{\is{build dst cmd}} translates a command, putting the result into the register named \q{\is{dst}}.
+% The function \q{\is{build_block block}} translates a block, and returns the register that holds the result value of the block.
+% For example, an \q{\is{llc_if}} command is translated as follows\footnote{The code displayed here is simplified, the actual code additionally 
+% maintains the state of the builder and a mapping from Isabelle's variables to actual registers in LLVM. 
+% We also omitted the case where the if-command returns unit, such that we do not create a $\phi$-node.}
+% \begin{lstlisting}[language=ML]
+%   fun build_if dst (llc_if b blk_t blk_e) = 
+%   (* Omitted: Obtain fresh labels l_then, l_else, l_ctd_if *)
+%   val _ = Builder.mk_cbr b l_then l_else
+%   
+%   val _ = Builder.open_bb l_then 
+%   val r_then = build_block blk_t
+%   val l_then' = Builder.mk_br l_ctd_if
+%   
+%   val _ = Builder.open_bb l_else 
+%   val r_else = build_block blk_e
+%   val l_else' = Builder.mk_br l_ctd_if
+% 
+%   val _ = Builder.open_bb b l_ctd_if
+%   val _ = Builder.mk_phi dst [(r_then,l_then')] [(r_else,l_else')]
+% \end{lstlisting}
+% 
+% The function takes a register \q{\is{dst}} where it should put the result to, and the Isabelle representation of the if command.
+% We first obtain three fresh label names. Then, we close the current basic block with a conditional branch to the \q{\is{then}} and \q{\is{else}} label (\q{\is{mk_cbr}}).
+% We then emit the code for the then and else part into the respective basic blocks, and close these basic blocks with unconditional branches to the \q{\is{ctd_if}} label.
+% Finally, we open the \q{\is{ctd_if}} basic block, and emit a $\phi$-node to bind the result of the then and else part to the register \q{\is{dst}}.
+
+\begin{example}
+Figure~\ref{fig:fib_llvm} displays the output of our code generator for the \q{\is{fib}} function displayed in Figure~\ref{fig:fib_isabelle}.
+\end{example}
+
+
+\subsubsection{Mapping the Memory Model}
+Some of the translations are slightly more involved.
+For example, recall the \q{\is{ll_malloc :: 'a itself => n word => 'a ptr llM}} instruction. It has to be mapped to the function \q{\is{void* calloc(size_t, size_t)}} from
+the C standard library. For this, we have to parameterize the code generator with the architecture dependent size of the \q{\is{size_t}} type. 
+Next, we have to obtain the size of type \q{\is{'a}} and cast the \q{\is{n word}} parameter to \q{\is{size_t}}. Here, our code generator will refuse downcast, as this might result in bits being dropped. Finally, we have to cast the returned \q{\is{void*}} to the correct return type. 
+Moreover, the \q{\is{calloc}} function returns \q{\is{null}} if not enough memory is available. In contrast, our semantics always returns a new block of memory.
+We insert code to terminate the program in a defined way if it runs out of memory. The relation between our semantics and the actual LLVM program then 
+becomes: Either the program terminates with an out-of-memory condition, or it behaves as modeled by the semantics. 
+Our current implementation simply prints an error message and terminates the process with exit code $1$ if it runs out of memory.
+A similar issue arises when comparing pointers: LLVM does not have instructions for pointer comparison. Instead, pointers have to be cast to integers, which can then be compared. However, this requires to know the bit-width of a pointer, which we cannot model in our semantics.
+Instead, we model the instructions \q{\is{ll_ptrcmp_eq}} and \q{\is{ll_ptrcmp_ne}}, and let the code generator generate the cast to integers and the integer comparison. 
+
+
+\subsection{Preprocessing}
+In the previous sections we have described the semantics of a fragment of LLVM, shallowly embedded in Isabelle/HOL. 
+However, programs have to stick to a very restrictive shape (cf.~\S\ref{sec:modeling_ctrl_flow}), 
+which makes them easy to map to actual LLVM code, but tedious to write directly.
+In this section, we describe the preprocessing techniques that we implemented to make programs simpler to write.
+Note that these techniques work by \emph{proving} the equations in restricted shape from the user specified ones. 
+Thus, errors in the preprocessor cannot affect soundness of the generated code: Either, it fails to prove the equations, or it produces ill-shaped equations, 
+which the code generator will reject.
+
+Our preprocessor includes two main functionalities, monomorphization and inlining.
+The goal is to produce well-shaped equations from a given set of Isabelle functions.
+We assume that the functions we start with are instantiated to a monomorphic type, i.e., do not contain any type variables.
+
+\subsubsection{Monomorphization}
+We first collect the defining equations of the specified functions, and, recursively, the equations of the functions used in them.
+During the collection process we perform monomorphization, i.e., 
+we instantiate polymorphic definitions to the types they are actually used with. 
+After this step, we have a set of monomorphic equations that define all functions that will occur in the final program.
+However, the right hand sides of the equations may still be ill-shaped.
+
+
+
+\subsubsection{Inlining}
+We first apply user defined rewrite rules, and then flatten nested expressions, converting function calls to the shape 
+\q{\is{r <- f x_1 ... x\_n}} or \q{\is{r <- return (f x_1 ... x\_n)}}, where the $x_i$ are either constants, variables, or \emph{monadic} arguments
+of type \q{\is{... => _ llM}}. Subterms of type \q{\is{_ llM}} are recursively flattened.
+We iterate the rewriting and flattening steps until a fixed point is reached. 
+While this preprocessing is highly incomplete, i.e., it cannot convert every term to a well-shaped one, it works well in practice, allowing for concise specifications.
+
+\begin{example}
+Consider the following definition of the function \q{\is{fib'}}:
+\begin{lstlisting}
+fib' :: "m word => m word llM"
+fib' n = if n <= 1 then return n 
+         else do { n_1 <- fib' (n - 1); n_2 <- fib' (n - 2); return (n_1 + n_2) }
+\end{lstlisting}
+When started with \q{\is{fib' :: 64 word => 64 word llM}}, the preprocessor automatically translates this equation 
+to the equation displayed in Figure~\ref{fig:fib_isabelle}. During the translation, it uses the following inlining rules:
+\begin{lstlisting}
+  if b then c else t = llc_if (from_bool b) c t                 return (a + b) = ll_add a b
+  return (from_bool (a<=b)) = ll_icmp_ule a b               return (a - b) = ll_sub a b
+\end{lstlisting}
+Our default setup contains similar rules for the other operations, as well as rules to map tuples and case-distinctions over tuples to \q{\is{insertvalue}} and \q{\is{extractvalue}} instructions.
+\end{example}
+
+\subsubsection{Generation of Recursive Equations}
+A third functionality of the preprocessor is to generate recursive functions from fixed-point combinators. In general,
+it examines the right hand side of an equation for patterns \q{\is{p}} for which it has an unfold rule of the form \q{\is{p = F p}}.
+It then defines a new function \q{\is{f x_1 ... x\_n = F (f x_1 ... x\_n)}}, where the \q{\is{x\_i}} are the free variables in the pattern \q{\is{p}}.
+Finally, it replaces \q{\is{p}} by \q{\is{f x_1 ... x\_n}} in the equation. This way, specifications with fixed point combinators are automatically 
+transformed to a set of recursive equations, as required by the code generator.
+
+A standard example is the while loop combinator, which we define by the equation
+\begin{lstlisting}
+  llc_while b c s = do {ctd <- b s; llc_if ctd (do {s <- c s; llc_while b c s}) (return s)}
+\end{lstlisting}
+We use this equation as unfold rule, such that while loops are automatically converted to tail calls. Note that this 
+feature allows for the concise specifications of loops, without adding additional trusted code. 
+As LLVM has tail-call optimization, the compiled programs will be efficient.
+
+\begin{example}\label{ex:euclid}
+Consider the following program:
+\begin{lstlisting}
+euclid :: 64 word => 64 word => 64 word
+euclid a b = do {
+  (a,b) <- llc_while 
+    (%(a,b) => ll_cmp (a ~= b))
+    (%(a,b) => if (a<=b) then return (a,b-a) else return (a-b,b))
+    (a,b);
+  return a }
+\end{lstlisting}
+From this, the preprocessor proves the following two equations (before inlining):
+\begin{lstlisting}
+euclid a b = do {
+    (a, b) <- euclid_0 (a, b);
+    return a }
+euclid_0 s = do {
+    ctd <- case s of (a, b) => ll_cmp (a ~= b);
+    llc_if ctd (do {
+      s <- case s of (a, b) => if a <= b then return (a, b - a) else return (a - b, b);
+      euclid_0 s
+    }) (return s) }
+\end{lstlisting}
+That is, it defined a new function \q{\is{euclid_0}} to replace the while loop by tail recursion.
+\end{example}
+
+
+
+\section{Verification Condition Generator}\label{sec:vcg}
+The next step towards generating verified LLVM programs is to establish a reasoning infrastructure. 
+In this section, we describe our separation logic~\cite{Rey02} based verification condition generator.
+Note that, while applying complex operations on the proof state, at the end, our VCG conducts a proof 
+that goes through Isabelle's inference kernel. Thus, bugs in the VCG cannot cause unsoundness.
+
+\subsection{Separation Algebra}
+The first step to obtain a separation logic is to define a separation algebra on a suitable abstraction of the memory.
+A separation algebra~\cite{CHY07} is a structure with a zero, a disjointness predicate $a\#b$, 
+and a disjoint union $a+b$.
+Intuitively, elements describe parts of the memory. 
+Zero describes the empty memory, $a\#b$ means that $a$ and $b$ describe disjoint parts of the memory,
+and $a+b$ describes the memory described by the union of $a$ and $b$. 
+For the exact definition of a separation algebra, we refer to \cite{CHY07,KKB12}. We note that 
+separation algebras naturally extend over functions, pairs, and option types. 
+
+We abstract a value by a partial function from value addresses (\q{\is{va_dir list}}) to primitive values, 
+such that the addresses in the domain of the function are independent, i.e., no address is the prefix of another address:
+\begin{lstlisting}
+  typedef aval = "{ m :: vaddr => 'a option. \<forall>va,va'\<in>dom m. va~=va' --> indep va va' }"
+  val_\<alpha> :: val => aval
+  val_\<alpha> (PRIM x) = [[] |-> x]
+  val_\<alpha> (PAIR x y) = PFST \<cdot> val_\<alpha> x + PSND \<cdot> val_\<alpha> y
+\end{lstlisting}
+here, \q{\is{[k |->v]}} is the partial function that maps $k$ to $v$, and \q{\is{i \<cdot> a}} 
+prepends the item $i$ to all addresses in the domain of $a$. 
+It is straightforward (though technically involved) to show that abstract values form a separation algebra, 
+where the empty map is zero, maps are disjoint iff their domains are pairwise independent, and union merges two maps.
+
+A natural abstraction of a block (\q{\is{val list}})
+would be a function from indexes to abstract values, mapping invalid indexes to $0$. 
+However, this abstraction does not contain enough information to reason about deallocation. 
+In order to deallocate a block, we have to own the whole block. However, from the abstraction, we cannot infer the size of the block, and thus we cannot
+specify an assertion that ensures that we own the whole block. A remedy (which the author has seen in \cite{App14}) is to additionally 
+abstract a block to its size. Thus, abstract blocks have the type \q{\is{ablock = (nat => aval) \x nat option}}. 
+The option type is required to make the second elements of the tuples a separation algebra. We use the trivial separation algebra here, where
+two elements are only disjoint if at least one of them is \q{\is{None}}. 
+Finally, we define \q{\is{amemory = nat => ablock}}, and a function \q{\is{\<alpha> :: memory => amemory}} that abstracts memory
+by a function from block indexes to abstract blocks, mapping deallocated or invalid indexes to zero.
+
+\subsection{Basic Reasoning Infrastructure}
+Predicates of type \q{\is{assn = memory => bool}} are called \emph{assertions}.
+The \emph{weakest precondition} of a program \q{\is{c :: 'a llM}}, a \emph{postcondition} \q{\is{Q :: 'a => assn}}, and a memory \q{\is{s}} is a predicate defined as:
+\begin{lstlisting}
+wp c Q s = (\<exists>r s'. run c s = SUCC r s' \and Q r (\<alpha> s'))
+\end{lstlisting}
+Intuitively, \q{\is{wp c Q s}} states that program \q{\is{c}}, if run on memory \q{\is{s}}, terminates successfully and the result \q{\is{r}} and the abstraction of the new 
+state \q{\is{s'}} satisfy \q{\is{Q}}.
+
+For assertions \q{\is{P}} and \q{\is{Q}}, the \emph{separating conjunction} \q{\is{P*Q}} describes a memory that can be split into two disjoint parts described by \q{\is{P}} and \q{\is{Q}}, respectively:
+\begin{lstlisting}
+(P * Q) s = \<exists>s_1 s_2. s_1 # s_2 \and s = s_1 + s_2 \and P s_1 \and Q s_2
+\end{lstlisting}
+%
+Validity of a \emph{Hoare triple} \q{\is|{P} c {Q}|} is defined as follows:
+\begin{lstlisting}
+|= {P} c {Q} = \<forall>F s. (P*F) (\<alpha> s) --> wp c (%r s'. (Q r * F) s') s
+\end{lstlisting}
+That is, if the memory can be split into a part described by the \emph{precondition} \q{\is{P}}, and a \emph{frame} described by \q{\is{F}},
+then command \q{\is{c}} will succeed, and the new memory consists of a part described by the postcondition \q{\is{Q}} and the unchanged frame. 
+Our Hoare triples satisfy the frame rule: \q{\is$|= {P} c {Q} ==> |= {P * F} c {\<lambda>r. Q r * F}$} for all \q{\is{F}}.
+
+\subsection{Basic Rules}
+Once we have set up the separation algebra and the abstraction function, we can prove Hoare triples for the basic operations of our memory model.
+For example, we prove the following rules for \q{\is{allocn}} and \q{\is{free}}:
+\begin{lstlisting}
+|= {\<box>} allocn v n {%p. malloc_tag n p * range {0..<n} (%_. v) p}
+|= {malloc_tag n p * range {0..<n} blk p} free p {%_. \<box>}
+\end{lstlisting}
+where \q{\is{\<box> = \<lambda>s. s=0}} describes the empty memory, 
+\q{\is{malloc_tag n p}} asserts that \q{\is{p}} points to the beginning of a block, and the size field of this block's abstraction is \q{\is{n}}, 
+and \q{\is{range I f p}} describes that for all \q{$i\in I$}, \q{$p+i$} points to value \q{$f~i$}.
+Intuitively, \q{\is{allocn}} creates a block of size \q{$n$}, initialized with values \q{$v$}, and a tag. 
+If one possesses both, the whole block and the tag, it can be deallocated by free. 
+% Note that we use the size encoded in the tag to ensure that we possess the whole block. 
+For the actual LLVM memory instructions, we obtain the following rules:
+\begin{lstlisting}
+|= {n~=0} ll_malloc TYPE('a) n {%p. range {0..<n} (%_. init) p * malloc_tag n p}
+|= {range {0..<n} blk p * malloc_tag n p} ll_free p {%_. \<box>}
+|= {pto x p} ll_load p {%r. r=x * pto x p}
+|= {pto xx p} ll_store x p {%_. pto x p}
+\end{lstlisting}
+Here, \q{\is{pto x p}} describes that $p$ points to value $x$. We prove similar rules for the other instructions.
+
+\subsection{Automating the VCG}
+In order to efficiently prove Hoare triples, some automation is required.
+We provide a verification condition generator with a frame inference heuristics. 
+The first step to prove a Hoare triple is to convert it to a proposition on weakest preconditions:
+\begin{lstlisting}
+  [|!!F s. STATE (P*F) s ==> wp c (%r s'. (Q r * F) s') s|] ==> |= {P} c {Q}
+\end{lstlisting}
+where \q{\is{STATE P s = P (\<alpha> s)}}.
+In general, the VCG operates on subgoals of the form \q{\is{STATE P s ==> wp c Q s}}. 
+It then iteratively performs one of the following steps\footnote{This is a simplified presentation. 
+The actual VCG is an instantiation of a generic VCG framework that can be configured with various solvers, rules, and heuristics.}:
+\begin{description}
+  \item[simplification] Apply a rewrite rule to transform \q{\is{wp c Q s}} into some equivalent proposition. For example,
+    binding is resolved by the rule:
+    \begin{lstlisting}
+      wp (do {x<-m; f x}) Q s = wp m (%x. wp (f x) Q) s
+    \end{lstlisting}
+  \item[rule] If there is a Hoare triple of the form \q{\is$|= {P'} c {Q'}$}, the VCG tries to infer a frame \q{\is{F}} 
+  such that \q{\is{P |- P'*F}}, and replaces the goal by \q{\is{STATE (Q'*F) s' ==> Q s'}} for a fresh \q{\is{s'}}. 
+  Here, \q{\is{P|-Q = \<forall>s. P s ==> Q s}} denotes entailment.
+  \item[final] If the goal has the form \q{\is{STATE P s ==> Q s}} such that \q{\is{Q}} is not of the form \q{\is{wp _ _ _}}, a heuristics is used to prove 
+  \q{\is{P |- Q}}.
+\end{description}
+The actual verification conditions are generated during frame inference and the final proof heuristics.
+For example, the rule for \q{\is{ll_malloc}} requires to prove that the size operand is not zero. 
+The VCG will try to prove these goals by a default tactic, and leave them to the user if this tactic fails.
+
+\begin{example}\label{ex:euclid-proof}
+Recall the function \q{\is{euclid :: 64 word => 64 word => 64 word llM}} from Example~\ref{ex:euclid}.
+We prove the following Hoare triple:
+\begin{lstlisting}
+  |= {uint a a\impl * uint b b\impl * 0<a * 0<b} euclid a\impl b\impl {%r\impl. uint (gcd a b) r\impl}
+\end{lstlisting}
+Here, \q{\is{uint a a\impl}} states that \q{\is{a\impl::32 word}} is an unsigned integer with value \q{\is{a::int}}, 
+where \q{\is{int}} is the type of (mathematical) integers in Isabelle, and \q{\is{gcd}} is Isabelle's greatest common divisor function. 
+After annotating a suitable loop invariant, the VCG generates the following two verification conditions:
+\begin{lstlisting}
+  [| gcd x y = gcd a b; x ~= y; x <= y; ... |] ==> gcd x (y - x) = gcd a b
+  [| gcd x y = gcd a b; \<not> x <= y; ... |] ==> gcd (x - y) y = gcd a b
+\end{lstlisting}
+These are straightforward to prove in Isabelle, e.g., using sledgehammer\cite{BBP13}.
+\end{example}
+
+\subsection{Data Structures and Basic Refinement}
+Recall Example~\ref{ex:euclid-proof}. The Hoare triple that is proved there first maps the 64 bit word arguments and results to mathematical integers,
+and then phrases the correctness statement in terms of mathematical integers. 
+This approach is often more feasible than stating correctness on the concrete implementation directly. 
+In our case, we would have to define the concept of greatest common divisor for 64 bit words. In general, an algorithm often 
+computes some function on abstract mathematical concepts like integers or sets, but has to implement these by concrete data structures like 64 bit words or hash-tables.
+Thus, a concise way to specify the correctness statement is to first map the implementations back to the abstract concepts, and then state 
+the actual correctness abstractly. 
+
+In separation logic based reasoning, a data structure provides a \emph{refinement assertion} \q{\is{A x x\impl :: assn}}, which describes 
+that the abstract value \q{\is{x}} is implemented by the concrete value \q{\is{x\impl}}. 
+We define refinement assertions to implement integers and natural numbers by $n$ bit words, and to implement lists by blocks of memory. 
+Note that new data structures and refinement assertions can easily be added. In general, an implementation does not completely implement an abstract mathematical concept.
+For example, $n$ bit words can only represent the integers \q{\is|sints n = $\{-2^{\text{n}-1}..<2^{\text{n}-1}\}$|}, and hash-tables can only represent finite sets. Thus, the rules for the operations generally come with additional preconditions. 
+For example, the rule to implement subtraction on integers by subtraction on $n$ bit words is the following:
+\begin{lstlisting}
+|= {sint a a\impl * sint b b\impl * a-b \<in> sints n} ll_sub a\impl b\impl {%r\impl. sint (a-b) r\impl}
+  for a\impl b\impl :: n word and a b :: int
+\end{lstlisting}
+Note that the postcondition does not mention the operands \q{\is{a,b}} again, though they are still valid after the operation. 
+As \q{\is{sint}} is \emph{pure}, i.e., does not use the memory, our VCG can automatically add the corresponding assertions to the postcondition. 
+
+
+\section{Automatic Refinement}\label{sec:auto_ref}
+Our basic VCG infrastructure can be used to verify simple algorithms, like \q{\is{euclid}} from Example~\ref{ex:euclid-proof}.
+However, many complex algorithms have already been verified using the Isabelle Refinement Framework~\cite{LaTu12}.
+It features a non-deterministic programming language with a refinement calculus and a VCG. 
+It allows to express an algorithm on the abstract mathematical concepts, and then refine it in multiple steps towards an efficient implementation.
+The last step of a refinement is typically performed by the Sepref tool~\cite{La15}, which translates a program from the non-deterministic monad of the Refinement Framework 
+into the deterministic heap monad of Imperative HOL~\cite{BKHEM08}, replacing abstract data types by concrete implementations. 
+% It comes with some powerful automation and support for easily defining new data structures~\cite{La16}.
+%
+We have modified the Sepref tool to translate to our LLVM monad instead.
+We only had to modify the translation phase. The preprocessing phases, which only work on the abstract program, remained unchanged.
+
+The translation phase works by symbolically executing the abstract program, thereby synthesizing a structurally similar concrete program.
+During the symbolic execution, the relation between the abstract and concrete variables is modeled by refinement assertions. 
+The predicate \q{\is{hnr \<Gamma> m\impl \<Gamma>' R m}} means that concrete program \q{\is{m\impl}} implements abstract program \q{\is{m}},
+where \q{\is{\<Gamma>}} contains the refinements for the variables before the execution, \q{\is{\<Gamma>'}} contains the 
+refinements after the execution, and \q{\is{R}} is the refinement assertion for the result of \q{\is{m}}. For example, a \q{\is{bind}} is 
+processed by the following rule:
+\begin{lstlisting}[numbers=left]
+[| hnr \<Gamma> m\impl \<Gamma>' R\_x m;
+  !!x x\impl. hnr (R\_x x x\impl * \<Gamma>') (f\impl x\impl) ($R_x'$ x x\impl * \<Gamma>'') R\_y (f x);
+  MK_FREE $R_x'$ free;
+|] ==> hnr \<Gamma> (do {x\impl<-m\impl;r\impl<-f\impl x\impl; free x\impl; return r\impl}) \<Gamma>'' R\_y (do {x<-m; f x})
+\end{lstlisting}
+To refine \q{\is{x<-m; f x}}, we first execute \q{\is{m}}, synthesizing the concrete program \q{\is{m\impl}} (line~1).
+The state after \q{\is{m}} is \q{\is{R\_x x x\impl * \<Gamma>'}}, where \q{\is{x}} is the result created by \q{\is{m}}.
+From this state, we execute \q{\is{f x}} (line~2). The new state is \q{\is{$R_x'$ x x\impl * \<Gamma>'' * R\_y y y\impl}}, where \q{\is{y}} is the result of \q{\is{f x}}.
+% , which is only implicit in the above rule.
+Now, the variable \q{\is{x}} goes out of scope, such that it has to be deallocated. 
+The predicate \q{\is&MK_FREE $R_x'$ free = \<forall>x x\impl. |= {$R_x'$ x x\impl} free x\impl {\<lambda>_. \<box>}&} (line~3) states that 
+\q{\is{free}} is a deallocator for data structures implemented by refinement assertion \q{\is{$R_x'$}}. 
+Note that the refinement for variable \q{\is{x}} may change: If \q{\is{f\impl x\impl}} overwrites \q{\is{x\impl}},
+the refinement assertion for \q{\is{x}} will be changed to the special assertion \q{\is{invalid}}. 
+The deallocator for \q{\is{invalid}} is simply a no-op.
+%
+Adding support for deallocators was the most substantial change we applied to the Sepref tool. Its original target 
+language, Imperative HOL, is garbage collected, such that there is no need for explicit deallocation.
+
+\subsection{Data Structure Library}
+Once the basic Sepref tool is adapted, we can define data structures. 
+Reusing the basic data structures from the original Sepref tool is not possible, as Imperative HOL 
+uses arbitrary precision integers and algebraic data types, while we have only fixed width integers and pairs.
+Up to now, we have added the implementation of integers and natural numbers 
+by $n$ bit words, the implementation of lists by arrays, and, on top of this, the implementation of a list 
+by an array and a length field. However, we could reuse the existing infrastructure of the Sepref tool: For example,
+there is support to automatically generate rules that also support refinement of the elements of a data structure, 
+exploiting `free theorems'~\cite{Wad89} which stem from parametricity properties of the abstract types.
+
+\subsection{Example: Knuth-Morris-Pratt String Search}
+Finally, we conducted a case study: 
+We took an existing formalization~\cite{HeLa17} of the Knuth-Morris-Pratt string search~\cite{KMP77} in the Refinement Framework.
+It uses Sepref to generate Imperative HOL code, which is then translated to Standard ML by Isabelle's code generator.
+We only had to slightly change the abstract part of the proof, in order to insert a few in-bounds assertions. 
+For example, when incrementing an index, we have to explicitly assert that it won't overflow. 
+As the invariants used in the original proof already contain this knowledge, adapting the proofs was straightforward.
+We then used the modified Sepref tool to synthesize LLVM instead of Imperative HOL. 
+For this, we fixed the lengths and indexes to 64 bit integers, and the characters to 8 bit integers.
+For the search string and text we use a pair of an array and a length field.
+The result of the automatic synthesis is an LLVM specification \q{\is{kmp_impl}}, and the theorem:
+\begin{lstlisting}
+(kmp_impl, kmp_SPEC) : [%s t. |s| + |t| < $2^{63}$] larray^k \x larray^k -> snat_option
+\end{lstlisting}
+Here, \q{\is{kmp_SPEC}} is the abstract specification of a string search algorithm, \q{\is{larray}} is 
+the refinement of a list by an array and a length, and \q{\is{snat_option}} implements the type \q{\is{nat option}} 
+by signed 64 bit integers, mapping \q{\is{None}} to $-1$. 
+The notation \q{\is{[\<Phi>] $A_1^{k|d}$ \x ... \x $A_n^{k|d}$ -> R}} specifies a refinement with precondition \q{\is{\Phi}}, such that the 
+arguments are refined by \q{\is{A_1 ... A\_n}} and the result is refined by \q{\is{R}}. 
+The $\cdot^{k|d}$ annotations specify whether the argument is overwritten ($k$ for keep, $d$ for destroy).
+While we use this notation a lot in the Refinement Framework, it is straightforward to prove a standard Hoare triple from it. By unfolding some definitions we get:
+\begin{lstlisting}
+|= {larray s s\impl * larray t t\impl * |s| + |t| < $2^{63}$}
+   kmp_impl s\impl t\impl
+     {%i. larray s s\impl * larray t t\impl 
+      * if i=-1 then \<nexists>i. sublist_at s t i 
+          else i>=0 \and sublist_at s t (unat i) \and (\<forall>j<unat i. \<not>sublist_at s t j)}
+\end{lstlisting}
+That is, our algorithm requires the length of the search string $s$ plus the length of the text $t$ to be less than $2^{63}$. 
+Then, it will return the index of the first occurrence of $s$ in $t$, or $-1$ if $s$ does not occur in $t$. 
+Moreover, the algorithm will neither change $s$ nor $t$, as expressed by the respective assertions in the postcondition.
+
+The code generator produces actual LLVM text from \q{\is{kmp_impl}}, which we compile and link with a simple command line interface written in C, 
+using \textsc{clang}~\cite{Clang}.
+Similarly, we generate Standard ML code from the original formalization, which we compile using \textsc{MLton}~\cite{MLton}.
+We compare the programs by running them on a large text that does not contain the search string: 
+The program compiled by LLVM is an order of magnitude faster than the one compiled by MLton, and uses a third of the memory.
+We leave more systematic testing to future work.
+
+
+
+
+\section{Conclusions}
+We have formalized a semantics and a code generator for a fragment of LLVM. On top of the semantics, we have built a verification 
+infrastructure, and re-targeted the Sepref tool to connect the Refinement Framework to LLVM. As a case-study, we have 
+only slightly changed an existing formalization of the Knuth-Morris-Pratt string search algorithm to obtain a verified LLVM implementation,
+which is an order of magnitude faster than the Standard-ML implementation from the original formalization.
+
+Our LLVM semantics makes a few simplifying assumptions: It assumes an infinite supply of memory, and thus cannot assign a bit-size to pointers. 
+This assumption helps us to retain a deterministic semantics, which allows us to evaluate the semantics inside the theorem prover (cf.~Example~\ref{ex:fib_isabelle}). 
+We plan to use this feature for systematic testing of our semantics against the actual LLVM compiler. 
+A similar assumption is implicitly made for the stack, as our semantics permits arbitrarily deep recursive procedure calls.
+We remedy this mismatch between semantics and reality by terminating the program in a defined way if it runs out of heap.
+To protect against stack overflows, LLVM provides mechanisms like stack probing or split stack, which, however, require some effort to enable. 
+We leave that to future work, and note that our generated code allocates no large blocks of memory on the stack. 
+Thus, stack overflows are likely to hit the guard pages inserted by most operating systems, which will cause termination of the process.
+
+This project would not have been possible without several independent Isabelle developments:
+We use the Separation Algebra library~\cite{KKB12_afp,KKB12} as basis for our separation logic. We substantially extended this library by a 
+frame inference heuristics, and formalized the extension of separation algebras over functions, products, and options. 
+Moreover, we use Isabelle's machine word library~\cite{Word_Lib-AFP} to model the 2's complement arithmetic of LLVM. We slightly extended this library by adding a few lemmas. Finally, the Eisbach language~\cite{MMW16} was a great help for prototyping the verification condition generator, although most of the 
+final VCG is now implemented directly in the more low-level Isabelle/ML.
+
+Related work includes the Vellvm project \cite{ZNMZ12,ZNMZ13}, which formalizes a substantial fragment of LLVM in Coq.
+While we focus on generating verified programs, they focus on proving correctness of program analyses and transformations. 
+Moreover, we drew some of the ideas for our separation logic from the Verifiable C project~\cite{App14}, a Coq formalization of a separation logic on top of the CompCert C semantics~\cite{BL09}.
+
+Future work will include the verification of more basic data structures, which will enable us to 
+port more existing verification projects to LLVM, hopefully increasing their performance. 
+One challenge will be the support of sum types: Unfortunately, union types have been discontinued in LLVM, such that we have to resort 
+to low-level bit-fiddling to support them. However, this will increase the complexity of the code generator. An alternative would be a more sophisticated memory model.
+The current shallow embedding of the control flow semantics also has the disadvantage that we cannot easily model more complex control flow like breaking from loops or exceptions, without significantly increasing the complexity of the code generator. To this end, we are already working on formalizing the semantics of 
+arbitrary control flow graphs, such that we can verify the translation of our control flow constructs to CFGs.
+
+
+{\footnotesize
+\paragraph{\footnotesize Acknowledgement}
+We thank Maximilian P.\ L.\ Haslbeck and Simon Wimmer for proofreading and useful suggestions.
+We received funding from DFG grant LA 3292/1 "Verifizierte Model Checker".
+}
+
+\clearpage
+
+% 
+% 
+% Discussion:
+%   assumption on infinite supply of memory assumption, deterministic semantics
+% 
+% Future work:
+%   handle stack overflow
+%   systematically test semantics: execute in Isabelle and LLVM, compare results
+%   start to develop data structures, port more algorithms to use LLVM as backend.
+% 
+% Mention used 3rd party libraries:
+%   Word, Sep-Algebra, Eisbach
+% 
+% Related work
+%   Vellvm, Compcert and its verification infrastructure
+% 
+  
+  
+  
+% {\footnotesize
+% 
+% \paragraph{\footnotesize Acknowledgement}
+% Max Haslbeck, Anders Schlichtkrull, and Mark Summerfield suggested textual
+% improvements.
+% %
+% The work has received funding from the European Research Council
+% under the European Union's Horizon 2020 research and innovation program
+% (grant agreement No.\ 713999, Matryoshka).
+% 
+% }
+
+\bibliographystyle{splncs03}
+\bibliography{bib}
+
+\end{document}
