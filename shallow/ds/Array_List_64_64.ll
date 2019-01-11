@@ -75,6 +75,20 @@ define void @arl_free({ i64, { i64, i64* } } %al) {
     ret void
 }
 
+define { i64, { i64, i64* } } @arl_take({ i64, { i64, i64* } } %al, i64 %l) {
+
+  start:
+    %l1 = extractvalue { i64, { i64, i64* } } %al, 0
+    %x = extractvalue { i64, { i64, i64* } } %al, 1
+    %c = extractvalue { i64, i64* } %x, 0
+    %a = extractvalue { i64, i64* } %x, 1
+    %xa = insertvalue { i64, { i64, i64* } } zeroinitializer, i64 %l, 0
+    %xb = insertvalue { i64, i64* } zeroinitializer, i64 %c, 0
+    %x1 = insertvalue { i64, i64* } %xb, i64* %a, 1
+    %x2 = insertvalue { i64, { i64, i64* } } %xa, { i64, i64* } %x1, 1
+    ret { i64, { i64, i64* } } %x2
+}
+
 define { i64, { i64, i64* } } @Array_List_arl_resize(i64 %c, { i64, { i64, i64* } } %al) {
 
   start:

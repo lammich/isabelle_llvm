@@ -299,7 +299,22 @@ subsection \<open>Arrays that own their Elements\<close>
     (\<lambda>ni. \<upharpoonleft>aal_assn xss a ** \<upharpoonleft>snat.assn (length xss) ni)"
     unfolding aal_len_def aal_assn_def 
     by vcg
-  
+
+  definition [llvm_code, llvm_inline]: "aal_take na i l \<equiv> doM {
+    let (n,a) = na;
+    aa \<leftarrow> nao_nth a i;
+    aa \<leftarrow> arl_take aa l;
+    a \<leftarrow> nao_upd a i aa;
+    return (n,a)
+  }" 
+
+  lemma aal_take_rl[vcg_rules]: "llvm_htriple
+    (\<upharpoonleft>aal_assn xss a ** \<upharpoonleft>snat.assn i ii ** \<upharpoonleft>snat.assn l li ** \<up>(i<length xss \<and> l \<le> length (xss!i)))
+    (aal_take a ii li)
+    (\<lambda>a. \<upharpoonleft>aal_assn (xss[i := take l (xss!i)]) a)"
+    unfolding aal_assn_def aal_take_def
+    by vcg
+        
     
   definition "aal_free na \<equiv> doM {
     let (n,a) = na;
@@ -327,6 +342,7 @@ subsection \<open>Arrays that own their Elements\<close>
     "aal_llen :: (64,8 word,64) array_array_list \<Rightarrow> 64 word \<Rightarrow> 64 word llM"  
     "aal_len :: (64,8 word,64) array_array_list \<Rightarrow> 64 word llM"  
     "aal_free :: (64,8 word,64) array_array_list \<Rightarrow> unit llM"  
+    "aal_take :: (64,8 word,64) array_array_list \<Rightarrow> 64 word \<Rightarrow> 64 word \<Rightarrow> ((64,8 word,64) array_array_list) llM"  
     
 
 end

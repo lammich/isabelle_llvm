@@ -22,6 +22,12 @@ begin
     
     sepref_decl_op list_list_llen: "\<lambda>xss i. length (xss!i)" :: "[\<lambda>(xss,i). i<length xss]\<^sub>f LR A \<times>\<^sub>r nat_rel \<rightarrow> nat_rel" .
     sepref_decl_op list_list_len: "length :: _ list list \<Rightarrow> _" :: "LR A \<rightarrow> nat_rel" .
+    
+    sepref_decl_op list_list_take: "\<lambda>xss i l. (xss[i:=take l (xss!i)])" 
+      :: "[\<lambda>((xss,i),l). i<length xss \<and> l\<le>length (xss!i)]\<^sub>f ((LR A \<times>\<^sub>r nat_rel) \<times>\<^sub>r nat_rel)\<rightarrow> LR A" 
+      unfolding conv_to_is_Nil short_circuit_conv
+      by parametricity
+    
   end
 
   locale list_list_custom_empty = 

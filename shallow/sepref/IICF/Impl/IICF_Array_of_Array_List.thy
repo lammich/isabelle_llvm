@@ -42,7 +42,7 @@ begin
     
       sepref_decl_impl aal_push_back_hnr_aux
         unfolding short_circuit_conv by parametricity
-        
+                
       lemma aal_pop_back_hnr_aux: "(uncurry aal_pop_back, uncurry (RETURN oo op_list_list_pop_back)) 
         \<in> [\<lambda>(xss,i). i<length xss \<and> xss!i\<noteq>[]]\<^sub>a AA\<^sup>d *\<^sub>a snat_assn\<^sup>k \<rightarrow> id_assn \<times>\<^sub>a AA"
         by p_hnr
@@ -71,6 +71,14 @@ begin
 
       sepref_decl_impl (no_register) aal_empty: aal_empty_hnr_aux .
 
+      
+      lemma aal_take_hnr_aux: "(uncurry2 aal_take, uncurry2 (RETURN ooo op_list_list_take)) 
+        \<in> [\<lambda>((xss,i),l). i<length xss \<and> l \<le> length (xss!i)]\<^sub>a AA\<^sup>d *\<^sub>a snat_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow> AA"
+        by p_hnr
+
+      sepref_decl_impl aal_take_hnr_aux    
+        unfolding short_circuit_conv by parametricity
+      
     end
   end  
 
@@ -99,6 +107,7 @@ begin
       let l = op_list_list_push_back l (n-1) 43;
       let (x,l) = op_list_list_pop_back l (n-1);
       let l = op_list_list_push_back l (n-1) x;
+      let l = op_list_list_take l (n-1) 1;
       
       RETURN l
     }" :: "[\<lambda>n. n\<in>{1..150}]\<^sub>a (snat_assn' TYPE(32))\<^sup>k \<rightarrow> aal_assn' TYPE(32) TYPE(32) (snat_assn' TYPE(32))"

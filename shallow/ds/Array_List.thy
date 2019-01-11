@@ -102,6 +102,11 @@ begin
     return (r,(l,c,a))
   }"
   
+  definition [llvm_code,llvm_inline]: "arl_take al l' \<equiv> doM {
+    let (l,c,a) = al;
+    return (l',c,a)
+  }"
+  
   
   export_llvm (debug)
     "arl_new_raw :: (64 word,64) array_list llM" is "arl_new"
@@ -111,6 +116,7 @@ begin
     "arl_len :: (64 word,64) array_list \<Rightarrow> 64 word llM" is "arl_len"
     "arl_push_back :: (64 word,64) array_list \<Rightarrow> 64 word \<Rightarrow> (64 word,64) array_list llM" is "arl_push_back"
     "arl_pop_back :: (64 word,64) array_list \<Rightarrow> (64 word \<times> (64 word,64) array_list) llM" is "arl_pop_back"
+    "arl_take :: (64 word,64) array_list \<Rightarrow> 64 word \<Rightarrow> (64 word,64) array_list llM" is "arl_take"
     
     file "Array_List_64_64.ll"
     
@@ -224,6 +230,13 @@ begin
     apply vcg'
     by (auto simp: take_minus_one_conv_butlast last_take_nth_conv)
     
+  lemma arl_take_rule[vcg_rules]:
+    "llvm_htriple 
+      (\<upharpoonleft>arl_assn al (ali::(_,'l::len2)array_list) ** \<upharpoonleft>snat.assn l li ** \<up>\<^sub>d(l \<le> length al)) 
+      (arl_take ali li) 
+      (\<lambda>ali. \<upharpoonleft>arl_assn (take l al) ali)"  
+    unfolding arl_assn_def arl_assn'_def arl_take_def
+    by vcg
     
     
 end
