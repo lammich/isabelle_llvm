@@ -5,6 +5,8 @@ target triple = "x86_64-pc-linux-gnu"
 
 
 
+
+
 define i32 @euclid(i32 %a, i32 %b) {
 
   start:

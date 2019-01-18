@@ -424,7 +424,7 @@ llvm_deps foo: "qs_quicksort :: 64 word ptr \<Rightarrow> 64 word \<Rightarrow> 
 
 
 export_llvm "qs_quicksort :: 64 word ptr \<Rightarrow> 64 word \<Rightarrow> 64 word \<Rightarrow> unit llM" is "qs_quicksort"
-  file \<open>qs_quicksort.ll\<close>
+  file \<open>code/qs_quicksort.ll\<close>
 
 definition "swap xs i j \<equiv> xs[ i:= xs!j, j:=xs!i]"
   

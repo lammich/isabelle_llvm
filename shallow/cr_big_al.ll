@@ -2,8 +2,10 @@
 target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-pc-linux-gnu"
 
-declare  void @isabelle_llvm_free(i8*)
-declare  i8* @isabelle_llvm_calloc(i64, i64)
+
+
+declare void @isabelle_llvm_free(i8*)
+declare i8* @isabelle_llvm_calloc(i64, i64)
 
 
 define void @NArray_narray_free(i64* %p) {

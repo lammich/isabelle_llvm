@@ -37,6 +37,7 @@ begin
       and struct_of :: "'a itself \<Rightarrow> llvm_vstruct"
       and init :: 'a
     assumes from_to_id[simp]: "from_val o to_val = id"
+    assumes to_from_id[simp]: "llvm_vstruct v = struct_of TYPE('a) \<Longrightarrow> to_val (from_val v) = v"
     assumes struct_of_matches[simp]: "llvm_vstruct (to_val x) = (struct_of TYPE('a))"
     assumes init_zero: "to_val init = llvm_zero_initializer (struct_of TYPE('a))"
     
@@ -66,11 +67,19 @@ begin
     definition [simp]: "struct_of_word (_::'a word itself) \<equiv> llvm_s_int (len_of TYPE('a))"
     definition [simp]: "init_word \<equiv> 0::'a word"
     
+    
+    lemma int_inv_aux: "width i = LENGTH('a) \<Longrightarrow> lconst LENGTH('a) (uint (word_of_int (lint_to_uint i) :: 'a word)) = i"
+      by (metis uint_const uint_eq uint_lower_bound uint_upper_bound width_lconst word_of_int_inverse word_ubin.norm_Rep)
+    
     instance
       apply standard
       apply (rule ext)
       apply (auto simp: from_val_word_def to_val_word_def)
       apply (auto simp: llvm_s_int_def llvm_zero_initializer_def llvm_int_def)
+      subgoal for v apply (cases v) 
+        apply (auto simp: llvm_int_def llvm_the_int_def llvm_s_ptr_def llvm_s_pair_def)
+        apply (simp add: llvm_vstruct_def int_inv_aux)
+      done
       done
       
   end
@@ -86,6 +95,8 @@ begin
       apply (rule ext)
       apply (auto simp: from_val_ptr_def to_val_ptr_def)
       apply (auto simp: llvm_zero_initializer_def llvm_ptr_def llvm_s_ptr_def null_def llvm_null_def)
+      subgoal for v apply (cases v)
+        by (auto simp: llvm_s_int_def llvm_s_pair_def llvm_ptr_def llvm_the_ptr_def)
       done
       
   end
@@ -101,17 +112,27 @@ begin
       apply (rule ext)
       apply (auto simp: from_val_prod_def to_val_prod_def)
       apply (auto simp: llvm_pair_def llvm_s_pair_def init_zero llvm_zero_initializer_def)
+      subgoal for v
+        apply (cases v)
+        apply (auto simp: llvm_s_int_def llvm_s_ptr_def llvm_pair_def llvm_the_pair_def 
+          llvm_val.the_val_def llvm_vstruct_def split: prod.splits llvm_val.splits val.split)
+        done
       done
       
   end
 
+  lemma to_val_prod_conv[simp]: "to_val (a,b) = llvm_pair (to_val a) (to_val b)"
+    unfolding to_val_prod_def by auto
+  
+  
   text \<open>Checked conversion from value\<close>  
   definition checked_from_val :: "llvm_val \<Rightarrow> 'a::llvm_rep llM" where
     "checked_from_val v \<equiv> doM {
       fcheck (STATIC_ERROR ''Type mismatch'') (llvm_vstruct v = struct_of TYPE('a));
       return (from_val v)
     }" 
-  
+
+      
   subsection \<open>Instructions\<close>  
   
   text \<open>The instructions are arranged in the order as they are described in the 
@@ -201,10 +222,24 @@ begin
   subsubsection \<open>Aggregate Operations\<close>
   text \<open>In LLVM, there is an \<open>extractvalue\<close> and \<open>insertvalue\<close> operation.
     In our shallow embedding, these get instantiated for \<open>fst\<close> and \<open>snd\<close>.\<close>
+    
+  
+  definition "checked_split_pair v \<equiv> doM {
+    fcheck (STATIC_ERROR ''Expected pair'') (llvm_is_pair v);
+    return (llvm_the_pair v)
+  }"
+  
+  definition ll_extract_fst :: "'t::llvm_rep \<Rightarrow> 't\<^sub>1::llvm_rep llM" where "ll_extract_fst p = doM { (a,b) \<leftarrow> checked_split_pair (to_val p); checked_from_val a }"
+  definition ll_extract_snd :: "'t::llvm_rep \<Rightarrow> 't\<^sub>2::llvm_rep llM" where "ll_extract_snd p = doM { (a,b) \<leftarrow> checked_split_pair (to_val p); checked_from_val b }"
+  definition ll_insert_fst :: "'t::llvm_rep \<Rightarrow> 't\<^sub>1::llvm_rep \<Rightarrow> 't llM" where "ll_insert_fst p x = doM { (a,b) \<leftarrow> checked_split_pair (to_val p); checked_from_val (llvm_pair (to_val x) b) }" 
+  definition ll_insert_snd :: "'t::llvm_rep \<Rightarrow> 't\<^sub>2::llvm_rep \<Rightarrow> 't llM" where "ll_insert_snd p x = doM { (a,b) \<leftarrow> checked_split_pair (to_val p); checked_from_val (llvm_pair a (to_val x)) }" 
+    
+  (*  
   definition ll_extract_fst :: "('a::llvm_rep \<times> 'b::llvm_rep) \<Rightarrow> 'a llM" where "ll_extract_fst ab \<equiv> return (fst ab)"
   definition ll_extract_snd :: "('a::llvm_rep \<times> 'b::llvm_rep) \<Rightarrow> 'b llM" where "ll_extract_snd ab \<equiv> return (snd ab)"
   definition ll_insert_fst :: "('a::llvm_rep \<times> 'b::llvm_rep) \<Rightarrow> 'a \<Rightarrow> ('a\<times>'b) llM" where "ll_insert_fst ab a \<equiv> return (a,snd ab)"
   definition ll_insert_snd :: "('a::llvm_rep \<times> 'b::llvm_rep) \<Rightarrow> 'b \<Rightarrow> ('a\<times>'b) llM" where "ll_insert_snd ab b \<equiv> return (fst ab,b)"
+  *)
     
   subsubsection \<open>Memory Access and Addressing Operations\<close>
     
@@ -244,17 +279,18 @@ begin
     return (PTR r)
   }"  
 
-  definition ll_gep_fst :: "('a::llvm_rep \<times> 'b::llvm_rep) ptr \<Rightarrow> 'a ptr llM" where "ll_gep_fst p = doM {
+  definition ll_gep_fst :: "'p::llvm_rep ptr \<Rightarrow> 'a::llvm_rep ptr llM" where "ll_gep_fst p = doM {
+    fcheck (STATIC_ERROR ''gep_fst: Expected pair type'') (llvm_is_s_pair (struct_of TYPE('p)));
     r \<leftarrow> llvm_checked_gep (the_raw_ptr p) PFST;
     return (PTR r)
   }"
 
-  definition ll_gep_snd :: "('a::llvm_rep \<times> 'b::llvm_rep) ptr \<Rightarrow> 'b ptr llM" where "ll_gep_snd p = doM {
+  definition ll_gep_snd :: "'p::llvm_rep ptr \<Rightarrow> 'b::llvm_rep ptr llM" where "ll_gep_snd p = doM {
+    fcheck (STATIC_ERROR ''gep_snd: Expected pair type'') (llvm_is_s_pair (struct_of TYPE('p)));
     r \<leftarrow> llvm_checked_gep (the_raw_ptr p) PSND;
     return (PTR r)
   }"
 
-  
   subsubsection \<open>Conversion Operations\<close>
   definition "llb_trunc i w \<equiv> doM {
     fcheck (STATIC_ERROR ''Trunc must go to smaller type'') (width i > w);
@@ -369,7 +405,31 @@ begin
   *}
     
   subsection \<open>Code Generator\<close>
+
   
+  text \<open>The code generator will translate pair instructions if such a predicate is registered.
+    here, @{typ 't} must be of form \<open>(...)type\<close>, and \<open>tfrees 't\<^sub>1,'t\<^sub>2 \<subseteq> tfrees 't\<close>, 
+    and there can only be one such predicate per type.
+  \<close>
+  definition 
+    ll_is_pair_type :: "bool \<Rightarrow> 't::llvm_rep itself \<Rightarrow> 't\<^sub>1::llvm_rep itself \<Rightarrow> 't\<^sub>2::llvm_rep itself \<Rightarrow> bool"
+  where "ll_is_pair_type anonymous _ _ _ \<equiv> struct_of TYPE('t) = llvm_s_pair (struct_of TYPE('t\<^sub>1)) (struct_of TYPE('t\<^sub>2))"
+
+  named_theorems ll_is_pair_type_thms \<open>Isabelle-LLVM: Theorems for user-defined tuple types\<close>
+  
+  
+  
+  lemma TERM_TYPE_I: "TERM (TYPE ('a))" .
+  
+  lemma ll_dest_pair_type:
+    assumes "ll_is_pair_type anon TYPE('t::llvm_rep) TYPE('t\<^sub>1::llvm_rep) TYPE('t\<^sub>2::llvm_rep)"
+    assumes "TERM (TYPE('t))"
+    shows "TERM (TYPE('t\<^sub>1))" "TERM (TYPE('t\<^sub>2))"
+    .
+  
+  
+  
+    
   text \<open>General functions\<close>
   ML \<open> structure LLC_Lib = 
     struct
@@ -378,6 +438,8 @@ begin
       
       val is_llM = can dest_llM
 
+      fun dest_ptrT (Type (@{type_name ptr},[T])) = T
+        | dest_ptrT ty = raise TYPE("dest_ptrT",[ty],[]);
       
       fun dest_numeralT (Type (@{type_name \<open>bit0\<close>},[ty])) = 2*dest_numeralT ty
         | dest_numeralT (Type (@{type_name \<open>bit1\<close>},[ty])) = 2*dest_numeralT ty+1
@@ -423,17 +485,37 @@ begin
       fun the_assert msg NONE = raise Fail msg 
          | the_assert _ (SOME x) = x 
       
+      
+      fun dest_is_pair_type_thm thm = case Thm.prop_of thm of 
+        @{mpat (typs) "Trueprop (ll_is_pair_type 
+            ?anon 
+            TYPE(?'v_t::llvm_rep) 
+            TYPE(?'v_ta::llvm_rep) 
+            TYPE(?'v_tb::llvm_rep))"} => let 
+              val anon = case anon of @{mpat "True"} => true | @{mpat "False"} => false | _ => raise THM("dest_is_pair_type_thm: Not a literal Boolean",~1,[thm])
+            in
+              (anon,t,ta,tb)
+            end
+      | _ => raise THM("dest_is_pair_type_thm",~1,[thm])
+         
                     
     end
   \<close>
   
   text \<open>The intermediate representation of shallowly embedded LLVM programs.\<close>
+  
+  (*
+  xxx, ctd here: conceptually, named types should be disambiguated during monomorphization,
+    such that all named types come without type parameters!
+    Is this feasible? Monomorphization would have to define new types.
+  *)  
+  
   ML \<open> structure LLC_Intermediate = 
     struct
     
       (* LLC intermediate representation. Somewhere in between Isabelle and LLVM-IR *)    
       
-      datatype llc_type = TInt of int | TPtr of llc_type | TPair of llc_type*llc_type
+      datatype llc_type = TInt of int | TPtr of llc_type | TPair of llc_type*llc_type | TNamed of string
       datatype llc_const = CInit | CInt of int | CNull
       datatype llc_opr = OVar of string | OConst of llc_const
       type llc_topr = llc_type * llc_opr
@@ -452,19 +534,122 @@ begin
       datatype llc_eqn =              
                 EQN of llc_type option * string * (llc_type * string) list * llc_block
     
+      datatype llc_named_type = Named_Type of string * llc_type list                
+                
     end
   \<close>
         
+  
   text \<open>Parser from Isabelle terms to intermediate representation\<close>
   ML \<open> structure LLC_Compiler = 
     struct
       open LLC_Lib LLC_Intermediate
     
+      (* Maps Isabelle type names to named type theorems *)
+      structure Named_Type_Tab = Proof_Data (
+        type T = thm Symtab.table
+        val init = K Symtab.empty
+      )
+
+      (* Record type instance: LLVM name and field types *)
+      type named_type_inst = string * llc_type list
+      
+      (* Maps instantiated (monomorphic) Isabelle types to instances *)
+      structure NTInst_Tab = Proof_Data (
+        type T = named_type_inst Typtab.table
+        val init = K Typtab.empty
+      )
+
       (* Direct compilation of while: not (yet) supported
       val llc_compile_while =
         Config.bool (Config.declare ("llc_compile_while", \<^here>) (fn _ => Config.Bool true));
       *)
+
+      fun build_named_type_tables ctxt = let
+        fun check_pt thm = let
+          val (_, typ, typa, typb) = dest_is_pair_type_thm thm
+          val _ = is_Type typ orelse raise TYPE("check_pt: Expected type",[typ],[])
+          val (tname,args) = dest_Type typ
+          
+          val _ = forall is_TVar args orelse raise TYPE("check_pt: Expected simple type",[typ],[])
+          
+          val tvars = Term.add_tvarsT typ []
+          val tvarsa = Term.add_tvarsT typa []
+          val tvarsb = Term.add_tvarsT typb []
+          
+          val _ = subset op= (tvarsa, tvars) andalso subset op= (tvarsb, tvars)
+            orelse raise TYPE("check_pt: additional type vars in element types",[typ,typa,typb],[])
+          
+        in
+          (tname,thm)
+        end
+        
+        val typtab = Named_Theorems.get ctxt @{named_theorems ll_is_pair_type_thms} |> map check_pt |> Symtab.make
+      in
+        ctxt
+        |> Named_Type_Tab.put typtab
       
+      end
+      
+      fun mk_type_thm ctxt T = Thm.instantiate' [SOME (Thm.ctyp_of ctxt T)] [] @{thm TERM_TYPE_I}
+      val dest_type_thm = Thm.prop_of #> Logic.dest_term #> Logic.dest_type
+
+      fun inst_pair_type ctxt (T as Type(tname,_)) = let
+        val thm = Symtab.lookup (Named_Type_Tab.get ctxt) tname
+        val _ = is_none thm andalso raise TYPE("Not a registered pair type",[T],[]);
+        val thm = the thm
+        val (anon,_,_,_) = dest_is_pair_type_thm thm
+      
+        val ftypes = map (fn x => dest_type_thm (x OF [thm,mk_type_thm ctxt T])) @{thms ll_dest_pair_type}
+      in
+        (anon,ftypes)
+      end
+      | inst_pair_type _ T = raise TYPE("Invalid type for pair type",[T],[])
+      
+      fun llc_parse_type (Type (@{type_name word},[T])) ctxt = (dest_numeralT T |> TInt, ctxt)
+        | llc_parse_type (Type (@{type_name ptr},[T])) ctxt = llc_parse_type T ctxt |>> TPtr
+        | llc_parse_type (T as Type _) ctxt = llc_make_type_inst T ctxt
+        | llc_parse_type T _ = raise TYPE ("llc_parse_type: ",[T],[])
+      and
+      (* Lookup or make named type instance *)
+      llc_make_type_inst T ctxt = case Typtab.lookup (NTInst_Tab.get ctxt) T of
+        SOME (name,_) => (TNamed name, ctxt)
+      | NONE => let
+          val (tname,_) = dest_Type T
+          
+          (* Get anonymity and instantiated field types *)
+          val (anon,field_types) = inst_pair_type ctxt T
+        in  
+          if anon then let
+            (* Recursively parse field types *)
+            val (field_ltypes,ctxt) = fold_map llc_parse_type field_types ctxt
+            
+            val (lta,ltb) = case field_ltypes of
+              [lta,ltb] => (lta,ltb)
+            | _ => raise TYPE("Internal: Currently expecting exactly 2 fields!",T::field_types,[])
+          in
+            (TPair (lta,ltb), ctxt)
+          end
+          else let
+            (* Make name variant *)
+            val used_names = NTInst_Tab.get ctxt |> Typtab.dest |> map (fst o snd) |> Name.make_context
+            val (lname,_) = Name.variant (Name.desymbolize NONE tname) used_names
+            
+            (* Register this instance, with empty fields first *)
+            val ctxt = NTInst_Tab.map (Typtab.update (T,(lname,[]))) ctxt
+            
+            (* Recursively parse field types *)
+            val (field_ltypes,ctxt) = fold_map llc_parse_type field_types ctxt
+            
+            (* Register fields for this instance *)
+            val ctxt = NTInst_Tab.map (Typtab.update (T,(lname,field_ltypes))) ctxt
+        
+          in
+            (TNamed lname, ctxt)
+          end
+        end
+      
+            
       fun head_of_cthm thm = case Thm.prop_of thm of
         @{mpat "Trueprop (?lhs = _)"} => head_of lhs
       | _ => raise THM ("head_of_cthm",~1,[thm])  
@@ -502,24 +687,36 @@ begin
       (* TODO/FIXME: Populate with actual instructions! Register them, together with their compilers! *)  
       fun is_llvm_instr name = String.isPrefix "LLVM_Shallow.ll_" name
                 
-                      
-      fun llc_parse_type (Type (@{type_name word},[T])) = dest_numeralT T |> TInt
-        | llc_parse_type (Type (@{type_name ptr},[T])) = llc_parse_type T |> TPtr
-        | llc_parse_type (Type (@{type_name prod},[Ta,Tb])) = TPair (llc_parse_type Ta, llc_parse_type Tb)
-        | llc_parse_type T = raise TYPE ("llc_parse_type: ",[T],[])
+      (*                
+      fun llc_parse_type _ (Type (@{type_name word},[T])) = dest_numeralT T |> TInt
+        | llc_parse_type ttabs (Type (@{type_name ptr},[T])) = llc_parse_type ttabs T |> TPtr
+        | llc_parse_type ttabs (Type (@{type_name prod},[Ta,Tb])) = TPair (llc_parse_type ttabs Ta, llc_parse_type ttabs Tb)
+        | llc_parse_type (typtab,_) (T as Type (name,args)) = 
+            if Symtab.defined typtab name then TNamed (name,args) else raise TYPE ("llc_parse_type: ",[T],[])
+        | llc_parse_type _ T = raise TYPE ("llc_parse_type: ",[T],[])
+      *)
         
-      fun llc_parse_vtype (Type (@{type_name unit},[])) = NONE
-        | llc_parse_vtype T = SOME (llc_parse_type T)
+      fun llc_parse_vtype (Type (@{type_name unit},[])) ctxt = (NONE, ctxt)
+        | llc_parse_vtype T ctxt = llc_parse_type T ctxt |>> SOME
         
-      fun llc_parse_const @{mpat (typs) \<open>init::?'v_T::llvm_rep\<close>} = (llc_parse_type T, CInit)
-        | llc_parse_const @{mpat (typs) \<open>null::?'v_T::llvm_rep ptr\<close>} = (TPtr (llc_parse_type T), CNull)
-        | llc_parse_const t = case try dest_word_const t of
-            SOME (w,v) => (TInt w, CInt v)
+      fun llc_parse_const @{mpat (typs) \<open>init::?'v_T::llvm_rep\<close>} ctxt = llc_parse_type T ctxt |>> (fn T => (T,CInit))
+        | llc_parse_const @{mpat (typs) \<open>null::?'v_T::llvm_rep ptr\<close>} ctxt = llc_parse_type T ctxt |>> (fn T => (TPtr T, CNull))
+        | llc_parse_const t ctxt = case try dest_word_const t of
+            SOME (w,v) => ((TInt w, CInt v), ctxt)
           | NONE => raise TERM ("llc_parse_const: ",[t])
       
       local    
-        datatype llc_env = ENV of Symtab.set * (llc_type * string) Termtab.table * (llc_type * string) option list   
-        
+      
+        val env_empty = (Symtab.empty,Termtab.empty,[])
+        structure LLC_Env = Proof_Data (
+          type T = Symtab.set * (llc_type * string) Termtab.table * (llc_type * string) option list   
+          fun init _ = env_empty
+        )
+
+        (* val env_syms = LLC_Env.get #> #1 *)
+        val env_params = LLC_Env.get #> #2
+        val env_bnds = LLC_Env.get #> #3
+              
         fun make_uniqueN n tab name = let
           val name' = if n=0 then name else name ^ Int.toString n
         in
@@ -532,73 +729,116 @@ begin
         val make_unique = make_uniqueN 0
         
         
-        val env_empty = ENV (Symtab.empty,Termtab.empty,[])
-        
-        fun env_add_sym name (ENV (syms,params,bnds)) = let
+        fun env_add_sym name ctxt = let
+          val (syms,params,bnds) = LLC_Env.get ctxt
           val name = Name.desymbolize NONE name |> make_unique syms
           val syms = Symtab.insert_set name syms
+          val ctxt = LLC_Env.put (syms,params,bnds) ctxt
         in
-          (name,ENV (syms,params,bnds))
+          (name,ctxt)
         end
         
-        fun env_add_bound lty name env = let
-          val (name,env) = env_add_sym name env
-          val ENV (syms,params,bnds) = env
+        fun env_add_bound lty name ctxt = let
+          val (name,ctxt) = env_add_sym name ctxt
+          val (syms,params,bnds) = LLC_Env.get ctxt
           val bnds = SOME (lty,name)::bnds
+          val ctxt = LLC_Env.put (syms,params,bnds) ctxt
         in
-          (name,ENV (syms,params,bnds))
+          (name,ctxt)
         end
         
-        fun env_add_unit_bound (ENV (syms,params,bnds)) = ENV (syms,params,NONE::bnds)
+        fun env_add_unit_bound ctxt = let
+          val (syms,params,bnds) = LLC_Env.get ctxt
+          val ctxt = LLC_Env.put (syms,params,NONE::bnds) ctxt
+        in
+          ctxt
+        end
         
-        fun env_add_param v env = let
+        fun env_add_param v ctxt = let
           val (iname,ty) = dest_Var v
           val name = fst iname
-          val lty = llc_parse_type ty
+          val (lty,ctxt) = llc_parse_type ty ctxt
         
-          val (name,env) = env_add_sym name env
-          val ENV (syms,params,bnds) = env
+          val (name,ctxt) = env_add_sym name ctxt
+          val (syms,params,bnds) = LLC_Env.get ctxt
           val params = Termtab.update_new (v,(lty,name)) params
+          val ctxt = LLC_Env.put (syms,params,bnds) ctxt
         in
-          ((lty,name),ENV (syms,params,bnds))
+          ((lty,name),ctxt)
         end
 
-        fun env_lookup_bound (ENV (_,_,bnds)) i = case nth bnds i of SOME x => x | NONE => raise TERM ("Reference to bound unit variable",[])
-        fun env_lookup_param (ENV (_,params,_)) v = Termtab.lookup params v |> the
+        fun env_lookup_bound ctxt i = case nth (env_bnds ctxt) i of SOME x => x | NONE => raise TERM ("Reference to bound unit variable",[])
+        fun env_lookup_param ctxt v = Termtab.lookup (env_params ctxt) v |> the
                 
       
-        fun env_parse_add_bound T x env = case llc_parse_vtype T of
-          NONE => (NONE, env_add_unit_bound env)
-        | SOME ty => let
-            val (x,env) = env_add_bound ty x env
+        fun env_parse_add_bound T x ctxt = case llc_parse_vtype T ctxt of
+          (NONE,ctxt) => (NONE, env_add_unit_bound ctxt)
+        | (SOME ty,ctxt) => let
+            val (x,ctxt) = env_add_bound ty x ctxt
           in
-            (SOME (ty,x),env)
+            (SOME (ty,x),ctxt)
           end  
         
         
       in
       
-        fun llc_parse_op env (Bound i) = env_lookup_bound env i ||> OVar
-          | llc_parse_op env (t as Var _) = env_lookup_param env t ||> OVar
-          | llc_parse_op _ t = llc_parse_const t ||> OConst
+        fun llc_parse_op (Bound i) ctxt = (env_lookup_bound ctxt i ||> OVar, ctxt)
+          | llc_parse_op (t as Var _) ctxt = (env_lookup_param ctxt t ||> OVar, ctxt)
+          | llc_parse_op t ctxt = llc_parse_const t ctxt |>> apsnd OConst
       
-        fun llc_parse_op' _ (t as @{mpat \<open>TYPE (_)\<close>}) = t |> Logic.dest_type |> llc_parse_type |> OOType
-          | llc_parse_op' env t = llc_parse_op env t |> OOOp
+        fun llc_parse_op' (t as @{mpat \<open>TYPE (_)\<close>}) ctxt = llc_parse_type (Logic.dest_type t) ctxt |>> OOType
+          | llc_parse_op' t ctxt = llc_parse_op t ctxt |>> OOOp
           
-        fun llc_parse_op_bool env t = let
-          val (ty,x) = llc_parse_op env t
+        fun llc_parse_op_bool t ctxt = let
+          val ((ty,x),ctxt) = llc_parse_op t ctxt
           val _ = ty=TInt 1 orelse raise TERM ("parse_op_bool: not a Boolean",[t])
         in
-          (ty,x)
+          ((ty,x), ctxt)
         end  
           
-        fun ftab_lookup ftab f = let
-          val fname = Termtab.lookup ftab f
+        structure Fun_Tab = Proof_Data (
+          type T = string Termtab.table 
+          val init = K Termtab.empty
+        )
+        
+        
+        fun ftab_lookup ctxt f = let
+          val fname = Termtab.lookup (Fun_Tab.get ctxt) f
           val _ = is_none fname andalso raise TYPE("No such function in ftab",[fastype_of f],[f])
           val fname = the fname
         in fname end  
+
         
-        fun llc_parse_cmd ftab env rty t = 
+        fun check_valid_pair_inst ctxt t pT i fT = let
+          val (_,fTs') = inst_pair_type ctxt pT
+          val _ = i < length fTs' andalso fT = nth fTs' i
+            orelse raise TYPE("Invalid pair instruction instance",[fastype_of (head_of t)],[t])
+          
+          (*val _ = Pretty.block [Pretty.str "Type instance OK ", Syntax.pretty_term ctxt t, Pretty.str " :: ", Syntax.pretty_typ ctxt (fastype_of t) ]
+            |> Pretty.string_of |> writeln
+          *)  
+        in
+          ()
+        end
+        
+        
+        fun check_llvm_struct_cmd ctxt (t as @{mpat (typs) \<open>ll_extract_fst :: ?'v_pT::llvm_rep \<Rightarrow> ?'v_aT::llvm_rep llM\<close>}) = 
+              check_valid_pair_inst ctxt t pT 0 aT
+          | check_llvm_struct_cmd ctxt (t as @{mpat (typs) \<open>ll_extract_snd :: ?'v_pT::llvm_rep \<Rightarrow> ?'v_bT::llvm_rep llM\<close>}) = 
+              check_valid_pair_inst ctxt t pT 1 bT
+          | check_llvm_struct_cmd ctxt (t as @{mpat (typs) \<open>ll_insert_fst :: ?'v_pT::llvm_rep \<Rightarrow> ?'v_aT::llvm_rep \<Rightarrow> _\<close>}) = 
+              check_valid_pair_inst ctxt t pT 0 aT
+          | check_llvm_struct_cmd ctxt (t as @{mpat (typs) \<open>ll_insert_snd :: ?'v_pT::llvm_rep \<Rightarrow> ?'v_bT::llvm_rep \<Rightarrow> _\<close>}) = 
+              check_valid_pair_inst ctxt t pT 1 bT
+          | check_llvm_struct_cmd ctxt (t as @{mpat (typs) \<open>ll_gep_fst :: ?'v_pT::llvm_rep ptr \<Rightarrow> ?'v_aT::llvm_rep ptr llM\<close>}) = 
+              check_valid_pair_inst ctxt t pT 0 aT
+          | check_llvm_struct_cmd ctxt (t as @{mpat (typs) \<open>ll_gep_snd :: ?'v_pT::llvm_rep ptr \<Rightarrow> ?'v_bT::llvm_rep ptr llM\<close>}) = 
+              check_valid_pair_inst ctxt t pT 1 bT
+          | check_llvm_struct_cmd _ _ = ()
+
+        
+                        
+        fun llc_parse_cmd rty t ctxt = 
           let
             val (f,args) = strip_comb t
             val _ = is_Const f orelse raise TERM ("parse_cmd: Invalid head",[f])
@@ -607,67 +847,93 @@ begin
           in
             case cname of
               @{const_name \<open>llc_if\<close>} => (case args of 
-                  [arg_cond,arg_then,arg_else] => CmIf 
-                    (llc_parse_op_bool env arg_cond, 
-                     llc_parse_block ftab env arg_then |> fst, 
-                     llc_parse_block ftab env arg_else |> fst)
+                  [arg_cond,arg_then,arg_else] => let
+                    val (l_cond, ctxt) = llc_parse_op_bool arg_cond ctxt
+                    val (l_then,ctxt) = llc_parse_block arg_then ctxt
+                    val (l_else,ctxt) = llc_parse_block arg_else ctxt
+                  in
+                    (CmIf (l_cond,l_then,l_else), ctxt)
+                  end
                 | _ => raise TERM ("parse_cmd: If needs 3 arguments",[t])
               )
             | @{const_name \<open>llc_while\<close>} => (case args of [@{mpat "\<lambda>_. ?tcond"}, @{mpat "\<lambda>xb. ?tbody"}, arg_inits] => let
-                    val inits = llc_parse_op_bool env arg_inits
+                    val (inits,ctxt) = llc_parse_op_bool arg_inits ctxt
+
+                    val env = LLC_Env.get ctxt
+                                        
+                    val (sv,ctxt) = env_parse_add_bound xb_T xb ctxt
+                    val (cond,ctxt) = llc_parse_block tcond ctxt
+                    val (body,ctxt) = llc_parse_block tbody ctxt
                     
-                    val (sv,env) = env_parse_add_bound xb_T xb env
-                    val (cond,_) = llc_parse_block ftab env tcond
-                    val (body,_) = llc_parse_block ftab env tbody
+                    val ctxt = LLC_Env.put env ctxt
+                    
                   in
-                    CmWhile (sv, cond, body, inits)
+                    (CmWhile (sv, cond, body, inits), ctxt)
                   end
                 | _ => raise TERM ("parse_cmd: While needs 3 arguments",[t])
               )
             | _ => 
-                if is_llvm_instr cname then CmInstr (cname,map (llc_parse_op' env) args)
-                else CmCall (rty, ftab_lookup ftab f,map (llc_parse_op env) args)
+                if is_llvm_instr cname then let 
+                    val _ = check_llvm_struct_cmd ctxt f
+                    val (ops,ctxt) = fold_map llc_parse_op' args ctxt
+                  in (CmInstr (cname,ops), ctxt) end
+                else let 
+                    val (ops,ctxt) = fold_map llc_parse_op args ctxt
+                    val fname = ftab_lookup ctxt f
+                  in (CmCall (rty, fname ,ops), ctxt) end
                    
           end
-        and llc_parse_block ftab env @{mpat "bind ?m (\<lambda>x. ?f)"} = 
-          let
-            val rty = llc_parse_vtype x_T
-            val cmd = llc_parse_cmd ftab env rty m
-            val (sv,env) = env_parse_add_bound x_T x env
-            val (blk,env) = llc_parse_block ftab env f
+        and llc_parse_block @{mpat "bind ?m (\<lambda>x. ?f)"} ctxt = 
+          let 
+            val (rty,ctxt) = llc_parse_vtype x_T ctxt
+            val (cmd, ctxt) = llc_parse_cmd rty m ctxt
+            val env = LLC_Env.get ctxt
+            val (sv,ctxt) = env_parse_add_bound x_T x ctxt
+            val (blk,ctxt) = llc_parse_block f ctxt
+            val ctxt = LLC_Env.put env ctxt
           in
-            (BlBind (sv,cmd,blk),env)
+            (BlBind (sv,cmd,blk),ctxt)
           end
-          | llc_parse_block _ env @{mpat "return ()"} = (BlReturn NONE, env)
-          | llc_parse_block _ env @{mpat "return ?x"} = (llc_parse_op env x |> SOME |> BlReturn, env)
-          | llc_parse_block _ _ t = raise TERM ("llc_parse_block: structural error",[t])
+          | llc_parse_block @{mpat "return ()"} ctxt = (BlReturn NONE, ctxt)
+          | llc_parse_block @{mpat "return ?x"} ctxt = llc_parse_op x ctxt |>> SOME |>> BlReturn
+          | llc_parse_block t _ = raise TERM ("llc_parse_block: structural error",[t])
+         
           
-          
-        fun llc_parse_eqn ftab @{mpat "Trueprop (?lhs = ?rhs)"} = let
+        fun llc_parse_eqn @{mpat "Trueprop (?lhs = ?rhs)"} ctxt = let
           val (hdc,params) = strip_comb lhs
         
           val _ = is_Const hdc orelse raise (TERM ("llc_parse_eqn: Expected constant head", [hdc]))
           val _ = map (fn a => is_Var a orelse raise TERM ("llc_parse_eqn: arguments must be vars",[a])) params
 
-          val fname = ftab_lookup ftab hdc 
+          val fname = ftab_lookup ctxt hdc 
+          
+          val ctxt = LLC_Env.put env_empty ctxt
                     
-          val (params,env) = fold_map env_add_param params env_empty
-          val (blk,env) = llc_parse_block ftab env rhs
+          val (params,ctxt) = fold_map env_add_param params ctxt
+          val (blk,ctxt) = llc_parse_block rhs ctxt
           
-          val rlty = fastype_of lhs |> dest_llM |> llc_parse_vtype
-          
-          val _ = env
+          val (rlty, ctxt) = llc_parse_vtype (dest_llM (fastype_of lhs)) ctxt
+
+          (* Erase meaningless environment after equation has been parsed! *)
+          val ctxt = LLC_Env.put env_empty ctxt 
         in
-          EQN (rlty,fname,params,blk)
+          (EQN (rlty,fname,params,blk), ctxt)
         end
-        | llc_parse_eqn _ t = raise TERM ("llc_parse_eqn: Expected equation of form lhs = rhs", [t])
+        | llc_parse_eqn t _ = raise TERM ("llc_parse_eqn: Expected equation of form lhs = rhs", [t])
           
           
       end      
       
-      fun parse_cthms ftab thms = map (llc_parse_eqn ftab o Thm.prop_of) thms
+      fun parse_cthms_aux thms ctxt = fold_map (llc_parse_eqn o Thm.prop_of) thms ctxt
             
-      
+      fun parse_cthms ftab thms ctxt = let
+        val ctxt = Fun_Tab.put ftab ctxt
+        val (eqns,ctxt) = parse_cthms_aux thms (build_named_type_tables ctxt)
+        
+        val named_tys = NTInst_Tab.get ctxt |> Typtab.dest |> map (Named_Type o snd)
+      in 
+        (named_tys,eqns)
+      end
           
     end
     
@@ -675,6 +941,7 @@ begin
 
   text \<open>LLVM Builder. Interface to build actual LLVM text.\<close>
   ML_file "LLVM_Builder.ml"
+  
   
   text \<open>Compiler from intermediate representation to actual LLVM text.\<close>
   ML \<open> structure LLC_Backend = 
@@ -684,66 +951,67 @@ begin
       type vtab = LLVM_Builder.value Symtab.table
       type builder = vtab -> string -> llc_topr' list -> LLVM_Builder.T -> LLVM_Builder.value option
     
-      fun llc_ty (TInt w) = LLVM_Builder.mkty_i w
-        | llc_ty (TPtr ty) = LLVM_Builder.mkty_ptr (llc_ty ty)
-        | llc_ty (TPair (ty1, ty2)) = LLVM_Builder.mkty_struct [llc_ty ty1, llc_ty ty2]
+      fun llc_ty _ (TInt w) = LLVM_Builder.mkty_i w
+        | llc_ty b (TPtr ty) = LLVM_Builder.mkty_ptr (llc_ty b ty)
+        | llc_ty b (TPair (ty1, ty2)) = LLVM_Builder.mkty_struct [llc_ty b ty1, llc_ty b ty2]
+        | llc_ty b (TNamed name) = LLVM_Builder.mkty_named b name
       
       
-      fun llc_const_to_val ty CInit = LLVM_Builder.mkc_zeroinit (llc_ty ty)
-        | llc_const_to_val ty (CInt v) = LLVM_Builder.mkc_i (llc_ty ty) v
-        | llc_const_to_val ty (CNull) = LLVM_Builder.mkc_null (llc_ty ty)
+      fun llc_const_to_val b ty CInit = LLVM_Builder.mkc_zeroinit (llc_ty b ty)
+        | llc_const_to_val b ty (CInt v) = LLVM_Builder.mkc_i (llc_ty b ty) v
+        | llc_const_to_val b ty (CNull) = LLVM_Builder.mkc_null (llc_ty b ty)
       
-      fun llc_op_to_val vtab (_,OVar x) = the_assert ("Variable not in vtab " ^ x) (Symtab.lookup vtab x)
-        | llc_op_to_val _ (ty,OConst c) = llc_const_to_val ty c
+      fun llc_op_to_val _ vtab (_,OVar x) = the_assert ("Variable not in vtab " ^ x) (Symtab.lookup vtab x)
+        | llc_op_to_val b _ (ty,OConst c) = llc_const_to_val b ty c
         
       
       
       fun arith_instr_builder iname vtab dst [OOOp x1, OOOp x2] b = (
-        LLVM_Builder.mk_arith_instr iname b dst (llc_op_to_val vtab x1) (llc_op_to_val vtab x2) |> SOME
+        LLVM_Builder.mk_arith_instr iname b dst (llc_op_to_val b vtab x1) (llc_op_to_val b vtab x2) |> SOME
       ) | arith_instr_builder _ _ _ _ _ = raise Fail "arith_instr_builder: invalid arguments"
       
       fun icmp_instr_builder cmpcode vtab dst [OOOp x1, OOOp x2] b = (
-        LLVM_Builder.mk_icmp_instr cmpcode b dst (llc_op_to_val vtab x1) (llc_op_to_val vtab x2) |> SOME
+        LLVM_Builder.mk_icmp_instr cmpcode b dst (llc_op_to_val b vtab x1) (llc_op_to_val b vtab x2) |> SOME
       ) | icmp_instr_builder _ _ _ _ _ = raise Fail "icmp_instr_builder: invalid arguments"
 
       fun ptrcmp_instr_builder cmpcode vtab dst [OOOp x1, OOOp x2] b = (
-        LLVM_Builder.mk_ptrcmp_instr cmpcode b dst (llc_op_to_val vtab x1) (llc_op_to_val vtab x2) |> SOME
+        LLVM_Builder.mk_ptrcmp_instr cmpcode b dst (llc_op_to_val b vtab x1) (llc_op_to_val b vtab x2) |> SOME
       ) | ptrcmp_instr_builder _ _ _ _ _ = raise Fail "icmp_instr_builder: invalid arguments"
             
       fun conv_instr_builder cmpcode vtab dst [OOOp x1, OOType ty] b = (
-        LLVM_Builder.mk_conv_instr cmpcode b dst (llc_op_to_val vtab x1) (llc_ty ty) |> SOME
+        LLVM_Builder.mk_conv_instr cmpcode b dst (llc_op_to_val b vtab x1) (llc_ty b ty) |> SOME
       ) | conv_instr_builder _ _ _ _ _ = raise Fail "conv_instr_builder: invalid arguments"
 
       fun extract_value_builder idx vtab dst [OOOp x1] b = (
-        LLVM_Builder.mk_extractvalue b dst (llc_op_to_val vtab x1) idx |> SOME
+        LLVM_Builder.mk_extractvalue b dst (llc_op_to_val b vtab x1) idx |> SOME
       ) | extract_value_builder _ _ _ _ _ = raise Fail "extract_value_builder: invalid arguments"
 
       fun insert_value_builder idx vtab dst [OOOp x1, OOOp x2] b = (
-        LLVM_Builder.mk_insertvalue b dst (llc_op_to_val vtab x1) (llc_op_to_val vtab x2) idx |> SOME
+        LLVM_Builder.mk_insertvalue b dst (llc_op_to_val b vtab x1) (llc_op_to_val b vtab x2) idx |> SOME
       ) | insert_value_builder _ _ _ _ _ = raise Fail "insert_value_builder: invalid arguments"
       
       fun malloc_builder vtab dst [OOType ty, OOOp x] b = (
-        LLVM_Builder.mk_malloc b dst (llc_ty ty) (llc_op_to_val vtab x) |> SOME
+        LLVM_Builder.mk_malloc b dst (llc_ty b ty) (llc_op_to_val b vtab x) |> SOME
       ) | malloc_builder _ _ _ _ = raise Fail "malloc_builder: invalid arguments"
             
       fun free_builder vtab _ [OOOp x] b = (
-        LLVM_Builder.mk_free b (llc_op_to_val vtab x); NONE
+        LLVM_Builder.mk_free b (llc_op_to_val b vtab x); NONE
       ) | free_builder _ _ _ _ = raise Fail "free_builder: invalid arguments"
 
       fun load_builder vtab dst [OOOp x] b = (
-        LLVM_Builder.mk_load b dst (llc_op_to_val vtab x) |> SOME
+        LLVM_Builder.mk_load b dst (llc_op_to_val b vtab x) |> SOME
       ) | load_builder _ _ _ _ = raise Fail "load_builder: invalid arguments"
       
       fun store_builder vtab _ [OOOp x1, OOOp x2] b = (
-        LLVM_Builder.mk_store b (llc_op_to_val vtab x1) (llc_op_to_val vtab x2); NONE
+        LLVM_Builder.mk_store b (llc_op_to_val b vtab x1) (llc_op_to_val b vtab x2); NONE
       ) | store_builder _ _ _ _ = raise Fail "store_builder: invalid arguments"
 
       fun ofs_ptr_builder vtab dst [OOOp x1, OOOp x2] b = (
-        LLVM_Builder.mk_ofs_ptr b dst (llc_op_to_val vtab x1) (llc_op_to_val vtab x2) |> SOME
+        LLVM_Builder.mk_ofs_ptr b dst (llc_op_to_val b vtab x1) (llc_op_to_val b vtab x2) |> SOME
       ) | ofs_ptr_builder _ _ _ _ = raise Fail "ofs_ptr_builder: invalid arguments"
       
       fun gep_idx_builder idx vtab dst [OOOp x1] b = (
-        LLVM_Builder.mk_gep_idx b dst (llc_op_to_val vtab x1) (LLVM_Builder.mkc_iw 32 idx) |> SOME
+        LLVM_Builder.mk_gep_idx b dst (llc_op_to_val b vtab x1) (LLVM_Builder.mkc_iw 32 idx) |> SOME
       ) | gep_idx_builder _ _ _ _ _ = raise Fail "gep_idx_builder: invalid arguments"
       
       fun register_builder (b:builder) (n:string) = Symtab.update_new (n,b)
@@ -801,8 +1069,8 @@ begin
       end  
       
       fun build_call b vtab dst (rty,pname,args) = let
-        val args = map (llc_op_to_val vtab) args
-        val rty = map_option llc_ty rty
+        val args = map (llc_op_to_val b vtab) args
+        val rty = map_option (llc_ty b) rty
         
         val v = case rty of 
           NONE => (LLVM_Builder.mk_call_void b pname args; NONE)
@@ -817,7 +1085,7 @@ begin
         val l_else = LLVM_Builder.variant_label b "else"
         val l_ctd_if = LLVM_Builder.variant_label b "ctd_if"
       
-        val _ = LLVM_Builder.mk_cbr b (llc_op_to_val vtab op_cond) l_then l_else
+        val _ = LLVM_Builder.mk_cbr b (llc_op_to_val b vtab op_cond) l_then l_else
         
         val _ = LLVM_Builder.open_bb b l_then 
         val r_then = build_block b vtab blk_then
@@ -870,13 +1138,13 @@ begin
           in
             build_block b vtab blk
           end
-        | build_block _ vtab (BlReturn x) = map_option (llc_op_to_val vtab) x
+        | build_block b vtab (BlReturn x) = map_option (llc_op_to_val b vtab) x
               
         
         
       fun build_eqn b (EQN (rty, pname, params, blk)) = let
-        val params = map (apfst llc_ty) params
-        val rty = map_option llc_ty rty
+        val params = map (apfst (llc_ty b)) params
+        val rty = map_option (llc_ty b) rty
         
         val paramsv = LLVM_Builder.open_proc b rty pname params
         
@@ -889,16 +1157,22 @@ begin
       in
         ()
       end
-    
-      fun eqns_to_llvm eqns = let
+
+      fun build_named_ty b (Named_Type (name,ftys)) = let
+        val ltys = map (llc_ty b) ftys
+        val sty = LLVM_Builder.mkty_struct ltys
+      in
+        LLVM_Builder.decl_named_ty b name sty
+      end
+          
+      fun compile_to_llvm (tys,eqns) = let
         val b = LLVM_Builder.builder ()
+        val _ = map (build_named_ty b) tys
         val _ = map (build_eqn b) eqns
         val res = LLVM_Builder.string_of b
       in
         res
       end
-      
-      
       
     end
        
@@ -1176,10 +1450,10 @@ subsection \<open>Preprocessor\<close>
         
         
         val _ = trace (fn () => Pretty.str "Translating code theorems to IL")
-        val eqns = LLC_Compiler.parse_cthms ftab cthms
+        val tysxeqns = LLC_Compiler.parse_cthms ftab cthms ctxt
         
         val _ = trace (fn () => Pretty.str "Writing LLVM")
-        val res = LLC_Backend.eqns_to_llvm eqns
+        val res = LLC_Backend.compile_to_llvm tysxeqns
       in
         (cthms,res)
       end
@@ -1241,32 +1515,63 @@ subsection \<open>Preprocessor\<close>
     end
   \<close>
   
+  subsection \<open>Product as Anonymous Pair Type\<close>
   
+  lemma ll_prod_is_pair[ll_is_pair_type_thms]: 
+    "ll_is_pair_type True TYPE('a::llvm_rep \<times>'b::llvm_rep) TYPE('a) TYPE('b)"
+    by (simp add: ll_is_pair_type_def)
+  
+  definition [llvm_inline]: "prod_insert_fst \<equiv> ll_insert_fst :: ('a::llvm_rep \<times> 'b::llvm_rep) \<Rightarrow> 'a \<Rightarrow> ('a\<times>'b) llM"
+  definition [llvm_inline]: "prod_insert_snd \<equiv> ll_insert_snd :: ('a::llvm_rep \<times> 'b::llvm_rep) \<Rightarrow> 'b \<Rightarrow> ('a\<times>'b) llM"
+  definition [llvm_inline]: "prod_extract_fst \<equiv> ll_extract_fst :: ('a::llvm_rep \<times> 'b::llvm_rep) \<Rightarrow> 'a llM"
+  definition [llvm_inline]: "prod_extract_snd \<equiv> ll_extract_snd :: ('a::llvm_rep \<times> 'b::llvm_rep) \<Rightarrow> 'b llM"
+  definition [llvm_inline]: "prod_gep_fst \<equiv> ll_gep_fst :: ('a::llvm_rep \<times> 'b::llvm_rep) ptr \<Rightarrow> 'a ptr llM"
+  definition [llvm_inline]: "prod_gep_snd \<equiv> ll_gep_snd :: ('a::llvm_rep \<times> 'b::llvm_rep) ptr \<Rightarrow> 'b ptr llM"
+
+  
+  lemma prod_ops_simp:
+    "prod_insert_fst = (\<lambda>(_,b) a. return (a,b))"
+    "prod_insert_snd = (\<lambda>(a,_) b. return (a,b))"
+    "prod_extract_fst = (\<lambda>(a,b). return a)"
+    "prod_extract_snd = (\<lambda>(a,b). return b)"
+    unfolding 
+      prod_insert_fst_def ll_insert_fst_def 
+      prod_insert_snd_def ll_insert_snd_def
+      prod_extract_fst_def ll_extract_fst_def 
+      prod_extract_snd_def ll_extract_snd_def       
+    apply (all \<open>intro ext\<close>  )
+    apply (auto 
+      simp: checked_split_pair_def to_val_prod_def from_val_prod_def checked_from_val_def
+      split: prod.splits
+      )
+    done
+  
+    
   subsection \<open>Ad-Hoc Regression Tests\<close>
   
   definition exp :: "64 word \<Rightarrow> 64 word llM" where "exp i \<equiv> doM {
-    s \<leftarrow> ll_insert_fst init 1;
-    s \<leftarrow> ll_insert_snd s i;
+    s \<leftarrow> prod_insert_fst init 1;
+    s \<leftarrow> prod_insert_snd s i;
     s \<leftarrow> llc_while
       (\<lambda>s. doM {
-        i \<leftarrow> ll_extract_snd s;
+        i \<leftarrow> prod_extract_snd s;
         ll_icmp_ne i 0
       })
       (\<lambda>s. doM {
-        c \<leftarrow> ll_extract_fst s;
-        i \<leftarrow> ll_extract_snd s;
+        c \<leftarrow> prod_extract_fst s;
+        i \<leftarrow> prod_extract_snd s;
         
         c \<leftarrow> ll_mul c 2;
         i \<leftarrow> ll_sub i 1;
         
-        s \<leftarrow> ll_insert_fst init c;
-        s \<leftarrow> ll_insert_snd s i;
+        s \<leftarrow> prod_insert_fst init c;
+        s \<leftarrow> prod_insert_snd s i;
         
         return s
       })
       s;
   
-    ll_extract_fst s
+    prod_extract_fst s
   }"
   
   text \<open>Executability of semantics inside Isabelle\<close>
@@ -1332,5 +1637,60 @@ export_llvm foobar: main_exp is main file "code/exp.ll"
 export_llvm (debug) main is main file "code/test2.ll"
 
 value "run (main 0 null) llvm_empty_memory"
+
+
+typedef my_pair = "UNIV :: (64 word \<times> 32 word) set" by simp
+
+lemmas my_pair_bij[simp] = Abs_my_pair_inverse[simplified] Rep_my_pair_inverse
+
+instantiation my_pair :: llvm_rep
+begin
+  definition "from_val_my_pair \<equiv> Abs_my_pair o from_val"
+  definition "to_val_my_pair \<equiv> to_val o Rep_my_pair"
+  definition [simp]: "struct_of_my_pair (_:: my_pair itself) \<equiv> struct_of TYPE(64 word \<times> 32 word)"
+  definition "init_my_pair \<equiv> Abs_my_pair init"
+
+  instance
+    apply standard
+    unfolding from_val_my_pair_def to_val_my_pair_def struct_of_my_pair_def init_my_pair_def
+    apply (auto simp: to_val_word_def)
+    done
+
+end
+
+definition my_fst :: "my_pair \<Rightarrow> 64 word llM" where [llvm_inline]: "my_fst \<equiv> ll_extract_fst"
+definition my_snd :: "my_pair \<Rightarrow> 32 word llM" where [llvm_inline]: "my_snd \<equiv> ll_extract_snd"
+definition my_ins_fst :: "my_pair \<Rightarrow> 64 word \<Rightarrow> my_pair llM" where [llvm_inline]: "my_ins_fst \<equiv> ll_insert_fst"
+definition my_ins_snd :: "my_pair \<Rightarrow> 32 word \<Rightarrow> my_pair llM" where [llvm_inline]: "my_ins_snd \<equiv> ll_insert_snd"
+definition my_gep_fst :: "my_pair ptr \<Rightarrow> 64 word ptr llM" where [llvm_inline]: "my_gep_fst \<equiv> ll_gep_fst"
+definition my_gep_snd :: "my_pair ptr \<Rightarrow> 32 word ptr llM" where [llvm_inline]: "my_gep_snd \<equiv> ll_gep_snd"
+
+
+definition [llvm_code]: "test_named (a::32 word) (b::64 word) \<equiv> doM {
+  a \<leftarrow> add_add a;
+  b \<leftarrow> add_add b;
+  let n = (init::my_pair);
+  a \<leftarrow> my_fst n;
+  b \<leftarrow> my_snd n;
+  n \<leftarrow> my_ins_fst n init;
+  n \<leftarrow> my_ins_snd n init;
+  
+  p \<leftarrow> ll_malloc TYPE(my_pair) (1::64 word);
+  p1 \<leftarrow> my_gep_fst p;
+  p2 \<leftarrow> my_gep_snd p;
+  
+  return b
+}"
+
+
+
+lemma [ll_is_pair_type_thms]: "ll_is_pair_type False TYPE(my_pair) TYPE(64 word) TYPE(32 word)"
+  unfolding ll_is_pair_type_def
+  by auto
+
+export_llvm (debug) test_named file "code/test_named.ll"
+
+
+
       
 end

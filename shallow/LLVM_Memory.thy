@@ -89,17 +89,41 @@ begin
   
   definition "llvm_empty_memory \<equiv> LLVM_MEMORY ab.ba.empty_memory"
   
+  
+  fun llvm_is_int where
+    "llvm_is_int (LLVM_VAL (PRIMITIVE (PV_INT _))) = True"
+  | "llvm_is_int _ = False"  
+  
+  fun llvm_is_ptr where
+    "llvm_is_ptr (LLVM_VAL (PRIMITIVE (PV_PTR _))) = True"
+  | "llvm_is_ptr _ = False"  
+  
+  fun llvm_is_pair where
+    "llvm_is_pair (LLVM_VAL (PAIR _ _)) = True"
+  | "llvm_is_pair _ = False"  
     
   definition "llvm_int i \<equiv> LLVM_VAL (PRIMITIVE (PV_INT i))"
   definition "llvm_null \<equiv> LLVM_PTR RP_NULL"
   definition "llvm_ptr p \<equiv> LLVM_VAL (PRIMITIVE (PV_PTR (llvm_ptr.the_ptr p)))"
   definition "llvm_pair a b \<equiv> LLVM_VAL (PAIR (llvm_val.the_val a) (llvm_val.the_val b))"
-    
+
   definition "llvm_the_int v \<equiv> case v of LLVM_VAL (PRIMITIVE (PV_INT i)) \<Rightarrow> i"
   definition "llvm_the_ptr p \<equiv> case p of LLVM_VAL (PRIMITIVE (PV_PTR p)) \<Rightarrow> LLVM_PTR p"
   definition "llvm_the_pair p \<equiv> case p of LLVM_VAL (PAIR a b) \<Rightarrow> (LLVM_VAL a, LLVM_VAL b)"
     
+  fun llvm_is_s_int where
+    "llvm_is_s_int w (LLVM_VSTRUCT (VS_PRIMITIVE (PVS_INT w'))) \<longleftrightarrow> w'=w"
+  | "llvm_is_s_int _ _ \<longleftrightarrow> False"  
       
+  fun llvm_is_s_ptr where
+    "llvm_is_s_ptr (LLVM_VSTRUCT (VS_PRIMITIVE (PVS_PTR))) \<longleftrightarrow> True"
+  | "llvm_is_s_ptr _ \<longleftrightarrow> False"  
+
+  fun llvm_is_s_pair where
+    "llvm_is_s_pair (LLVM_VSTRUCT (VS_PAIR _ _)) \<longleftrightarrow> True"
+  | "llvm_is_s_pair _ \<longleftrightarrow> False"  
+  
+        
   definition "llvm_s_int w \<equiv> LLVM_VSTRUCT (VS_PRIMITIVE (PVS_INT w))"
   definition "llvm_s_ptr \<equiv> LLVM_VSTRUCT (VS_PRIMITIVE (PVS_PTR))"
   definition "llvm_s_pair a b \<equiv> LLVM_VSTRUCT (VS_PAIR (llvm_vstruct.the_vstruct a) (llvm_vstruct.the_vstruct b))"
@@ -113,6 +137,21 @@ begin
 
   definition "llvm_zero_initializer s = LLVM_VAL (zero_initializer (llvm_vstruct.the_vstruct s))"
   
+  lemma llvm_is_simps[simp]:
+    " llvm_is_int (llvm_int i)"
+    "\<not>llvm_is_int (llvm_ptr p)"
+    "\<not>llvm_is_int (llvm_pair v\<^sub>1 v\<^sub>2)"
+    
+    "\<not>llvm_is_ptr (llvm_int i)"
+    " llvm_is_ptr (llvm_ptr p)"
+    "\<not>llvm_is_ptr (llvm_pair v\<^sub>1 v\<^sub>2)"
+  
+    "\<not>llvm_is_pair (llvm_int i)"
+    "\<not>llvm_is_pair (llvm_ptr p)"
+    " llvm_is_pair (llvm_pair v\<^sub>1 v\<^sub>2)"
+    unfolding llvm_int_def llvm_ptr_def llvm_pair_def 
+    by auto
+    
   
   lemma llvm_the_int_inv[simp]: "llvm_the_int (llvm_int i) = i"
     by (auto simp: llvm_the_int_def llvm_int_def)
@@ -123,6 +162,19 @@ begin
   lemma llvm_the_pair_inv[simp]: "llvm_the_pair (llvm_pair a b) = (a,b)"
     by (auto simp: llvm_the_pair_def llvm_pair_def)
     
+  lemma llvm_int_inj[simp]: "llvm_int a = llvm_int b \<longleftrightarrow> a=b" by (auto simp: llvm_int_def)
+  lemma llvm_ptr_inj[simp]: "llvm_ptr a = llvm_ptr b \<longleftrightarrow> a=b" by (cases a; cases b) (auto simp: llvm_ptr_def)
+  lemma llvm_pair_inj[simp]: "llvm_pair a b = llvm_pair a' b' \<longleftrightarrow> a=a' \<and> b=b'" 
+    by (auto simp: llvm_pair_def llvm_val.the_val_def split: llvm_val.splits)  
+      
+  lemma llvm_v_disj[simp]:  
+    "llvm_int i \<noteq> llvm_ptr p"
+    "llvm_int i \<noteq> llvm_pair a b"
+    "llvm_ptr p \<noteq> llvm_int i"
+    "llvm_ptr p \<noteq> llvm_pair a b"
+    "llvm_pair a b \<noteq> llvm_int i"
+    "llvm_pair a b \<noteq> llvm_ptr p"
+    unfolding llvm_int_def llvm_ptr_def llvm_pair_def by auto 
             
   lemma llvm_s_int[simp]: "llvm_vstruct (llvm_int i) = llvm_s_int (width i)"
     by (auto simp: llvm_vstruct_def llvm_s_int_def llvm_int_def)
@@ -133,7 +185,63 @@ begin
   lemma llvm_s_pair[simp]: "llvm_vstruct (llvm_pair a b) = llvm_s_pair (llvm_vstruct a) (llvm_vstruct b)"
     by (auto simp: llvm_vstruct_def llvm_s_pair_def llvm_pair_def)
 
+  lemma llvm_s_pair_inj[simp]: "llvm_s_pair a b = llvm_s_pair c d \<longleftrightarrow> a=c \<and> b=d"
+    unfolding llvm_s_pair_def by (cases a; cases b) auto
+  
+  lemma llvm_s_disj[simp]:
+    "llvm_s_int w \<noteq> llvm_s_ptr"
+    "llvm_s_int w \<noteq> llvm_s_pair t1 t2"
+    "llvm_s_ptr \<noteq> llvm_s_int w"
+    "llvm_s_ptr \<noteq> llvm_s_pair t1 t2"
+    "llvm_s_pair t1 t2 \<noteq> llvm_s_int w"
+    "llvm_s_pair t1 t2 \<noteq> llvm_s_ptr"
+    unfolding llvm_s_int_def llvm_s_ptr_def llvm_s_pair_def 
+    by auto
+    
+  lemma llvm_vstruct_cases[cases type]:
+    obtains w where "s = llvm_s_int w" | "s = llvm_s_ptr" | s\<^sub>1 s\<^sub>2 where "s = llvm_s_pair s\<^sub>1 s\<^sub>2"
+  proof (cases s)
+    case [simp]: (LLVM_VSTRUCT x)
+    show ?thesis proof (cases x)
+      case [simp]: (VS_PAIR x11 x12)
+      show ?thesis using that
+        by (clarsimp simp: llvm_s_pair_def) (metis llvm_vstruct.sel)
       
+    next
+      case (VS_PRIMITIVE x2)
+      then show ?thesis apply (cases x2)
+        using that by (auto simp: llvm_s_ptr_def llvm_s_int_def)
+    qed
+  qed
+  
+  lemma llvm_v_cases[cases type]:
+    obtains i where "v = llvm_int i" | p where "v = llvm_ptr p" | v1 v2 where "v = llvm_pair v1 v2"
+    apply (cases v) subgoal for x apply (cases x)
+    subgoal apply (auto simp: llvm_pair_def) by (metis llvm_val.sel)
+    subgoal for xx apply (cases xx)
+      apply (auto simp: llvm_int_def llvm_ptr_def)
+      by (metis llvm_ptr.sel)
+      done
+    done
+  
+  lemma struct_of_zero_initializer[simp]: "struct_of_val (zero_initializer s) = s"  
+    by (induction s rule: zero_initializer.induct) auto
+    
+  lemma llvm_vstruct_of_zero_initializer[simp]: "llvm_vstruct (llvm_zero_initializer s) = s"
+    unfolding llvm_zero_initializer_def llvm_vstruct_def by simp
+
+  lemma llvm_zero_initializer_simps[simp]:
+    "llvm_zero_initializer (llvm_s_int w) = llvm_int (lconst w 0)"
+    "llvm_zero_initializer llvm_s_ptr = llvm_ptr llvm_null"
+    "llvm_zero_initializer (llvm_s_pair s1 s2) = llvm_pair (llvm_zero_initializer s1) (llvm_zero_initializer s2)"
+    unfolding llvm_zero_initializer_def llvm_s_int_def llvm_s_ptr_def llvm_s_pair_def
+      llvm_int_def llvm_ptr_def llvm_null_def llvm_pair_def
+    by auto
+  
+  
+    
+          
+    
   subsection \<open>Alternative Characterizations\<close>  
     
   text \<open>These are some alternative characterizations, that might be easier to present, 
@@ -218,7 +326,7 @@ begin
     L ::= llvm_val.the_val x
   }"
     unfolding llvm_store_def llvm_zoom_base_def ab.ba.store_def llvm_load_alt
-    apply (cases x; cases p; simp)
+    apply (induction x rule: llvm_val.induct; cases p; simp ) (* TODO: How to access case-rule for llvm_val? Induction is overkill here! *)
     subgoal for val pp
       apply (cases pp; simp)
       subgoal for addr 
