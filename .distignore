@@ -1,0 +1,9 @@
+*~
+paper
+dist.tgz
+mkdist.sh
+mkhtml.sh
+html
+TODO
+others
+.distignore
