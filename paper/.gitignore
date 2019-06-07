@@ -4,5 +4,7 @@
 *.log
 *.fls
 *.out
+*.vtc
 main.pdf
 *.fdb_latexmk
+TACAS2019_paper_148.pdf
