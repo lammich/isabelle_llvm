@@ -27,17 +27,28 @@ done
 
 
 if $REBUILD; then
-./make_artifact.sh
+  cd paper
+  ./make.sh
+  cd ..
+  
+  cd thys
+  isabelle build -v -d '$AFP' -D .
+  cd ..
+  
+  ./mkdist.sh
 fi
 
 
 rm -rf html
 mkdir -p html
 
+ISABELLE_BROWSER_INFO=$(isabelle getenv ISABELLE_BROWSER_INFO | sed -re 's/.*=//')
 
+cp -a $ISABELLE_BROWSER_INFO/Unsorted/Isabelle_LLVM html/
 cp README.md html/
-cp isabelle_llvm.tgz html/
+cp dist.tgz html/
 cp LICENSE html/
+cp paper/main.pdf html/
 
 
 pandoc -V pagetitle="Isabelle LLVM" -s README.md > html/index.html

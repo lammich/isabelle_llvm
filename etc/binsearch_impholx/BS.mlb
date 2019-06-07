@@ -1,0 +1,14 @@
+$(SML_LIB)/basis/basis.mlb
+$(SML_LIB)/basis/mlton.mlb 
+$(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+
+local
+    Unsynchronized.sml
+    ann "nonexhaustiveMatch ignore" in
+      BS_Code_Export.sml
+    end
+in
+    structure BS
+end
+
+BS.sml

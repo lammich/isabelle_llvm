@@ -1,0 +1,11 @@
+Show the benchmark results from logfiles
+  ./bench_kmp.sh
+  ./bench_bs.sh
+  
+Rerun the benchmarks  
+  ./bench_kmp.sh -r
+  ./bench_bs.sh -r
+  
+Rerunning the benchmarks will also try to compile the programs. 
+You need clang-6.0 and mlton for that.
+

@@ -1,0 +1,24 @@
+TODO
+
+DONE Native while loops
+DONE Integrated prep-oce-eqs to preprocessor
+DONE verified bin-search
+
+Elaborate memory model: No confusion for better verifiability!
+
+more verified algos
+  Ideas: 
+    * Heaps, Dijkstra [we have some performance data there]
+    * gratchk: Exception compilation, memmap of certificate. Actually fast enough.
+    * drat-checker: Quite complex, but would be cool ... own paper?
+    * Push-Relabel: Performance data available, compare with ProgComp C++ algo!
+  
+
+Motivation for paper:
+  Efficient verified code, still small TCB
+    How big is TCB of Isabelle's standard codegen? How big is ours?
+
+  Approach: 
+    * Code generation from shallowly embedded IR, which is easy to compile to LLVM.
+    * Outside TCB: Preprocessing, VCG, integration of Sepref-Tool
+    

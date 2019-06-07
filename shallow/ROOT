@@ -1,7 +1,0 @@
-session Isabelle_LLVM = Refine_Monadic +
-  sessions
-    Separation_Algebra
-    Refine_Imperative_HOL
-    Word_Lib
-  theories
-    "sepref/Examples/KMP"

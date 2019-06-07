@@ -14,9 +14,9 @@
   morekeywords={theorem,theorems,corollary,lemma,lemmas,locale,begin,end,fixes,assumes,shows,and,class,
     constrains , definition, where, apply, done,unfolding, primrec, fun, using, by, for, uses,
     schematic_lemma, concrete_definition, prepare_code_thms, export_code, datatype, type_synonym, typedef, value,
-    proof, next, qed, show, have, hence, thus, interpretation, fix, context, sepref_definition,is
+    proof, next, qed, show, have, hence, thus, interpretation, fix, context, sepref_definition,is,export_llvm
  } ,
-  morekeywords=[2]{rec, return, bind, foreach, if, then, else, do, let, in, res, spec, fail, assert, while, case, of,
+  morekeywords=[2]{rec, return, bind, foreach, if, then, else, do, let, in, res, spec, fail, assert, while, case, of, file,
     check},
 %  morekeywords=[3]{length,mod,insert},
 %   morekeywords=[4]{simp,auto,intro,elim,rprems,refine_mono,refine_rcg},
@@ -24,6 +24,12 @@
   morecomment=[s]{(\*}{\*)},
 }
 
+
+\DeclareTextCommand{\shortunderscore}{T1}{%
+  \leavevmode \kern.06em\vbox{\hrule width.4em}}
+
+\renewcommand{\textunderscore}{\shortunderscore}  
+  
 \lstset{
     language=isabelle,
     mathescape=true,
@@ -120,7 +126,7 @@
   {\\<leftarrow>}{{$\leftarrow$}}1
   {\\<mapsto>}{{$\mapsto$}}1
   {\\<equiv>}{{$\equiv$}}1
-  {\\<and>}{{$\and$}}1
+  {\\<and>}{{$\wedge$}}1
   {\\<or>}{{$\vee$}}1
   {\\<And>}{{$\bigwedge$}}1
   {\\<Up>}{{$\Uparrow$}}1
@@ -170,6 +176,6 @@
 
 % \newcommand{\is}{\lstinline[language=isabelle,basicstyle=\normalsize\ttfamily\slshape]}
 \newcommand{\is}{\lstinline[language=isabelle]}
-\newcommand{\q}[1]{\mbox{\guilsinglleft{#1}\hspace{-2.5pt}\guilsinglright}}
+\newcommand{\q}[1]{\mbox{\guilsinglleft{#1}\hspace{-.0pt}\guilsinglright}}
 % \newcommand{\isai}[1]{\q{\lstinline[language=isabelle,basicstyle=\normalsize\ttfamily\slshape]{#1}}}
 \cMakeRobust\q

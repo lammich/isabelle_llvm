@@ -1,0 +1,15 @@
+session Isabelle_LLVM = Refine_Monadic +
+  options [browser_info]
+  
+  sessions
+    "Refine_Imperative_HOL"
+    "Word_Lib"
+    "Separation_Algebra"
+    
+  theories
+    "sepref/IICF/IICF"  
+    
+  theories
+    "examples/Bin_Search"
+    "examples/KMP"
+    "examples/LLVM_Examples"
