@@ -27,7 +27,7 @@ lemma TRANS_init: "\<lbrakk> hn_refine \<Gamma> c \<Gamma>' R a; CNV c c' \<rbra
 
 lemma infer_post_triv: "P \<turnstile> P" by (rule entails_refl)
 
-ML {*
+ML \<open>
   structure Sepref = struct
     structure sepref_preproc_simps = Named_Thms (
       val name = @{binding sepref_preproc}
@@ -129,7 +129,7 @@ ML {*
       #> sepref_opt_simps.setup 
       #> sepref_opt_simps2.setup
   end
-*}
+\<close>
 
 setup Sepref.setup
 

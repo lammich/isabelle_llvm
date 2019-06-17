@@ -13,6 +13,9 @@ imports
   "Intf/IICF_Map"
   "Intf/IICF_Prio_Map"
 
+  "Impl/IICF_Array_Map"
+  "Impl/IICF_Array_Map_Total"
+  
   (* Lists *)
   "Intf/IICF_List"
 

@@ -313,6 +313,9 @@ lemma b_assn_is_pure[safe_constraint_rules, simp]:
   "is_pure A \<Longrightarrow> is_pure (b_assn A P)"
   by (auto simp: is_pure_conv b_assn_pure_conv)
 
+lemma R_comp_brel_id_conv[fcomp_norm_simps]: "R O b_rel Id P = b_rel R P" by auto
+  
+  
 \<comment> \<open>Most general form\<close>
 lemma b_assn_subtyping_match[sepref_frame_match_rules]:
   assumes "hn_ctxt (b_assn A P) x y \<turnstile> hn_ctxt A' x y"
@@ -362,6 +365,19 @@ lemma b_assn_subtyping_match_eqA_tL[sepref_frame_match_rules]:
   unfolding hn_ctxt_def b_assn_def entails_def vassn_tag_def
   by (auto simp: pred_lift_extract_simps)
 
+  
+lemma b_rel_gen_merge:
+  assumes A: "MERGE1 A f B g C"  
+  shows "MERGE1 (b_assn A P) f (b_assn B Q) g (b_assn C (\<lambda>x. P x \<or> Q x))"  
+  supply [vcg_rules] = MERGE1D[OF A]
+  apply rule
+  by vcg
+  
+lemmas b_rel_merge_eq[sepref_frame_merge_rules] = b_rel_gen_merge[where P=P and Q=P for P, simplified]
+lemmas [sepref_frame_merge_rules] = b_rel_gen_merge
+lemmas b_rel_merge_left[sepref_frame_merge_rules] = b_rel_gen_merge[where Q="\<lambda>_. True", simplified]
+lemmas b_rel_merge_right[sepref_frame_merge_rules] = b_rel_gen_merge[where P="\<lambda>_. True", simplified]
+  
 (*  
 \<comment> \<open>General form\<close>
 lemma b_rel_subtyping_merge[sepref_frame_merge_rules]:
@@ -448,6 +464,24 @@ abbreviation nbn_rel :: "nat \<Rightarrow> (nat \<times> nat) set"
   where "nbn_rel n \<equiv> b_rel nat_rel (\<lambda>x::nat. x<n)"  
 
 
+lemma in_R_comp_nbn_conv: "(a,b)\<in>(R O nbn_rel N) \<longleftrightarrow> (a,b)\<in>R \<and> b<N" by auto
+lemma range_comp_nbn_conv: "Range (R O nbn_rel N) = Range R \<inter> {0..<N}"
+  by (auto 0 3 simp: b_rel_def)
+
+lemma mk_free_b_assn[sepref_frame_free_rules]:
+  assumes "MK_FREE A f"  
+  shows "MK_FREE (b_assn A P) f"  
+proof -
+  note [vcg_rules] = assms[THEN MK_FREED]
+  show ?thesis by rule vcg
+qed
+
+lemma intf_of_b_rel[synth_rules]: "INTF_OF_REL R I \<Longrightarrow> INTF_OF_REL (b_rel R P) I" by simp
+
+lemma b_assn_intf[intf_of_assn]: "intf_of_assn V I \<Longrightarrow> intf_of_assn (b_assn V P) I"
+  by simp
+  
+    
 subsection \<open>Tool Setup\<close>
 lemmas [sepref_relprops] = 
   sepref_relpropI[of IS_LEFT_UNIQUE]
@@ -1325,7 +1359,18 @@ begin
     
 end    
 
-interpretation snat: dflt_option "-1" snat_assn "ll_icmp_eq (-1)"
+locale dflt_pure_option = dflt_option +
+  assumes A_pure[safe_constraint_rules]: "is_pure A"
+begin
+  find_theorems MK_FREE is_pure
+
+  lemma A_free[sepref_frame_free_rules]: "MK_FREE A (\<lambda>_. return ())"
+    by (rule mk_free_is_pure[OF A_pure])
+
+end  
+
+
+interpretation snat: dflt_pure_option "-1" snat_assn "ll_icmp_eq (-1)"
   apply unfold_locales
   subgoal
     apply (auto simp: snat_rel_def pure_def pred_lift_extract_simps del: ext intro!: ext)
@@ -1339,6 +1384,7 @@ interpretation snat: dflt_option "-1" snat_assn "ll_icmp_eq (-1)"
       apply vcg'
       done
     qed
+  subgoal by simp  
   done
 
 abbreviation snat_option_assn' :: "'a itself \<Rightarrow> nat option \<Rightarrow> 'a::len2 word \<Rightarrow> llvm_amemory \<Rightarrow> bool" where

@@ -4,7 +4,18 @@ DONE Native while loops
 DONE Integrated prep-oce-eqs to preprocessor
 DONE verified bin-search
 
+DONE: Heap and Heapmap
+
 Elaborate memory model: No confusion for better verifiability!
+
+Refinement framework: more flexible matching, 
+  e.g., only on combinator structure/loop structure.
+  Use pw inside. 
+  
+  Splitting on refinement goals: Split conc side, then simplify, 
+  and only split abs side when necessary.
+
+
 
 more verified algos
   Ideas: 

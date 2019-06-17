@@ -14,6 +14,9 @@ lemma arl_assn_free[sepref_frame_free_rules]: "MK_FREE (\<upharpoonleft>arl_assn
 lemma al_assn_free[sepref_frame_free_rules]: "MK_FREE (al_assn R) arl_free"
   unfolding al_assn_def by (rule sepref_frame_free_rules)+
 
+  
+text \<open>This functions deletes all elements of a resizable array, without resizing it.\<close>
+sepref_decl_op emptied_list: "\<lambda>_::'a list. []::'a list" :: "\<langle>A\<rangle>list_rel \<rightarrow> \<langle>A\<rangle>list_rel" .
 
 context
   fixes l_dummy :: "'l::len2 itself" 
@@ -85,6 +88,10 @@ begin
     by m_ref
   sepref_decl_impl (ismop) al_is_empty: al_is_empty_hnr_aux .
 
+  lemma al_emptied_hnr_aux: "(arl_clear,mop_emptied_list)\<in>AA\<^sup>d\<rightarrow>\<^sub>aAA"
+    by m_ref
+  sepref_decl_impl (ismop) al_emptied_hnr_aux .
+    
     
 end
 
@@ -117,6 +124,7 @@ begin
   sepref_definition example [llvm_code] is "\<lambda>n. do {
     let l = op_list_empty; 
     l \<leftarrow> mop_list_append l 42;
+    l \<leftarrow> mop_emptied_list l;
     l \<leftarrow> mop_list_append l 43;
     l \<leftarrow> mop_list_append l 44;
     l \<leftarrow> mop_list_append l 45;

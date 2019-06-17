@@ -620,7 +620,7 @@ qed
   
 
 subsection \<open>ML-Level Utilities\<close>
-ML {*
+ML \<open>
   signature SEPREF_BASIC = sig
     (* Destroy lambda term, return function to reconstruct. Bound var is replaced by free. *)
     val dest_lambda_rc: Proof.context -> term -> ((term * (term -> term)) * Proof.context)
@@ -1055,7 +1055,7 @@ ML {*
       msg ^ "\n" ^ Pretty.string_of (Pretty.chunks (Goal_Display.pretty_goals ctxt st))
 
   end
-*}
+\<close>
 
 
 ML \<open>

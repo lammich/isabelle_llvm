@@ -74,6 +74,12 @@ begin
   definition arl_new_sz :: "'a::llvm_rep itself \<Rightarrow> 'l::len2 word \<Rightarrow> ('a,'l) array_list llM" 
     where [llvm_inline]: "arl_new_sz TYPE('a) n \<equiv> arl_new_sz_raw n"
       
+  definition arl_clear :: "('a::llvm_rep,'l::len2) array_list \<Rightarrow> ('a::llvm_rep,'l) array_list llM"
+    where [llvm_code,llvm_inline]: "arl_clear al \<equiv> doM {
+      let (l,c,a) = al;
+      return (signed_nat 0,c,a)
+    }"  
+    
   definition arl_free :: "('a::llvm_rep,'l::len) array_list \<Rightarrow> unit llM" 
   where [llvm_code,llvm_inline]: "arl_free al \<equiv> doM {
     let (_,_,a) = al;
@@ -125,6 +131,7 @@ begin
   export_llvm (debug)
     "arl_new_raw :: (64 word,64) array_list llM" is "arl_new"
     "arl_new_sz_raw :: 64 word \<Rightarrow> (64 word,64) array_list llM"
+    "arl_clear :: (64 word,64) array_list \<Rightarrow> (64 word,64) array_list llM"
     "arl_free :: (64 word,64) array_list \<Rightarrow> unit llM" is "arl_free"
     "arl_nth :: (64 word,64) array_list \<Rightarrow> 64 word \<Rightarrow> 64 word llM" is "arl_nth"
     "arl_upd :: (64 word,64) array_list \<Rightarrow> 64 word \<Rightarrow> 64 word \<Rightarrow> (64 word,64) array_list llM" is "arl_upd"
@@ -226,6 +233,13 @@ begin
     apply (rule ENTAILSD)
     by vcg
     
+  lemma arl_clear_rule[vcg_rules]: 
+    "llvm_htriple 
+      (\<upharpoonleft>arl_assn al ali) 
+      (arl_clear ali) 
+      (\<lambda>ali. \<upharpoonleft>arl_assn [] ali)"
+    unfolding arl_clear_def arl_assn_def arl_assn'_def
+    by (vcg_monadify) vcg'
     
   lemma arl_free_rule[vcg_rules]:
     "llvm_htriple (\<upharpoonleft>arl_assn al ali) (arl_free ali) (\<lambda>_. \<box>)"  

@@ -15,10 +15,6 @@ begin
   abbreviation "snatb_rel' TYPE('l::len2) N \<equiv> b_rel (snat_rel' TYPE('l)) (\<lambda>x. x<N)"
   abbreviation "snatb_assn N \<equiv> b_assn snat_assn (\<lambda>x. x<N)"
   abbreviation "snatb_assn' TYPE('l::len2) N \<equiv> (snatb_assn N :: _ \<Rightarrow> 'l word \<Rightarrow> _)"
-    
-
-  (* TODO: Move *)
-  lemma R_comp_brel_id_conv[fcomp_norm_simps]: "R O b_rel Id P = b_rel R P" by auto
   
   
   (* TODO: Move, clean up proof *)
@@ -35,11 +31,6 @@ begin
     done
             
   (* TODO: Move *)  
-  lemma in_snat_nbn_conv: "(a,b)\<in>(R O nbn_rel N) \<longleftrightarrow> (a,b)\<in>R \<and> b<N" by auto
-    
-  lemma range_comp_nbn_conv: "Range (R O nbn_rel N) = Range R \<inter> {0..<N}"
-    by (auto 0 3 simp: b_rel_def)
-    
   
   (*
   lemma range_snatb_conv: "Range (snatb_rel' TYPE('l) N) = {0..<N} \<inter> Range (snat_rel' TYPE('l::len2))"

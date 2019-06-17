@@ -21,6 +21,7 @@ begin
       by parametricity
     
     sepref_decl_op list_list_llen: "\<lambda>xss i. length (xss!i)" :: "[\<lambda>(xss,i). i<length xss]\<^sub>f LR A \<times>\<^sub>r nat_rel \<rightarrow> nat_rel" .
+    (* TODO: list_list is a proper subtype of list. So share operations! length, empty, ... *)
     sepref_decl_op list_list_len: "length :: _ list list \<Rightarrow> _" :: "LR A \<rightarrow> nat_rel" .
     
     sepref_decl_op list_list_take: "\<lambda>xss i l. (xss[i:=take l (xss!i)])" 

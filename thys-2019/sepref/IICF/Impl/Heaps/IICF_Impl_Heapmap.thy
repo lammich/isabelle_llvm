@@ -4,11 +4,15 @@ imports
   IICF_Abs_Heapmap 
   "../IICF_Array" 
   "../IICF_Array_List" 
+  "../IICF_Array_Map_Total" 
   "../IICF_Indexed_Array_List"
 begin
 
+
+  find_theorems snatb_rel
+
   (* TODO: Move *)  
-  lemma in_snat_rel_imnp_less_max'[simp]: "(w, n) \<in> snat_rel' TYPE('l) \<Longrightarrow> n < max_snat LENGTH('l::len2)"
+  lemma in_snat_rel_imp_less_max'[simp]: "(w, n) \<in> snat_rel' TYPE('l) \<Longrightarrow> n < max_snat LENGTH('l::len2)"
     by (simp add: snat_rel_imp_less_max_snat)
 
 (*
@@ -40,20 +44,8 @@ begin
   
   find_theorems INTF_OF_REL
 
-  lemma intf_of_b_rel[synth_rules]: "INTF_OF_REL R I \<Longrightarrow> INTF_OF_REL (b_rel R P) I" by simp
-
-  lemma b_assn_intf[intf_of_assn]: "intf_of_assn V I \<Longrightarrow> intf_of_assn (b_assn V P) I"
-    by simp
-  
   
   (* TODO: Move *)
-  lemma mk_free_b_assn[sepref_frame_free_rules]:
-    assumes "MK_FREE A f"  
-    shows "MK_FREE (b_assn A P) f"  
-  proof -
-    note [vcg_rules] = assms[THEN MK_FREED]
-    show ?thesis by rule vcg
-  qed
   
   
   (* TODO: Move *)
@@ -72,16 +64,16 @@ begin
   definition iam1_update :: "nat \<Rightarrow> 'a \<Rightarrow> 'a iam1 \<Rightarrow> 'a iam1 nres"
     where "iam1_update k v m \<equiv> mop_list_set m k v"
   
-  (*definition abs_iam_empty :: "nat \<Rightarrow> (nat \<rightharpoonup> 'a) nres" 
-    where "abs_iam_empty (N::nat) \<equiv> RETURN Map.empty"
+  (*definition abs_iamt_empty :: "nat \<Rightarrow> (nat \<rightharpoonup> 'a) nres" 
+    where "abs_iamt_empty (N::nat) \<equiv> RETURN Map.empty"
   *)
     
-  sepref_decl_op iam_init: "\<lambda>(N::nat) (v::'a). \<lambda>k. if k<N then Some v else None" :: "nat_rel \<rightarrow> V \<rightarrow> \<langle>nat_rel,V\<rangle> map_rel"
+  sepref_decl_op iamt_init: "\<lambda>(N::nat) (v::'a). \<lambda>k. if k<N then Some v else None" :: "nat_rel \<rightarrow> V \<rightarrow> \<langle>nat_rel,V\<rangle> map_rel"
     apply (rule frefI)
     apply parametricity
     by (auto simp: map_rel_def)
   
-  lemma iam1_empty_refine: "(uncurry iam1_init,uncurry mop_iam_init) 
+  lemma iam1_empty_refine: "(uncurry iam1_init,uncurry mop_iamt_init) 
     \<in> [\<lambda>(N',v). N'=N]\<^sub>f nat_rel \<times>\<^sub>r Id \<rightarrow> \<langle>iam1_rel N\<rangle>nres_rel"
     unfolding iam1_init_def 
     by (auto intro!: frefI nres_relI simp: iam1_rel_def in_br_conv fun_eq_iff)
@@ -109,40 +101,41 @@ begin
     
     private abbreviation (input) "iam2_assn \<equiv> array_assn id_assn"
   
-    definition "iam_assn N V \<equiv> hr_comp 
+    definition "amt_assn N V \<equiv> hr_comp 
       (hr_comp iam2_assn (iam1_rel N))
       (\<langle>nat_rel, the_pure V\<rangle>map_rel)"
-    lemmas [fcomp_norm_unfold] = iam_assn_def[symmetric]
+    lemmas [fcomp_norm_unfold] = amt_assn_def[symmetric]
   
 
-    lemma iam_assn_intf[intf_of_assn]: "intf_of_assn V TYPE('v) \<Longrightarrow> intf_of_assn (iam_assn N V) (TYPE((nat,'v)i_map))"
+    lemma amt_assn_intf[intf_of_assn]: "intf_of_assn V TYPE('v) \<Longrightarrow> intf_of_assn (amt_assn N V) (TYPE((nat,'v)i_map))"
       by simp
         
-    sepref_definition iam_init_impl is "uncurry iam1_init"
+    sepref_definition iamt_init_impl is "uncurry iam1_init"
       :: "(snat_assn' TYPE('l))\<^sup>k *\<^sub>a id_assn\<^sup>k \<rightarrow>\<^sub>a iam2_assn"
       unfolding iam1_init_def
       apply (subst array_fold_custom_replicate)
       by sepref
-    sepref_decl_impl (ismop) iam_init_impl.refine[FCOMP iam1_empty_refine] by auto
+    sepref_decl_impl (ismop) iamt_init_impl.refine[FCOMP iam1_empty_refine] by auto
 
-    sepref_definition iam_lookup_impl is "uncurry iam1_lookup" 
+    sepref_definition iamt_lookup_impl is "uncurry iam1_lookup" 
       :: "(snat_assn' TYPE('l))\<^sup>k *\<^sub>a iam2_assn\<^sup>k \<rightarrow>\<^sub>a id_assn"
       unfolding iam1_lookup_def
       by sepref
-    sepref_decl_impl (ismop) iam_lookup_impl.refine[FCOMP iam1_lookup_refine] 
+    sepref_decl_impl (ismop) iamt_lookup_impl.refine[FCOMP iam1_lookup_refine] 
       uses mop_map_the_lookup.fref[where K=Id] .
                                                             
-    sepref_definition iam_update_impl is "uncurry2 iam1_update"  
+    sepref_definition iamt_update_impl is "uncurry2 iam1_update"  
       :: "(snat_assn' TYPE('l))\<^sup>k *\<^sub>a id_assn\<^sup>k *\<^sub>a iam2_assn\<^sup>d \<rightarrow>\<^sub>a iam2_assn"
       unfolding iam1_update_def
       by sepref
-    sepref_decl_impl (ismop) iam_update_impl.refine[FCOMP iam1_update_refine] 
+    sepref_decl_impl (ismop) iamt_update_impl.refine[FCOMP iam1_update_refine] 
       uses mop_map_update.fref[where K=Id] .
   
   end    
 
   *)
 
+  (*
   type_synonym 'a iam1 = "'a list"
 
   definition iam1_rel :: "nat \<Rightarrow> ('a iam1 \<times> (nat\<rightharpoonup>'a)) set"
@@ -155,16 +148,16 @@ begin
   definition iam1_update :: "nat \<Rightarrow> 'a \<Rightarrow> 'a iam1 \<Rightarrow> 'a iam1 nres"
     where "iam1_update k v m \<equiv> mop_list_set m k v"
   
-  sepref_decl_op iam_empty: "\<lambda>(N::nat). Map.empty :: nat \<rightharpoonup> _" :: "nat_rel \<rightarrow> \<langle>nat_rel,V\<rangle> map_rel" .
+  sepref_decl_op iamt_empty: "\<lambda>(N::nat). Map.empty :: nat \<rightharpoonup> _" :: "nat_rel \<rightarrow> \<langle>nat_rel,V\<rangle> map_rel" .
   
-  lemma iam_fold_custom_empty:
-    "op_map_empty = op_iam_empty N"
-    "Map.empty = op_iam_empty N"
-    "mop_map_empty = mop_iam_empty N"
+  lemma iamt_fold_custom_empty:
+    "op_map_empty = op_iamt_empty N"
+    "Map.empty = op_iamt_empty N"
+    "mop_map_empty = mop_iamt_empty N"
     by auto
   
   
-  lemma iam1_empty_refine: "(iam1_init,mop_iam_empty) 
+  lemma iam1_empty_refine: "(iam1_init,mop_iamt_empty) 
     \<in> nat_rel \<rightarrow>\<^sub>f\<^sub>d (\<lambda>N. \<langle>iam1_rel N\<rangle>nres_rel)"
     unfolding iam1_init_def
     by (auto intro!: frefI nres_relI simp: iam1_rel_def in_br_conv fun_eq_iff)
@@ -192,22 +185,22 @@ begin
     
     private abbreviation (input) "iam2_assn \<equiv> array_assn id_assn"
   
-    definition "iam_assn V N \<equiv> hr_comp 
+    definition "amt_assn V N \<equiv> hr_comp 
       (hr_comp iam2_assn (iam1_rel N))
       (\<langle>nat_rel, the_pure V\<rangle>map_rel)"
-    lemmas [fcomp_norm_unfold] = iam_assn_def[symmetric]
+    lemmas [fcomp_norm_unfold] = amt_assn_def[symmetric]
   
-    lemma iam_assn_fold'[fcomp_norm_unfold]: 
+    lemma amt_assn_fold'[fcomp_norm_unfold]: 
       "hrr_comp nat_rel (\<lambda>x. hr_comp (IICF_Array.array_assn id_assn) (iam1_rel x))
-                        (\<lambda>x. \<langle>nat_rel, the_pure V\<rangle>map_rel) = iam_assn V"
-      unfolding iam_assn_def 
+                        (\<lambda>x. \<langle>nat_rel, the_pure V\<rangle>map_rel) = amt_assn V"
+      unfolding amt_assn_def 
       by (auto simp: fun_eq_iff hrr_comp_def pred_lift_extract_simps; smt non_dep_def)
     
 
-    lemma iam_assn_intf[intf_of_assn]: "intf_of_assn V TYPE('v) \<Longrightarrow> intf_of_assn (iam_assn V N) (TYPE((nat,'v)i_map))"
+    lemma amt_assn_intf[intf_of_assn]: "intf_of_assn V TYPE('v) \<Longrightarrow> intf_of_assn (amt_assn V N) (TYPE((nat,'v)i_map))"
       by simp
         
-    sepref_definition iam_init_impl [llvm_inline] is "iam1_init"
+    sepref_definition iamt_init_impl [llvm_inline] is "iam1_init"
       :: "(snat_assn' TYPE('l))\<^sup>k \<rightarrow>\<^sub>a iam2_assn"
       unfolding iam1_init_def
       supply [sepref_import_param] = IdI[of init]
@@ -215,30 +208,32 @@ begin
       by sepref
       
      
-    sepref_decl_impl (ismop) iam_empty: iam_init_impl.refine[FCOMP iam1_empty_refine] .
+    sepref_decl_impl (ismop) iamt_empty: iamt_init_impl.refine[FCOMP iam1_empty_refine] .
     
-    sepref_definition iam_lookup_impl [llvm_inline] is "uncurry iam1_lookup" 
+    sepref_definition iamt_lookup_impl [llvm_inline] is "uncurry iam1_lookup" 
       :: "(snat_assn' TYPE('l))\<^sup>k *\<^sub>a iam2_assn\<^sup>k \<rightarrow>\<^sub>a id_assn"
       unfolding iam1_lookup_def
       by sepref
-    sepref_decl_impl (ismop) iam_lookup_impl.refine[FCOMP iam1_lookup_refine] 
+    sepref_decl_impl (ismop) iamt_lookup_impl.refine[FCOMP iam1_lookup_refine] 
       uses mop_map_the_lookup.fref[where K=Id] .
                                                             
-    sepref_definition iam_update_impl [llvm_inline] is "uncurry2 iam1_update"  
+    sepref_definition iamt_update_impl [llvm_inline] is "uncurry2 iam1_update"  
       :: "(snat_assn' TYPE('l))\<^sup>k *\<^sub>a id_assn\<^sup>k *\<^sub>a iam2_assn\<^sup>d \<rightarrow>\<^sub>a iam2_assn"
       unfolding iam1_update_def
       by sepref
-    sepref_decl_impl (ismop) iam_update_impl.refine[FCOMP iam1_update_refine] 
+    sepref_decl_impl (ismop) iamt_update_impl.refine[FCOMP iam1_update_refine] 
       uses mop_map_update.fref[where K=Id] .
   
   end    
   
   type_synonym ('v) iam = "'v ptr"
   
-  schematic_goal [sepref_frame_free_rules]: "MK_FREE (iam_assn N V) (?fr)"
-    unfolding iam_assn_def
+  schematic_goal [sepref_frame_free_rules]: "MK_FREE (amt_assn N V) (?fr)"
+    unfolding amt_assn_def
     by sepref_dbg_side
   
+  *)  
+    
   locale hm_impl = hmstruct prio for prio :: "'e \<Rightarrow> 'p::linorder" +
     fixes prio_assn :: "'p \<Rightarrow> 'pi::llvm_rep \<Rightarrow> assn"
       and elem_assn :: "'e \<Rightarrow> 'ei::llvm_rep \<Rightarrow> assn"
@@ -286,13 +281,13 @@ begin
       mk_free_is_pure[OF prio_is_pure]
       mk_free_is_pure[OF elem_is_pure]
     
-    definition "hm2_assn \<equiv> b_assn (ial_assn' TYPE('l) N \<times>\<^sub>a iam_assn elem_assn N) (\<lambda>_. 4<LENGTH('l) \<and> N<max_snat LENGTH('l))"
+    definition "hm2_assn \<equiv> b_assn (ial_assn' TYPE('l) N \<times>\<^sub>a amt_assn elem_assn N) (\<lambda>_. 4<LENGTH('l) \<and> N<max_snat LENGTH('l))"
       
     lemma hm2_assn_rdomp_boundsI: "rdomp (hm2_assn) (ag, bq) \<Longrightarrow> 4<LENGTH('l) \<and> N<max_snat LENGTH('l)"
       unfolding hm2_assn_def by auto
     
     
-    find_theorems iam_assn
+    find_theorems amt_assn
     
     sepref_definition hm_append_impl is "uncurry2 hm_append_op"
       :: "hm2_assn\<^sup>d*\<^sub>aidx_assn\<^sup>k*\<^sub>aelem_assn\<^sup>k \<rightarrow>\<^sub>a hm2_assn"
@@ -639,7 +634,7 @@ begin
       
     term hm_empty_op   
     
-    definition "hm_empty_op' N \<equiv> do { m\<leftarrow>mop_iam_empty N; RETURN (op_ial_empty N,m) }"
+    definition "hm_empty_op' N \<equiv> do { m\<leftarrow>mop_amt_empty N; RETURN (op_ial_empty N,m) }"
     
     lemma hm_empty_op_N: "hm_empty_op' N = hm_empty_op"
       by (auto simp: hm_empty_op_def hm_empty_op'_def)
@@ -775,11 +770,22 @@ begin
       like, e.g., 'l
   *)  
     
-  type_synonym 'l heapmap = "'l ial \<times> 'l word iam"  
+  type_synonym 'l heapmap = "'l ial \<times> 'l word amt"  
 
+  abbreviation hm_assn' where "hm_assn' TYPE('l::len2) \<equiv> HM.hm_assn :: _ \<Rightarrow> _ \<Rightarrow> 'l heapmap \<Rightarrow> _"
+  
+  
   schematic_goal [sepref_frame_free_rules]: "MK_FREE (HM.hm_assn N) (?fr)"
     unfolding HM.hm_assn_def HM.hm12_assn_def HM.hm2_assn_def
     by sepref_dbg_side_keep
+    
+  term  HM.hm_assn
+    
+  lemma hm_assn_intf[intf_of_assn]: 
+    "intf_of_assn (HM.hm_assn N) (TYPE((nat,nat)i_map))"
+    by simp
+    
+    
     
   (*
       thm HM.hm_empty_impl_def

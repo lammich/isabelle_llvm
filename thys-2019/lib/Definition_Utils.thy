@@ -12,10 +12,10 @@ begin
 
   declare [[ML_exception_debugger, ML_debugger, ML_exception_trace]]
 
-text {*
+text \<open>
   This theory provides a tool for extracting definitions from terms, and
   for generating code equations for recursion combinators.
-*}
+\<close>
 
 (*
   TODO: Copied and merged from $AFP/Refine_Monadic/Refine_Automation
@@ -30,7 +30,7 @@ text {*
 *)
 
 ML_val \<open>Symtab.update_list\<close>
-ML {*
+ML \<open>
 signature DEFINITION_UTILS = sig
   type extraction = {
     pattern: term,   (* Pattern to be defined as own constant *)
@@ -727,12 +727,12 @@ end;
 
 
 end;
-*}
+\<close>
 
 setup Definition_Utils.setup
 
 
-setup {*
+setup \<open>
   let
     fun parse_cpat cxt = let 
       val (t, (context, tks)) = Scan.lift Args.embedded_inner_syntax cxt 
@@ -753,14 +753,14 @@ setup {*
     )
       "Add/delete concrete_definition pattern"
   end
-*}
+\<close>
 
 (* Command setup *)
 
 (* TODO: Folding of .refine-lemma seems not to work, if the function has
   parameters on which it does not depend *)
 
-ML {* Outer_Syntax.local_theory 
+ML \<open> Outer_Syntax.local_theory 
   @{command_keyword concrete_definition} 
   "Define constant from theorem"
   (Parse.binding 
@@ -783,9 +783,9 @@ ML {* Outer_Syntax.local_theory
       NONE name attribs params thm pats lthy 
     |> snd
   end))
-*}
+\<close>
 
-text {* 
+text \<open> 
   Command: 
     @{text "concrete_definition name [attribs] for params uses thm is patterns"}
   where @{text "attribs"}, @{text "for"}, and @{text "is"}-parts are optional.
@@ -806,7 +806,7 @@ text {*
   Attribute: @{text "cd_patterns pats"}. Declaration attribute. Declares
     default patterns for the @{text "concrete_definition"} command.
   
-*}
+\<close>
 
 declare [[ cd_patterns "_ = \<hole>" "_ == \<hole>" ]]
 
@@ -816,7 +816,7 @@ ML_val \<open>val x:binding = Binding.empty\<close>
 
 ML_val \<open>@{binding foo}\<close>
 
-ML {* 
+ML \<open> 
   let
     val modes = (Scan.optional
      (@{keyword "("} |-- Parse.list1 (Parse.position Args.name) --| @{keyword ")"}) [])
@@ -833,16 +833,16 @@ ML {*
       end)
     )
   end
-*}
+\<close>
 
-text {* 
+text \<open> 
   Command: 
     @{text "prepare_code_thms (modes) thm"}
   where the @{text "(mode)"}-part is optional.
 
   Set up code-equations for recursions in constant defined by @{text "thm"}.
   The optional @{text "modes"} is a comma-separated list of extraction modes.
-*}
+\<close>
 
 text \<open>Example setup for option monad fixed points\<close>
 
@@ -865,13 +865,13 @@ ML_val \<open>
   
 declaration \<open>K (Definition_Utils.declare_extraction_group @{binding option} #> snd)\<close>
   
-declaration {* fn _ =>
+declaration \<open> fn _ =>
   Definition_Utils.add_extraction ("option",\<^here>) {
     pattern = Logic.varify_global @{term "option.fixp_fun x"},
     gen_thm = @{thm gen_code_thm_option_fixp},
     gen_tac = Partial_Function.mono_tac
   }
-*}
+\<close>
 
   definition "option_fixp_extraction_test m n = option.fixp_fun (\<lambda>D x. 
     if x\<le>(0::int) then 
@@ -893,7 +893,7 @@ val _ = Theory.setup
       (fn (ctxt, name) => ML_Syntax.print_string (Definition_Utils.check_extraction_group ctxt name))));
 \<close>  
 
-text {* 
+text \<open> 
   Command: 
     @{text "synth_definition binding [def_attrs] is [ref_attrs]: term"}
   where the @{text "(def_attrs)"} and @{text "(ref_attrs)"} parts are optional.
@@ -905,7 +905,7 @@ text {*
   
   The \<open>def_attrs\<close> are applied to the definition theorem, the \<open>ref_attrs\<close> to 
   the refinement theorem.
-*}
+\<close>
   
   
 ML \<open>
