@@ -3,6 +3,11 @@ theory Refine_Monadic_Add
 imports Refine_Monadic_Thin
 begin
 
+  lemma bind_res_singleton[simp]: "bind (RES {x}) f = f x"
+    by (auto simp: pw_eq_iff refine_pw_simps)
+
+
+
   lemma option_rel_inv_conv:
     "(x,Some v')\<in>\<langle>V\<rangle>option_rel \<longleftrightarrow> (\<exists>v. x=Some v \<and> (v,v')\<in>V)"
     "(Some v,x')\<in>\<langle>V\<rangle>option_rel \<longleftrightarrow> (\<exists>v'. x'=Some v' \<and> (v,v')\<in>V)"
@@ -68,6 +73,23 @@ lemma monadic_WHILEIT_unfold:
 
 
 
+(* TODO: Move *)
+lemma WHILEIT_refine_new_invar':
+  assumes R0: "I' x' \<Longrightarrow> (x,x')\<in>R"
+  assumes INV0: "\<lbrakk> I' x'; (x,x')\<in>R \<rbrakk> \<Longrightarrow> I x"
+  assumes COND_REF: "\<And>x x'. \<lbrakk> (x,x')\<in>R; I x; I' x' \<rbrakk> \<Longrightarrow> b x = b' x'"
+  assumes STEP_REF: 
+    "\<And>x x'. \<lbrakk> (x,x')\<in>R; b x; b' x'; I x; I' x' \<rbrakk> \<Longrightarrow> f x \<le> \<Down>R (f' x')"
+  assumes STEP_INV: 
+    "\<And>x x'. \<lbrakk> (x,x')\<in>R; b x; b' x'; I x; I' x' \<rbrakk> \<Longrightarrow> f x \<le>\<^sub>n SPEC I"
+  shows "WHILEIT I b f x \<le>\<Down>R (WHILEIT I' b' f' x')"
+  apply (rule WHILEIT_refine_genR[where 
+    I=I and I'=I' and x'=x' and x=x and R=R and b=b and b'=b' and f'=f' and f=f
+    and R'="{ (c,a). (c,a)\<in>R \<and> I c }"
+    ])
+  using assms STEP_INV[THEN leofD[rotated]]
+  by (auto intro: add_invar_refineI)
+  
 
 
 abbreviation (do_notation) bind_doN where "bind_doN \<equiv> Refine_Basic.bind"
@@ -105,5 +127,37 @@ translations
 
 
 
+lemma Nil_eq_upt_conv: "[] = [l..<h] \<longleftrightarrow> l\<ge>h"
+  by (metis upt_eq_Nil_conv zero_le)
 
+lemma eq_upt_Cons_conv: "ll#xs = [l..<h] \<longleftrightarrow> (l<h \<and> ll=l \<and> xs = [l+1..<h])"
+  by (metis upt_eq_Cons_conv)
+  
+(* TODO: Move! Ultimately, we want sepref-rules and a foreach-statement *)  
+lemma nfoldli_upt_by_while:
+  "nfoldli [l..<h] c f \<sigma> =
+  doN { (_,\<sigma>)\<leftarrow>WHILET (\<lambda>(i,\<sigma>). i<h \<and> c \<sigma>) (\<lambda>(i,\<sigma>). doN { \<sigma> \<leftarrow> f i \<sigma>; ASSERT (i<h); RETURN (i+1,\<sigma>) }) (l,\<sigma>); RETURN \<sigma> }
+  "
+proof (induction "[l..<h]" arbitrary: l \<sigma>)
+  case Nil thus ?case
+    apply (simp add: Nil_eq_upt_conv)
+    apply (subst WHILET_unfold)
+    by simp
+next
+  case (Cons ll xs)
+  
+  from Cons.hyps(2)[symmetric] have [simp]: "l<h" and [simp]: "ll=l" "[l..<h] = l#[l+1..<h]" "xs=[l+1..<h]"
+    by (auto simp: upt_eq_Cons_conv)
+  
+  note IH = Cons.hyps(1)[of "Suc l",simplified,abs_def]  
+    
+  from Cons.hyps(2) show ?case
+    apply (subst WHILET_unfold)
+    apply (auto simp add: IH)
+    done
+    
+qed    
+
+ 
+  
 end

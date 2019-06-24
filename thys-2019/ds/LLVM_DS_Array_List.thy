@@ -87,13 +87,13 @@ begin
   }"
   
 
-  definition arl_nth :: "('a::llvm_rep,'l::len2) array_list \<Rightarrow> 'l word \<Rightarrow> 'a llM"
+  definition arl_nth :: "('a::llvm_rep,'l::len2) array_list \<Rightarrow> 'll::len2 word \<Rightarrow> 'a llM"
     where [llvm_code,llvm_inline]: "arl_nth al i \<equiv> doM {
       let (l,c,a) = al;
       array_nth a i
     }"
     
-  definition arl_upd :: "('a::llvm_rep,'l::len2) array_list \<Rightarrow> 'l word \<Rightarrow> 'a \<Rightarrow> ('a,'l) array_list llM"
+  definition arl_upd :: "('a::llvm_rep,'l::len2) array_list \<Rightarrow> 'll::len2 word \<Rightarrow> 'a \<Rightarrow> ('a,'l) array_list llM"
     where [llvm_code,llvm_inline]: "arl_upd al i x \<equiv> doM {
       let (l,c,a) = al;
       array_upd a i x;

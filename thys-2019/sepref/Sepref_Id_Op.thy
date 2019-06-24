@@ -119,7 +119,7 @@ lemma unprotect_rl1: "ID (PR_CONST x) t T \<Longrightarrow> ID (UNPROTECT x) t T
   by simp
 
 subsection \<open> ML-Level code \<close>
-ML {*
+ML \<open>
 infix 0 THEN_ELSE_COMB'
 
 signature ID_OP_TACTICAL = sig
@@ -158,7 +158,7 @@ structure Id_Op_Tactical :ID_OP_TACTICAL = struct
   end
 
 end
-*}
+\<close>
 
 
 named_theorems_rev id_rules "Operation identification rules"
@@ -167,7 +167,7 @@ named_theorems_rev def_pat_rules "Definite operation pattern rules (not backtrac
 
 
 
-ML {*
+ML \<open>
 
   structure Id_Op = struct
 
@@ -323,7 +323,7 @@ ML {*
 
   end
 
-*}
+\<close>
 
 subsection \<open>Default Setup\<close>
 

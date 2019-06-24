@@ -79,7 +79,7 @@ lemma vassn_tagI: "\<Gamma> h \<Longrightarrow> vassn_tag \<Gamma>"
 
 lemma vassn_dest[dest!]:
   "vassn_tag (\<Gamma>\<^sub>1 ** \<Gamma>\<^sub>2) \<Longrightarrow> vassn_tag \<Gamma>\<^sub>1 \<and> vassn_tag \<Gamma>\<^sub>2"
-  "vassn_tag (hn_ctxt R a b) \<Longrightarrow> a\<in>rdom R"
+  "vassn_tag (hn_ctxt R a b) \<Longrightarrow> rdomp R a"
   unfolding vassn_tag_def hn_ctxt_def rdomp_def[abs_def]
   by (auto simp: sep_conj_def)
 
@@ -646,7 +646,7 @@ lemma to_import_frefD:
 
 lemma add_PR_CONST: "(c,a)\<in>R \<Longrightarrow> (c,PR_CONST a)\<in>R" by simp
 
-ML {*
+ML \<open>
 structure Sepref_Import_Param = struct
 
   (* TODO: Almost clone of Sepref_Rules.to_foparam*)
@@ -720,7 +720,7 @@ structure Sepref_Import_Param = struct
         "Sepref: Parametricity to hnr-rule, no conversion to hfref"    
 
 end
-*}
+\<close>
 
 setup Sepref_Import_Param.setup
 

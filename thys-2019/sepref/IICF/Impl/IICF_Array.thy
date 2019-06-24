@@ -133,6 +133,7 @@ abbreviation larray_assn'
   where
   "larray_assn' _ == larray_assn"
 
+type_synonym ('x,'l) larray = "'l word \<times> 'x ptr"
 
 lemma larray1_rel_prenorm: "((n, xs), ys) \<in> larray1_rel \<longleftrightarrow> n = length ys \<and> xs=ys"  
   by (auto simp: larray1_rel_def in_br_conv)

@@ -334,6 +334,56 @@ proof -
 qed    
   
 type_synonym ('vl,'wl) wu3 = "('vl,'vl word \<times> 'wl word,'vl) array_array_list"
+
+(* TODO: Move *)
+lemma hfref_postcondI:
+  assumes POST: "\<And>args. \<lbrakk>P args; rdomp (snd A) args\<rbrakk> \<Longrightarrow> f args \<le>\<^sub>n SPEC (Q args)"
+  assumes REF: "(fi,f) \<in> [P]\<^sub>a\<^sub>d A \<rightarrow> (\<lambda>x. B x)"
+  shows "(fi,f) \<in> [P]\<^sub>a\<^sub>d A \<rightarrow> (\<lambda>x. b_assn (B x) (Q x))"
+proof -
+  note [vcg_rules] = REF[THEN hfrefD, THEN hn_refineD]
+
+  from POST have AUX[intro]: "Q args res" 
+    if  "P args" "nofail (f args)" "RETURN res \<le> f args" 
+    and "pure_part (B args res resi)" "pure_part (snd A args argsi)" 
+    for args argsi res resi
+    using that
+    by (auto simp: pw_leof_iff pw_le_iff rdomp_conv_pure_part)
+  
+  note [dest!] = pure_part_split_conj
+    
+  show ?thesis
+    by sepref_to_hoare vcg
+
+qed      
+
+(* TODO: Move *)
+lemma rdomp_invalid_simp[simp]: "rdomp (invalid_assn P) x = rdomp P x"
+  by (auto simp: invalid_assn_def rdomp_conv_pure_part sep_algebra_simps pred_lift_extract_simps)
+  
+definition "wu_constrain_len_rel N \<equiv> b_rel Id (\<lambda>xss. length xss=N)"
+  
+lemma wu2_empty_clen_refine: "(wu2_empty, wu2_empty)\<in>nat_rel \<rightarrow>\<^sub>f\<^sub>d wu_constrain_len_rel"
+  apply rule
+  by (auto simp: wu_constrain_len_rel_def wu2_empty_def)
+
+lemma wu2_ins_edge_clen_refine: 
+  "(wu2_ins_edge, wu2_ins_edge) \<in> nat_rel \<times>\<^sub>r nat_rel \<rightarrow> Id \<rightarrow> wu_constrain_len_rel N \<rightarrow> \<langle>wu_constrain_len_rel N\<rangle>nres_rel"  
+  unfolding wu2_ins_edge_def wu_constrain_len_rel_def
+  by (auto simp: pw_nres_rel_iff refine_pw_simps)
+
+lemma wu2_adjs_len_clen_refine: "(wu2_adjs_len, wu2_adjs_len) \<in> nat_rel \<rightarrow> wu_constrain_len_rel N \<rightarrow> \<langle>nat_rel\<rangle>nres_rel"
+  unfolding wu_constrain_len_rel_def
+  by (auto intro!: nres_relI)
+
+lemma wu2_adjs_nth_clen_refine: "(wu2_adjs_nth,wu2_adjs_nth) \<in> nat_rel \<rightarrow> nat_rel \<rightarrow> wu_constrain_len_rel N \<rightarrow> \<langle>nat_rel \<times>\<^sub>r Id\<rangle>nres_rel"
+  unfolding wu_constrain_len_rel_def
+  by (auto intro!: nres_relI)
+
+lemma wu2_max_clen_refine: "(wu2_max, wu2_max)\<in>wu_constrain_len_rel N \<rightarrow> nat_rel"  
+  unfolding wu_constrain_len_rel_def
+  by (auto intro!: nres_relI)
+      
   
 context 
   fixes VL :: "'vl::len2 itself"
@@ -345,44 +395,54 @@ begin
   definition wu3_assn :: "_ \<Rightarrow> ('vl,'wl) wu3 \<Rightarrow> assn"
     where "wu3_assn \<equiv> aal_assn' TYPE('vl) TYPE('vl) (V_assn \<times>\<^sub>a W_assn)"
   
+  definition "wu_assn N = hr_comp local.wu3_assn (wu_constrain_len_rel N)"
+    
   sepref_register wu2_empty wu2_ins_edge wu2_adjs_len wu2_adjs_nth
   
-  sepref_definition wu3_empty is "RETURN o wu2_empty" 
-    :: "[\<lambda>_. 4<LENGTH('vl)]\<^sub>a (snat_assn' TYPE('vl))\<^sup>k \<rightarrow> wu3_assn"
-    unfolding wu2_empty_def wu3_assn_def
-    apply (rewrite aal_fold_custom_empty)
-    by sepref
-  lemmas [sepref_fr_rules] = wu3_empty.refine  
-    
-  sepref_definition wu3_ins_edge is "uncurry2 wu2_ins_edge" 
-    :: "(V_assn \<times>\<^sub>a V_assn)\<^sup>k *\<^sub>a W_assn\<^sup>k *\<^sub>a wu3_assn\<^sup>d \<rightarrow>\<^sub>a wu3_assn"
-    unfolding wu2_ins_edge_def wu3_assn_def
-    supply [dest!] = rdomp_aal_assnD
-    by sepref
-  lemmas [sepref_fr_rules] = wu3_ins_edge.refine  
 
-  sepref_definition wu3_max is "RETURN o wu2_max" :: "wu3_assn\<^sup>k \<rightarrow>\<^sub>a V_assn"
-    unfolding wu2_max_def wu3_assn_def
-    apply (rewrite op_list_list_len_def[symmetric]) (* TODO: list_list is a proper subtype of list. So share operations! *)
-    by sepref
-  lemmas [sepref_fr_rules] = wu3_max.refine  
+  context 
+    notes [fcomp_norm_unfold] = wu_assn_def[symmetric]
+  begin
+    
+    sepref_definition wu3_empty [llvm_code,llvm_inline] is "RETURN o wu2_empty" 
+      :: "[\<lambda>_. 4<LENGTH('vl)]\<^sub>a (snat_assn' TYPE('vl))\<^sup>k \<rightarrow> wu3_assn"
+      unfolding wu2_empty_def wu3_assn_def
+      apply (rewrite aal_fold_custom_empty)
+      by sepref
       
-  sepref_definition wu3_adjs_len is "uncurry wu2_adjs_len"  
-    :: "V_assn\<^sup>k *\<^sub>a wu3_assn\<^sup>k \<rightarrow>\<^sub>a V_assn"
-    unfolding wu2_adjs_len_def wu3_assn_def
-    by sepref
-  lemmas [sepref_fr_rules] = wu3_adjs_len.refine  
+    lemmas [sepref_fr_rules] = wu3_empty.refine[FCOMP wu2_empty_clen_refine]
+      
     
-  sepref_definition wu3_adjs_nth is "uncurry2 wu2_adjs_nth"  
-    :: "V_assn\<^sup>k *\<^sub>a V_assn\<^sup>k *\<^sub>a wu3_assn\<^sup>k \<rightarrow>\<^sub>a V_assn\<times>\<^sub>aW_assn"
-    unfolding wu2_adjs_nth_def wu3_assn_def
-    by sepref
-  lemmas [sepref_fr_rules] = wu3_adjs_nth.refine  
-
+    sepref_definition wu3_ins_edge [llvm_code,llvm_inline] is "uncurry2 wu2_ins_edge" 
+      :: "(V_assn \<times>\<^sub>a V_assn)\<^sup>k *\<^sub>a W_assn\<^sup>k *\<^sub>a wu3_assn\<^sup>d \<rightarrow>\<^sub>a wu3_assn"
+      unfolding wu2_ins_edge_def wu3_assn_def
+      supply [dest!] = rdomp_aal_assnD
+      by sepref
+      
+    lemmas [sepref_fr_rules] = wu3_ins_edge.refine[FCOMP wu2_ins_edge_clen_refine]  
+  
+    sepref_definition wu3_max [llvm_code,llvm_inline] is "RETURN o wu2_max" :: "wu3_assn\<^sup>k \<rightarrow>\<^sub>a V_assn"
+      unfolding wu2_max_def wu3_assn_def
+      apply (rewrite op_list_list_len_def[symmetric]) (* TODO: list_list is a proper subtype of list. So share operations! *)
+      by sepref
+    lemmas [sepref_fr_rules] = wu3_max.refine[FCOMP wu2_max_clen_refine]
+        
+    sepref_definition wu3_adjs_len [llvm_code,llvm_inline] is "uncurry wu2_adjs_len"  
+      :: "V_assn\<^sup>k *\<^sub>a wu3_assn\<^sup>k \<rightarrow>\<^sub>a V_assn"
+      unfolding wu2_adjs_len_def wu3_assn_def
+      by sepref
+    lemmas [sepref_fr_rules] = wu3_adjs_len.refine[FCOMP wu2_adjs_len_clen_refine]  
+      
+    sepref_definition wu3_adjs_nth [llvm_code,llvm_inline] is "uncurry2 wu2_adjs_nth"  
+      :: "V_assn\<^sup>k *\<^sub>a V_assn\<^sup>k *\<^sub>a wu3_assn\<^sup>k \<rightarrow>\<^sub>a V_assn\<times>\<^sub>aW_assn"
+      unfolding wu2_adjs_nth_def wu3_assn_def
+      by sepref
+    lemmas [sepref_fr_rules] = wu3_adjs_nth.refine[FCOMP wu2_adjs_nth_clen_refine]  
+  end
 end    
 
-abbreviation wu3_assn' :: "'vl::len2 itself \<Rightarrow> 'wl::len2 itself \<Rightarrow> _ \<Rightarrow> ('vl,'wl) wu3 \<Rightarrow> assn"
-  where "wu3_assn' _ _ \<equiv> wu3_assn"
+abbreviation wu_assn' :: "'vl::len2 itself \<Rightarrow> 'wl::len2 itself \<Rightarrow> _ \<Rightarrow> _ \<Rightarrow> ('vl,'wl) wu3 \<Rightarrow> assn"
+  where "wu_assn' _ _ \<equiv> wu_assn"
 
 
 end

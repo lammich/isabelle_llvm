@@ -270,9 +270,9 @@ lemma uint_bin_ops_arith:
 
 (* TODO: Remove preconditions! *)
 lemma uint_bin_ops_bitwise:
-  "uint.is_bin_op' ll_and (AND) (AND)" 
-  "uint.is_bin_op' ll_or (OR) (OR)" 
-  "uint.is_bin_op' ll_xor (XOR) (XOR)" 
+  "uint.is_bin_op (\<lambda>_ _ _. True) ll_and (AND) (AND)" 
+  "uint.is_bin_op (\<lambda>_ _ _. True) ll_or (OR) (OR)" 
+  "uint.is_bin_op (\<lambda>_ _ _. True) ll_xor (XOR) (XOR)" 
   by (all \<open>prove_uint_op simp: uint_and uint_or uint_xor\<close>)
 
 lemmas uint_bin_ops = uint_bin_ops_arith uint_bin_ops_bitwise
@@ -352,6 +352,12 @@ lemma unat_bin_ops:
   "unat.is_bin_op (\<lambda>_ a b. b\<noteq>0) ll_urem (mod) (mod)"
   by (all \<open>prove_unat_op simp: unat_mult_lem unat_neq_ZD unat_div unat_mod\<close>)
 
+lemma unat_bin_ops_bitwise:
+  "unat.is_bin_op (\<lambda>_ _ _. True) ll_and (AND) (AND)" 
+  "unat.is_bin_op (\<lambda>_ _ _. True) ll_or (OR) (OR)" 
+  "unat.is_bin_op (\<lambda>_ _ _. True) ll_xor (XOR) (XOR)" 
+  by (all \<open>prove_unat_op simp: unat_and unat_or unat_xor\<close>)
+  
 lemma unat_cmp_ops: 
   "unat.is_cmp_op ll_icmp_eq (=) (=)" 
   "unat.is_cmp_op ll_icmp_ne (\<noteq>) (\<noteq>)"

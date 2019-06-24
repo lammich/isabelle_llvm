@@ -4,6 +4,7 @@ imports "Separation_Algebra.Sep_Tactics"
 begin
 
 no_notation pred_K ("\<langle>_\<rangle>")
+hide_const (open) Separation_Algebra.pure
 
 subsection \<open>Simp-Lemmas for Separation Algebra\<close>
 

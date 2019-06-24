@@ -8,12 +8,6 @@ imports
   "../../sepref/IICF/Impl/Heaps/IICF_Impl_Heapmap"
 begin
 
-(* TODO: Move *)
-  thm nres_monad_laws
-  lemma bind_res_singleton[simp]: "bind (RES {x}) f = f x"
-    by (auto simp: pw_eq_iff refine_pw_simps)
-    
-
   (* TODO: Move! *)
   definition "combf X f\<^sub>1 f\<^sub>2 x \<equiv> if x\<in>X then f\<^sub>1 x else f\<^sub>2 x"
   
@@ -924,6 +918,7 @@ context Prim2 begin
     (\<lambda>(Q,\<pi>). do { 
       u \<leftarrow> min_Q_spec Q; 
       (Q,\<pi>) \<leftarrow> SPEC (upd_Q\<pi>_spec u Q \<pi>);
+      ASSERT (Q u \<noteq> \<infinity>);
       let Q = Q(u:=\<infinity>);
       RETURN (Q,\<pi>) 
     })
@@ -940,6 +935,9 @@ context Prim2 begin
     by auto
     
   
+  lemma Qinter_init_r_defined: "Qinter initQ init\<pi> r r \<noteq> \<infinity>"  
+    by (auto simp: Qinter_def)
+    
   lemma prim2_refine: "prim2 \<le>\<Down>p21_rel prim1"
   proof -
     have [simp]: "initQ \<noteq> (\<lambda>_. \<infinity>)" by (auto simp: initQ_def fun_eq_iff zero_enat_def)
@@ -951,6 +949,7 @@ context Prim2 begin
       subgoal by (auto simp add: initQ_def fun_eq_iff zero_enat_def)
       subgoal 
         apply refine_vcg 
+        using Qinter_init_r_defined
         apply (auto simp: p21_rel_def in_br_conv A_one_step_after_init
           invar2_init_init maintain_invar2_first_step(1)) 
         done  
@@ -961,7 +960,7 @@ context Prim2 begin
         done
       subgoal
         apply (clarsimp simp: p21_rel_def in_br_conv pw_le_iff refine_pw_simps)
-        by (metis Prim_Invar2_ctd_loc.Q_min_light_edge' Prim_Invar2_ctd_loc.intro insert_is_Un maintain_invar2_ctd(1))
+        by (smt Prim2.Qinter_def Prim_Invar2_ctd_loc.Q_min_light_edge' Prim_Invar2_ctd_loc.intro Prim_Invar2_ctd_loc.maintain_invar_ctd(1) Un_insert_left sup_bot.left_neutral)
       done
   qed    
   
@@ -1021,6 +1020,7 @@ context Prim2 begin
     (\<lambda>(Q,\<pi>). do { 
       u \<leftarrow> min_Q_spec Q; 
       (Q,\<pi>) \<leftarrow> upd_Q\<pi>_loop u Q \<pi>;
+      ASSERT (Q u \<noteq> \<infinity>);
       let Q = Q(u:=\<infinity>);
       RETURN (Q,\<pi>) 
     })
@@ -1092,7 +1092,7 @@ context Prim2 begin
       (\<lambda>(Q,\<pi>). doN { 
         (u,_) \<leftarrow> mop_pm_peek_min id Q;
         (Q,\<pi>) \<leftarrow> upd_Q\<pi>_loop2 u Q \<pi>;
-        Q \<leftarrow> mop_map_delete u Q;
+        Q \<leftarrow> mop_map_delete_ex u Q;
         RETURN (Q,\<pi>) 
       })
       (Q,op_map_empty)
@@ -1104,11 +1104,14 @@ context Prim2 begin
     apply (auto simp: min_Q_spec_def pw_le_iff refine_pw_simps in_br_conv Qpm_empty Qpm_Some)
     by (metis enat_ile enat_ord_simps(1) linear)
     
-  lemma Qpm_delete_refine: "\<lbrakk> (Qi,Q)\<in>Qpm_rel; (ki,k)\<in>Id \<rbrakk> \<Longrightarrow> mop_map_delete ki Qi
+  lemma Qpm_delete_refine: "\<lbrakk> (Qi,Q)\<in>Qpm_rel; (ki,k)\<in>Id; Q k \<noteq> \<infinity> \<rbrakk> \<Longrightarrow> mop_map_delete_ex ki Qi
        \<le> SPEC (\<lambda>Qi'. (Qi', Q(k := \<infinity>))
                     \<in> Qpm_rel)"  
+    apply clarsimp                    
+    apply refine_vcg
+    subgoal by (simp add: Qpm_Some domIff) 
     apply (clarsimp simp: Qpm_rel_def in_br_conv split: option.split)
-    subgoal for x
+    subgoal for _ x
       apply (drule fun_relD[OF _ IdI[of x]])
       by (auto simp: in_br_conv)
     done
@@ -1126,30 +1129,10 @@ context Prim2 begin
   lemma prim4_refine: "prim4 \<le> \<Down>(Qpm_rel\<times>\<^sub>rId) prim3"  
     unfolding prim4_def prim3_def
     apply (refine_rcg peek_min_refine Qpm_delete_refine)
-    by (auto simp: Qpm_init_refine init\<pi>_def Qpm_is_empty_refine in_br_conv)
+    apply (auto simp: Qpm_init_refine init\<pi>_def Qpm_is_empty_refine in_br_conv)
+    done
     
 end
-
-(* TODO: Move *)
-lemma WHILEIT_refine_new_invar':
-  assumes R0: "I' x' \<Longrightarrow> (x,x')\<in>R"
-  assumes INV0: "\<lbrakk> I' x'; (x,x')\<in>R \<rbrakk> \<Longrightarrow> I x"
-  assumes COND_REF: "\<And>x x'. \<lbrakk> (x,x')\<in>R; I x; I' x' \<rbrakk> \<Longrightarrow> b x = b' x'"
-  assumes STEP_REF: 
-    "\<And>x x'. \<lbrakk> (x,x')\<in>R; b x; b' x'; I x; I' x' \<rbrakk> \<Longrightarrow> f x \<le> \<Down>R (f' x')"
-  assumes STEP_INV: 
-    "\<And>x x'. \<lbrakk> (x,x')\<in>R; b x; b' x'; I x; I' x' \<rbrakk> \<Longrightarrow> f x \<le>\<^sub>n SPEC I"
-  shows "WHILEIT I b f x \<le>\<Down>R (WHILEIT I' b' f' x')"
-  apply (rule WHILEIT_refine_genR[where 
-    I=I and I'=I' and x'=x' and x=x and R=R and b=b and b'=b' and f'=f' and f=f
-    and R'="{ (c,a). (c,a)\<in>R \<and> I c }"
-    ])
-  using assms STEP_INV[THEN leofD[rotated]]
-  by (auto intro: add_invar_refineI)
-  
-
-
-
 
 
 locale Prim5 = Prim2 w g r for w :: "nat set \<Rightarrow> nat" and g r + 
@@ -1194,127 +1177,96 @@ begin
     
     
   definition "prim5 \<equiv> doN {
-    Q \<leftarrow> HM.mop_hm_empty (wu2_max g2);
+    let Nn = wu2_max g2;
+    Q \<leftarrow> HM.mop_hm_empty Nn;
     ASSERT (r<N);
     let Q = op_map_update r 0 Q;
-    \<pi> \<leftarrow> mop_am_custom_empty (wu2_max g2);
+    \<pi> \<leftarrow> mop_am_custom_empty Nn;
     WHILEIT (\<lambda>(Q,\<pi>). dom Q \<subseteq> {0..<N})
       (\<lambda>(Q,\<pi>). \<not>op_map_is_empty Q) 
       (\<lambda>(Q,\<pi>). doN { 
         (u,_) \<leftarrow> mop_pm_peek_min id Q;
         (Q,\<pi>) \<leftarrow> upd_Q\<pi>_loop3 u Q \<pi>;
         ASSERT (u<N);
-        Q \<leftarrow> mop_map_delete u Q;
+        Q \<leftarrow> mop_map_delete_ex u Q;
         RETURN (Q,\<pi>) 
       })
       (Q,\<pi>)
     }
     "
 
-  context
-    assumes G_REL: "(g2,(g,w))\<in>wu_rel N"
-    assumes R_ND: "r<N"
-  begin    
-    
-    private lemma wu2_adjs_nth_bound: "wu2_adjs_nth u i g2 \<le>\<^sub>n SPEC (\<lambda>(v,d). v<N)"
-      unfolding wu2_adjs_nth_def
-      apply refine_vcg
-      using G_REL
-      unfolding wu_rel_def wu2_invar_def
-      apply (auto simp: Let_def)
-      by (metis atLeastLessThan_iff fst_image_mp nth_mem)
-  
-  
-    method Q\<pi>3_refine = (rule bind_refine; Q\<pi>3_refine | rule nfoldli_refine)?
-    lemma upd_Q\<pi>_loop3_refine[refine]:
-      assumes "(ui,u)\<in>Id" "(Qi,Q)\<in>Id" "(\<pi>i,\<pi>)\<in>Id" "u<N"
-      shows "upd_Q\<pi>_loop3 ui Qi \<pi>i \<le>\<Down> Id (upd_Q\<pi>_loop2 u Q \<pi>)"
-      apply (simp add: assms(1-3)[simplified])
-      apply (rule order_trans[rotated])
-      unfolding upd_Q\<pi>_loop2_def
-      apply (rule iterate_adjs_refine_aux[OF G_REL])
-      apply fact
-      unfolding upd_Q\<pi>_loop3_def
-      apply (rule refine_IdD)
-      (* TODO: A more flexible refine_rcg tactic might save us from this manual rule applications *)
-      apply Q\<pi>3_refine
-      apply refine_dref_type
-      supply conc_Id[simp del]
-      apply (clarsimp_all simp: refine_IdI[OF order_refl])
-      apply (rule bind_refine')
-      apply (rule refine_IdI[OF order_refl])
-      apply (clarsimp split del: if_split)
-      apply (rule if_refine)
-      apply simp
-      apply simp
-      apply (rule ASSERT_refine_left)
-      subgoal using wu2_adjs_nth_bound by (auto simp: pw_leof_iff)
-      subgoal by (auto simp: pw_le_iff refine_pw_simps split: option.splits)
-      done
-      
-    lemma N_len_eq: "N=length g2" using G_REL by (auto simp: wu_rel_def Let_def)
-    
-    lemma prim5_refine: "prim5 \<le>\<Down>Id prim4"  
-      unfolding prim4_def prim5_def Let_def
-      apply (rewrite in "_ \<le> \<Down>_ \<hole>" WHILET_def)
-      apply (simp del: conc_Id)
-      apply (refine_vcg bind_refine' WHILEIT_refine_new_invar')
-      
-      apply (clarsimp_all split: if_splits simp: R_ND)
-      subgoal by auto
-      subgoal by auto
-      subgoal        
-        unfolding upd_Q\<pi>_loop3_def wu2_adjs_len_def wu2_adjs_nth_def
-        apply (refine_vcg nfoldli_leof_rule[where I="\<lambda>_ _ (Q,\<pi>). dom Q \<subseteq> {0..<N}"])
-        apply (clarsimp_all split: if_splits)
-        apply (auto simp: N_len_eq)
-        (*apply (auto simp: wu2_invar_def) 
-        by (metis (mono_tags, hide_lams) atLeastLessThan_iff img_fst nth_mem subsetD)
-        *)
-        done
-      done
+end
 
-  end    
-end    
-
-lemma Nil_eq_upt_conv: "[] = [l..<h] \<longleftrightarrow> l\<ge>h"
-  by (metis upt_eq_Nil_conv zero_le)
-
-lemma eq_upt_Cons_conv: "ll#xs = [l..<h] \<longleftrightarrow> (l<h \<and> ll=l \<and> xs = [l+1..<h])"
-  by (metis upt_eq_Cons_conv)
-  
-(* TODO: Move! Ultimately, we want sepref-rules and a foreach-statement *)  
-lemma nfoldli_upt_by_while:
-  "nfoldli [l..<h] c f \<sigma> =
-  doN { (_,\<sigma>)\<leftarrow>WHILET (\<lambda>(i,\<sigma>). i<h \<and> c \<sigma>) (\<lambda>(i,\<sigma>). doN { \<sigma> \<leftarrow> f i \<sigma>; ASSERT (i<h); RETURN (i+1,\<sigma>) }) (l,\<sigma>); RETURN \<sigma> }
-  "
-proof (induction "[l..<h]" arbitrary: l \<sigma>)
-  case Nil thus ?case
-    apply (simp add: Nil_eq_upt_conv)
-    apply (rewrite WHILET_unfold)
-    by simp
-next
-  case (Cons ll xs)
-  
-  from Cons.hyps(2)[symmetric] have [simp]: "l<h" and [simp]: "ll=l" "[l..<h] = l#[l+1..<h]" "xs=[l+1..<h]"
-    by (auto simp: upt_eq_Cons_conv)
-  
-  note IH = Cons.hyps(1)[of "Suc l",simplified,abs_def]  
+locale Prim5_prf = Prim5 +    
+  assumes G_REL: "(g2,(g,w))\<in>wu_rel N"
+  assumes R_ND: "r<N"
+begin    
     
-  from Cons.hyps(2) show ?case
-    apply (rewrite WHILET_unfold)
-    apply (auto simp add: IH)
+  lemma wu2_adjs_nth_bound: "wu2_adjs_nth u i g2 \<le>\<^sub>n SPEC (\<lambda>(v,d). v<N)"
+    unfolding wu2_adjs_nth_def
+    apply refine_vcg
+    using G_REL
+    unfolding wu_rel_def wu2_invar_def
+    apply (auto simp: Let_def)
+    by (metis atLeastLessThan_iff fst_image_mp nth_mem)
+
+
+  method Q\<pi>3_refine = (rule bind_refine; Q\<pi>3_refine | rule nfoldli_refine)?
+  lemma upd_Q\<pi>_loop3_refine[refine]:
+    assumes "(ui,u)\<in>Id" "(Qi,Q)\<in>Id" "(\<pi>i,\<pi>)\<in>Id" "u<N"
+    shows "upd_Q\<pi>_loop3 ui Qi \<pi>i \<le>\<Down> Id (upd_Q\<pi>_loop2 u Q \<pi>)"
+    apply (simp add: assms(1-3)[simplified])
+    apply (rule order_trans[rotated])
+    unfolding upd_Q\<pi>_loop2_def
+    apply (rule iterate_adjs_refine_aux[OF G_REL])
+    apply fact
+    unfolding upd_Q\<pi>_loop3_def
+    apply (rule refine_IdD)
+    (* TODO: A more flexible refine_rcg tactic might save us from this manual rule applications *)
+    apply Q\<pi>3_refine
+    apply refine_dref_type
+    supply conc_Id[simp del]
+    apply (clarsimp_all simp: refine_IdI[OF order_refl])
+    apply (rule bind_refine')
+    apply (rule refine_IdI[OF order_refl])
+    apply (clarsimp split del: if_split)
+    apply (rule if_refine)
+    apply simp
+    apply simp
+    apply (rule ASSERT_refine_left)
+    subgoal using wu2_adjs_nth_bound by (auto simp: pw_leof_iff)
+    subgoal by (auto simp: pw_le_iff refine_pw_simps split: option.splits)
     done
     
-qed    
+  lemma N_len_eq: "N=length g2" using G_REL by (auto simp: wu_rel_def Let_def)
+  
+  lemma prim5_refine: "prim5 \<le>\<Down>Id prim4"  
+    unfolding prim4_def prim5_def Let_def
+    apply (rewrite in "_ \<le> \<Down>_ \<hole>" WHILET_def)
+    apply (simp del: conc_Id)
+    apply (refine_vcg bind_refine' WHILEIT_refine_new_invar')
+    
+    apply (clarsimp_all split: if_splits simp: R_ND)
+    subgoal by auto
+    subgoal by auto
+    subgoal        
+      unfolding upd_Q\<pi>_loop3_def wu2_adjs_len_def wu2_adjs_nth_def
+      apply (refine_vcg nfoldli_leof_rule[where I="\<lambda>_ _ (Q,\<pi>). dom Q \<subseteq> {0..<N}"])
+      apply (clarsimp_all split: if_splits)
+      apply (auto simp: N_len_eq)
+      (*apply (auto simp: wu2_invar_def) 
+      by (metis (mono_tags, hide_lams) atLeastLessThan_iff img_fst nth_mem subsetD)
+      *)
+      done
+    done
 
+end    
 
-find_theorems WHILET nfoldli
 
    
 abbreviation "snat32_assn \<equiv> snat_assn' TYPE(32)"
 abbreviation "snat64_assn \<equiv> snat_assn' TYPE(64)"
-abbreviation "wu3_64_assn \<equiv> wu3_assn' TYPE(64) TYPE(64)"
+abbreviation "wu_64_assn \<equiv> wu_assn' TYPE(64) TYPE(64)"
 
 thm Prim5.upd_Q\<pi>_loop3_def
 term Prim5.upd_Q\<pi>_loop3
@@ -1328,7 +1280,20 @@ find_theorems intf_of_assn
 lemma upd_Q\<pi>_loop4_aux1: "a<b \<Longrightarrow> (bi,b)\<in>snat_rel' TYPE('l::len2) \<Longrightarrow> Suc a < max_snat LENGTH('l)"
   by (simp add: less_trans_Suc)
 
-
+lemma wu2_length_simp: "rdomp (wu_assn N) g \<Longrightarrow> length g = N"
+  by (auto simp: wu_assn_def wu_constrain_len_rel_def rdomp_hrcomp_conv)
+  
+  
+sepref_definition upd_Q\<pi>_loop4 [llvm_code] is "uncurry4 (Prim5.upd_Q\<pi>_loop3)"
+  :: "snat64_assn\<^sup>k *\<^sub>a (wu_64_assn N)\<^sup>k *\<^sub>a snat64_assn\<^sup>k *\<^sub>a (hm_assn' TYPE(64) N)\<^sup>d *\<^sub>a (snat_am_assn' TYPE(64) N)\<^sup>d 
+    \<rightarrow>\<^sub>a hm_assn' TYPE(64) N \<times>\<^sub>a snat_am_assn' TYPE(64) N"
+  unfolding Prim5.upd_Q\<pi>_loop3_def nfoldli_upt_by_while PR_CONST_def Prim5.N_def
+  apply (annot_snat_const "TYPE(64)")
+  supply [simp] = less_trans_Suc upd_Q\<pi>_loop4_aux1[where 'l=64, simplified] wu2_length_simp
+  supply [[goals_limit = 1]]
+  by sepref
+  
+(*
 sepref_definition upd_Q\<pi>_loop4 is "uncurry4 (Prim5.upd_Q\<pi>_loop3)"
   :: "[\<lambda>((((r,g),u),Q),\<pi>). N = wu2_max g ]\<^sub>a snat64_assn\<^sup>k *\<^sub>a wu3_64_assn\<^sup>k *\<^sub>a snat64_assn\<^sup>k *\<^sub>a (hm_assn' TYPE(64) N)\<^sup>d *\<^sub>a (snat_am_assn' TYPE(64) N)\<^sup>d 
     \<rightarrow>  hm_assn' TYPE(64) N \<times>\<^sub>a snat_am_assn' TYPE(64) N"
@@ -1337,7 +1302,7 @@ sepref_definition upd_Q\<pi>_loop4 is "uncurry4 (Prim5.upd_Q\<pi>_loop3)"
   supply [simp] = less_trans_Suc upd_Q\<pi>_loop4_aux1[where 'l=64, simplified]
   supply [[goals_limit = 1]]
   by sepref
-  
+*)  
   
 sepref_register Prim5.upd_Q\<pi>_loop3 :: "nat
      \<Rightarrow> (nat \<times> nat) list list
@@ -1346,216 +1311,90 @@ sepref_register Prim5.upd_Q\<pi>_loop3 :: "nat
 lemmas [sepref_fr_rules] = upd_Q\<pi>_loop4.refine
 term Prim5.prim5
 
-lemma eval_wu2max_bind_aux: 
-  "bind_ref_tag x (RETURN $ (wu2_max $ b)) \<Longrightarrow> x = wu2_max b" by (auto simp: bind_ref_tag_def)
+lemma wu2_max_simp: "rdomp (wu_assn N) g \<Longrightarrow> wu2_max g = N"
+  by (auto simp: wu_assn_def wu_constrain_len_rel_def rdomp_hrcomp_conv)
+
+  
+lemma wu2_max_aux: "\<lbrakk>bind_ref_tag x (RETURN $ (wu2_max $ b)); rdomp (wu_assn N) b\<rbrakk> \<Longrightarrow> x=N"  
+  using wu2_max_simp
+  by (auto simp: bind_ref_tag_def)
+  
+  
+thm nres_monad3  
+lemma protected_bind_assoc: "bind$(bind$m$(\<lambda>\<^sub>2x. f x))$(\<lambda>\<^sub>2y. g y) = bind$m$(\<lambda>\<^sub>2x. bind$(f x)$(\<lambda>\<^sub>2y. g y))" by simp
+  
+lemma protected_let_inline: "Let$x$(\<lambda>\<^sub>2y. f y) = f x" by auto
+
+lemma AUX: "hn_refine \<Gamma> c \<Gamma>' R m \<Longrightarrow> TERM \<Gamma>' \<Longrightarrow> hn_refine \<Gamma> c \<Gamma>' R m" by simp
+
+(* TODO: Move *)
+definition BCONST :: "'b \<Rightarrow> 'a \<Rightarrow> 'a" where "BCONST c m \<equiv> m"
+
+lemma annot_BCONST: "m = BCONST c m" by (simp add: BCONST_def)
+
+definition bind_const :: "'a \<Rightarrow> 'a nres \<Rightarrow> ('a \<Rightarrow> 'b nres) \<Rightarrow> 'b nres" 
+  where "bind_const c \<equiv> Refine_Basic.bind"
+
+lemma bind_BCONST_pat[def_pat_rules]: "Refine_Basic.bind$(BCONST$c$m)$f \<equiv> UNPROTECT (bind_const c)$m$f"
+  unfolding BCONST_def bind_const_def by auto
+    
+lemma Let_BCONST_pat[def_pat_rules]: "Let$(BCONST$c$cc)$f \<equiv> UNPROTECT (bind_const c)$(RETURN$cc)$f"
+  unfolding BCONST_def bind_const_def by auto
+
+term "bind_const x"
+
+lemma id_op_bind_const[id_rules]: 
+  "PR_CONST (bind_const c) ::\<^sub>i TYPE('a nres \<Rightarrow> ('a \<Rightarrow> 'b nres) \<Rightarrow> 'b nres)"
+  by simp
+
+  
+    
+lemma hn_bind_const[sepref_comb_rules]:
+  assumes PRE: "vassn_tag \<Gamma> \<Longrightarrow> m \<le> RETURN c"
+  assumes D1: "hn_refine \<Gamma> m' \<Gamma>1 Rh m"
+  assumes D2: 
+    "\<And>x'. m = RETURN c \<Longrightarrow> 
+      hn_refine (hn_ctxt Rh c x' ** \<Gamma>1) (f' x') (\<Gamma>2 x') R (f c)"
+  assumes IMP: "\<And>x'. \<Gamma>2 x' \<turnstile> hn_ctxt Rx c x' ** \<Gamma>'"
+  assumes "MK_FREE Rx fr"
+  shows "hn_refine \<Gamma> (doM {x\<leftarrow>m'; r\<leftarrow>f' x; fr x; return r}) \<Gamma>' R (PR_CONST (bind_const c)$m$(\<lambda>\<^sub>2x. f x))"
+proof (rule hn_refine_vassn_tagI)
+  assume "vassn_tag \<Gamma>"
+  then have X: "m = RETURN c \<and> x=c" if "RETURN x \<le> m" for x
+    using PRE that dual_order.trans by fastforce
+  
+  show ?thesis  
+    unfolding APP_def PROTECT2_def bind_ref_tag_def bind_const_def PR_CONST_def
+    apply (rule hnr_bind[where ?\<Gamma>2.0="\<lambda>x x'. \<up>(x=c) ** G x'" for G])
+    apply fact
+    apply (drule X) apply (clarsimp simp: sep_algebra_simps) apply fact
+    find_theorems entails pred_lift
+    apply (clarsimp simp: entails_lift_extract_simps sep_algebra_simps) apply fact
+    by fact
+    
+qed
 
 
-sepref_definition prim6 is "uncurry Prim5.prim5" 
-  :: "snat64_assn\<^sup>k *\<^sub>a wu3_64_assn\<^sup>k \<rightarrow>\<^sub>a\<^sub>d (\<lambda>(r,g). hm_assn' TYPE(64) (wu2_max g) \<times>\<^sub>a snat_am_assn' TYPE(64) (wu2_max g))"
+thm sepref_fr_rules
+
+find_in_thms Refine_Basic.bind in id_rules
+
+find_theorems op_ASSERT_bind
+
+
+sepref_definition prim6 [llvm_code] is "uncurry Prim5.prim5" 
+  :: "snat64_assn\<^sup>k *\<^sub>a (wu_64_assn N)\<^sup>k \<rightarrow>\<^sub>a (hm_assn' TYPE(64) N \<times>\<^sub>a snat_am_assn' TYPE(64) N)"
   unfolding Prim5.prim5_def Prim5.N_def
   apply (annot_snat_const "TYPE(64)")
-  apply sepref_dbg_keep
-  apply sepref_dbg_trans_step
-  apply sepref_dbg_trans_step
-  apply sepref_dbg_trans_step
-  apply (frule eval_wu2max_bind_aux, hypsubst)
-  apply sepref_dbg_trans_step
-  apply sepref_dbg_trans_step
-  apply sepref_dbg_trans_step
-  apply sepref_dbg_trans_step
-  apply sepref_dbg_trans_step
-  apply sepref_dbg_trans_step
-  apply sepref_dbg_trans_step
-  apply sepref_dbg_trans_step
-  apply sepref_dbg_trans_step
-  apply sepref_dbg_trans_step
-  apply sepref_dbg_trans_step
-  apply sepref_dbg_trans_step
-  apply sepref_dbg_trans_step
-  apply sepref_dbg_trans_step
-  apply sepref_dbg_trans_step
-  apply sepref_dbg_trans_step
-  oops sorry
-  xxx, ctd here
-  apply sepref_dbg_trans_step
-  apply sepref_dbg_trans_step
-  apply sepref_dbg_trans_step
-  apply sepref_dbg_trans_step
-  apply sepref_dbg_trans_step
-  apply sepref_dbg_trans_step
-  apply sepref_dbg_trans_step
+  supply [simp] = wu2_length_simp
+  apply (rewrite at "wu2_max _" annot_BCONST[where c=N])
+  by sepref
+  
+find_in_thms hm_empty_impl in sepref_fr_rules  
   
   
+export_llvm prim6  
   
-  oops
-  apply sepref_dbg_trans_step_keep
-  apply sepref_dbg_frame
-  apply sepref_dbg_frame_step_keep
-  apply sepref_dbg_trans_step
-  apply sepref_dbg_trans_step
-  
-  oops
-  apply sepref_dbg_trans_step_keep
-  
-  find_in_thms HM.mop_hm_empty_fixed in sepref_fr_rules
-  
-  
-  oops
-  xxx, id problem. First guess: custom map-inits!?
-
-
-
-sepref_definition upd_Q\<pi>_loop4 is "uncurry4 Prim5.upd_Q\<pi>_loop3"
-  :: "snat64_assn\<^sup>k *\<^sub>a wu3_assn\<^sup>k *\<^sub>a snat64_assn\<^sup>k *\<^sub>a (hm_assn' TYPE(64))  "
-
-
-oops
-xxx: we need translation or nfoldli to for-loop!
-
- 
-            
-oops
-
-
-
-oops
-again: Prototype setoid rewrite:
-        
-for boolean, show \<Longrightarrow>
-use mono-lemmas
-
-
-   ?a'\<le>a  b\<le>?b'
-------------------  (init-rule)
-      a\<le>b
-
- m\<le>m'  f\<le>f'
------------------------- (bind-rule)     
- bind m f \<le> bind m' f'
-
- 
-  R \<subseteq> R'  f \<le> f'
--------------------- (conc-rule)
-   \<Down>R f \<le> \<Down>R' f'
- 
-     -
------------- (exit-rule)  
-  x \<le> x 
-   
-   
-    
-    find_theorems rdomp
-    
-    oops
-    xxx: rdomp predicates, to infer length bounds on main list and sublists!
-      We have done similar things for array-list already? Reuse!?
-    
-    oops
-    xxx: Argument that there cannot be to many entries!
-    
-    
-    
-    
-oops  
-xxx, ctd here:
-  Refine down to LLVM!
-  Refine iteration by for-loop!
-  
-  
-  
-
-definition wu1_\<alpha>V :: "('w) wugraph1 \<Rightarrow> nat set"
-  where "wu1_\<alpha>V xss \<equiv> fst`\<Union>(set`set xss)"
-
-definition wu1_\<alpha>E :: "('w) wugraph1 \<Rightarrow> (nat\<times>nat) set" 
-  where "wu1_\<alpha>E xss \<equiv> { (i,j). \<exists>w. i<length xss \<and> (j,w)\<in>set (xss!i) }"
-
-definition "wu1_\<alpha>g xss \<equiv> graph (wu1_\<alpha>V xss) (wu1_\<alpha>E xss)"
-
-definition wu1_\<alpha>w :: "'w::zero wugraph1 \<Rightarrow> nat\<times>nat \<Rightarrow> 'w" where "wu1_\<alpha>w xss \<equiv> \<lambda>(u,v). 
-  if u<length xss then 
-    the_default 0 (map_of (xss!u) v)
-  else 0"
-
-definition wu1_invar :: "'w::zero wugraph1 \<Rightarrow> bool" 
-  where "wu1_invar xss \<equiv> let N=length xss in
-    (\<forall>xs\<in>set xss. fst`set xs \<subseteq> {0..<N} \<and> distinct (map fst xs))
-    (\<forall>u<length N. c\<notin>)"
-  
-
-definition wu1_empty :: "nat \<Rightarrow> _ wugraph1" where
-  "wu1_empty N \<equiv> replicate N []"
-        
-(* TODO: Move *)  
-lemma graph_eq_empty_iff[simp]: 
-  "finite V \<Longrightarrow> finite E \<Longrightarrow> 
-    (graph V E = graph_empty \<longleftrightarrow> V={} \<and> E={})
-  \<and> (graph_empty = graph V E \<longleftrightarrow> V={} \<and> E={})"
-  using graph_accs(1) by fastforce
-  
-lemma finite_wu1[simp,intro!]:
-  "finite (wu1_\<alpha>V xss)" 
-  "finite (wu1_\<alpha>E xss)"  
-  unfolding wu1_\<alpha>V_def wu1_\<alpha>E_def
-  subgoal by auto []
-  apply (rule finite_subset[where B="{0..<length xss} \<times> fst`\<Union>(set`set xss)"])
-    subgoal by force
-    subgoal by simp
-  done
-  
-  
-lemma wu1_\<alpha>E_empty[simp]: "wu1_\<alpha>E (replicate N []) = {}"
-  unfolding wu1_\<alpha>E_def by auto
-  
-lemma wu1_empty[simp]:
-  "wu1_invar (wu1_empty N)"  
-  "wu1_\<alpha>g (wu1_empty N) = graph_empty"
-  "wu1_\<alpha>w (wu1_empty N) = (\<lambda>_. 0)"
-  by (auto simp: wu1_empty_def wu1_invar_def wu1_\<alpha>g_def wu1_\<alpha>V_def wu1_\<alpha>w_def)
-  
-term ins_edge  
-  
-definition wu1_ins_edge :: "nat\<times>nat \<Rightarrow> 'w \<Rightarrow> 'w wugraph1 \<Rightarrow> 'w wugraph1 nres" where
-  "wu1_ins_edge \<equiv> \<lambda>(u,v) w xss. 
-    ASSERT (u<length xss \<and> v<length xss \<and> v\<notin>fst`set (xss!u))
-    \<then> RETURN (xss[u:=(v,w)#xss!u])"
-  
-lemma 
-  assumes INV: "wu1_invar xss"
-  assumes PRE: "u<length xss" "v<length xss" "(u,v)\<notin>edges (wu1_\<alpha>g xss)" "u\<noteq>v"
-  shows "wu1_ins_edge (u,v) w xss 
-    \<le> SPEC (\<lambda>xss'. 
-        wu1_invar xss' 
-      \<and> wu1_\<alpha>g xss' = ins_edge (u,v) (wu1_\<alpha>g xss)
-      \<and> wu1_\<alpha>w xss' = (wu1_\<alpha>w xss)((u,v):=w)
-      )"  
-  unfolding wu1_ins_edge_def    
-  apply refine_vcg
-  apply (clarsimp_all simp: assms)
-  subgoal using PRE
-    apply (simp add: wu1_\<alpha>g_def edges_graph)
-    apply (auto simp: wu1_\<alpha>E_def)
-    done
-  subgoal using INV PRE  
-    apply (auto simp: wu1_invar_def)
-    subgoal
-      by (smt atLeastLessThan_iff fst_conv img_fst in_set_upd_cases list.set_cases list_tail_coinc nth_mem subsetD)
-    subgoal
-      by (metis (no_types, lifting) distinct.simps(2) fst_conv image_set in_set_upd_eq list.simps(9) nth_mem)
-    done
-  subgoal
-    apply (subst graph_eq_iff; clarsimp)
-    apply (auto simp: wu1_\<alpha>g_def)
-    xxx: Add irrefl to invariant, this gives better simp-lemmas!
-    
-    
-    find_theorems "edges (graph _ _)"
-  
-  
-   sorry
-  subgoal  sorry
-  subgoal  sorry
-  subgoal  sorry
 
 
 end

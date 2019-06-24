@@ -1,6 +1,6 @@
 section \<open>LLVM like Integer Types with Flexible Bit-Width\<close>
 theory LLVM_Integer
-imports "HOL-Word.Word" "Word_Lib.Word_Lemmas"
+imports "HOL-Word.Word" Bits_Natural "Word_Lib.Word_Lemmas"
 begin
 
 (* TODO: Fix in Word.thy! 
@@ -125,20 +125,8 @@ subsection \<open>Additions to @{theory "HOL-Word.Bits_Int"}\<close>
 declare bin_to_bl_def[simp del]
 
 (* TODO: Move *)
-(* FIXME: map2 is duplicated from List.map2 *)
 lemma map2_eq_Nil_conv[simp]: "map2 f a b = [] \<longleftrightarrow> a=[] \<or> b=[]"
   by (cases a; cases b; auto)
-  
-(* TODO: Move *)
-lemma bin_trunc_xor':
-  "bintrunc n x XOR bintrunc n y = bintrunc n (x XOR y)"
-  by (auto simp add: bin_eq_iff bin_nth_ops nth_bintr)
-
-lemma uint_xor: "uint (x XOR y) = uint x XOR uint y"
-  by (transfer, simp add: bin_trunc_xor')
-
-  
-  
   
 lemma bin_to_bl_eq_Nil_conv[simp]: "bin_to_bl w i = [] \<longleftrightarrow> w=0"
   by (metis bin_to_bl_aux.Z bin_to_bl_def size_bin_to_bl)

@@ -1,44 +1,6 @@
 theory Bin_Search
 imports "../sepref/IICF/IICF" "List-Index.List_Index"
 begin
-  (* TODO: Move to Find-Index. DONE, see AFP-4943a3cb91e3 *)  
-  lemma find_index_conv_takeWhile: "find_index P xs = size(takeWhile (Not o P) xs)"
-    by(induct xs) auto
-  
-  lemma find_index_first: "i < find_index P xs \<Longrightarrow> \<not>P (xs!i)"
-    unfolding find_index_conv_takeWhile
-    using takeWhile_take_has_property_nth by fastforce
-  
-  lemma index_first: "i<index xs x \<Longrightarrow> x\<noteq>xs!i"
-    using find_index_first unfolding index_def by blast
-  
-  lemma find_index_append: "find_index P (xs @ ys) =
-    (if \<exists>x\<in>set xs. P x then find_index P xs else size xs + find_index P ys)"
-    by (induct xs) simp_all
-
-  lemma find_index_eqI:
-    assumes "i\<le>length xs"  
-    assumes "\<forall>j<i. \<not>P (xs!j)"
-    assumes "i<length xs \<Longrightarrow> P (xs!i)"
-    shows "find_index P xs = i"
-    by (metis (mono_tags, lifting) antisym_conv2 assms find_index_eq_size_conv find_index_first find_index_less_size_conv linorder_neqE_nat nth_find_index)
-    
-  lemma find_index_eq_iff:
-    "find_index P xs = i \<longleftrightarrow> (i\<le>length xs \<and> (\<forall>j<i. \<not>P (xs!j)) \<and> (i<length xs \<longrightarrow> P (xs!i)))"  
-    by (auto intro: find_index_eqI simp: nth_find_index find_index_le_size find_index_first)
-    
-  lemma index_eqI:
-    assumes "i\<le>length xs"  
-    assumes "\<forall>j<i. xs!j \<noteq> x"
-    assumes "i<length xs \<Longrightarrow> xs!i = x"
-    shows "index xs x = i"
-    unfolding index_def by (simp add: find_index_eqI assms)
-    
-  lemma index_eq_iff:
-    "index xs x = i \<longleftrightarrow> (i\<le>length xs \<and> (\<forall>j<i. xs!j \<noteq> x) \<and> (i<length xs \<longrightarrow> xs!i = x))"  
-    by (auto intro: index_eqI simp: index_le_size index_less_size_conv dest: index_first)
-    
-        
   subsection \<open>Binary Search\<close>
     
   subsubsection \<open>Abstract Algorithm\<close>
@@ -104,7 +66,7 @@ begin
     apply sepref
     done
     
-  export_llvm bin_search_impl is bin_search file "code/bin_search.ll"
+  export_llvm (debug) bin_search_impl is bin_search file "code/bin_search.ll"
   lemmas bs_impl_correct = bin_search_impl.refine[FCOMP bin_search_correct']
   
   subsubsection \<open>Combined Correctness Theorem\<close>

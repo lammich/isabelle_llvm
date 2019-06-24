@@ -219,7 +219,7 @@ subsection \<open>Arrays that own their Elements\<close>
     supply [vcg_rules] = nao_new_init_rl[OF arl_init]
     by vcg
     
-  definition aal_push_back :: "('l::len2,'a::llvm_rep,'ll::len2) array_array_list \<Rightarrow> 'l word \<Rightarrow> 'a \<Rightarrow> ('l,'a,'ll) array_array_list llM"
+  definition aal_push_back :: "('l::len2,'a::llvm_rep,'ll::len2) array_array_list \<Rightarrow> 'li::len word \<Rightarrow> 'a \<Rightarrow> ('l,'a,'ll) array_array_list llM"
     where [llvm_code, llvm_inline]: "aal_push_back na i x \<equiv> doM {
     let (n,a) = na;
     aa \<leftarrow> nao_nth a i;

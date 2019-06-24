@@ -1,5 +1,5 @@
 theory Ex_CFG
-imports Monad2
+imports Monad
 begin
   term fold
 
