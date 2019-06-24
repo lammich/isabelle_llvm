@@ -104,7 +104,7 @@
 
 \begin{abstract}
 We present a framework to generate verified LLVM programs from Isabelle/HOL.
-It consists of a code generator that generates LLVM text from 
+It is based on a code generator that generates LLVM text from 
 a simplified fragment of LLVM, shallowly embedded into Isabelle/HOL.
 On top, we have developed a separation logic, a verification condition 
 generator, and an LLVM backend to the Isabelle Refinement Framework.
@@ -151,7 +151,7 @@ and the code generator, which is a pretty printer combined with some straightfor
 
 The Isabelle Refinement Framework~\cite{LaTu12,La13,La15} features a stepwise refinement approach to verified algorithms, using the Isabelle/HOL theorem prover~\cite{NPW02,NiKl14}.
 It has been successfully applied to verify many algorithms and software systems, 
-among them LTL and timed automata model checkers~\cite{ELNN13,BrLa18,WiLa18}, network flow algorithms~\cite{LaSe17,LaSe16}, a SAT-solver certification tool~\cite{La17_CADE,La17_SAT}, and even a SAT solver~\cite{FBL18}.
+among them LTL and timed automata model checkers~\cite{ELNN13,BrLa18,WiLa18}, network flow algorithms~\cite{LaSe19,LaSe16}, a SAT-solver certification tool~\cite{La17_CADE,La17_SAT}, and even a SAT solver~\cite{FBL18}.
 Using Isabelle/HOL's code generator~\cite{HKKN13}, the verified algorithms can be extracted to functional languages like Haskell or Standard ML.
 However, the code generator only provides partial correctness guarantees, i.e., termination of the generated code cannot be proved.
 Moreover, the generated code is typically slower than the same algorithms implemented in C or Java. 
@@ -188,6 +188,7 @@ such that most parts of existing verifications can be reused.
 As case studies (\S\ref{sec:casestudies}), we verify a binary search algorithm and adopt an existing formalization~\cite{HeLa17} of
 the Knuth-Morris-Pratt string search algorithm~\cite{KMP77}. The resulting LLVM code is significantly
 faster than the corresponding Standard-ML code and on par with unverified C implementations.
+The paper ends with the discussion of future work (\S\ref{sec:future_work}) and related work (\S\ref{sec:related_work}).
 %
 The Isabelle theories described in this paper are available at \url{http://www21.in.tum.de/~lammich/isabelle_llvm}. 
 
@@ -277,7 +278,8 @@ memory = MEMORY (block list)                 block     = val list option
 val = PAIR val val | PRIM primval              primval = PV_INT lint | PV_PTR rptr
 \end{lstlisting}
 %
-Here, the type \q{\is{lint}} is a fixed bit width word type with a two's complement semantics, as used by LLVM. 
+Here, the type \q{\is{lint}} is a fixed bit width word type with a two's complement semantics, as used by LLVM, 
+and pair corresponds to a 2-element structure in LLVM. 
 The type \q{\is{rptr}} is either null or an address. An address is a path through the memory structure to a value:
 \begin{lstlisting}
 rptr  = NULL | ADDR nat nat (va_dir list)                      va_dir = PFST | PSND
@@ -488,7 +490,7 @@ The result of the $\phi$-instruction is bound to a fresh register, which can the
 
 
 It is straightforward to map an Isabelle-LLVM program to an actual LLVM program.
-Each equation of the form \q{\is{proc x_1 .. x\_n = block}} is mapped to an LLVM procedure named \q{\is{proc}}. 
+Each equation of the form \q{\is{proc x_1 .. x\_n = block}} is mapped to an LLVM function named \q{\is{proc}}. 
 A block is mapped to a control flow graph. Instructions and procedure calls are directly mapped to LLVM instructions and calls.
 An \q{\is{x <- llc_if b t e}} is translated to conditional branching, using a $\phi$-instruction to define the result register \q{\is{x}} when joining the control flow.
 An \q{\is{x <- llc_while b c s}} is translated similarly. 
@@ -694,7 +696,7 @@ Finally, we define \q{\is{amemory = nat => ablock}}, and a function \q{\is{\<alp
 by a function from block indexes to abstract blocks, mapping deallocated or invalid indexes to zero.
 
 \subsection{Basic Reasoning Infrastructure}
-Predicates of type \q{\is{assn = memory => bool}} are called \emph{assertions}.
+Predicates of type \q{\is{assn = amemory => bool}} are called \emph{assertions}.
 The \emph{weakest precondition} of a program \q{\is{c :: 'a llM}}, a \emph{postcondition} \q{\is{Q :: 'a => assn}}, and a memory \q{\is{s}} is defined as:
 \begin{lstlisting}
 wp c Q s = (\<exists>r s'. run c s = SUCC r s' \and Q r (\<alpha> s'))
@@ -720,7 +722,7 @@ Once we have set up the separation algebra and the abstraction function, we can 
 For example, we prove the following rules for \q{\is{allocn}} and \q{\is{free}}:
 \begin{lstlisting}
 |= {\<box>} allocn v n {%p. malloc_tag n p * range {0..<n} (%_. v) p}
-|= {malloc_tag n p * range {0..<n} blk p} free p {%_. \<box>}
+|= {malloc_tag n p * \<exists>blk. range {0..<n} blk p} free p {%_. \<box>}
 \end{lstlisting}
 where \q{\is{\<box> = \<lambda>s. s=0}} describes the empty memory, 
 \q{\is{malloc_tag n p}} asserts that \q{\is{p}} points to the beginning of a block, and the size field of this block's abstraction is \q{\is{n}}, 
@@ -735,7 +737,9 @@ For the Isabelle-LLVM memory instructions, we obtain the following rules:
 |= {pto x p} ll_load p {%r. r=x * pto x p}
 |= {pto xx p} ll_store x p {%_. pto x p}
 \end{lstlisting}
-Here, \q{\is{pto x p}} describes that $p$ points to value $x$. We prove similar rules for the other instructions.
+Here, \q{\is{pto x p}} describes that $p$ points to value $x$, and we write predicates as if they were assertions 
+on the empty memory, e.g., \q{\is{r=x}} instead of \q{\is{\<lambda>s. s=0 \<and> r=x}}.
+We prove similar rules for the other instructions.
 
 \subsection{Automating the VCG}
 In order to efficiently prove Hoare triples, some automation is required.
@@ -808,7 +812,7 @@ As \q{\is{sint$_n$}} is \emph{pure}, i.e., does not use the memory, our VCG will
 Our basic VCG infrastructure can be used to verify simple algorithms like \q{\is{euclid}} from Example~\ref{ex:euclid-proof}.
 However, many complex algorithms have already been verified using the Isabelle Refinement Framework~\cite{LaTu12}.
 It features a non-deterministic programming language with a refinement calculus and a VCG. 
-It allows to express an algorithm on the abstract mathematical concepts, and then refine it in multiple steps towards an efficient implementation.
+It allows to express an algorithm using abstract mathematical concepts, and then refine it in multiple steps towards an efficient implementation.
 The last step of a refinement is typically performed by the Sepref tool~\cite{La15}, which translates a program from the non-deterministic monad of the Refinement Framework 
 into the deterministic heap monad of Imperative HOL~\cite{BKHEM08}, replacing abstract data types by concrete implementations. 
 % It comes with some powerful automation and support for easily defining new data structures~\cite{La16}.
@@ -847,8 +851,8 @@ Once the basic Sepref tool is adapted, we can define data structures.
 Reusing the basic data structures from the original Sepref tool is not possible, as Imperative HOL 
 uses arbitrary precision integers and algebraic data types, while we have only fixed width words and pairs.
 Up to now, we have added the implementation of integers and natural numbers 
-by $n$ bit words and the implementation of lists by both fixed size and resizeable arrays.
-However, we could reuse the existing infrastructure of the Sepref tool: For example,
+by $n$ bit words and some basic container data structures like dynamic arrays, bit-vectors, and min-heaps.
+Thereby, we could reuse the existing infrastructure of the Sepref tool: For example,
 there is support to automatically generate rules that also support refinement of the elements of a data structure, 
 exploiting `free theorems'~\cite{Wad89} which stem from parametricity properties of the abstract types.
 
@@ -894,9 +898,9 @@ Finally, we invoke our adapted Sepref tool:
   export_llvm bs_impl file "bin_search.ll"
   lemmas bs_impl_correct = bs_impl.refine[FCOMP bs_correct]
 \end{lstlisting}
-This produces an Isabelle-LLVM program \q{\is{bs_impl}}, exports it to actual LLVM text, and proves the refinement theorem
+This produces an Isabelle-LLVM program \q{\is{bs_impl}}, exports it to actual LLVM text, and proves the refinement theorem \q{\is{bs_impl_correct}}:
 \begin{lstlisting}
-  bs_impl_correct: (bs_impl, fi_spec) : [%(xs, _). sorted xs] (larray$_{64}$ sint$_{64}$)${}^k$ \x sint$_{64}^k$ -> snat$_{64}$
+  (bs_impl, fi_spec) : [%(xs, _). sorted xs] (larray$_{64}$ sint$_{64}$)${}^k$ \x sint$_{64}^k$ -> snat$_{64}$
 \end{lstlisting}
 Here, \q{\is{snat${}_{w}$}} implements natural numbers by signed $w$-bit words\footnote{As LLVM's index operations are on signed words, 
   it's convenient to always implement sizes and indexes by signed types, even if they are natural numbers.}.
@@ -906,9 +910,9 @@ arguments are refined by \q{\is{A_1 ... A\_n}} and the result is refined by \q{\
 The $\cdot^{k|d}$ annotations specify whether an argument is overwritten ($k$ for keep, $d$ for destroy).
 While we use this notation a lot in the Refinement Framework, it is straightforward to prove a standard Hoare triple from it. By unfolding some definitions we get:
 \begin{lstlisting}
-  |= {larray$_{64}$ sint$_{64}$ xs xs\impl ** sint$_{64}$ x x\impl ** sorted xs }
-      (bs_impl xs\impl x\impl)
-      (%i\impl. \<exists>i. larray$_{64}$ sint$_{64}$ xs xs\impl ** snat$_{64}$ i i\impl ** i=find_index (%y. x<=y) xs)"
+  |= {larray$_{64}$ sint$_{64}$ xs xs\impl * sint$_{64}$ x x\impl * sorted xs }
+     bs_impl xs\impl x\impl
+     {%i\impl. \<exists>i. larray$_{64}$ sint$_{64}$ xs xs\impl * snat$_{64}$ i i\impl * i=find_index (%y. x<=y) xs}"
 \end{lstlisting}
 % TODO: Perhaps just annotate the bit-width!
 That is, if we start with an array \q{\is{xs\impl}} representing the sorted list \q{\is{xs}}, and 
@@ -1089,21 +1093,28 @@ SML${}^*$ is significantly faster than the original SML, but still $1.5$ times s
 % We leave more systematic testing to future work.
 %TODO Add exact numbers.
 
-
-
-
-\section{Conclusions}
-We have developed Isabelle-LLVM, a shallowly embedded imperative language designed to be easily translated to actual LLVM text. 
-On top of this, we have built a verification 
-infrastructure, and re-targeted the Sepref tool to connect the Refinement Framework to LLVM. 
-As case studies, we have generated verified LLVM code for a binary search algorithm and the Knuth-Morris-Pratt string search algorithm.
-Both implementations are an order of magnitude faster than the ones generated with the original Sepref tool, and on par with unverified C implementations.
-The additional effort required to refine to LLVM instead of Standard ML was quite low.
-
+\section{Future Work}\label{sec:future_work}
 While our case studies only cover medium complex algorithms, we expect that our approach will scale to more complex algorithms, e.g.
 model checkers~\cite{WiLa18,FBL18} and SAT solvers~\cite{FBL18}, which have already been formalized with the original refinement framework. 
 While these formalizations use a combination of functional and imperative data structures, the LLVM backend only supports imperative data structures. 
-We expect the necessary changes to be manageable, but non-trivial.
+We expect the necessary changes to be manageable, but non-trivial. 
+In particular, the current Sepref tool only supports pure data structures to be nested in containers. In the Imperative HOL setting, we simply 
+use functional data structures inside containers. For LLVM, nested container data structures currently require ad-hoc proofs on the separation logic level. We leave the lifting of Sepref to support nested imperative data structures to future work. 
+
+Moreover, the refinement from arbitrary precision integers to fixed size integers was quite straightforward for our case studies, 
+and we expect these refinements to be more complex in general.
+We leave it to future work to explore this issue more systematically, and to provide semi-automated tools,
+e.g.~along the lines of AutoCorres~\cite{GLAK14}.
+
+Our code generator, as well as most standard code generators in theorem provers, 
+translate from logic to target language code, implicitly identifying logical 
+concepts with programming language concepts. This approach is simple, however, 
+the translation algorithm and its implementation become part of the trusted code base.
+More recently, code generators that translate into a deeply embedded semantics of the 
+target language have been developed~\cite{MyOw14,HuNi18}. 
+We leave a translation to a deep embedding of LLVM to future work, and note that a 
+deep embedding will also enable more advanced control flow constructs like exceptions and breaking from loops, 
+without significantly increasing the trusted code base.
 
 Compared to actual LLVM, Isabelle-LLVM makes a few simplifying assumptions: It assumes an infinite supply of memory, and thus cannot assign a bit-size to pointers. 
 This assumption helps us to retain a deterministic semantics, which is executable inside the theorem prover (cf.~Example~\ref{ex:fib_isabelle}). 
@@ -1114,16 +1125,24 @@ To protect against stack overflows, LLVM provides mechanisms like stack probing 
 We leave that to future work, and note that our generated code allocates no large blocks of memory on the stack. 
 Thus, stack overflows are likely to hit the guard pages inserted by most operating systems, which will cause termination of the process.
 
+Currently, we interface our generated LLVM code from C programs compiled by clang. However, the ABIs of C and LLVM only partially match, 
+and some LLVM constructs cannot be expressed in C at all.
+Currently, it is the user's responsibility to implement a correct header file. 
+We plan to automatically generate header files and adapter functions to make the exported code accessible from C.
+
+
+\section{Related Work}\label{sec:related_work}
 This project would not have been possible without several independent Isabelle developments:
 We use the Separation Algebra library~\cite{KKB12_afp,KKB12} as basis for our separation logic. We substantially extended this library by a 
 frame inference heuristics, and formalized the extension of separation algebras over functions, products, and options. 
 Moreover, we use Isabelle's machine word library~\cite{Word_Lib-AFP} to model the 2's complement arithmetic of LLVM. We slightly extended this library by adding a few lemmas. Finally, the Eisbach language~\cite{MMW16} was a great help for prototyping the verification condition generator, although most of the 
 final VCG is now implemented directly in the more low-level Isabelle/ML.
 
-Related work includes the Vellvm project~\cite{ZNMZ12,ZNMZ13} that verifies LLVM program transformations in Coq.
+The Vellvm project~\cite{ZNMZ12,ZNMZ13} verifies LLVM program transformations in Coq.
 To be useful, e.g. as backend for clang, they have to formalize a substantial fragment of LLVM. 
 On the other hand, we can afford to formalize a simplified and abstract semantics that 
 is just powerful enough to cover what Sepref generates.
+
 We drew some of the ideas for our separation logic from the Verifiable C project~\cite{App14}, 
 a Coq formalization of a separation logic on top of the CompCert C semantics~\cite{BL09}.
 
@@ -1132,18 +1151,34 @@ These are focused on specifying the semantics, and we are not aware of any compl
 algorithm verifications using these formalizations.
 % CakeML~\cite{KTMK19} is a verified compiler from StandardML down to assembly code. 
 % While it contains various low-level semantics, we are not aware direct correctness proofs
+
 The DeepSpec project~\cite{deepspec} aims at a completely verified computation environment, 
 down to machine code, including the operating system. 
 This is much more ambitious than the work presented here, which stops at a (simplified) LLVM semantics.
 For proving correct imperative programs, they have a separation logic based VCG for a fragment of C~\cite{App14,CBGD18},
 which they apply to several small C programs, mainly for cryptographic algorithms. 
 
-Future work includes porting more existing verifications and data structures to Isabelle-LLVM, hopefully increasing their performance. 
-One challenge will be the limited support of nested container data structures by Sepref: The nested containers must either be 
-purely functional, or laborious ad-hoc proofs on the separation logic level are required. 
-As the former is not an option for (imperative) LLVM, we plan to add more support for nested imperative data structures to Sepref. 
-Other challenges will be the translation of sum-types (which are not supported by LLVM), and support for more 
-complex control flow statements.
+
+\section{Conclusions}
+We have developed Isabelle-LLVM, a shallowly embedded imperative language designed to be easily translated to actual LLVM text. 
+On top of this, we have built a verification 
+infrastructure, and re-targeted the Sepref tool to connect the Refinement Framework to LLVM. 
+As case studies, we have generated verified LLVM code for a binary search algorithm and the Knuth-Morris-Pratt string search algorithm.
+Both implementations are an order of magnitude faster than the ones generated with the original Sepref tool, and on par with unverified C implementations.
+The additional effort required to refine to LLVM instead of Standard ML was quite low.
+
+
+
+
+
+
+% 
+% Future work includes porting more existing verifications and data structures to Isabelle-LLVM, hopefully increasing their performance. 
+% One challenge will be the limited support of nested container data structures by Sepref: The nested containers must either be 
+% purely functional, or laborious ad-hoc proofs on the separation logic level are required. 
+% As the former is not an option for (imperative) LLVM, we plan to add more support for nested imperative data structures to Sepref. 
+% Other challenges will be the translation of sum-types (which are not supported by LLVM), and support for more 
+% complex control flow statements.
 
 % 
 % 
