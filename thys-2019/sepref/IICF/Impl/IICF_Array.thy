@@ -215,7 +215,7 @@ definition "la_get1 nxs i \<equiv> case nxs of (n,xs) \<Rightarrow> xs!i"
 lemma la_get1_refine: "(la_get1,op_list_get) \<in> larray1_rel \<rightarrow> nat_rel \<rightarrow> Id"
   by (auto simp: larray1_rel_def in_br_conv la_get1_def)
   
-sepref_definition la_get_impl [llvm_inline] is "uncurry (RETURN oo la_get1)" :: "[\<lambda>(la,i). i<length (snd la)]\<^sub>a (larray_impl_assn' TYPE('b::len2))\<^sup>k *\<^sub>a (snat_assn' TYPE('b))\<^sup>k \<rightarrow> id_assn"
+sepref_definition la_get_impl [llvm_inline] is "uncurry (RETURN oo la_get1)" :: "[\<lambda>(la,i). i<length (snd la)]\<^sub>a (larray_impl_assn' TYPE('b::len2))\<^sup>k *\<^sub>a (snat_assn' TYPE('c::len2))\<^sup>k \<rightarrow> id_assn"
   unfolding la_get1_def la_length1_def
   apply sepref_dbg_keep
   done
@@ -228,7 +228,7 @@ lemma la_set1_refine: "(la_set1,op_list_set) \<in> larray1_rel \<rightarrow> nat
   by (auto simp: larray1_rel_def in_br_conv la_set1_def)
   
 sepref_definition la_set_impl [llvm_inline] is "uncurry2 (RETURN ooo la_set1)" 
-  :: "[\<lambda>((la,i),_). i<length (snd la)]\<^sub>a (larray_impl_assn' TYPE('b::len2))\<^sup>d *\<^sub>a (snat_assn' TYPE('b))\<^sup>k *\<^sub>a id_assn\<^sup>k \<rightarrow> larray_impl_assn' TYPE('b::len2)"
+  :: "[\<lambda>((la,i),_). i<length (snd la)]\<^sub>a (larray_impl_assn' TYPE('b::len2))\<^sup>d *\<^sub>a (snat_assn' TYPE('c::len2))\<^sup>k *\<^sub>a id_assn\<^sup>k \<rightarrow> larray_impl_assn' TYPE('b::len2)"
   unfolding la_set1_def
   apply sepref_dbg_keep
   done
