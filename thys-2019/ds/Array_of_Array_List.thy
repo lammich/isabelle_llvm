@@ -303,7 +303,7 @@ subsection \<open>Arrays that own their Elements\<close>
   definition [llvm_code, llvm_inline]: "aal_take na i l \<equiv> doM {
     let (n,a) = na;
     aa \<leftarrow> nao_nth a i;
-    aa \<leftarrow> arl_take aa l;
+    aa \<leftarrow> arl_take l aa;
     a \<leftarrow> nao_upd a i aa;
     return (n,a)
   }" 

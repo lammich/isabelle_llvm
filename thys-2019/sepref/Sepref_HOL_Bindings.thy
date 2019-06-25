@@ -852,6 +852,10 @@ abbreviation "unat_assn \<equiv> pure unat_rel"
 abbreviation (input) "unat_rel' TYPE('a::len) \<equiv> unat_rel :: ('a word \<times> _) set"
 abbreviation (input) "unat_assn' TYPE('a::len) \<equiv> unat_assn :: _ \<Rightarrow> 'a word \<Rightarrow> _"
 
+lemma in_unat_rel_imp_less_max'[simp]: "(w, n) \<in> unat_rel' TYPE('l) \<Longrightarrow> n < max_unat LENGTH('l::len2)"
+  by (simp add: unat_rel_def unat.rel_def in_br_conv)
+
+
 definition [simp]: "unat_const TYPE('a::len) c \<equiv> (c::nat)"
 context fixes c::nat begin
   sepref_register "unat_const TYPE('a::len) c" :: "nat"
@@ -930,6 +934,28 @@ abbreviation "snat_assn \<equiv> pure snat_rel"
 
 abbreviation (input) "snat_rel' TYPE('a::len2) \<equiv> snat_rel :: ('a word \<times> _) set"
 abbreviation (input) "snat_assn' TYPE('a::len2) \<equiv> snat_assn :: _ \<Rightarrow> 'a word \<Rightarrow> _"
+
+(* TODO: Too many snat_rel_ < max_snat lemma variants! *)
+lemma snat_rel_range: "Range (snat_rel' TYPE('l)) = {0..<max_snat LENGTH('l::len2)}"
+  (* TODO: Clean up proof! *)
+  apply (auto simp: Range_iff snat_rel_def snat.rel_def in_br_conv)
+  subgoal for x
+    apply (rule exI[where x="word_of_int (int x)"])
+    apply (auto simp: max_snat_def snat_invar_def)
+    subgoal
+      by (metis One_nat_def snat_eq_unat(1) snat_in_bounds_aux unat_of_nat_eq word_of_nat) 
+    subgoal
+      by (metis One_nat_def Word_Lemmas.of_nat_power diff_less len_gt_0 max_unat_def n_less_equal_power_2 not_msb_from_less power_0 word_of_nat)
+    done
+  done
+
+lemma snat_rel_imp_less_max_snat: 
+  "\<lbrakk>(x,n)\<in>snat_rel' TYPE('l::len2); L = LENGTH('l)\<rbrakk> \<Longrightarrow> n<max_snat L"
+  by (auto simp: snat_rel_def snat.rel_def in_br_conv)
+  
+lemma in_snat_rel_imp_less_max'[simp]: "(w, n) \<in> snat_rel' TYPE('l) \<Longrightarrow> n < max_snat LENGTH('l::len2)"
+  by (simp add: snat_rel_imp_less_max_snat)
+  
 
 definition [simp]: "snat_const TYPE('a::len2) c \<equiv> (c::nat)"
 context fixes c::nat begin

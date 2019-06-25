@@ -14,7 +14,26 @@ lemma arl_assn_free[sepref_frame_free_rules]: "MK_FREE (\<upharpoonleft>arl_assn
 lemma al_assn_free[sepref_frame_free_rules]: "MK_FREE (al_assn R) arl_free"
   unfolding al_assn_def by (rule sepref_frame_free_rules)+
 
+lemma rdomp_al_imp_len_bound: 
+  "rdomp (al_assn' TYPE('l::len2) A) xs \<Longrightarrow> length xs < max_snat LENGTH('l)"
+  unfolding al_assn_def arl_assn_def arl_assn'_def
+  apply (simp add: rdomp_hrcomp_conv sep_algebra_simps split: prod.splits)
+  by (auto 
+    simp: rdomp_def snat.assn_def sep_algebra_simps pred_lift_extract_simps
+    list_rel_imp_same_length[symmetric]
+    )
   
+lemma rdomp_al_dest': 
+  "rdomp (al_assn' TYPE('l::len2) A) xs \<Longrightarrow> is_pure A \<Longrightarrow> length xs < max_snat LENGTH('l) \<and> (\<forall>i<length xs. rdomp A (xs!i))"
+  unfolding al_assn_def arl_assn_def arl_assn'_def
+  apply (simp add: rdomp_hrcomp_conv sep_algebra_simps split: prod.splits)
+  apply (auto 
+    simp: rdomp_def snat.assn_def sep_algebra_simps pred_lift_extract_simps
+    list_rel_imp_same_length[symmetric]
+    )
+  by (auto 0 3 simp: list_rel_def list_all2_conv_all_nth is_pure_conv pure_app_eq pred_lift_extract_simps)
+    
+      
 text \<open>This functions deletes all elements of a resizable array, without resizing it.\<close>
 sepref_decl_op emptied_list: "\<lambda>_::'a list. []::'a list" :: "\<langle>A\<rangle>list_rel \<rightarrow> \<langle>A\<rangle>list_rel" .
 
@@ -70,15 +89,24 @@ begin
     by m_ref  
   sepref_decl_impl (ismop) al_append: al_append_hnr_aux .
 
+  lemma al_take_hnr_aux: "(uncurry arl_take, uncurry mop_list_take)
+    \<in> snat_assn\<^sup>k *\<^sub>a AA\<^sup>d \<rightarrow>\<^sub>a AA"
+    by m_ref  
+  sepref_decl_impl (ismop) al_take: al_take_hnr_aux .
+  
   lemma al_pop_last_hnr_aux: "(arl_pop_back, mop_list_pop_last)
     \<in> AA\<^sup>d \<rightarrow>\<^sub>a id_assn \<times>\<^sub>a AA"
     by m_ref  
   sepref_decl_impl (ismop) al_pop_last: al_pop_last_hnr_aux .
   
-  lemma al_butlast_hnr_aux: "(\<lambda>l. doM { (_,l) \<leftarrow> arl_pop_back l; return l}, mop_list_butlast) \<in> AA\<^sup>d \<rightarrow>\<^sub>a AA"
+  lemma al_butlast_hnr_aux: "(arl_butlast, mop_list_butlast) \<in> AA\<^sup>d \<rightarrow>\<^sub>a AA"
     by m_ref
   sepref_decl_impl (ismop) al_butlast: al_butlast_hnr_aux .
-  
+
+  lemma al_last_hnr_aux: "(arl_last, mop_list_last) \<in> AA\<^sup>k \<rightarrow>\<^sub>a id_assn"
+    by m_ref
+  sepref_decl_impl (ismop) al_last: al_last_hnr_aux .
+    
   lemma al_len_hnr_aux: "(arl_len, mop_list_length) \<in> AA\<^sup>k \<rightarrow>\<^sub>a snat_assn"
     by m_ref  
   sepref_decl_impl (ismop) al_len: al_len_hnr_aux .

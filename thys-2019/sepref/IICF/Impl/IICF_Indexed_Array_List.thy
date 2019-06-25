@@ -18,17 +18,6 @@ begin
   
   
   (* TODO: Move, clean up proof *)
-  lemma snat_rel_range: "Range (snat_rel' TYPE('l)) = {0..<max_snat LENGTH('l::len2)}"
-    apply (auto simp: Range_iff snat_rel_def snat.rel_def in_br_conv)
-    subgoal for x
-      apply (rule exI[where x="word_of_int (int x)"])
-      apply (auto simp: max_snat_def snat_invar_def)
-      subgoal
-        by (metis One_nat_def snat_eq_unat(1) snat_in_bounds_aux unat_of_nat_eq word_of_nat) 
-      subgoal
-        by (metis One_nat_def Word_Lemmas.of_nat_power diff_less len_gt_0 max_unat_def n_less_equal_power_2 not_msb_from_less power_0 word_of_nat)
-      done
-    done
             
   (* TODO: Move *)  
   

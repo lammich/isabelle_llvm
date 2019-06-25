@@ -118,11 +118,25 @@ begin
     return (r,(l,c,a))
   }"
   
-  definition [llvm_code,llvm_inline]: "arl_take al l' \<equiv> doM {
+  definition [llvm_code,llvm_inline]: "arl_take l' al \<equiv> doM {
     let (l,c,a) = al;
     return (l',c,a)
   }"
+
+  definition [llvm_code,llvm_inline]: "arl_last al \<equiv> doM {
+    let (l,c,a) = al;
+    l \<leftarrow> ll_sub l (signed_nat 1);
+    r \<leftarrow> array_nth a l;
+    return r
+  }"
   
+  definition [llvm_code,llvm_inline]: "arl_butlast al \<equiv> doM {
+    let (l,c,a) = al;
+    l \<leftarrow> ll_sub l (signed_nat 1);
+    return (l,c,a)
+  }"
+  
+    
   text \<open>Direct access to array underlying array-list \<close>
   definition array_of_arl :: "('a::llvm_rep,'l::len2) array_list \<Rightarrow> 'a ptr" where 
     [llvm_inline]: "array_of_arl \<equiv> \<lambda>(l,c,a). a"
@@ -138,7 +152,9 @@ begin
     "arl_len :: (64 word,64) array_list \<Rightarrow> 64 word llM" is "arl_len"
     "arl_push_back :: (64 word,64) array_list \<Rightarrow> 64 word \<Rightarrow> (64 word,64) array_list llM" is "arl_push_back"
     "arl_pop_back :: (64 word,64) array_list \<Rightarrow> (64 word \<times> (64 word,64) array_list) llM" is "arl_pop_back"
-    "arl_take :: (64 word,64) array_list \<Rightarrow> 64 word \<Rightarrow> (64 word,64) array_list llM" is "arl_take"
+    "arl_take :: 64 word \<Rightarrow> (64 word,64) array_list \<Rightarrow> (64 word,64) array_list llM" is "arl_take"
+    "arl_last :: (64 word,64) array_list \<Rightarrow> 64 word llM" is "arl_last"
+    "arl_butlast :: (64 word,64) array_list \<Rightarrow> ((64 word,64) array_list) llM" is "arl_butlast"
     
     
   subsection \<open>Reasoning Setup\<close>  
@@ -292,10 +308,31 @@ begin
   lemma arl_take_rule[vcg_rules]:
     "llvm_htriple 
       (\<upharpoonleft>arl_assn al (ali::(_,'l::len2)array_list) ** \<upharpoonleft>snat.assn l li ** \<up>\<^sub>d(l \<le> length al)) 
-      (arl_take ali li) 
+      (arl_take li ali) 
       (\<lambda>ali. \<upharpoonleft>arl_assn (take l al) ali)"  
     unfolding arl_assn_def arl_assn'_def arl_take_def
     by vcg
     
+
+  lemma arl_last_rule[vcg_rules]:
+    "llvm_htriple (\<upharpoonleft>arl_assn al (ali::(_,'l::len2)array_list) ** \<up>\<^sub>d(al\<noteq>[])) (arl_last ali) (\<lambda>x. \<upharpoonleft>arl_assn al ali ** \<up>(x=last al))"  
+    unfolding arl_assn_def arl_assn'_def arl_last_def
+    supply arl_len_rule_internal[vcg_rules]
+    apply (vcg_monadify)
+    apply vcg'
+    by (auto simp: last_take_nth_conv)
     
+    
+  lemma arl_butlast_rule[vcg_rules]:
+    "llvm_htriple (\<upharpoonleft>arl_assn al (ali::(_,'l::len2)array_list) ** \<up>\<^sub>d(al\<noteq>[])) (arl_butlast ali) (\<lambda>ali. \<upharpoonleft>arl_assn (butlast al) ali)"  
+    unfolding arl_assn_def arl_assn'_def arl_butlast_def
+    supply arl_len_rule_internal[vcg_rules]
+    apply (vcg_monadify)
+    apply vcg'
+    by (auto simp: take_minus_one_conv_butlast)
+    
+    
+    
+    
+        
 end

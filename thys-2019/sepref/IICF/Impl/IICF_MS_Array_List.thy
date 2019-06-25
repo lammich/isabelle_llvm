@@ -199,10 +199,6 @@ begin
 
 
   (* TODO: Move *)    
-  lemma snat_rel_imp_less_max_snat: 
-    "\<lbrakk>(x,n)\<in>snat_rel' TYPE('l::len2); L = LENGTH('l)\<rbrakk> \<Longrightarrow> n<max_snat L"
-    by (auto simp: snat_rel_def snat.rel_def in_br_conv)
-    
     
   schematic_goal [sepref_frame_free_rules]: "MK_FREE (marl_assn' TYPE('l::len2) A N) ?f"
     unfolding marl_assn'_fold'[symmetric]

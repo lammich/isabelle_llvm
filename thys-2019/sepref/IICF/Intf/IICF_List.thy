@@ -89,6 +89,8 @@ sepref_decl_op (no_def) list_copy: "op_list_copy" :: "\<langle>A\<rangle>list_re
 sepref_decl_op list_prepend: "(#)" :: "A \<rightarrow> \<langle>A\<rangle>list_rel \<rightarrow> \<langle>A\<rangle>list_rel" .
 sepref_decl_op list_append: "\<lambda>xs x. xs@[x]" :: "\<langle>A\<rangle>list_rel \<rightarrow> A \<rightarrow> \<langle>A\<rangle>list_rel" .
 sepref_decl_op list_concat: "(@)" :: "\<langle>A\<rangle>list_rel \<rightarrow> \<langle>A\<rangle>list_rel \<rightarrow> \<langle>A\<rangle>list_rel" .
+sepref_decl_op list_take: take :: "[\<lambda>(i,l). i\<le>length l]\<^sub>f nat_rel \<times>\<^sub>r \<langle>A\<rangle>list_rel \<rightarrow> \<langle>A\<rangle>list_rel" .
+sepref_decl_op list_drop: drop :: "[\<lambda>(i,l). i\<le>length l]\<^sub>f nat_rel \<times>\<^sub>r \<langle>A\<rangle>list_rel \<rightarrow> \<langle>A\<rangle>list_rel" .
 sepref_decl_op list_length: length :: "\<langle>A\<rangle>list_rel \<rightarrow> nat_rel" .
 sepref_decl_op list_get: nth :: "[\<lambda>(l,i). i<length l]\<^sub>f \<langle>A\<rangle>list_rel \<times>\<^sub>r nat_rel \<rightarrow> A" .
 sepref_decl_op list_set: list_update :: "[\<lambda>((l,i),_). i<length l]\<^sub>f (\<langle>A\<rangle>list_rel \<times>\<^sub>r nat_rel) \<times>\<^sub>r A \<rightarrow> \<langle>A\<rangle>list_rel" .
@@ -116,6 +118,8 @@ lemma [def_pat_rules]:
   "Cons$x$xs \<equiv> op_list_prepend$x$xs"
   "(@) $xs$(Cons$x$[]) \<equiv> op_list_append$xs$x"
   "(@) $xs$ys \<equiv> op_list_concat$xs$ys"
+  "take$i$l \<equiv> op_list_take$i$l"
+  "drop$i$l \<equiv> op_list_drop$i$l"
   "op_list_concat$xs$(Cons$x$[]) \<equiv> op_list_append$xs$x"
   "length$xs \<equiv> op_list_length$xs"
   "nth$l$i \<equiv> op_list_get$l$i"

@@ -12,8 +12,6 @@ begin
   find_theorems snatb_rel
 
   (* TODO: Move *)  
-  lemma in_snat_rel_imp_less_max'[simp]: "(w, n) \<in> snat_rel' TYPE('l) \<Longrightarrow> n < max_snat LENGTH('l::len2)"
-    by (simp add: snat_rel_imp_less_max_snat)
 
 (*
     (* TODO: Move *)  
