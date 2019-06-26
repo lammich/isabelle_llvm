@@ -7,6 +7,7 @@ theory KMP
     "HOL-Library.Sublist"
 begin
 
+
 declare len_greater_imp_nonempty[simp del] min_absorb2[simp]
 
 section\<open>Specification\<close>text_raw\<open>\label{sec:spec}\<close>

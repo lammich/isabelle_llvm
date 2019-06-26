@@ -35,7 +35,32 @@ subsection \<open>Abstract Replicate-Init Operation\<close>
     
     lemma fold_replicate_init: "replicate n i = repl i n" by simp
   end
+
+subsection \<open>Abstract grow-init Operation\<close>
+
+  definition [simp]: "op_list_grow_init i ns os xs \<equiv> take os xs @ replicate (ns - os) i" 
+  context fixes i begin
+    sepref_register "op_list_grow_init i"
+  end
+
+  definition [simp]: "grow_init_raw ns os xs \<equiv> take os xs @ replicate (ns - os) init"
+
+  lemma grow_init_param:
+    fixes A :: "'a \<Rightarrow> 'c::llvm_rep \<Rightarrow> assn"
+    assumes INIT: "GEN_ALGO i (is_init A)"
+    shows "(uncurry2 (RETURN ooo grow_init_raw), uncurry2 (RETURN ooo PR_CONST (op_list_grow_init i))) \<in> [\<lambda>_. True]\<^sub>f (nat_rel \<times>\<^sub>r nat_rel) \<times>\<^sub>r \<langle>the_pure A\<rangle>list_rel \<rightarrow> \<langle>\<langle>the_pure A\<rangle>list_rel\<rangle>nres_rel"
+  proof -  
+    from INIT have [param]: "(init,i) \<in> the_pure A" unfolding is_init_def GEN_ALGO_def by simp
+    have "(grow_init_raw, op_list_grow_init i) \<in> nat_rel \<rightarrow> nat_rel \<rightarrow> \<langle>the_pure A\<rangle>list_rel \<rightarrow> \<langle>the_pure A\<rangle>list_rel"
+      unfolding op_list_grow_init_def grow_init_raw_def
+      by parametricity
+    from this[to_fref] show ?thesis unfolding PR_CONST_def  
+      by (auto intro!: frefI nres_relI dest!: frefD)
+      
+  qed
   
+  
+    
     
   sepref_decl_op list_free: "\<lambda>_::_ list. ()" :: "\<langle>A\<rangle>list_rel \<rightarrow> unit_rel" .
 
@@ -56,6 +81,7 @@ subsection \<open>Interface Implementation\<close>
     
 definition [simp]: "array_replicate_init i n \<equiv> replicate n i"
 interpretation array: replicate_init array_replicate_init by unfold_locales simp
+
 
 context 
   notes [fcomp_norm_unfold] = array_assn_def[symmetric]
@@ -91,8 +117,14 @@ begin
 
   sepref_decl_impl (no_mop) hn_array_repl_init_raw uses array.replicate_init_param . 
   
-  
-  term op_list_replicate
+  lemma hn_array_grow_init_raw:
+    shows "(uncurry2 array_grow, uncurry2 (RETURN ooo grow_init_raw)) 
+      \<in> [\<lambda>((ns,os),xs). os\<le>length xs \<and> os\<le>ns]\<^sub>a snat_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k *\<^sub>a raw_array_assn\<^sup>d \<rightarrow> raw_array_assn"
+    unfolding snat_rel_def snat.assn_is_rel[symmetric]
+    apply sepref_to_hoare
+    by vcg'
+    
+  sepref_decl_impl (no_mop) hn_array_grow_init_raw uses grow_init_param .
   
   sepref_decl_op array_custom_replicate: op_list_replicate :: "nat_rel \<rightarrow> A \<rightarrow> \<langle>A\<rangle>list_rel" .
   
@@ -184,6 +216,25 @@ sepref_definition la_replicate_init_impl [llvm_inline] is "(RETURN o la_replicat
 
 sepref_decl_impl (no_mop) la_replicate_init_impl.refine[FCOMP la_replicate_init1_refine] uses larray.replicate_init_param .
   
+
+
+definition "la_grow_init1 \<equiv> \<lambda>ns os (n,xs). (ns, op_list_grow_init init ns os xs)"
+lemma la_grow_init1_refine: "(uncurry2 la_grow_init1, uncurry2 grow_init_raw) 
+  \<in> [\<lambda>((ns,os),xs). os\<le>length xs \<and> os\<le>ns]\<^sub>f (nat_rel \<times>\<^sub>r nat_rel) \<times>\<^sub>r larray1_rel \<rightarrow> larray1_rel"
+  by (auto simp: larray1_rel_def in_br_conv la_grow_init1_def intro!: frefI)
+  
+    
+sepref_definition la_grow_init_impl [llvm_inline] is "(uncurry2 (RETURN ooo la_grow_init1))" 
+  :: "[\<lambda>((ns,os),(n,xs)). os\<le>length xs \<and> os\<le>ns]\<^sub>a (snat_assn' TYPE('b::len2))\<^sup>k *\<^sub>a (snat_assn' TYPE('b::len2))\<^sup>k *\<^sub>a (larray_impl_assn' TYPE('b::len2))\<^sup>d \<rightarrow> larray_impl_assn' TYPE('b::len2)"
+  unfolding la_grow_init1_def 
+  by sepref
+
+sepref_decl_impl (no_mop) la_grow_init_impl.refine[FCOMP la_grow_init1_refine] uses grow_init_param .
+
+definition [simp]: "op_list_grow_init' i ns xs \<equiv> xs@replicate (ns-length xs) i"
+
+lemma op_list_grow_init'_alt: "op_list_grow_init' i ns xs = op_list_grow_init i ns (length xs) xs" by simp
+
 
 definition "la_length1 nxs \<equiv> case nxs of (n,_) \<Rightarrow> id n"
 lemma la_length1_refine: "(la_length1,op_list_length) \<in> larray1_rel \<rightarrow> nat_rel"
