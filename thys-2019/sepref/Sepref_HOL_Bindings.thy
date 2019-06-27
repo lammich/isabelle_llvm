@@ -575,6 +575,11 @@ subsubsection \<open>Operator Setup\<close>
 
 text \<open>Not-Equals is an operator in LLVM, but not in HOL\<close>
 definition [simp]: "op_neq a b \<equiv> a\<noteq>b"  
+(* TODO: Maybe have this pattern rule only for certain types.
+  Otherwise, op_neq has to be implemented by every type that has custom eq-operator!
+
+  The best solution would, or course, be to have a generic algorithm!
+*)
 lemma op_neq_pat[def_pat_rules]: "Not$((=)$a$b) \<equiv> op_neq$a$b" by simp
 sepref_register op_neq_word: "op_neq :: _ word \<Rightarrow> _"
 
