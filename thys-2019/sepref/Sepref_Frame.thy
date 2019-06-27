@@ -28,11 +28,13 @@ lemma frame_thms:
   "P\<turnstile>P' \<Longrightarrow> F\<turnstile>F' \<Longrightarrow> P**F \<turnstile> P'**F'"
   "CONSTRAINT is_pure R \<Longrightarrow> hn_invalid R x y \<turnstile> hn_ctxt R x y"
   "CONSTRAINT is_pure R \<Longrightarrow> hn_ctxt R x y \<turnstile> hn_val UNIV x y"
+  "CONSTRAINT is_pure A \<Longrightarrow> hn_ctxt A x y \<turnstile> hn_invalid A x y"  
   apply -
   applyS simp
   applyS (rule conj_entails_mono; assumption)
   applyS (erule recover_pure_aux)
   applyS (simp, smt entails_def eq_UNIV_iff hn_ctxt_def is_pureE pred_lift_def pure_app_eq)
+  applyS (auto simp: hn_ctxt_def invalid_assn_def is_pure_iff_pure_assn)
   done
 
 named_theorems_rev sepref_frame_match_rules \<open>Sepref: Additional frame rules\<close>
