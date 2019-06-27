@@ -256,4 +256,56 @@ lemma unat_xor: "unat (x XOR y) = unat x XOR unat y"
   by (simp add: uint_xor bitXOR_nat_def)
   
   
+  
+(* TODO: Add OR-numerals, XOR-numerals! *)  
+  
+lemma nat_and_numerals [simp]:
+  "(numeral (Num.Bit0 x) :: nat) AND (numeral (Num.Bit0 y) :: nat) = (2 :: nat) * (numeral x AND numeral y)"
+  "numeral (Num.Bit0 x) AND numeral (Num.Bit1 y) = (2 :: nat) * (numeral x AND numeral y)"
+  "numeral (Num.Bit1 x) AND numeral (Num.Bit0 y) = (2 :: nat) * (numeral x AND numeral y)"
+  "numeral (Num.Bit1 x) AND numeral (Num.Bit1 y) = (2 :: nat) * (numeral x AND numeral y)+1"
+  "0 AND n = 0"
+  "n AND 0 = 0"
+  "(1::nat) AND numeral (Num.Bit0 y) = 0"
+  "(1::nat) AND numeral (Num.Bit1 y) = 1"
+  "numeral (Num.Bit0 x) AND (1::nat) = 0"
+  "numeral (Num.Bit1 x) AND (1::nat) = 1"
+  "(Suc 0::nat) AND numeral (Num.Bit0 y) = 0"
+  "(Suc 0::nat) AND numeral (Num.Bit1 y) = 1"
+  "numeral (Num.Bit0 x) AND (Suc 0::nat) = 0"
+  "numeral (Num.Bit1 x) AND (Suc 0::nat) = 1"
+  "Suc 0 AND Suc 0 = 1"
+  for n::nat
+  by (auto simp: bitAND_nat_def Bit_def nat_add_distrib)
+  
+  
+  
+lemma nat_and_comm: "a AND b = b AND a" for a b :: nat
+  unfolding bitAND_nat_def by (auto simp: int_and_comm)
+
+lemma AND_upper_nat1: "a AND b \<le> a" for a b :: nat
+proof -
+  have "int a AND int b \<le> int a"
+    by (rule AND_upper1) simp
+  thus ?thesis unfolding bitAND_nat_def by linarith
+qed    
+
+lemma AND_upper_nat2: "a AND b \<le> b" for a b :: nat
+  using AND_upper_nat1[of b a] by (simp add: nat_and_comm)
+  
+lemmas AND_upper_nat1' [simp] = order_trans [OF AND_upper_nat1]
+lemmas AND_upper_nat1'' [simp] = order_le_less_trans [OF AND_upper_nat1]
+  
+lemmas AND_upper_nat2' [simp] = order_trans [OF AND_upper_nat2]
+lemmas AND_upper_nat2'' [simp] = order_le_less_trans [OF AND_upper_nat2]
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
 end

@@ -78,6 +78,11 @@ lemma word1_cases[cases type]:
 lemma word1_NOT_eq: "~~(x::1 word) = x+1"
   by (auto simp: NOT_eq)
 
+lemma upcast_no_msb[simp]: "LENGTH('small::len) < LENGTH('big::len) \<Longrightarrow> \<not>msb (UCAST('small \<rightarrow> 'big) x)" 
+  apply (clarsimp simp: ucast_def msb_word_of_int)
+  apply transfer
+  using nth_bintr by auto
+  
 
 subsection \<open>Integer Division with Rounding Towards Zero\<close>
 

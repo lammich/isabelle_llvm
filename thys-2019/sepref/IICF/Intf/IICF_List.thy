@@ -13,43 +13,6 @@ lemma param_index[param]:
 
 
 (* TODO: Move? *)
-subsection \<open>Swap two elements of a list, by index\<close>
-
-definition "swap l i j \<equiv> l[i := l!j, j:=l!i]"
-lemma swap_nth[simp]: "\<lbrakk>i < length l; j<length l; k<length l\<rbrakk> \<Longrightarrow>
-  swap l i j!k = (
-    if k=i then l!j
-    else if k=j then l!i
-    else l!k
-  )"
-  unfolding swap_def
-  by auto
-
-lemma swap_set[simp]: "\<lbrakk> i < length l; j<length l \<rbrakk> \<Longrightarrow> set (swap l i j) = set l"  
-  unfolding swap_def
-  by auto
-
-lemma swap_multiset[simp]: "\<lbrakk> i < length l; j<length l \<rbrakk> \<Longrightarrow> mset (swap l i j) = mset l"  
-  unfolding swap_def
-  by (auto simp: mset_swap)
-
-
-lemma swap_length[simp]: "length (swap l i j) = length l"  
-  unfolding swap_def
-  by auto
-
-lemma swap_same[simp]: "swap l i i = l"
-  unfolding swap_def by auto
-
-lemma distinct_swap[simp]: 
-  "\<lbrakk>i<length l; j<length l\<rbrakk> \<Longrightarrow> distinct (swap l i j) = distinct l"
-  unfolding swap_def
-  by auto
-
-lemma map_swap: "\<lbrakk>i<length l; j<length l\<rbrakk> 
-  \<Longrightarrow> map f (swap l i j) = swap (map f l) i j"
-  unfolding swap_def 
-  by (auto simp add: map_update)
 
 lemma swap_param[param]: "\<lbrakk> i<length l; j<length l; (l',l)\<in>\<langle>A\<rangle>list_rel; (i',i)\<in>nat_rel; (j',j)\<in>nat_rel\<rbrakk>
   \<Longrightarrow> (swap l' i' j', swap l i j)\<in>\<langle>A\<rangle>list_rel"
@@ -159,6 +122,14 @@ begin
 end
 
 
+lemma gen_swap: "swap xs i j = (let
+  xi = op_list_get xs i;
+  xj = op_list_get xs j;
+  xs = op_list_set xs i xj;
+  xs = op_list_set xs j xi 
+  in xs)"
+  by (auto simp: swap_def)
+
 lemma gen_mop_list_swap: "mop_list_swap l i j = do {
     xi \<leftarrow> mop_list_get l i;
     xj \<leftarrow> mop_list_get l j;
@@ -167,7 +138,9 @@ lemma gen_mop_list_swap: "mop_list_swap l i j = do {
     RETURN l
   }"
   unfolding mop_list_swap_def
-  by (auto simp: pw_eq_iff refine_pw_simps swap_def)
+  by (auto simp: pw_eq_iff refine_pw_simps gen_swap)
 
-
+lemmas gen_op_list_swap = gen_swap[folded op_list_swap_def]
+  
+  
 end

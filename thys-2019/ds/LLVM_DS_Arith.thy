@@ -91,7 +91,7 @@ abbreviation (input) "word_len \<equiv> \<lambda>_::'a::len0 word. LENGTH('a)"
 lemma snat_lt_max_snat[simp]: "snat w < max_snat (word_len w)"
   by (auto simp: snat_def max_snat_def sint_range')
   
-subsubsection \<open>Reflection of Maximum Representable Values\<close>  
+subsection \<open>Reflection of Maximum Representable Values\<close>  
   
 definition ll_max_uint :: "'l::len word llM" where [llvm_inline]: "ll_max_uint \<equiv> ll_sub 0 1"
 definition ll_max_sint :: "'l::len2 word llM" where [llvm_inline]: "ll_max_sint \<equiv> doM {r \<leftarrow> ll_max_uint; ll_lshr r 1}"
@@ -150,7 +150,7 @@ lemma ll_max_sint_rule: "llvm_htriple (\<box>) (ll_max_sint::'l::len2 word llM) 
 
 end  
   
-subsubsection \<open>Signed Integers\<close>
+subsection \<open>Signed Integers\<close>
 
 interpretation sint: standard_opr_abstraction sint 
   "\<lambda>_. True" 
@@ -238,7 +238,7 @@ end
     
   
   
-subsubsection \<open>Unsigned Integers\<close>
+subsection \<open>Unsigned Integers\<close>
 
 interpretation uint: standard_opr_abstraction uint 
   "\<lambda>_. True" 
@@ -401,7 +401,7 @@ lemma lt_exp2n_nat_estimate[simp]:
 end  
 
 
-subsubsection \<open>Natural Numbers by signed\<close>
+subsection \<open>Natural Numbers by signed\<close>
 
 
 definition "snat_invar (w::'a::len2 word) \<equiv> \<not>msb w"
@@ -560,5 +560,72 @@ proof -
     apply (simp add: nat_mod_distrib nat_mult_distrib nat_diff_distrib' nat_power_eq less_imp_diff_less)
     done
 qed    
+
+
+subsection \<open>Casting\<close>
+
+(* TODO: Add other casts. 
+
+  up/down * su/us/ss/uu
+
+  and su_conv, us_conv
+  
+  Some casts might be expressable as up/downcast followed by conv!
+*)
+
+context begin
+  interpretation llvm_prim_arith_setup .
+
+    
+  definition [llvm_inline]: "unat_snat_upcast TYPE('a::len2) x \<equiv> ll_zext x TYPE('a word)"
+  definition [llvm_inline]: "snat_unat_downcast TYPE('a::len) x \<equiv> ll_trunc x TYPE('a word)"
+    
+  definition [llvm_inline]: "snat_snat_upcast TYPE('a::len2) x \<equiv> ll_zext x TYPE('a word)"
+  definition [llvm_inline]: "snat_snat_downcast TYPE('a::len) x \<equiv> ll_trunc x TYPE('a word)"
+  
+  lemma unat_snat_upcast_rule[vcg_rules]:
+    "llvm_htriple 
+      (\<up>(is_up' UCAST('small \<rightarrow> 'big)) ** \<upharpoonleft>unat.assn n (ni::'small::len word)) 
+      (unat_snat_upcast TYPE('big::len2) ni) 
+      (\<lambda>r. \<upharpoonleft>snat.assn n r)"
+    unfolding unat.assn_def snat.assn_def unat_snat_upcast_def
+    apply vcg'
+    apply (auto simp: snat_invar_def snat_eq_unat(2) unat_ucast_upcast)
+    done
+
+  lemma snat_unat_downcast_rule[vcg_rules]:
+    "llvm_htriple 
+      (\<up>(is_down' UCAST('big \<rightarrow> 'small)) ** \<upharpoonleft>snat.assn n (ni::'big::len2 word) ** \<up>(n<max_unat LENGTH('small))) 
+      (snat_unat_downcast TYPE('small::len) ni) 
+      (\<lambda>r. \<upharpoonleft>unat.assn n r)"
+    unfolding unat.assn_def snat.assn_def snat_unat_downcast_def
+    apply vcg'
+    apply (auto simp: snat_invar_def snat_eq_unat(2) max_unat_def)
+    by (metis ucast_nat_def unat_of_nat_eq)
+
+  lemma snat_snat_upcast_rule[vcg_rules]:
+    "llvm_htriple 
+      (\<up>(is_up' UCAST('small \<rightarrow> 'big)) ** \<upharpoonleft>snat.assn n (ni::'small::len2 word)) 
+      (snat_snat_upcast TYPE('big::len2) ni) 
+      (\<lambda>r. \<upharpoonleft>snat.assn n r)"
+    unfolding unat.assn_def snat.assn_def snat_snat_upcast_def
+    apply vcg'
+    apply (auto simp: snat_invar_def snat_eq_unat(2) unat_ucast_upcast)
+    done
+
+  lemma snat_snat_downcast_rule[vcg_rules]:
+    "llvm_htriple 
+      (\<up>(is_down' UCAST('big \<rightarrow> 'small)) ** \<upharpoonleft>snat.assn n (ni::'big::len2 word) ** \<up>(n<max_snat LENGTH('small))) 
+      (snat_snat_downcast TYPE('small::len2) ni) 
+      (\<lambda>r. \<upharpoonleft>snat.assn n r)"
+    unfolding snat.assn_def snat_snat_downcast_def
+    apply vcg'
+    apply (clarsimp simp: snat_invar_def max_snat_def)
+    by (metis One_nat_def le_def msb_unat_big snat_eq_unat(1) snat_in_bounds_aux ucast_nat_def unat_of_nat_len)
+
+end
+
+
+
 
 end
