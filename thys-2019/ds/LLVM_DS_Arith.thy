@@ -583,6 +583,11 @@ context begin
   definition [llvm_inline]: "snat_snat_upcast TYPE('a::len2) x \<equiv> ll_zext x TYPE('a word)"
   definition [llvm_inline]: "snat_snat_downcast TYPE('a::len) x \<equiv> ll_trunc x TYPE('a word)"
   
+  definition [llvm_inline]: "unat_unat_upcast TYPE('a::len) x \<equiv> ll_zext x TYPE('a word)"
+  definition [llvm_inline]: "unat_unat_downcast TYPE('a::len) x \<equiv> ll_trunc x TYPE('a word)"
+
+    
+  
   lemma unat_snat_upcast_rule[vcg_rules]:
     "llvm_htriple 
       (\<up>(is_up' UCAST('small \<rightarrow> 'big)) ** \<upharpoonleft>unat.assn n (ni::'small::len word)) 
@@ -623,6 +628,27 @@ context begin
     apply (clarsimp simp: snat_invar_def max_snat_def)
     by (metis One_nat_def le_def msb_unat_big snat_eq_unat(1) snat_in_bounds_aux ucast_nat_def unat_of_nat_len)
 
+   lemma unat_unat_upcast_rule[vcg_rules]:
+    "llvm_htriple 
+      (\<up>(is_up' UCAST('small \<rightarrow> 'big)) ** \<upharpoonleft>unat.assn n (ni::'small::len word)) 
+      (unat_unat_upcast TYPE('big::len) ni) 
+      (\<lambda>r. \<upharpoonleft>unat.assn n r)"
+    unfolding unat.assn_def snat.assn_def unat_unat_upcast_def
+    apply vcg'
+    apply (auto simp: snat_invar_def snat_eq_unat(2) unat_ucast_upcast)
+    done
+
+  lemma unat_unat_downcast_rule[vcg_rules]:
+    "llvm_htriple 
+      (\<up>(is_down' UCAST('big \<rightarrow> 'small)) ** \<upharpoonleft>unat.assn n (ni::'big::len word) ** \<up>(n<max_unat LENGTH('small))) 
+      (unat_unat_downcast TYPE('small::len) ni) 
+      (\<lambda>r. \<upharpoonleft>unat.assn n r)"
+    unfolding unat.assn_def unat.assn_def unat_unat_downcast_def
+    apply vcg'
+    apply (auto simp: snat_invar_def snat_eq_unat(2) max_unat_def)
+    by (metis ucast_nat_def unat_of_nat_eq)
+    
+    
 end
 
 

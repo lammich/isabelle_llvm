@@ -651,7 +651,22 @@ end
 
 context begin  
   interpretation llvm_prim_arith_setup .  
- 
+
+context fixes a::num begin  
+  sepref_register 
+    "numeral a :: _ word"  
+    "0 :: _ word"
+    "1 :: _ word"
+
+  lemma word_numeral_param[sepref_import_param]:
+    "(PR_CONST (numeral a),PR_CONST (numeral a)) \<in> word_rel"  
+    "(0,0)\<in>word_rel"
+    "(1,1)\<in>word_rel"
+    by auto
+        
+end
+  
+   
 sepref_register 
   plus_word: "(+):: _ word \<Rightarrow> _"  
   minus_word: "(-):: _ word \<Rightarrow> _"  
@@ -708,7 +723,7 @@ lemma hn_word_icmp_op[sepref_fr_rules]:
   apply (sepref_to_hoare; vcg; fail)+
   done
   
-
+  
 lemma is_init_word[sepref_gen_algo_rules]:
   "GEN_ALGO 0 (is_init word_assn)"
   unfolding GEN_ALGO_def is_init_def
@@ -1107,6 +1122,14 @@ context fixes T :: "'a::len2 itself" begin
   
 end
 
+context fixes T :: "'a::len itself" begin
+  definition [simp]: "unat_unat_upcast_aux \<equiv> let _=TYPE('a) in id::nat\<Rightarrow>nat"
+  definition [simp]: "unat_unat_downcast_aux \<equiv> let _=TYPE('a) in id::nat\<Rightarrow>nat"
+
+  sepref_decl_op unat_unat_upcast: "unat_unat_upcast_aux" :: "nat_rel \<rightarrow> nat_rel" .
+  sepref_decl_op unat_unat_downcast: "unat_unat_downcast_aux" :: "nat_rel \<rightarrow> nat_rel" .
+end
+
 sepref_decl_op unat_snat_conv: "id::nat\<Rightarrow>_" :: "nat_rel \<rightarrow> nat_rel" .
 
 
@@ -1115,6 +1138,8 @@ lemma annot_snat_unat_downcast: "x = op_snat_unat_downcast TYPE('l::len) x" by s
 lemma annot_snat_snat_upcast: "x = op_snat_snat_upcast TYPE('l::len2) x" by simp 
 lemma annot_snat_snat_downcast: "x = op_snat_snat_downcast TYPE('l::len2) x" by simp 
 lemma annot_unat_snat_conv: "x = op_unat_snat_conv x" by simp 
+lemma annot_unat_unat_upcast: "x = op_unat_unat_upcast TYPE('l::len) x" by simp 
+lemma annot_unat_unat_downcast: "x = op_unat_unat_downcast TYPE('l::len) x" by simp 
   
 
 lemma in_unat_rel_conv_assn: "\<up>((xi, x) \<in> unat_rel) = \<upharpoonleft>unat.assn x xi"
@@ -1167,6 +1192,30 @@ context fixes BIG :: "'big::len2" and SMALL :: "'small::len2" begin
   
 end
 
+context fixes BIG :: "'big::len" and SMALL :: "'small::len" begin  
+  lemma unat_unat_upcast_refine: 
+    "(unat_unat_upcast TYPE('big), PR_CONST (mop_unat_unat_upcast TYPE('big))) \<in> [\<lambda>_. is_up' UCAST('small \<rightarrow> 'big)]\<^sub>a (unat_assn' TYPE('small::len))\<^sup>k \<rightarrow> unat_assn"
+    supply [simp] = in_unat_rel_conv_assn
+    apply sepref_to_hoare
+    apply simp
+    by vcg'
+  
+  sepref_decl_impl (ismop) unat_unat_upcast_refine fixes 'big 'small by simp
+  
+  lemma unat_unat_downcast_refine: 
+    "(unat_unat_downcast TYPE('small), PR_CONST (mop_unat_unat_downcast TYPE('small))) 
+      \<in> [\<lambda>x. is_down' UCAST('big \<rightarrow> 'small) \<and> x<max_unat LENGTH('small)]\<^sub>a (unat_assn' TYPE('big::len))\<^sup>k \<rightarrow> unat_assn"
+    supply [simp] = in_unat_rel_conv_assn
+    apply sepref_to_hoare
+    apply simp
+    by vcg'
+  
+  sepref_decl_impl (ismop) unat_unat_downcast_refine fixes 'big 'small by simp
+end
+
+
+
+
 definition unat_snat_conv :: "'l::len2 word \<Rightarrow> 'l word llM" 
   where "unat_snat_conv x \<equiv> return x"  
   
@@ -1192,6 +1241,64 @@ context fixes T::"'l::len2" begin
   sepref_decl_impl unat_snat_conv_refine[sepref_param] fixes 'l by auto
 end   
   
+
+text \<open>Converting to Word\<close>
+sepref_register "of_nat :: _ \<Rightarrow> _ word "
+lemma of_nat_word_refine[sepref_import_param]: 
+  "(id,of_nat) \<in> unat_rel' TYPE('a::len) \<rightarrow> word_rel"
+  by (auto simp: unat_rel_def unat.rel_def in_br_conv)
+
+
+
+subsubsection \<open>Bit-Shifting\<close>
+
+sepref_register 
+  shl_word: "(<<):: _ word \<Rightarrow> _"  
+  lshr_word: "(>>):: _ word \<Rightarrow> _"  
+  ashr_word: "(>>>):: _ word \<Rightarrow> _"  
+
+context begin
+
+interpretation llvm_prim_arith_setup .
+  
+lemma shl_hnr_unat[sepref_fr_rules]: "(uncurry ll_shl,uncurry (RETURN oo (<<))) \<in> [\<lambda>(a,b). b < LENGTH('a)]\<^sub>a (word_assn :: 'a::len word \<Rightarrow> _)\<^sup>k *\<^sub>a unat_assn\<^sup>k \<rightarrow> word_assn"
+  unfolding unat_rel_def unat.assn_is_rel[symmetric] unat.assn_def
+  apply sepref_to_hoare
+  by vcg'
+
+lemma lshr_hnr_unat[sepref_fr_rules]: "(uncurry ll_lshr,uncurry (RETURN oo (>>))) \<in> [\<lambda>(a,b). b < LENGTH('a)]\<^sub>a (word_assn :: 'a::len word \<Rightarrow> _)\<^sup>k *\<^sub>a unat_assn\<^sup>k \<rightarrow> word_assn"
+  unfolding unat_rel_def unat.assn_is_rel[symmetric] unat.assn_def
+  apply sepref_to_hoare
+  by vcg'
+
+lemma ashr_hnr_unat[sepref_fr_rules]: "(uncurry ll_ashr,uncurry (RETURN oo (>>>))) \<in> [\<lambda>(a,b). b < LENGTH('a)]\<^sub>a (word_assn :: 'a::len word \<Rightarrow> _)\<^sup>k *\<^sub>a unat_assn\<^sup>k \<rightarrow> word_assn"
+  unfolding unat_rel_def unat.assn_is_rel[symmetric] unat.assn_def
+  apply sepref_to_hoare
+  by vcg'
+
+lemma shl_hnr_snat[sepref_fr_rules]: "(uncurry ll_shl,uncurry (RETURN oo (<<))) \<in> [\<lambda>(a,b). b < LENGTH('a)]\<^sub>a (word_assn :: 'a::len2 word \<Rightarrow> _)\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow> word_assn"
+  unfolding snat_rel_def snat.assn_is_rel[symmetric] snat.assn_def
+  supply [simp] = snat_eq_unat
+  apply sepref_to_hoare
+  by vcg'
+  
+lemma lshr_hnr_snat[sepref_fr_rules]: "(uncurry ll_lshr,uncurry (RETURN oo (>>))) \<in> [\<lambda>(a,b). b < LENGTH('a)]\<^sub>a (word_assn :: 'a::len2 word \<Rightarrow> _)\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow> word_assn"
+  unfolding snat_rel_def snat.assn_is_rel[symmetric] snat.assn_def
+  supply [simp] = snat_eq_unat
+  apply sepref_to_hoare
+  by vcg'
+
+lemma ashr_hnr_snat[sepref_fr_rules]: "(uncurry ll_ashr,uncurry (RETURN oo (>>>))) \<in> [\<lambda>(a,b). b < LENGTH('a)]\<^sub>a (word_assn :: 'a::len2 word \<Rightarrow> _)\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow> word_assn"
+  unfolding snat_rel_def snat.assn_is_rel[symmetric] snat.assn_def
+  supply [simp] = snat_eq_unat
+  apply sepref_to_hoare
+  by vcg'
+  
+      
+end
+
+
+
 subsection \<open>HOL Combinators\<close>
 
 subsubsection \<open>If\<close>
