@@ -189,10 +189,19 @@ ML \<open>
         @{mk_term env: "?t1.0 $ ?t2.0"}
       end
     | protect env (Abs (x,T,t)) = let
+        val env' = T::env
+        val t = protect env' t
+        val t = @{mk_term env': "PROTECT2 ?t DUMMY"}
+      in
+        Abs (x,T,t)
+      end
+    (* TODO: Avoiding mk_term with loose vars under \<lambda>! Fix that!
+    | protect env (Abs (x,T,t)) = let
         val t = protect (T::env) t
       in
         @{mk_term env: "\<lambda>v_x::?'v_T. PROTECT2 ?t DUMMY"}
       end
+    *)  
     | protect _ t = t
 
     fun protect_conv ctxt = Refine_Util.f_tac_conv ctxt

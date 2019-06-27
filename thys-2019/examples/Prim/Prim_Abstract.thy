@@ -7,7 +7,6 @@ imports
   "../../sepref/IICF/Impl/IICF_Array_of_Array_List"
   "../../sepref/IICF/Impl/Heaps/IICF_Impl_Heapmap"
 begin
-
   (* TODO: Move! *)
   definition "combf X f\<^sub>1 f\<^sub>2 x \<equiv> if x\<in>X then f\<^sub>1 x else f\<^sub>2 x"
   
