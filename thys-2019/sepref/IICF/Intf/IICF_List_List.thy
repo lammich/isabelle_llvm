@@ -16,6 +16,11 @@ begin
       unfolding conv_to_is_Nil short_circuit_conv
       by parametricity
       
+    sepref_decl_op list_list_upd: "\<lambda>xss i j x. xss[i:=(xss!i)[j:=x]]" 
+      :: "[\<lambda>(((xss,i),j),x). i<length xss \<and> j<length (xss!i)]\<^sub>f (((LR A \<times>\<^sub>r nat_rel) \<times>\<^sub>r nat_rel) \<times>\<^sub>r A) \<rightarrow> LR A" 
+      unfolding short_circuit_conv
+      by parametricity
+      
     sepref_decl_op list_list_idx: "\<lambda>xss i j. xss!i!j" :: "[\<lambda>((xss,i),j). i<length xss \<and> j<length (xss!i)]\<^sub>f ((LR A \<times>\<^sub>r nat_rel) \<times>\<^sub>r nat_rel) \<rightarrow> A" 
       unfolding short_circuit_conv
       by parametricity

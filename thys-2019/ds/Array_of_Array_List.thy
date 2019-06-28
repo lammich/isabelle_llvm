@@ -272,6 +272,27 @@ subsection \<open>Arrays that own their Elements\<close>
     unfolding aal_assn_def aal_idx_def
     by vcg
     
+  definition [llvm_code, llvm_inline]: "aal_upd na i j x \<equiv> doM {
+    let (n,a) = na;
+    aa \<leftarrow> nao_nth a i;
+    aa \<leftarrow> arl_upd aa j x;
+    a \<leftarrow> nao_upd a i aa;
+    return (n,a)
+  }"
+
+  lemma aal_upd_rl[vcg_rules]:
+    fixes a :: "('ll::len2,'a::llvm_rep,'l::len2) array_array_list"
+    shows "llvm_htriple 
+      (\<upharpoonleft>aal_assn xss a ** \<upharpoonleft>snat.assn i ii ** \<upharpoonleft>snat.assn j jj ** \<up>(i<length xss \<and> j < length (xss!i)))
+      (aal_upd a ii jj x)
+      (\<lambda>a. \<upharpoonleft>aal_assn (xss[i:=(xss!i)[j:=x]]) a)
+    "
+    unfolding aal_assn_def aal_upd_def
+    by vcg
+      
+    
+    
+    
     
   definition [llvm_code, llvm_inline]: "aal_llen na i \<equiv> doM {
     let (n,a) = na;
@@ -337,6 +358,7 @@ subsection \<open>Arrays that own their Elements\<close>
     "aal_push_back :: (64,8 word,64) array_array_list \<Rightarrow> 64 word \<Rightarrow> 8 word \<Rightarrow> (64,8 word,64) array_array_list llM"  
     "aal_pop_back :: (64,8 word,64) array_array_list \<Rightarrow> 64 word \<Rightarrow> (8 word \<times> (64,8 word,64) array_array_list) llM"  
     "aal_idx :: (64,8 word,64) array_array_list \<Rightarrow> 64 word \<Rightarrow> 64 word \<Rightarrow> 8 word llM"  
+    "aal_upd :: (64,8 word,64) array_array_list \<Rightarrow> 64 word \<Rightarrow> 64 word \<Rightarrow> 8 word \<Rightarrow> (64,8 word,64) array_array_list llM"  
     "aal_llen :: (64,8 word,64) array_array_list \<Rightarrow> 64 word \<Rightarrow> 64 word llM"  
     "aal_len :: (64,8 word,64) array_array_list \<Rightarrow> 64 word llM"  
     "aal_free :: (64,8 word,64) array_array_list \<Rightarrow> unit llM"  

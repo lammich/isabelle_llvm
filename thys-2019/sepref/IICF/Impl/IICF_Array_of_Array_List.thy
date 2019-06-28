@@ -56,7 +56,15 @@ begin
 
       sepref_decl_impl aal_idx_hnr_aux         
         unfolding short_circuit_conv by parametricity
+
+      lemma aal_upd_hnr_aux: "(uncurry3 aal_upd, uncurry3 (RETURN oooo op_list_list_upd)) 
+        \<in> [\<lambda>(((xss,i),j),x). i<length xss \<and> j < length (xss!i)]\<^sub>a AA\<^sup>d *\<^sub>a snat_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k *\<^sub>a id_assn\<^sup>k \<rightarrow> AA"
+        by p_hnr
+
+      sepref_decl_impl aal_upd_hnr_aux         
+        unfolding short_circuit_conv by parametricity
         
+                
       lemma aal_llen_hnr_aux: "(uncurry aal_llen, uncurry (RETURN oo op_list_list_llen)) 
         \<in> [\<lambda>(xss,i). i<length xss]\<^sub>a AA\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow> snat_assn"
         by p_hnr

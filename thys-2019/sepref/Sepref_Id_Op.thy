@@ -337,6 +337,7 @@ ML \<open>
 subsection \<open>Default Setup\<close>
 
 subsubsection \<open>Numerals\<close> 
+(* TODO: Either remove, or also add numerals 0 and 1! *)
 lemma pat_numeral[def_pat_rules]: "numeral$x \<equiv> UNPROTECT (numeral$x)" by simp
 
 lemma id_nat_const[id_rules]: "(PR_CONST (a::nat)) ::\<^sub>i TYPE(nat)" by simp

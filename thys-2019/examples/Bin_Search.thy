@@ -1,6 +1,9 @@
 theory Bin_Search
 imports "../sepref/IICF/IICF" "List-Index.List_Index"
 begin
+
+  term is_None
+
   subsection \<open>Binary Search\<close>
     
   subsubsection \<open>Abstract Algorithm\<close>

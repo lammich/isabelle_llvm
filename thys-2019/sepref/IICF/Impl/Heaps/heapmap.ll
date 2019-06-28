@@ -66,7 +66,7 @@ define { { { i32, i32* }, i32* }, i32* } @IICF_Impl_Heapmap_hm_sink_impl({ { { i
   start:
     %x2 = insertvalue { { { { i32, i32* }, i32* }, i32* }, i32 } zeroinitializer, { { { i32, i32* }, i32* }, i32* } %x, 0
     %x3 = insertvalue { { { { i32, i32* }, i32* }, i32* }, i32 } %x2, i32 %x1, 1
-    %x4 = call { { { i32, i32* }, i32* }, i32* } @IICF_Impl_Heapmap_hm_sink_impl_f_011169448 ({ { { { i32, i32* }, i32* }, i32* }, i32 } %x3)
+    %x4 = call { { { i32, i32* }, i32* }, i32* } @IICF_Impl_Heapmap_hm_sink_impl_f_011646666 ({ { { { i32, i32* }, i32* }, i32* }, i32 } %x3)
     ret { { { i32, i32* }, i32* }, i32* } %x4
 }
 
@@ -75,7 +75,7 @@ define { { { i32, i32* }, i32* }, i32* } @IICF_Impl_Heapmap_hm_swim_impl({ { { i
   start:
     %x2 = insertvalue { { { { i32, i32* }, i32* }, i32* }, i32 } zeroinitializer, { { { i32, i32* }, i32* }, i32* } %x, 0
     %x3 = insertvalue { { { { i32, i32* }, i32* }, i32* }, i32 } %x2, i32 %x1, 1
-    %x4 = call { { { i32, i32* }, i32* }, i32* } @IICF_Impl_Heapmap_hm_swim_impl_f_011166226 ({ { { { i32, i32* }, i32* }, i32* }, i32 } %x3)
+    %x4 = call { { { i32, i32* }, i32* }, i32* } @IICF_Impl_Heapmap_hm_swim_impl_f_011643444 ({ { { { i32, i32* }, i32* }, i32* }, i32 } %x3)
     ret { { { i32, i32* }, i32* }, i32* } %x4
 }
 
@@ -546,7 +546,7 @@ define i1 @IICF_Indexed_Array_List_ial_contains_impl(i32 %x, { { i32, i32* }, i3
     ret i1 %r
 }
 
-define { { { i32, i32* }, i32* }, i32* } @IICF_Impl_Heapmap_hm_sink_impl_f_011169448({ { { { i32, i32* }, i32* }, i32* }, i32 } %x) {
+define { { { i32, i32* }, i32* }, i32* } @IICF_Impl_Heapmap_hm_sink_impl_f_011646666({ { { { i32, i32* }, i32* }, i32* }, i32 } %x) {
 
   start:
     %a1 = extractvalue { { { { i32, i32* }, i32* }, i32* }, i32 } %x, 0
@@ -651,7 +651,7 @@ define { { { i32, i32* }, i32* }, i32* } @IICF_Impl_Heapmap_hm_sink_impl_f_01116
     %xu = call { { { i32, i32* }, i32* }, i32* } @IICF_Impl_Heapmap_hm_exch_impl ({ { { i32, i32* }, i32* }, i32* } %a1, i32 %a2, i32 %xk)
     %xv = insertvalue { { { { i32, i32* }, i32* }, i32* }, i32 } zeroinitializer, { { { i32, i32* }, i32* }, i32* } %xu, 0
     %x2 = insertvalue { { { { i32, i32* }, i32* }, i32* }, i32 } %xv, i32 %xk, 1
-    %x3 = call { { { i32, i32* }, i32* }, i32* } @IICF_Impl_Heapmap_hm_sink_impl_f_011169448 ({ { { { i32, i32* }, i32* }, i32* }, i32 } %x2)
+    %x3 = call { { { i32, i32* }, i32* }, i32* } @IICF_Impl_Heapmap_hm_sink_impl_f_011646666 ({ { { { i32, i32* }, i32* }, i32* }, i32 } %x2)
     br label %ctd_ifc
 
   elsec:
@@ -669,7 +669,7 @@ define { { { i32, i32* }, i32* }, i32* } @IICF_Impl_Heapmap_hm_sink_impl_f_01116
     ret { { { i32, i32* }, i32* }, i32* } %x5
 }
 
-define { { { i32, i32* }, i32* }, i32* } @IICF_Impl_Heapmap_hm_swim_impl_f_011166226({ { { { i32, i32* }, i32* }, i32* }, i32 } %x) {
+define { { { i32, i32* }, i32* }, i32* } @IICF_Impl_Heapmap_hm_swim_impl_f_011643444({ { { { i32, i32* }, i32* }, i32* }, i32 } %x) {
 
   start:
     %a1 = extractvalue { { { { i32, i32* }, i32* }, i32* }, i32 } %x, 0
@@ -715,7 +715,7 @@ define { { { i32, i32* }, i32* }, i32* } @IICF_Impl_Heapmap_hm_swim_impl_f_01116
     %xoa = udiv i32 %a2, 2
     %xp = insertvalue { { { { i32, i32* }, i32* }, i32* }, i32 } zeroinitializer, { { { i32, i32* }, i32* }, i32* } %xn, 0
     %x1 = insertvalue { { { { i32, i32* }, i32* }, i32* }, i32 } %xp, i32 %xoa, 1
-    %x2 = call { { { i32, i32* }, i32* }, i32* } @IICF_Impl_Heapmap_hm_swim_impl_f_011166226 ({ { { { i32, i32* }, i32* }, i32* }, i32 } %x1)
+    %x2 = call { { { i32, i32* }, i32* }, i32* } @IICF_Impl_Heapmap_hm_swim_impl_f_011643444 ({ { { { i32, i32* }, i32* }, i32* }, i32 } %x1)
     br label %ctd_ifa
 
   elsea:
