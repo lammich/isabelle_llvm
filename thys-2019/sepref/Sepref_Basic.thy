@@ -158,6 +158,9 @@ lemma rdomp_pure[simp]: "rdomp (pure R) a \<longleftrightarrow> a\<in>Range R"
   unfolding rdomp_def[abs_def] pure_def by (auto simp: pred_lift_extract_simps)
 *)  
 
+lemma rdomp_invalid_simp[simp]: "rdomp (invalid_assn P) x = rdomp P x"
+  by (auto simp: invalid_assn_def rdomp_def pure_part_def pred_lift_extract_simps)
+
 lemma Range_of_constraint_conv[simp]: "Range (A\<inter>UNIV\<times>C) = Range A \<inter> C"
   by auto
 

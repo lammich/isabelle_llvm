@@ -480,8 +480,25 @@ lemma intf_of_b_rel[synth_rules]: "INTF_OF_REL R I \<Longrightarrow> INTF_OF_REL
 
 lemma b_assn_intf[intf_of_assn]: "intf_of_assn V I \<Longrightarrow> intf_of_assn (b_assn V P) I"
   by simp
+
+
+text \<open>Introduce extra goal for bounded result\<close>
+lemma hfref_bassn_resI:
+  assumes "\<And>xs. \<lbrakk>rdomp (fst As) xs; C xs\<rbrakk> \<Longrightarrow> a xs \<le>\<^sub>n SPEC P"
+  assumes "(c,a)\<in>[C]\<^sub>a As \<rightarrow> R"
+  shows "(c,a)\<in>[C]\<^sub>a As \<rightarrow> b_assn R P"
+  apply rule
+  apply (rule hn_refine_preI)
+  apply (rule hn_refine_cons[rotated])
+  apply (rule hn_refine_augment_res)
+  apply (rule assms(2)[to_hnr, unfolded hn_ctxt_def autoref_tag_defs])
+  apply simp
+  apply (rule assms(1))
+  apply (auto simp: rdomp_def sep_algebra_simps)
+  done
+
   
-    
+  
 subsection \<open>Tool Setup\<close>
 lemmas [sepref_relprops] = 
   sepref_relpropI[of IS_LEFT_UNIQUE]
@@ -1086,14 +1103,22 @@ lemma sint_const_fold:
   by simp_all
   
     
+lemma hfref_absfun_convI: "CNV g g' \<Longrightarrow> (f,g') \<in> hfref P A R \<Longrightarrow> (f,g) \<in> hfref P A R" by simp
+
 method annot_sint_const for T::"'a::len itself" = 
-  (simp only: sint_const_fold[where 'a='a] cong: annot_num_const_cong)
+  (rule hfref_absfun_convI),
+  (simp only: sint_const_fold[where 'a='a] cong: annot_num_const_cong),
+  (rule CNV_I)
   
 method annot_snat_const for T::"'a::len2 itself" = 
-  (simp only: snat_const_fold[where 'a='a] cong: annot_num_const_cong)
+  (rule hfref_absfun_convI),
+  (simp only: snat_const_fold[where 'a='a] cong: annot_num_const_cong),
+  (rule CNV_I)
   
 method annot_unat_const for T::"'a::len itself" = 
-  (simp only: unat_const_fold[where 'a='a] cong: annot_num_const_cong)
+  (rule hfref_absfun_convI),
+  (simp only: unat_const_fold[where 'a='a] cong: annot_num_const_cong),
+  (rule CNV_I)
   
   
 subsubsection \<open>Casting\<close>  
@@ -1718,6 +1743,106 @@ begin
     by (rule mk_free_is_pure[OF A_pure])
 
 end  
+
+(* TODO: Redundancies with dflt_option *)
+(* TODO: Setup id-op phase to identify those operations *)
+text \<open>Option type via unused implementation value, own set of operations.\<close>  
+locale dflt_option_private =   
+  fixes dflt and A :: "'a \<Rightarrow> 'c::llvm_rep \<Rightarrow> assn" and is_dflt
+  assumes UU: "A a dflt = sep_false"
+  assumes CMP: "llvm_htriple \<box> (is_dflt k) (\<lambda>r. \<upharpoonleft>bool.assn (k=dflt) r)"
+begin
+  
+  definition "option_assn a c \<equiv> if c=dflt then \<up>(a=None) else EXS aa. \<up>(a=Some aa) ** A aa c"
+
+  definition None where [simp]: "None \<equiv> Option.None"
+  definition Some where [simp]: "Some \<equiv> Option.Some"
+  definition the where [simp]: "the \<equiv> Option.the"
+  definition is_None where [simp]: "is_None \<equiv> Autoref_Bindings_HOL.is_None"
+  
+  lemmas fold_None = None_def[symmetric]
+  lemmas fold_Some = Some_def[symmetric]
+  lemmas fold_the = the_def[symmetric]
+  lemmas fold_is_None = is_None_def[symmetric]
+  
+  lemma fold_is_None2: 
+    "a = None \<longleftrightarrow> is_None a"
+    "None = a \<longleftrightarrow> is_None a"
+    by (auto simp: is_None_def None_def split: option.split)
+  
+  lemmas fold_option = fold_None fold_Some fold_the fold_is_None fold_is_None2
+  
+  sepref_register None Some the is_None
+  
+    
+  lemma hn_None[sepref_fr_rules]: "(uncurry0 (return dflt), uncurry0 (RETURN None)) \<in> unit_assn\<^sup>k \<rightarrow>\<^sub>a option_assn"  
+    apply sepref_to_hoare unfolding option_assn_def None_def
+    apply vcg'
+    done
+  
+  lemma hn_Some[sepref_fr_rules]: "(return, RETURN o Some) \<in> A\<^sup>d \<rightarrow>\<^sub>a option_assn"  
+    apply sepref_to_hoare
+    subgoal for a c
+      apply (cases "c=dflt")
+      using UU apply simp
+      unfolding option_assn_def Some_def
+      apply vcg
+      done
+    done
+  
+  lemma hn_the[sepref_fr_rules]: "(return, RETURN o the) \<in> [\<lambda>x. x \<noteq> Option.None]\<^sub>a option_assn\<^sup>d \<rightarrow> A"
+    apply sepref_to_hoare
+    unfolding option_assn_def the_def
+    apply clarsimp
+    apply vcg'
+    done
+    
+  lemma hn_is_None[sepref_fr_rules]: "(is_dflt, RETURN o is_None) \<in> option_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
+    unfolding bool1_rel_def bool.assn_is_rel[symmetric]
+    apply sepref_to_hoare
+    unfolding option_assn_def is_None_def
+    apply clarsimp
+    supply CMP[vcg_rules]
+    apply vcg'
+    done
+    
+  definition [llvm_inline]: "free_option fr c \<equiv> doM { d\<leftarrow>is_dflt c; llc_if d (return ()) (fr c) }"
+    
+  lemma mk_free_option[sepref_frame_free_rules]:
+    assumes [THEN MK_FREED, vcg_rules]: "MK_FREE A fr"  
+    shows "MK_FREE option_assn (free_option fr)"
+    apply rule
+    unfolding free_option_def option_assn_def
+    apply clarsimp
+    supply CMP[vcg_rules]
+    apply vcg
+    done
+    
+  lemma option_assn_pure[safe_constraint_rules]:
+    assumes "is_pure A" 
+    shows "is_pure option_assn"  
+  proof -
+    from assms obtain P where [simp]: "A = (\<lambda>a c. \<up>(P a c))"
+      unfolding is_pure_def by blast
+  
+    show ?thesis  
+      apply (rule is_pureI[where P'="\<lambda>a c. if c=dflt then a=Option.None else \<exists>aa. a=Option.Some aa \<and> P aa c"])
+      unfolding option_assn_def
+      by (auto simp: sep_algebra_simps pred_lift_extract_simps)
+      
+  qed    
+    
+    
+end    
+
+locale dflt_pure_option_private = dflt_option_private +
+  assumes A_pure[safe_constraint_rules]: "is_pure A"
+begin
+  lemma A_free[sepref_frame_free_rules]: "MK_FREE A (\<lambda>_. return ())"
+    by (rule mk_free_is_pure[OF A_pure])
+
+end  
+
 
 
 interpretation snat: dflt_pure_option "-1" snat_assn "ll_icmp_eq (-1)"

@@ -335,32 +335,7 @@ qed
   
 type_synonym ('vl,'wl) wu3 = "('vl,'vl word \<times> 'wl word,'vl) array_array_list"
 
-(* TODO: Move *)
-lemma hfref_postcondI:
-  assumes POST: "\<And>args. \<lbrakk>P args; rdomp (snd A) args\<rbrakk> \<Longrightarrow> f args \<le>\<^sub>n SPEC (Q args)"
-  assumes REF: "(fi,f) \<in> [P]\<^sub>a\<^sub>d A \<rightarrow> (\<lambda>x. B x)"
-  shows "(fi,f) \<in> [P]\<^sub>a\<^sub>d A \<rightarrow> (\<lambda>x. b_assn (B x) (Q x))"
-proof -
-  note [vcg_rules] = REF[THEN hfrefD, THEN hn_refineD]
 
-  from POST have AUX[intro]: "Q args res" 
-    if  "P args" "nofail (f args)" "RETURN res \<le> f args" 
-    and "pure_part (B args res resi)" "pure_part (snd A args argsi)" 
-    for args argsi res resi
-    using that
-    by (auto simp: pw_leof_iff pw_le_iff rdomp_conv_pure_part)
-  
-  note [dest!] = pure_part_split_conj
-    
-  show ?thesis
-    by sepref_to_hoare vcg
-
-qed      
-
-(* TODO: Move *)
-lemma rdomp_invalid_simp[simp]: "rdomp (invalid_assn P) x = rdomp P x"
-  by (auto simp: invalid_assn_def rdomp_conv_pure_part sep_algebra_simps pred_lift_extract_simps)
-  
 definition "wu_constrain_len_rel N \<equiv> b_rel Id (\<lambda>xss. length xss=N)"
   
 lemma wu2_empty_clen_refine: "(wu2_empty, wu2_empty)\<in>nat_rel \<rightarrow>\<^sub>f\<^sub>d wu_constrain_len_rel"

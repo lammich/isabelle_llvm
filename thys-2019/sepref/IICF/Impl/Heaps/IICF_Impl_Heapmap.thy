@@ -369,21 +369,6 @@ begin
       by sepref
     lemmas [sepref_fr_rules] = hm_exch_impl.refine
     
-    (* TODO: Move *)
-    lemma hfref_bassn_resI:
-      assumes "\<And>xs. \<lbrakk>rdomp (fst As) xs; C xs\<rbrakk> \<Longrightarrow> a xs \<le>\<^sub>n SPEC P"
-      assumes "(c,a)\<in>[C]\<^sub>a As \<rightarrow> R"
-      shows "(c,a)\<in>[C]\<^sub>a As \<rightarrow> b_assn R P"
-      apply rule
-      apply (rule hn_refine_preI)
-      apply (rule hn_refine_cons[rotated])
-      apply (rule hn_refine_augment_res)
-      apply (rule assms(2)[to_hnr, unfolded hn_ctxt_def autoref_tag_defs])
-      apply simp
-      apply (rule assms(1))
-      apply (auto simp: rdomp_def sep_algebra_simps)
-      done
-    
     sepref_definition parent_impl is "RETURN o h.parent" :: "[\<lambda>_. 4<LENGTH('l)]\<^sub>aidx1_assn\<^sup>d \<rightarrow> idx1_assn"
       unfolding h.parent_def
       apply (rule hfref_bassn_resI)

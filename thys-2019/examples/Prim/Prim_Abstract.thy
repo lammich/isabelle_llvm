@@ -7,24 +7,6 @@ imports
   "../../sepref/IICF/Impl/IICF_Array_of_Array_List"
   "../../sepref/IICF/Impl/Heaps/IICF_Impl_Heapmap"
 begin
-
-find_theorems "_\<in>hfref _ _ _ \<Longrightarrow> _\<in>hfref _ _ _"  
-
-find_in_thms numeral in id_rules pat_rules def_pat_rules
-
-find_theorems UNPROTECT numeral
-
-declare [[show_types, show_consts]]
-lemma foo 
-  using def_pat_rules(97)
-  apply -
-
-
-sepref_definition foo is "RETURN o (\<lambda>a. a + (0::nat))" :: "(unat_assn' TYPE(32))\<^sup>k \<rightarrow>\<^sub>a unat_assn' TYPE(32)"  
-  apply sepref_dbg_keep
-
-
-
   (* TODO: Move! *)
   definition "combf X f\<^sub>1 f\<^sub>2 x \<equiv> if x\<in>X then f\<^sub>1 x else f\<^sub>2 x"
   

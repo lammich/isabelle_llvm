@@ -12,7 +12,7 @@ void isabelle_llvm_abort_msg(char *msg) {
 }
 
 char* isabelle_llvm_calloc(size_t n, size_t m) {
-  printf("calloc(%ld,%ld)",n,m);
+  // printf("calloc(%ld,%ld)",n,m);
   char *res = calloc(n,m);
   if (!res) isabelle_llvm_abort_msg("Out of memory");
   return res;

@@ -2,30 +2,6 @@ theory IICF_MS_Array_List
 imports 
   "../Intf/IICF_List" IICF_Array
 begin
-
-  (* TODO: Move *)
-  lemma hfref_bassnI:
-    assumes "\<And>x. \<lbrakk>P x; rdomp (fst A) x\<rbrakk> \<Longrightarrow> fa x \<le> SPEC Q"
-    assumes "(fc,fa)\<in>[P]\<^sub>a A \<rightarrow> R"
-    shows "(fc,fa)\<in>[P]\<^sub>a A \<rightarrow> b_assn R Q"
-  proof (cases A)
-    case [simp]: (Pair Apre Apost)
-    then show ?thesis 
-      apply sepref_to_hoare
-      apply clarsimp
-      apply (rule htriple_pure_preI)
-      supply [vcg_rules] = assms(2)[to_hnr, THEN hn_refineD,unfolded autoref_tag_defs hn_ctxt_def, simplified]
-      apply vcg
-      apply (frule (1) order_trans[OF _ assms(1)])
-      subgoal by (auto simp: pure_part_def rdomp_def) 
-      subgoal by vcg 
-      done
-    
-  qed
-
-
-
-
   definition "ms_irel M N \<equiv> br (\<lambda>(l,xs). take l xs) (\<lambda>(l,xs). l\<le>N \<and> N = length xs \<and> N<M)"
 
   
