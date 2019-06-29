@@ -9,6 +9,9 @@ begin
 
   hide_const (open) CONSTRAINT
 
+  lemma not_None_eq2[simp]: "None \<noteq> x \<longleftrightarrow> (\<exists>y. x = Some y)"
+    by (cases x) auto
+  
   (* Additions for List_Index *)  
   lemma index_of_last_distinct[simp]: 
     "distinct l \<Longrightarrow> index l (last l) = length l - 1"  
