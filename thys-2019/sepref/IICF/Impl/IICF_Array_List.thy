@@ -14,7 +14,7 @@ lemma arl_assn_free[sepref_frame_free_rules]: "MK_FREE (\<upharpoonleft>arl_assn
 lemma al_assn_free[sepref_frame_free_rules]: "MK_FREE (al_assn R) arl_free"
   unfolding al_assn_def by (rule sepref_frame_free_rules)+
 
-lemma rdomp_al_imp_len_bound: 
+lemma al_assn_boundD[sepref_bounds_dest]: 
   "rdomp (al_assn' TYPE('l::len2) A) xs \<Longrightarrow> length xs < max_snat LENGTH('l)"
   unfolding al_assn_def arl_assn_def arl_assn'_def
   apply (simp add: rdomp_hrcomp_conv sep_algebra_simps split: prod.splits)
@@ -164,7 +164,6 @@ begin
     RETURN l
   }" :: "(snat_assn' TYPE(32))\<^sup>k \<rightarrow>\<^sub>a al_assn' TYPE(32) (snat_assn' TYPE(32))"
     apply (annot_snat_const "TYPE(32)")
-    supply [simp] = max_snat_def
     apply (rewrite al_fold_custom_empty[where 'l=32])
     by sepref
     

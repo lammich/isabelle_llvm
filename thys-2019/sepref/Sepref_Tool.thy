@@ -181,10 +181,6 @@ lemma case_prod_opt2[sepref_opt_simps2]:
 
 
 subsection \<open>Debugging Methods\<close>
-ML \<open>
-  fun SIMPLE_METHOD_NOPARAM' tac = Scan.succeed (fn ctxt => SIMPLE_METHOD' (IF_EXGOAL (tac ctxt)))
-  fun SIMPLE_METHOD_NOPARAM tac = Scan.succeed (fn ctxt => SIMPLE_METHOD (tac ctxt))
-\<close>
 method_setup sepref_dbg_preproc = \<open>SIMPLE_METHOD_NOPARAM' (fn ctxt => K (Sepref_Constraints.ensure_slot_tac) THEN' Sepref.preproc_tac ctxt)\<close>
   \<open>Sepref debug: Preprocessing phase\<close>
 (*method_setup sepref_dbg_id_param = \<open>SIMPLE_METHOD_NOPARAM' Sepref.id_param_tac\<close>
@@ -269,6 +265,7 @@ method_setup sepref_dbg_trans_step_keep = \<open>SIMPLE_METHOD_NOPARAM' Sepref_T
 method_setup sepref_dbg_side = \<open>SIMPLE_METHOD_NOPARAM' (fn ctxt => REPEAT_ALL_NEW_FWD (Sepref_Translate.side_cond_dispatch_tac false (K no_tac) ctxt))\<close>
 method_setup sepref_dbg_side_unfold = \<open>SIMPLE_METHOD_NOPARAM' (Sepref_Translate.side_unfold_tac)\<close>
 method_setup sepref_dbg_side_keep = \<open>SIMPLE_METHOD_NOPARAM' (fn ctxt => REPEAT_ALL_NEW_FWD (Sepref_Translate.side_cond_dispatch_tac true (K no_tac) ctxt))\<close>
+method_setup sepref_dbg_side_bounds = \<open>SIMPLE_METHOD_NOPARAM' (Sepref_Translate.bounds_tac)\<close>
 
 method_setup sepref_dbg_prepare_frame = \<open>SIMPLE_METHOD_NOPARAM' Sepref_Frame.prepare_frame_tac\<close>
   \<open>Sepref debug: Prepare frame inference\<close>

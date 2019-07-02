@@ -1267,65 +1267,22 @@ abbreviation "snat32_assn \<equiv> snat_assn' TYPE(32)"
 abbreviation "snat64_assn \<equiv> snat_assn' TYPE(64)"
 abbreviation "wu_64_assn \<equiv> wu_assn' TYPE(64) TYPE(64)"
 
-thm Prim5.upd_Q\<pi>_loop3_def
-term Prim5.upd_Q\<pi>_loop3
-term HM.hm_assn
-term ial_assn
-
-thm intf_of_assn
-
-find_theorems intf_of_assn
-
-lemma upd_Q\<pi>_loop4_aux1: "a<b \<Longrightarrow> (bi,b)\<in>snat_rel' TYPE('l::len2) \<Longrightarrow> Suc a < max_snat LENGTH('l)"
-  by (simp add: less_trans_Suc)
-
-lemma wu2_length_simp: "rdomp (wu_assn N) g \<Longrightarrow> length g = N"
-  by (auto simp: wu_assn_def wu_constrain_len_rel_def rdomp_hrcomp_conv)
-  
   
 sepref_definition upd_Q\<pi>_loop4 [llvm_code] is "uncurry4 (Prim5.upd_Q\<pi>_loop3)"
   :: "snat64_assn\<^sup>k *\<^sub>a (wu_64_assn N)\<^sup>k *\<^sub>a snat64_assn\<^sup>k *\<^sub>a (hm_assn' TYPE(64) N)\<^sup>d *\<^sub>a (snat_am_assn' TYPE(64) N)\<^sup>d 
     \<rightarrow>\<^sub>a hm_assn' TYPE(64) N \<times>\<^sub>a snat_am_assn' TYPE(64) N"
   unfolding Prim5.upd_Q\<pi>_loop3_def nfoldli_upt_by_while PR_CONST_def Prim5.N_def
   apply (annot_snat_const "TYPE(64)")
-  supply [simp] = less_trans_Suc upd_Q\<pi>_loop4_aux1[where 'l=64, simplified] wu2_length_simp
   supply [[goals_limit = 1]]
   by sepref
   
-(*
-sepref_definition upd_Q\<pi>_loop4 is "uncurry4 (Prim5.upd_Q\<pi>_loop3)"
-  :: "[\<lambda>((((r,g),u),Q),\<pi>). N = wu2_max g ]\<^sub>a snat64_assn\<^sup>k *\<^sub>a wu3_64_assn\<^sup>k *\<^sub>a snat64_assn\<^sup>k *\<^sub>a (hm_assn' TYPE(64) N)\<^sup>d *\<^sub>a (snat_am_assn' TYPE(64) N)\<^sup>d 
-    \<rightarrow>  hm_assn' TYPE(64) N \<times>\<^sub>a snat_am_assn' TYPE(64) N"
-  unfolding Prim5.upd_Q\<pi>_loop3_def nfoldli_upt_by_while PR_CONST_def Prim5.N_def
-  apply (annot_snat_const "TYPE(64)")
-  supply [simp] = less_trans_Suc upd_Q\<pi>_loop4_aux1[where 'l=64, simplified]
-  supply [[goals_limit = 1]]
-  by sepref
-*)  
   
 sepref_register Prim5.upd_Q\<pi>_loop3 :: "nat
      \<Rightarrow> (nat \<times> nat) list list
         \<Rightarrow> nat \<Rightarrow> ((nat, nat) i_map) \<Rightarrow> ((nat, nat) i_map) \<Rightarrow> (((nat, nat) i_map) \<times> ((nat, nat) i_map)) nres"
   
 lemmas [sepref_fr_rules] = upd_Q\<pi>_loop4.refine
-term Prim5.prim5
-
-lemma wu2_max_simp: "rdomp (wu_assn N) g \<Longrightarrow> wu2_max g = N"
-  by (auto simp: wu_assn_def wu_constrain_len_rel_def rdomp_hrcomp_conv)
-
   
-lemma wu2_max_aux: "\<lbrakk>bind_ref_tag x (RETURN $ (wu2_max $ b)); rdomp (wu_assn N) b\<rbrakk> \<Longrightarrow> x=N"  
-  using wu2_max_simp
-  by (auto simp: bind_ref_tag_def)
-  
-  
-thm nres_monad3  
-lemma protected_bind_assoc: "bind$(bind$m$(\<lambda>\<^sub>2x. f x))$(\<lambda>\<^sub>2y. g y) = bind$m$(\<lambda>\<^sub>2x. bind$(f x)$(\<lambda>\<^sub>2y. g y))" by simp
-  
-lemma protected_let_inline: "Let$x$(\<lambda>\<^sub>2y. f y) = f x" by auto
-
-lemma AUX: "hn_refine \<Gamma> c \<Gamma>' R m \<Longrightarrow> TERM \<Gamma>' \<Longrightarrow> hn_refine \<Gamma> c \<Gamma>' R m" by simp
-
 (* TODO: Move *)
 definition BCONST :: "'b \<Rightarrow> 'a \<Rightarrow> 'a" where "BCONST c m \<equiv> m"
 
@@ -1374,22 +1331,14 @@ proof (rule hn_refine_vassn_tagI)
 qed
 
 
-thm sepref_fr_rules
-
-find_in_thms Refine_Basic.bind in id_rules
-
-find_theorems op_ASSERT_bind
-
 
 sepref_definition prim6 [llvm_code] is "uncurry Prim5.prim5" 
   :: "snat64_assn\<^sup>k *\<^sub>a (wu_64_assn N)\<^sup>k \<rightarrow>\<^sub>a (hm_assn' TYPE(64) N \<times>\<^sub>a snat_am_assn' TYPE(64) N)"
   unfolding Prim5.prim5_def Prim5.N_def
   apply (annot_snat_const "TYPE(64)")
-  supply [simp] = wu2_length_simp
   apply (rewrite at "wu2_max _" annot_BCONST[where c=N])
   by sepref
   
-find_in_thms hm_empty_impl in sepref_fr_rules  
   
   
 export_llvm prim6  

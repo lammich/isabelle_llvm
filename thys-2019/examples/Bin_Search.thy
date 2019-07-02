@@ -64,8 +64,6 @@ begin
     unfolding bin_search_def
     apply (rule hfref_with_rdomI)
     apply (annot_snat_const "TYPE(size_t)")
-    supply rdomp_larray_imp_len_bound[dest]
-    supply [simp] = max_snat_def
     apply sepref
     done
     

@@ -889,9 +889,6 @@ abbreviation "unat_assn \<equiv> pure unat_rel"
 abbreviation (input) "unat_rel' TYPE('a::len) \<equiv> unat_rel :: ('a word \<times> _) set"
 abbreviation (input) "unat_assn' TYPE('a::len) \<equiv> unat_assn :: _ \<Rightarrow> 'a word \<Rightarrow> _"
 
-lemma in_unat_rel_imp_less_max'[simp]: "(w, n) \<in> unat_rel' TYPE('l) \<Longrightarrow> n < max_unat LENGTH('l::len2)"
-  by (simp add: unat_rel_def unat.rel_def in_br_conv)
-
 
 definition [simp]: "unat_const TYPE('a::len) c \<equiv> (c::nat)"
 context fixes c::nat begin
@@ -986,13 +983,6 @@ lemma snat_rel_range: "Range (snat_rel' TYPE('l)) = {0..<max_snat LENGTH('l::len
     done
   done
 
-lemma snat_rel_imp_less_max_snat: 
-  "\<lbrakk>(x,n)\<in>snat_rel' TYPE('l::len2); L = LENGTH('l)\<rbrakk> \<Longrightarrow> n<max_snat L"
-  by (auto simp: snat_rel_def snat.rel_def in_br_conv)
-  
-lemma in_snat_rel_imp_less_max'[simp]: "(w, n) \<in> snat_rel' TYPE('l) \<Longrightarrow> n < max_snat LENGTH('l::len2)"
-  by (simp add: snat_rel_imp_less_max_snat)
-  
 
 definition [simp]: "snat_const TYPE('a::len2) c \<equiv> (c::nat)"
 context fixes c::nat begin
@@ -1322,7 +1312,27 @@ lemma ashr_hnr_snat[sepref_fr_rules]: "(uncurry ll_ashr,uncurry (RETURN oo (>>>)
       
 end
 
+subsubsection \<open>Bounds Solver Setup\<close>
 
+
+lemma in_unat_rel_boundsD[sepref_bounds_dest]: "(w, n) \<in> unat_rel' TYPE('l) \<Longrightarrow> n < max_unat LENGTH('l::len)"
+  by (simp add: unat_rel_def unat.rel_def in_br_conv)
+
+(*lemma snat_rel_imp_less_max_snat: 
+  "\<lbrakk>(x,n)\<in>snat_rel' TYPE('l::len2); L = LENGTH('l)\<rbrakk> \<Longrightarrow> n<max_snat L"
+  by (auto simp: snat_rel_def snat.rel_def in_br_conv)
+*)
+  
+lemma in_snat_rel_boundsD[sepref_bounds_dest]: 
+  "(w, n) \<in> snat_rel' TYPE('l) \<Longrightarrow> n < max_snat LENGTH('l::len2)"
+  by (auto simp: snat_rel_def snat.rel_def in_br_conv)
+  
+lemma in_sint_rel_boundsD[sepref_bounds_dest]: 
+  "(w,i)\<in>sint_rel' TYPE('l::len) \<Longrightarrow> min_sint LENGTH('l) \<le> i \<and> i < max_sint LENGTH('l)"
+  by (auto simp: sint_rel_def sint.rel_def in_br_conv)
+  
+lemmas [sepref_bounds_simps] = max_snat_def max_unat_def max_sint_def min_sint_def
+  
 
 subsection \<open>HOL Combinators\<close>
 
@@ -1897,29 +1907,25 @@ subsection \<open>Ad-Hoc Regression Tests\<close>
   
 sepref_definition example1 is "\<lambda>x. ASSERT (x\<in>{-10..10}) \<then> 
     RETURN (x<5 \<and> x\<noteq>2 \<longrightarrow> x-2 \<noteq> 0)" :: "(sint_assn' TYPE(7))\<^sup>k \<rightarrow>\<^sub>a (bool1_assn)" 
-  supply [simp] = min_sint_def max_sint_def
   apply (annot_sint_const "TYPE(7)")
-  apply sepref_dbg_keep
+  apply sepref
   done
 
 sepref_definition example2 is "\<lambda>x. ASSERT (x\<in>{-10..10}) \<then> RETURN (x+(-1) * (7 smod 15) - 3 sdiv 2)" :: "(sint_assn' TYPE(7))\<^sup>k \<rightarrow>\<^sub>a (sint_assn' TYPE(7))" 
-  supply [simp] = min_sint_def max_sint_def
   apply (annot_sint_const "TYPE(7)")
-  apply sepref_dbg_keep
+  apply sepref
   done
 
 sepref_definition example1n is "\<lambda>x. ASSERT (x\<in>{2..10}) \<then> 
     RETURN (x<5 \<and> x\<noteq>2 \<longrightarrow> x-2 \<noteq> 0)" :: "(snat_assn' TYPE(7))\<^sup>k \<rightarrow>\<^sub>a (bool1_assn)" 
-  supply [simp] = max_snat_def
   apply (annot_snat_const "TYPE(7)")
-  apply sepref_dbg_keep
+  apply sepref
   done
 
 sepref_definition example2n is "\<lambda>x. ASSERT (x\<in>{5..10}) \<then> RETURN ((x-1) * (7 mod 15) - 3 div 2)" 
   :: "(snat_assn' TYPE(7))\<^sup>k \<rightarrow>\<^sub>a (snat_assn' TYPE(7))" 
-  supply [simp] = max_snat_def
   apply (annot_snat_const "TYPE(7)")
-  apply sepref_dbg_keep
+  apply sepref
   done
   
       

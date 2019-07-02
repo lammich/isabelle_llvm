@@ -423,7 +423,7 @@ begin
     unfolding is_pure_conv
     by (clarsimp simp: hr_comp_pure)
 
-  lemma rdomp_hrcomp_conv: "rdomp (hr_comp A R) x \<longleftrightarrow> (\<exists>y. rdomp A y \<and> (y,x)\<in>R)"
+  lemma rdomp_hrcomp_conv[simp]: "rdomp (hr_comp A R) x \<longleftrightarrow> (\<exists>y. rdomp A y \<and> (y,x)\<in>R)"
     by (auto simp: rdomp_def hr_comp_def sep_algebra_simps pred_lift_extract_simps)
 
   lemma hn_rel_compI: 

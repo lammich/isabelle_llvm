@@ -88,6 +88,7 @@
 
 \author{Peter Lammich}{The University of Manchester}{peter.lammich@manchester.ac.uk}{}{}
 \authorrunning {P. Lammich}
+\Copyright{Peter Lammich}
 
 % \author{Peter Lammich}
 % \authorrunning {P. Lammich}
@@ -101,6 +102,8 @@
 \maketitle
 
 \setcounter{footnote}{0}
+
+\supplement{\url{http://www21.in.tum.de/~lammich/isabelle_llvm}}
 
 \begin{abstract}
 We present a framework to generate verified LLVM programs from Isabelle/HOL.
@@ -190,7 +193,7 @@ the Knuth-Morris-Pratt string search algorithm~\cite{KMP77}. The resulting LLVM 
 faster than the corresponding Standard-ML code and on par with unverified C implementations.
 The paper ends with the discussion of future work (\S\ref{sec:future_work}) and related work (\S\ref{sec:related_work}).
 %
-The Isabelle theories described in this paper are available at \url{http://www21.in.tum.de/~lammich/isabelle_llvm}. 
+The Isabelle theories described in this paper are available as supplement material (URL displayed in paper header).
 
 
 
@@ -221,7 +224,7 @@ We use do-notation, i.e.\ \q{\is|do { x<-m; f x }|} is short for \q{\is{bind m (
 Moreover, we define a flat chain complete partial order~\cite{Mark76} on \q{\is{mres}}, with \q{\is{\<bot> := NTERM}}.
 For a monotonic function \q{\is{F :: ('a => ('b,'s) M) => 'a => ('b,'s) M}}, \q{\is{REC F}} is the least fixed point.
 As functions defined using the monad combinators are monotonic by construction~\cite{Kr10}, 
-we can define arbitrary recursive computations. The partial function package~\cite{Kr10} supports automation for monotonicity 
+we can define arbitrary recursive computations. The partial function package~\cite{Kr10} provides automation for monotonicity 
 proofs and for defining simple recursive functions. Mutual recursion still requires some manual effort, though it could be automated, too.
 
 % \subsubsection{Lenses}
@@ -340,7 +343,7 @@ checks that this block is not already deallocated, and then deallocates the bloc
 
 \subsection{Towards a Shallow Embedding}
 While we explicitly model values in memory by the type \q{\is{val}}, we model values in registers in a more shallow fashion:
-We identify LLVM registers with Isabelle variables that have a type of the shape \q{\is{T = T \x T | n word | T ptr}}. 
+We identify LLVM registers with Isabelle variables that have a type of shape \q{\is{T = T \x T | n word | T ptr}}. 
 Here, \q{\is{\x}} is Isabelle's product type, \q{\is{n word}} is the $n$ bit word type from Isabelle's word 
 library\cprotect\footnote{For convenient notation, we use the type \q{\is{n word}} as if it were a type depending on a variable $n$. 
 Isabelle/HOL is not dependently typed. Instead, $n$ is actually a type variable with type-class \q{\is{len}}, which provides a 
@@ -617,7 +620,7 @@ For example, the \q{\is{llc_while}} combinator is defined as a fixed point (cf.~
 Using its definition as an unfold rule, the preprocessor will automatically convert while loops into tail calls.
 This allows for using while-loops without trusting their translation in the code generator. 
 % However, to be efficient, we have to enable LLVM's tail call optimization, which will translate the function back into a loop.
-A configuration option in our tool lets the user choose between direct while-loop translation or unfolding to a tail call.
+A configuration option in our tool lets the user choose between direct while-loop translation or unfolding into a tail call.
 
 % A standard example is the while loop combinator, which we define by the equation
 % \begin{lstlisting}
@@ -738,7 +741,7 @@ For the Isabelle-LLVM memory instructions, we obtain the following rules:
 |= {pto xx p} ll_store x p {%_. pto x p}
 \end{lstlisting}
 Here, \q{\is{pto x p}} describes that $p$ points to value $x$, and we write predicates as if they were assertions 
-on the empty memory, e.g., \q{\is{r=x}} instead of \q{\is{\<lambda>s. s=0 \<and> r=x}}.
+on the empty memory, e.g., \q{\is{n~=0}} instead of \q{\is{\<lambda>s. s=0 \<and> n~=0}}.
 We prove similar rules for the other instructions.
 
 \subsection{Automating the VCG}
@@ -795,8 +798,9 @@ the actual correctness abstractly.
 
 In separation logic based reasoning, a data structure provides a \emph{refinement assertion} \q{\is{A x x\impl :: assn}}, which describes 
 that the abstract value \q{\is{x}} is implemented by the concrete value \q{\is{x\impl}}. 
-We define refinement assertions to implement integers and natural numbers by $n$ bit words, and to implement lists by blocks of memory. 
-Note that new data structures and refinement assertions can easily be added. In general, an implementation does not completely implement an abstract mathematical concept.
+We define refinement assertions to implement integers and natural numbers by $n$ bit words, and to implement lists by blocks of memory.
+On top of that, we define more complex data structures like dynamic arrays.
+Note that new data structures can easily be added. In general, an implementation does not completely implement an abstract mathematical concept.
 For example, $n$ bit words can only represent the integers \q{\is|sints n = $\{-2^{\text{n}-1}..<2^{\text{n}-1}\}$|}, and hash-tables can only represent finite sets. Thus, the rules for the operations generally come with additional preconditions. 
 For example, the rule to implement subtraction on integers by subtraction on $n$ bit words is the following:
 \begin{lstlisting}
@@ -868,7 +872,7 @@ Despite its simplicity, it has a history of flawed implementations\footnote{A bu
 We start with a high-level specification: For a list \q{\is{xs}} and a value \q{\is{x}}, find the index of the first element greater or equal to \q{\is{x}}.
 We define the following constant:
 \begin{lstlisting}
-  fi_spec xs x = spec i. find_index (%y. x<=y) xs
+  fi_spec xs x = spec i. i = find_index (%y. x<=y) xs
 \end{lstlisting}
 where \q{\is{find_index P xs}} is a standard list function that returns the index of the 
 first element in \q{\is{xs}} that satisfies \q{\is{P}}, or \q{\is{length xs}} if there is no such element.
@@ -923,7 +927,7 @@ The Sepref tool implements mathematical integers by 64-bit words, proving absenc
 This is only possible because the assertion in \q{\is{bin_search}} explicitly states that the indexes are in bounds. 
 Moreover, note the expression \q{\is{l + (h-l) div 2}} that we used to compute the midpoint index. 
 On mathematical integers, it is equal to \q{\is{(l+h) div 2}}. However, on fixed-width words, the latter may overflow, while the former does not\footnote{Exactly this 
-overflowing midpoint computation caused the infamous bug in the Java Standard Library~\cite{bs_flaw_blogpost}.}.
+overflow caused the infamous bug in the Java Standard Library~\cite{bs_flaw_blogpost}.}.
 
 \subsection{Knuth-Morris-Pratt String Search}
 Next, we regard the Knuth-Morris-Pratt (KMP) string search algorithm~\cite{KMP77}, a well-known 
@@ -1107,7 +1111,7 @@ We leave it to future work to explore this issue more systematically, and to pro
 e.g.~along the lines of AutoCorres~\cite{GLAK14}.
 
 Our code generator, as well as most standard code generators in theorem provers, 
-translate from logic to target language code, implicitly identifying logical 
+translates from logic to target language code, implicitly identifying logical 
 concepts with programming language concepts. This approach is simple, however, 
 the translation algorithm and its implementation become part of the trusted code base.
 More recently, code generators that translate into a deeply embedded semantics of the 
@@ -1116,14 +1120,19 @@ We leave a translation to a deep embedding of LLVM to future work, and note that
 deep embedding will also enable more advanced control flow constructs like exceptions and breaking from loops, 
 without significantly increasing the trusted code base.
 
-Compared to actual LLVM, Isabelle-LLVM makes a few simplifying assumptions: It assumes an infinite supply of memory, and thus cannot assign a bit-size to pointers. 
+Compared to actual LLVM, Isabelle-LLVM makes a few simplifying assumptions: 
+We do not support floating point arithmetic, though this could be added, e.g.~based on Lei Yu's floating point formalization \cite{Yu13}.
+Moreover, we only support two-element structures (pairs). This nicely fits Isabelle HOL's product datatype, and the nested structures 
+resulting from longer tuples should not be a problem for LLVM's optimizer.
+Also, we do not support concepts that are handy for program optimization, but not required for code generation, like poison values.
+Isabelle-LLVM assumes an infinite supply of memory, and thus cannot assign a bit-size to pointers. 
 This assumption helps us to retain a deterministic semantics, which is executable inside the theorem prover (cf.~Example~\ref{ex:fib_isabelle}). 
 We plan to use this feature for systematic testing of our code generator against the actual LLVM compiler. 
 A similar assumption is implicitly made for the stack, as our semantics permits arbitrarily deep recursive procedure calls.
 We remedy this mismatch between semantics and reality by terminating the program in a defined way if it runs out of heap.
 To protect against stack overflows, LLVM provides mechanisms like stack probing or split stack, which, however, require some effort to enable. 
 We leave that to future work, and note that our generated code allocates no large blocks of memory on the stack. 
-Thus, stack overflows are likely to hit the guard pages inserted by most operating systems, which will cause termination of the process.
+Thus, stack overflows are likely to hit the guard pages inserted by most operating systems, which will cause defined termination of the process.
 
 Currently, we interface our generated LLVM code from C programs compiled by clang. However, the ABIs of C and LLVM only partially match, 
 and some LLVM constructs cannot be expressed in C at all.
@@ -1139,7 +1148,7 @@ Moreover, we use Isabelle's machine word library~\cite{Word_Lib-AFP} to model th
 final VCG is now implemented directly in the more low-level Isabelle/ML.
 
 The Vellvm project~\cite{ZNMZ12,ZNMZ13} verifies LLVM program transformations in Coq.
-To be useful, e.g. as backend for clang, they have to formalize a substantial fragment of LLVM. 
+To be useful, e.g.~as backend for clang, they have to formalize a substantial fragment of LLVM. 
 On the other hand, we can afford to formalize a simplified and abstract semantics that 
 is just powerful enough to cover what Sepref generates.
 

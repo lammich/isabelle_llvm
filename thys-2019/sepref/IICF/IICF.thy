@@ -8,6 +8,8 @@ imports
   "Intf/IICF_Multiset"
   "Intf/IICF_Prio_Bag"
 
+  "Impl/Heaps/IICF_Impl_Heap"
+  
 
   (* Maps *)
   "Intf/IICF_Map"
@@ -15,7 +17,10 @@ imports
 
   "Impl/IICF_Array_Map"
   "Impl/IICF_Array_Map_Total"
+
   
+  "Impl/Heaps/IICF_Impl_Heapmap"
+    
   (* Lists *)
   "Intf/IICF_List"
 

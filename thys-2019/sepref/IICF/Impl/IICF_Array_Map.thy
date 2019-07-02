@@ -175,7 +175,6 @@ begin
         RETURN (the (m 0))
       }
     }" :: "(snat_assn' TYPE(32))\<^sup>k \<rightarrow>\<^sub>a snat_assn' TYPE(32)"
-      supply [simp] = max_snat_def (* TODO: This reasoning should work by default *)
       apply (annot_snat_const "TYPE(32)")
       by sepref
     

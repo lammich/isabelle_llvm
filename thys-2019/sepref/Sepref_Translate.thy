@@ -36,40 +36,11 @@ text \<open>
   \end{itemize}
 \<close>
 
-(*subsection \<open>Basic Translation Tool\<close>  
-definition COPY -- "Copy operation"
-   where [simp]: "COPY \<equiv> RETURN" 
-
-lemma tagged_nres_monad1: "Refine_Basic.bind$(RETURN$x)$(\<lambda>\<^sub>2x. f x) = f x" by simp
-
-text \<open>The PREPARED-tag is used internally, to flag a refinement goal
-  with the index of the refinement rule to be used\<close>
-definition PREPARED_TAG :: "'a => nat => 'a"
-  where [simp]: "PREPARED_TAG x i == x"
-lemma PREPARED_TAG_I: 
-  "hn_refine \<Gamma> c \<Gamma>' R a \<Longrightarrow> hn_refine \<Gamma> c \<Gamma>' R (PREPARED_TAG a i)"
-  by simp
-
-lemmas prepare_refine_simps = tagged_nres_monad1 COPY_def 
-  PREPARED_TAG_def
-
-lemma mono_trigger: "mono_Heap F \<Longrightarrow> mono_Heap F" .
-*)
 
 text \<open>Tag to keep track of abstract bindings. 
   Required to recover information for side-condition solving.\<close>
 definition "bind_ref_tag x m \<equiv> RETURN x \<le> m"
 
-(*
-abbreviation DEP_SIDE_PRECOND
-  -- \<open>Precondition that depends on information from relators, 
-    like maximum size. It must be processed after frame inference,
-    when the relator variables have been fixed.\<close>
-  where "DEP_SIDE_PRECOND \<Phi> \<equiv> DEFER_tag (PRECOND_tag \<Phi>)"
-
-lemma DEP_SIDE_PRECOND_D: "DEP_SIDE_PRECOND P \<Longrightarrow> P"
-  by simp
-*)
 
 text \<open>Tag to keep track of preconditions in assertions\<close>
 definition "vassn_tag \<Gamma> \<equiv> \<exists>h. \<Gamma> h"
@@ -108,6 +79,8 @@ definition "GEN_ALGO f \<Phi> \<equiv> \<Phi> f"
 \<comment> \<open>Tag to synthesize @{term f} with property @{term \<Phi>}.\<close>
 
 lemma is_GEN_ALGO: "GEN_ALGO f \<Phi> \<Longrightarrow> GEN_ALGO f \<Phi>" .
+
+named_theorems_rev sepref_gen_algo_rules \<open>Sepref: Generic algorithm rules\<close>
 
 
 text \<open>Tag for side-condition solver to discharge by assumption\<close>
@@ -154,11 +127,11 @@ lemma cons_pre_rule: \<comment> \<open>Consequence rule to be applied if no dire
   shows "hn_refine P c Q R m"
   using assms(2-) by (rule hn_refine_cons_pre)
 
-named_theorems_rev sepref_gen_algo_rules \<open>Sepref: Generic algorithm rules\<close>
 
+\<comment> \<open>Bounds-Solver\<close>
 
-find_theorems Monad.REC
-
+named_theorems_rev sepref_bounds_dest \<open>Bounds solver drules\<close>
+named_theorems_rev sepref_bounds_simps \<open>Bounds solver simp rules\<close>
 
 ML \<open>
 
@@ -168,29 +141,6 @@ structure Sepref_Translate = struct
     Attrib.setup_config_bool @{binding sepref_debug_translate} (K false)
   
   val dbg_msg_tac = Sepref_Debugging.dbg_msg_tac cfg_debug  
-
-  fun gen_msg_analyze t ctxt = let
-    val t = Logic.strip_assums_concl t
-  in
-    case t of
-      @{mpat "Trueprop ?t"} => (case t of
-            @{mpat "MERGE _ _ _ _ _"} => "t_merge"
-          | @{mpat "MERGE1 _ _ _ _ _"} => "t_merge1"
-          | @{mpat "MK_FREE _ _"} => "t_mk_free"
-          | @{mpat "_ \<turnstile> _"} => "t_frame"
-          | @{mpat "INDEP _"} => "t_indep"
-          | @{mpat "CONSTRAINT _ _"} => "t_constraint"
-          | @{mpat "M.mono_body _"} => "t_mono"
-          | @{mpat "PREFER_tag _"} => "t_prefer"
-          | @{mpat "DEFER_tag _"} => "t_defer"
-          | @{mpat "RPREM _"} => "t_rprem" 
-          | @{mpat "hn_refine _ _ _ _ ?a"} => Pretty.block [Pretty.str "t_hnr: ",Pretty.brk 1, Syntax.pretty_term ctxt a] |> Pretty.string_of 
-          | _ => "Unknown goal type"
-        )
-    | _ => "Non-Trueprop goal"
-  end  
-
-  fun msg_analyze msg = Sepref_Debugging.msg_from_subgoal msg gen_msg_analyze
 
   fun check_side_conds thm = let
     open Sepref_Basic
@@ -289,7 +239,28 @@ structure Sepref_Translate = struct
       (*THEN' asm_full_simp_tac ctxt*)
     end
   
-    fun side_fallback_tac ctxt = side_unfold_tac ctxt THEN' TRADE (SELECT_GOAL o auto_tac) ctxt
+    (* TODO: Not accessible as single ML function? *)
+    fun linarith_tac ctxt = 
+      Method.insert_tac ctxt (rev (Named_Theorems.get ctxt \<^named_theorems>\<open>arith\<close>))
+      THEN' Lin_Arith.tac ctxt
+    
+    fun bounds_tac ctxt = let
+      val ctxt = ctxt 
+        addSDs Named_Theorems_Rev.get ctxt @{named_theorems_rev sepref_bounds_dest}
+        addsimps Named_Theorems_Rev.get ctxt @{named_theorems_rev sepref_bounds_simps}
+    in
+      TRADE (fn ctxt => 
+        SELECT_GOAL (auto_tac ctxt)
+        THEN_ALL_NEW TRY o linarith_tac ctxt
+      ) ctxt
+    end
+    
+    fun side_fallback_tac ctxt = 
+      side_unfold_tac ctxt 
+      THEN' (
+        TRADE (SELECT_GOAL o auto_tac) ctxt
+        THEN_ALL_NEW (TRY o SOLVED' (bounds_tac ctxt))
+      )
   
     val side_frame_tac = Sepref_Frame.frame_tac side_fallback_tac
     val side_merge_tac = Sepref_Frame.merge_tac side_fallback_tac
@@ -460,6 +431,7 @@ end
 
 setup Sepref_Translate.setup
 
+method_setup sepref_bounds = \<open>SIMPLE_METHOD_NOPARAM' (Sepref_Translate.bounds_tac)\<close>
 
 
 subsubsection \<open>Basic Setup\<close>

@@ -300,7 +300,7 @@ lemmas larray_mk_free[sepref_frame_free_rules] = hn_MK_FREEI[OF larray_free_hnr]
 end
   
 
-lemma rdomp_larray_imp_len_bound: 
+lemma larray_boundD[sepref_bounds_dest]: 
   "rdomp (larray_assn' TYPE('a::len2) A) xs \<Longrightarrow> length xs < max_snat LENGTH('a)"
   unfolding larray_assn_def raw_larray_assn_def larray1_rel_def
   apply (auto simp: rdomp_hrcomp_conv in_br_conv snat_rel_def snat.rel_def)
@@ -313,10 +313,9 @@ subsection \<open>Ad-Hoc Regression Tests\<close>
   
 sepref_definition example1 [llvm_code] is "\<lambda>n. RETURN (replicate (n+1) (snat_init TYPE(32)))" 
   :: "[\<lambda>n. n\<in>{1..<150}]\<^sub>a (snat_assn' TYPE(32))\<^sup>k \<rightarrow> array_assn (snat_assn' TYPE(32))"
-  supply [simp] = max_snat_def
   apply (annot_snat_const "TYPE(32)")
   apply (rewrite array.fold_replicate_init)
-  apply sepref_dbg_keep
+  apply sepref
   done
   
 sepref_definition example2 [llvm_code] is \<open>\<lambda>n. do {
@@ -326,19 +325,17 @@ sepref_definition example2 [llvm_code] is \<open>\<lambda>n. do {
   ASSERT (a!1=42 \<and> a!2=42);
   RETURN (a!snat_const TYPE(32) 1 + a!snat_const TYPE(32) 2)
 }\<close> :: "(snat_assn' TYPE(32))\<^sup>k \<rightarrow>\<^sub>a snat_assn' TYPE(64)"
-  supply [simp] = max_snat_def
   apply (annot_snat_const "TYPE(64)")
   apply (rewrite array_fold_custom_replicate)
-  apply sepref_dbg_keep
+  apply sepref
   done
   
   
 sepref_definition example1n [llvm_code] is "\<lambda>n. RETURN (replicate (n+1) (snat_init TYPE(8)))" 
   :: "[\<lambda>n. n\<in>{1..<150}]\<^sub>a (snat_assn' TYPE(32))\<^sup>k \<rightarrow> larray_assn' TYPE(32) (snat_assn' TYPE(8))"
-  supply [simp] = max_snat_def
   apply (rewrite larray.fold_replicate_init)
   apply (annot_snat_const "TYPE(32)")
-  apply sepref_dbg_keep
+  apply sepref
   done
   
   
@@ -349,10 +346,9 @@ sepref_definition example2n [llvm_code] is \<open>\<lambda>n. do {
   ASSERT (a!1=42 \<and> a!2=42);
   RETURN (a!snat_const TYPE(32) 1 + a!snat_const TYPE(32) 2)
 }\<close> :: "(snat_assn' TYPE(32))\<^sup>k \<rightarrow>\<^sub>a snat_assn' TYPE(64)"
-  supply [simp] = max_snat_def
   apply (annot_snat_const "TYPE(64)")
   apply (rewrite larray_fold_custom_replicate)
-  apply sepref_dbg_keep
+  apply sepref
   done
 
   

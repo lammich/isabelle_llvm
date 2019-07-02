@@ -9,6 +9,13 @@ begin
 
   hide_const (open) CONSTRAINT
 
+  
+  ML \<open>
+    fun SIMPLE_METHOD_NOPARAM' tac = Scan.succeed (fn ctxt => SIMPLE_METHOD' (IF_EXGOAL (tac ctxt)))
+    fun SIMPLE_METHOD_NOPARAM tac = Scan.succeed (fn ctxt => SIMPLE_METHOD (tac ctxt))
+  \<close>
+  
+  
   lemma not_None_eq2[simp]: "None \<noteq> x \<longleftrightarrow> (\<exists>y. x = Some y)"
     by (cases x) auto
   

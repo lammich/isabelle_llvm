@@ -105,6 +105,8 @@ text \<open>Standard preconditions are preserved by list-relation. These lemmas 
 lemma list_rel_pres_neq_nil[fcomp_prenorm_simps]: "(x',x)\<in>\<langle>A\<rangle>list_rel \<Longrightarrow> x'\<noteq>[] \<longleftrightarrow> x\<noteq>[]" by auto
 lemma list_rel_pres_length[fcomp_prenorm_simps]: "(x',x)\<in>\<langle>A\<rangle>list_rel \<Longrightarrow> length x' = length x" by (rule list_rel_imp_same_length)
 
+declare list_rel_imp_same_length[sepref_bounds_dest]
+
 locale list_custom_empty = 
   fixes rel empty and op_custom_empty :: "'a list"
   assumes customize_hnr_aux: "(uncurry0 empty,uncurry0 (RETURN (op_list_empty::'a list))) \<in> unit_assn\<^sup>k \<rightarrow>\<^sub>a rel"

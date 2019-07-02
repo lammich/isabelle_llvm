@@ -34,13 +34,6 @@ begin
 
   find_theorems vassn_tag hn_refine
 
-    (* TODO: Move*)
-    lemma snat_imp_bound[simp,arith]: "(c::'l::len2 word,a)\<in>snat_rel \<Longrightarrow> l=LENGTH('l) \<Longrightarrow> a<max_snat l"
-      unfolding snat_rel_def snat.rel_def in_br_conv
-      unfolding snat_def max_snat_def
-      apply auto
-      using sint_range' by blast
-
       
   (* TODO: Very specialized workaround lemma, to work around invalid-recombination
     problem for case that B is pure 
@@ -112,16 +105,6 @@ begin
       sepref_register "(\<le>) :: 'p \<Rightarrow> 'p \<Rightarrow> bool"
       sepref_register "(<) :: 'p \<Rightarrow> 'p \<Rightarrow> bool"
       
-      lemma l_len_bound[simp,arith]: "4 < LENGTH('l) \<Longrightarrow> 16 \<le> max_snat LENGTH('l)"
-        unfolding max_snat_def
-      proof -
-        assume "4<LENGTH('l)"
-        hence "4\<le>LENGTH('l)-1" by simp
-        hence "(2::nat)^4 \<le> 2^(LENGTH('l)-1)" 
-          by (rule power_increasing) auto
-        thus "(16::nat) \<le> 2^(LENGTH('l)-1)" by auto
-      qed
-      
       lemmas [sepref_frame_free_rules] = 
         mk_free_is_pure[OF prio_is_pure]
         mk_free_is_pure[OF elem_is_pure]
@@ -181,19 +164,16 @@ begin
       
       lemma overflow_safe_hbound_check: "2*k\<le>n \<longleftrightarrow> k\<le>n div 2" for k n :: nat by auto
       
-      (* TODO: Move *)
-      lemma al_assn_len_bound: "rdomp (al_assn' TYPE('l) A) xs \<Longrightarrow> length xs < max_snat LENGTH('l)"
-        unfolding al_assn_def 
-        by (auto simp: rdomp_hrcomp_conv dest!: rdomp_arl_assn_len list_rel_imp_same_length)
-      
-      lemma bound_aux1: "rdomp assn xs \<Longrightarrow> j\<le>length xs div 2 \<Longrightarrow> 2*j < max_snat LENGTH('l)"  
-        apply (drule al_assn_len_bound)
-        by simp
-        
+      (*lemma bound_aux1: "rdomp assn xs \<Longrightarrow> j\<le>length xs div 2 \<Longrightarrow> 2*j < max_snat LENGTH('l)"  
+        apply sepref_bounds*)
+
+      (*          
       lemma bound_aux2: "\<lbrakk>rdomp assn a1'; 2 * a2' < length a1'\<rbrakk> 
         \<Longrightarrow> Suc (2 * a2') < max_snat LENGTH('l)"  
+        apply sepref_bounds
         apply (drule al_assn_len_bound)
         by auto
+      *)
         
       sepref_register sink_op
       sepref_definition sink_impl is "uncurry (PR_CONST sink_op)" :: "[\<lambda>_. 4<LENGTH('l)]\<^sub>a assn\<^sup>d *\<^sub>a idx_assn\<^sup>k \<rightarrow> assn"
@@ -201,7 +181,6 @@ begin
         unfolding overflow_safe_hbound_check Suc_eq_plus1
         (* TODO: Workaround/Hack *)
         supply [sepref_frame_match_rules] = workaround_invalid_recombine_pure2[where B=snat_assn, simplified]
-        supply [simp] = bound_aux1 bound_aux2
         apply (annot_snat_const "TYPE('l)")
         by sepref
         

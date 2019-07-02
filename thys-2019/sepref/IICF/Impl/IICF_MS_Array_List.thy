@@ -54,20 +54,20 @@ begin
   end
 
   type_synonym ('l,'a) marl = "'l word \<times> 'a ptr"
+
+  lemma ms_irel_prenorm: 
+    assumes "((l,xs),xs')\<in>ms_irel M N"
+    shows "length xs = N \<and> l=length xs' \<and> length xs'\<le>N \<and> N < M"
+    using assms
+    unfolding ms_irel_def
+    by (auto simp: in_br_conv)
   
+    
   context
     fixes M :: nat
     defines "M \<equiv> max_snat (LENGTH ('l::len2))"
+    notes [fcomp_prenorm_simps] = ms_irel_prenorm[where M=M]
   begin
-
-    lemma ms_irel_prenorm[fcomp_prenorm_simps]: 
-      assumes "((l,xs),xs')\<in>ms_irel M N"
-      shows "length xs = N" "l=length xs'" "length xs'\<le>N" "N < M"
-      using assms
-      unfolding ms_irel_def
-      by (auto simp: in_br_conv)
-  
-
     abbreviation "marl2_assn \<equiv> snat_assn' TYPE('l) \<times>\<^sub>a array_assn id_assn"
   
     
@@ -180,11 +180,15 @@ begin
     unfolding marl_assn'_fold'[symmetric]
     by sepref_dbg_side
   
-  
+  lemma marl_assn'_boundsD[sepref_bounds_dest]:
+     "rdomp (marl_assn' TYPE('l::len2) A N) xs \<Longrightarrow> length xs \<le> N \<and> N < max_snat LENGTH('l)"  
+    unfolding marl_assn'_def
+    supply [sepref_bounds_dest] = ms_irel_prenorm
+    by sepref_bounds
+      
   lemma bind_assoc_tagged: "bind$(bind$m$f)$g = bind$m$(\<lambda>\<^sub>2x. bind$(f$x)$g)" 
     unfolding autoref_tag_defs by simp 
       
-  find_theorems name: beta  
     
     
 experiment begin    
@@ -194,7 +198,6 @@ experiment begin
     RETURN (x@[1::nat])
   })" :: "[\<lambda>N. N\<ge>10]\<^sub>a\<^sub>d (snat_assn' TYPE(64))\<^sup>k \<rightarrow> marl_assn' TYPE(64) (snat_assn' TYPE(64))"
     apply (annot_snat_const "TYPE(64)")
-    supply [simp] = snat_rel_imp_less_max_snat
     by sepref
     
 

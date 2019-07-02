@@ -133,7 +133,7 @@ begin
     by (auto dest!: pure_part_split_conj snat.vcg_prep_delete_assn)
     
 
-  lemma rdomp_aal_assnD':
+  lemma aal_assn_boundsD_aux1:
     assumes A: "rdomp (aal_assn' TYPE('l::len2) TYPE('ll::len2) A) xss"  
     shows "length xss < max_snat LENGTH('l)" (is ?G1)
       and "\<forall>xs\<in>set xss. length xs < max_snat LENGTH('ll)" (is ?G2)
@@ -179,12 +179,17 @@ begin
     thus ?G2 by blast
   qed      
 
-  lemma rdomp_aal_assnD:
+  lemma aal_assn_boundsD':
     assumes A: "rdomp (aal_assn' TYPE('l::len2) TYPE('ll::len2) A) xss"  
     shows "length xss < max_snat LENGTH('l) 
       \<and> (\<forall>xs\<in>set xss. length xs < max_snat LENGTH('ll))"
-    using rdomp_aal_assnD'[OF A] by auto
+    using aal_assn_boundsD_aux1[OF A] by auto
       
+  lemma aal_assn_boundsD[sepref_bounds_dest]:  
+    assumes A: "rdomp (aal_assn' TYPE('l::len2) TYPE('ll::len2) A) xss"  
+    shows "length xss < max_snat LENGTH('l)"
+    using aal_assn_boundsD_aux1[OF A] by auto
+    
   subsection \<open>Ad-Hoc Regression Tests\<close>
     
   experiment
@@ -202,8 +207,7 @@ begin
     }" :: "[\<lambda>n. n\<in>{1..150}]\<^sub>a (snat_assn' TYPE(32))\<^sup>k \<rightarrow> aal_assn' TYPE(32) TYPE(32) (snat_assn' TYPE(32))"
     apply (rewrite aal_fold_custom_empty[where 'l=32 and 'll=32])
     apply (annot_snat_const "TYPE(32)")
-    supply [simp] = max_snat_def
-    apply sepref_dbg_keep
+    apply sepref
     done
   
     export_llvm example is example

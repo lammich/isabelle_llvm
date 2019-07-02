@@ -376,7 +376,6 @@ begin
     sepref_definition ial_empty_impl [llvm_code]
       is aial_empty :: "idx_assn\<^sup>k \<rightarrow>\<^sub>a\<^sub>d ial2_assn"
       unfolding aial_empty_def
-      supply [simp] = snat_rel_imp_less_max_snat
       by sepref
         
     definition [simp]: "ial_empty_aux (N::nat) \<equiv> op_list_empty"
@@ -479,8 +478,14 @@ begin
     end            
   end
   
-  schematic_goal [sepref_frame_free_rules]: "MK_FREE (ial_assn N) (?fr)"
+  schematic_goal ial_assn_free[sepref_frame_free_rules]: "MK_FREE (ial_assn N) (?fr)"
     unfolding ial_assn_def
-    by sepref_dbg_side
+    by sepref_dbg_side (* TODO: Use proper method here! *)
   
+  lemma ial_assn_boundD[sepref_bounds_dest]: 
+    "rdomp (ial_assn' TYPE('l::len2) N) xs \<Longrightarrow> length xs \<le> N \<and> N < max_snat LENGTH('l)"
+    unfolding ial_assn_def ial_rel1_def
+    supply [simp] = in_br_conv
+    by sepref_bounds
+    
 end

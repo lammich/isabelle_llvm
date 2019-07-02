@@ -391,7 +391,6 @@ begin
     sepref_definition wu3_ins_edge [llvm_code,llvm_inline] is "uncurry2 wu2_ins_edge" 
       :: "(V_assn \<times>\<^sub>a V_assn)\<^sup>k *\<^sub>a W_assn\<^sup>k *\<^sub>a wu3_assn\<^sup>d \<rightarrow>\<^sub>a wu3_assn"
       unfolding wu2_ins_edge_def wu3_assn_def
-      supply [dest!] = rdomp_aal_assnD
       by sepref
       
     lemmas [sepref_fr_rules] = wu3_ins_edge.refine[FCOMP wu2_ins_edge_clen_refine]  
@@ -419,5 +418,10 @@ end
 abbreviation wu_assn' :: "'vl::len2 itself \<Rightarrow> 'wl::len2 itself \<Rightarrow> _ \<Rightarrow> _ \<Rightarrow> ('vl,'wl) wu3 \<Rightarrow> assn"
   where "wu_assn' _ _ \<equiv> wu_assn"
 
+lemma wu_assn_boundsD[sepref_bounds_dest]: 
+  "rdomp (wu_assn' TYPE('vl::len2) TYPE(_) N) g \<Longrightarrow> length g = N \<and> N < max_snat LENGTH('vl)"
+  unfolding wu_assn_def wu3_assn_def wu_constrain_len_rel_def
+  by sepref_bounds
+  
 
 end
