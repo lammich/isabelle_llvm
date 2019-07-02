@@ -586,7 +586,11 @@ context begin
   definition [llvm_inline]: "unat_unat_upcast TYPE('a::len) x \<equiv> ll_zext x TYPE('a word)"
   definition [llvm_inline]: "unat_unat_downcast TYPE('a::len) x \<equiv> ll_trunc x TYPE('a word)"
 
+  definition unat_snat_conv :: "'l::len2 word \<Rightarrow> 'l word llM" 
+    where [llvm_inline]: "unat_snat_conv x \<equiv> return x"  
     
+  definition snat_unat_conv :: "'l::len2 word \<Rightarrow> 'l word llM" 
+    where [llvm_inline]: "snat_unat_conv x \<equiv> return x"  
   
   lemma unat_snat_upcast_rule[vcg_rules]:
     "llvm_htriple 
@@ -647,6 +651,20 @@ context begin
     apply vcg'
     apply (auto simp: snat_invar_def snat_eq_unat(2) max_unat_def)
     by (metis ucast_nat_def unat_of_nat_eq)
+    
+  lemma unat_snat_conv_rule[vcg_rules]: 
+    "llvm_htriple (\<upharpoonleft>unat.assn x (xi::'l::len2 word) ** \<up>(x<max_snat LENGTH('l))) (unat_snat_conv xi) (\<lambda>r. \<upharpoonleft>snat.assn x r)"
+    unfolding unat_snat_conv_def unat.assn_def snat.assn_def
+    apply vcg'
+    by (force simp: max_snat_def snat_invar_alt snat_eq_unat(1))
+  
+  
+    
+  lemma snat_unat_conv_rule[vcg_rules]: 
+    "llvm_htriple (\<upharpoonleft>snat.assn x (xi::'l::len2 word)) (snat_unat_conv xi) (\<lambda>r. \<upharpoonleft>unat.assn x r)"
+    unfolding snat_unat_conv_def unat.assn_def snat.assn_def
+    apply vcg'
+    by (force simp: max_snat_def snat_invar_alt snat_eq_unat(1))
     
     
 end

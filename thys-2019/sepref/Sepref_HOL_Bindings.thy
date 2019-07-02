@@ -1146,6 +1146,7 @@ context fixes T :: "'a::len itself" begin
 end
 
 sepref_decl_op unat_snat_conv: "id::nat\<Rightarrow>_" :: "nat_rel \<rightarrow> nat_rel" .
+sepref_decl_op snat_unat_conv: "id::nat\<Rightarrow>_" :: "nat_rel \<rightarrow> nat_rel" .
 
 
 lemma annot_unat_snat_upcast: "x = op_unat_snat_upcast TYPE('l::len2) x" by simp 
@@ -1155,7 +1156,7 @@ lemma annot_snat_snat_downcast: "x = op_snat_snat_downcast TYPE('l::len2) x" by 
 lemma annot_unat_snat_conv: "x = op_unat_snat_conv x" by simp 
 lemma annot_unat_unat_upcast: "x = op_unat_unat_upcast TYPE('l::len) x" by simp 
 lemma annot_unat_unat_downcast: "x = op_unat_unat_downcast TYPE('l::len) x" by simp 
-  
+lemma annot_snat_unat_conv: "x = op_snat_unat_conv x" by simp  
 
 lemma in_unat_rel_conv_assn: "\<up>((xi, x) \<in> unat_rel) = \<upharpoonleft>unat.assn x xi"
   by (auto simp: unat_rel_def unat.assn_is_rel pure_app_eq)
@@ -1228,19 +1229,7 @@ context fixes BIG :: "'big::len" and SMALL :: "'small::len" begin
   sepref_decl_impl (ismop) unat_unat_downcast_refine fixes 'big 'small by simp
 end
 
-
-
-
-definition unat_snat_conv :: "'l::len2 word \<Rightarrow> 'l word llM" 
-  where "unat_snat_conv x \<equiv> return x"  
   
-lemma unat_snat_conv_rule[vcg_rules]: 
-  "llvm_htriple (\<upharpoonleft>unat.assn x (xi::'l::len2 word) ** \<up>(x<max_snat LENGTH('l))) (unat_snat_conv xi) (\<lambda>r. \<upharpoonleft>snat.assn x r)"
-  unfolding unat_snat_conv_def unat.assn_def snat.assn_def
-  apply vcg'
-  by (force simp: max_snat_def snat_invar_alt snat_eq_unat(1))
-
-
 context fixes T::"'l::len2" begin
   lemma unat_snat_conv_refine: "(\<lambda>x. x, op_unat_snat_conv) 
     \<in> [\<lambda>x. x<max_snat LENGTH('l::len2)]\<^sub>f unat_rel' TYPE('l) \<rightarrow> snat_rel' TYPE('l)"
@@ -1251,11 +1240,20 @@ context fixes T::"'l::len2" begin
       simp: snat_eq_unat(1)
       )
       
-  thm unat_snat_conv_refine[sepref_param]    
-      
   sepref_decl_impl unat_snat_conv_refine[sepref_param] fixes 'l by auto
-end   
   
+  lemma snat_unat_conv_refine: "(\<lambda>x. x, op_snat_unat_conv)
+    \<in> snat_rel' TYPE('l) \<rightarrow> unat_rel' TYPE('l)"
+    by (force
+      intro!: frefI
+      simp: snat_rel_def unat_rel_def snat.rel_def unat.rel_def
+      simp: in_br_conv max_snat_def snat_invar_alt
+      simp: snat_eq_unat(1)
+      )
+
+  sepref_decl_impl snat_unat_conv_refine[sepref_param] fixes 'l .
+end
+
 
 text \<open>Converting to Word\<close>
 sepref_register "of_nat :: _ \<Rightarrow> _ word "
