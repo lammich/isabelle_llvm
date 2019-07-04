@@ -101,6 +101,7 @@ begin
   abbreviation comp19 (infixl "o\<^sub>1\<^sub>9" 55) where "f o\<^sub>1\<^sub>9 g \<equiv> \<lambda>x. f o\<^sub>1\<^sub>8 (g x)"
   abbreviation comp20 (infixl "o\<^sub>2\<^sub>0" 55) where "f o\<^sub>2\<^sub>0 g \<equiv> \<lambda>x. f o\<^sub>1\<^sub>9 (g x)"
   
+  (* TODO: Why are the number of o off by one?*)
   notation
     comp4 (infixl "\<circ>\<circ>\<circ>" 55) and
     comp5 (infixl "\<circ>\<circ>\<circ>\<circ>" 55) and

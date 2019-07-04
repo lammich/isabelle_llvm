@@ -10,7 +10,10 @@ keywords
 
 begin
 
-  declare [[ML_exception_debugger, ML_debugger, ML_exception_trace]]
+  (*
+    (* DO NOt USE IN PRODUCTION VERSION \<rightarrow> SLOWDOWN *)
+    declare [[ML_exception_debugger, ML_debugger, ML_exception_trace]]
+  *)
 
 text \<open>
   This theory provides a tool for extracting definitions from terms, and

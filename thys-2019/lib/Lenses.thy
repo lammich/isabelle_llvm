@@ -1010,7 +1010,6 @@ lemmas "get (CTOR \<dots>) =" and "put x (CTOR \<dots>) = "
     | B (name: string)
     | C bool bool int
 
-    declare [[ML_print_depth = 100]]
     private define_lenses test
     print_theorems
 
