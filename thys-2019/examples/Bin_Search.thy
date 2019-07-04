@@ -57,7 +57,7 @@ begin
   type_synonym size_t = 64
   type_synonym elem_t = 64
 
-  sepref_definition bin_search_impl [llvm_code] is "uncurry bin_search"  
+  sepref_def bin_search_impl is "uncurry bin_search"  
     :: "(larray_assn' TYPE(size_t) (sint_assn' TYPE(elem_t)))\<^sup>k 
         *\<^sub>a (sint_assn' TYPE(elem_t))\<^sup>k 
        \<rightarrow>\<^sub>a snat_assn' TYPE(size_t)"

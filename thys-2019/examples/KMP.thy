@@ -917,7 +917,7 @@ abbreviation "tab_assn \<equiv> larray_assn' TYPE(size_t) size_t_assn"
 (*abbreviation "tab_assn \<equiv> array_assn size_t_assn" *) 
   
 subsection \<open>Refinement of Lookup Table Computation\<close>
-sepref_definition compute_butlast_\<ff>s_impl is compute_butlast_\<ff>s 
+sepref_def compute_butlast_\<ff>s_impl is compute_butlast_\<ff>s 
   :: "[\<lambda>s. length s < max_snat LENGTH(size_t)]\<^sub>a (string_assn)\<^sup>k \<rightarrow> tab_assn"
   unfolding compute_butlast_\<ff>s_def
   apply (rewrite in "WHILEIT _ \<hole>" short_circuit_conv)+
@@ -929,12 +929,12 @@ sepref_definition compute_butlast_\<ff>s_impl is compute_butlast_\<ff>s
   done
   
 (*prepare_code_thms (LLVM) [llvm_code] compute_butlast_\<ff>s_impl_def*)
-declare compute_butlast_\<ff>s_impl_def[llvm_code]
+(*declare compute_butlast_\<ff>s_impl_def[llvm_code]*)
 
 llvm_deps compute_butlast_\<ff>s_impl
 export_llvm compute_butlast_\<ff>s_impl is "KMP_compute_table"
 
-declare compute_butlast_\<ff>s_impl.refine[sepref_fr_rules]
+(*declare compute_butlast_\<ff>s_impl.refine[sepref_fr_rules]*)
 
 sepref_register compute_\<ff>s
 
@@ -944,7 +944,7 @@ subsection \<open>Refinement of Main Algorithm\<close>
 
 abbreviation "result_assn \<equiv> snat_option_assn' TYPE(size_t)"
   
-sepref_definition kmp_impl is "uncurry kmp3" 
+sepref_def kmp_impl is "uncurry kmp3" 
   :: "[\<lambda>(s,t). length s + length t < max_snat LENGTH(size_t) ]\<^sub>a 
       (string_assn)\<^sup>k *\<^sub>a (string_assn)\<^sup>k \<rightarrow> result_assn"
   unfolding kmp3_def kmp2_def
@@ -956,7 +956,7 @@ sepref_definition kmp_impl is "uncurry kmp3"
   done
   
 (*prepare_code_thms (LLVM) [llvm_code] kmp_impl_def*)
-declare kmp_impl_def[llvm_code]
+(*declare kmp_impl_def[llvm_code]*)
 
 export_llvm 
   compute_butlast_\<ff>s_impl is "kmp_compute_table"

@@ -1268,7 +1268,7 @@ abbreviation "snat64_assn \<equiv> snat_assn' TYPE(64)"
 abbreviation "wu_64_assn \<equiv> wu_assn' TYPE(64) TYPE(64)"
 
   
-sepref_definition upd_Q\<pi>_loop4 [llvm_code] is "uncurry4 (Prim5.upd_Q\<pi>_loop3)"
+sepref_def upd_Q\<pi>_loop4 is "uncurry4 (Prim5.upd_Q\<pi>_loop3)"
   :: "snat64_assn\<^sup>k *\<^sub>a (wu_64_assn N)\<^sup>k *\<^sub>a snat64_assn\<^sup>k *\<^sub>a (hm_assn' TYPE(64) N)\<^sup>d *\<^sub>a (snat_am_assn' TYPE(64) N)\<^sup>d 
     \<rightarrow>\<^sub>a hm_assn' TYPE(64) N \<times>\<^sub>a snat_am_assn' TYPE(64) N"
   unfolding Prim5.upd_Q\<pi>_loop3_def nfoldli_upt_by_while PR_CONST_def Prim5.N_def
@@ -1276,12 +1276,10 @@ sepref_definition upd_Q\<pi>_loop4 [llvm_code] is "uncurry4 (Prim5.upd_Q\<pi>_lo
   supply [[goals_limit = 1]]
   by sepref
   
-  
 sepref_register Prim5.upd_Q\<pi>_loop3 :: "nat
      \<Rightarrow> (nat \<times> nat) list list
         \<Rightarrow> nat \<Rightarrow> ((nat, nat) i_map) \<Rightarrow> ((nat, nat) i_map) \<Rightarrow> (((nat, nat) i_map) \<times> ((nat, nat) i_map)) nres"
   
-lemmas [sepref_fr_rules] = upd_Q\<pi>_loop4.refine
   
 (* TODO: Move *)
 definition BCONST :: "'b \<Rightarrow> 'a \<Rightarrow> 'a" where "BCONST c m \<equiv> m"
@@ -1332,7 +1330,7 @@ qed
 
 
 
-sepref_definition prim6 [llvm_code] is "uncurry Prim5.prim5" 
+sepref_def prim6 is "uncurry Prim5.prim5" 
   :: "snat64_assn\<^sup>k *\<^sub>a (wu_64_assn N)\<^sup>k \<rightarrow>\<^sub>a (hm_assn' TYPE(64) N \<times>\<^sub>a snat_am_assn' TYPE(64) N)"
   unfolding Prim5.prim5_def Prim5.N_def
   apply (annot_snat_const "TYPE(64)")

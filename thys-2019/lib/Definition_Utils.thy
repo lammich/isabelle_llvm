@@ -11,7 +11,7 @@ keywords
 begin
 
   (*
-    (* DO NOt USE IN PRODUCTION VERSION \<rightarrow> SLOWDOWN *)
+    (* DO NOT USE IN PRODUCTION VERSION \<rightarrow> SLOWDOWN *)
     declare [[ML_exception_debugger, ML_debugger, ML_exception_trace]]
   *)
 
@@ -64,7 +64,7 @@ signature DEFINITION_UTILS = sig
   
   
   val define_concrete_fun: extraction list option -> binding -> 
-    Token.src list -> indexname list -> thm ->
+    Token.src list -> Token.src list -> indexname list -> thm ->
     cterm list -> local_theory -> (thm * thm) * local_theory
   
   val mk_qualified: string -> bstring -> binding
@@ -504,7 +504,7 @@ fun extract_concrete_fun _ [] concl =
 
 
 (* Define concrete function from refinement lemma *)
-fun define_concrete_fun gen_code fun_name attribs_raw param_names thm pats
+fun define_concrete_fun gen_code fun_name attribs_def_raw attribs_ref_raw param_names thm pats
   (orig_lthy:local_theory) = 
 let
   val lthy = orig_lthy;
@@ -539,10 +539,11 @@ let
   val def_term = Logic.mk_equals (lhs_term,f_term) 
     |> fold Logic.all param_terms;
 
-  val attribs = map (Attrib.check_src lthy) attribs_raw;
+  val attribs_def = map (Attrib.check_src lthy) attribs_def_raw;
+  val attribs_ref = map (Attrib.check_src lthy) attribs_ref_raw;
 
   val ((_,(_,def_thm)),lthy) = Specification.definition 
-    (SOME (fun_name,NONE,Mixfix.NoSyn)) [] [] ((Binding.empty,attribs),def_term) lthy;
+    (SOME (fun_name,NONE,Mixfix.NoSyn)) [] [] ((Binding.empty,attribs_def),def_term) lthy;
 
   val folded_thm = Local_Defs.fold lthy [def_thm] thm';
 
@@ -550,7 +551,7 @@ let
   
   val (_,lthy) 
     = Local_Theory.note 
-       ((mk_qualified (basename) "refine",[]),[folded_thm]) 
+       ((mk_qualified (basename) "refine",attribs_ref),[folded_thm]) 
        lthy;
 
   val lthy = case gen_code of
@@ -601,7 +602,7 @@ end;
     end  
 
 
-    fun sd_cmd (((name,attribs_raw),attribs2_raw),t_raw) lthy = let
+    fun sd_cmd (((name,attribs_def_raw),attribs_ref_raw),t_raw) lthy = let
       local
         (*val ctxt = Refine_Util.apply_configs flags lthy*)
       in
@@ -615,8 +616,6 @@ end;
       val pat= Thm.cterm_of ctxt t
       val goal=t
 
-      val attribs2 = map (Attrib.check_src lthy) attribs2_raw;
-      
       
       fun 
         after_qed [[thm]] ctxt = let
@@ -627,10 +626,8 @@ end;
                  ((mk_qualified (Binding.name_of name) "refine_raw",[]),[thm]) 
                  lthy;
 
-            val ((dthm,rthm),lthy) = define_concrete_fun NONE name attribs_raw [] thm [pat] lthy
+            val ((dthm,rthm),lthy) = define_concrete_fun NONE name attribs_def_raw attribs_ref_raw [] thm [pat] lthy
 
-            val (_,lthy) = Local_Theory.note ((Binding.empty,attribs2),[rthm]) lthy
-            
             (* FIXME: Does not work, as we cannot see the default extraction patterns!
             val lthy = lthy 
               |> flag_prep_code ? Refine_Automation.extract_recursion_eqs 
@@ -769,9 +766,9 @@ ML \<open> Outer_Syntax.local_theory
   (Parse.binding 
     -- Parse.opt_attribs
     -- Scan.optional (@{keyword "for"} |-- Scan.repeat1 Args.var) []
-    --| @{keyword "is"} -- Parse.thm
+    --| @{keyword "is"} -- Parse.opt_attribs -- Parse.thm
     -- Scan.optional (@{keyword "uses"} |-- Scan.repeat1 Args.embedded_inner_syntax) []
-  >> (fn ((((name,attribs),params),raw_thm),pats) => fn lthy => let
+  >> (fn (((((name,attribs_def),params),attribs_ref),raw_thm),pats) => fn lthy => let
     val thm = 
       case Attrib.eval_thms lthy [raw_thm] of
         [thm] => thm
@@ -783,27 +780,31 @@ ML \<open> Outer_Syntax.local_theory
 
   in 
     Definition_Utils.define_concrete_fun 
-      NONE name attribs params thm pats lthy 
+      NONE name attribs_def attribs_ref params thm pats lthy 
     |> snd
   end))
 \<close>
 
 text \<open> 
   Command: 
-    @{text "concrete_definition name [attribs] for params uses thm is patterns"}
-  where @{text "attribs"}, @{text "for"}, and @{text "is"}-parts are optional.
+    @{text "concrete_definition name [attribs_def] for params is [attribs_ref] thm uses patterns"}
+  where @{text "attribs_..."}, @{text "for"}, and @{text "uses"}-parts are optional.
 
   Declares a new constant @{text "name"} by matching the theorem @{text "thm"} 
   against a pattern.
+  
+  The definition theorem of the constant gets the attributes specified in \<open>attribs_def\<close>.
+  Moreover, a new theorem is derived from \<open>thm\<close>, with the defined constant folded.
+  This is registered as \<open>name.refine\<close>, with attributes [attribs_ref].
   
   If the @{text "for"} clause is given, it lists variables in the theorem, 
   and thus determines the order of parameters of the defined constant. Otherwise,
   parameters will be in order of occurrence.
 
-  If the @{text "is"} clause is given, it lists patterns. The conclusion of the
+  If the @{text "uses"} clause is given, it lists patterns. The conclusion of the
   theorem will be matched against each of these patterns. For the first matching
   pattern, the constant will be declared to be the term that matches the first
-  non-dummy variable of the pattern. If no @{text "is"}-clause is specified,
+  non-dummy variable of the pattern. If no @{text "uses"}-clause is specified,
   the default patterns will be tried.
 
   Attribute: @{text "cd_patterns pats"}. Declaration attribute. Declares
