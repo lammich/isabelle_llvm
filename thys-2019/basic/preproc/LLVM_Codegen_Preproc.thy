@@ -18,21 +18,21 @@ begin
   declaration \<open>fn _ => Definition_Utils.declare_extraction_group @{binding LLVM} #> snd\<close>
   declaration \<open>fn _ => Definition_Utils.declare_extraction_group @{binding LLVM_while} #> snd\<close>
     
-  declaration {* fn _ =>
+  declaration \<open> fn _ =>
     Definition_Utils.add_extraction (@{extraction_group LLVM_while},\<^here>) {
       pattern = Logic.varify_global @{term "llc_while b body"},
       gen_thm = @{thm gen_code_thm_llc_while},
       gen_tac = K (K no_tac)
     }
-  *}
+  \<close>
 
-  declaration {*fn _ =>
+  declaration \<open>fn _ =>
     Definition_Utils.add_extraction (@{extraction_group LLVM},\<^here>) {
       pattern = Logic.varify_global @{term "REC (B::('a \<Rightarrow> 'b llM) \<Rightarrow> 'a \<Rightarrow> 'b llM)"},
       gen_thm = @{thm REC_unfold},
       gen_tac = Partial_Function.mono_tac
     }
-  *}
+  \<close>
 
 subsection \<open>Preprocessor\<close>  
   text \<open>
@@ -83,7 +83,9 @@ subsection \<open>Preprocessor\<close>
         val inline_thms = Named_Theorems.get ctxt @{named_theorems llvm_inline}
         val ctxt = put_simpset HOL_ss ctxt addsimps inline_thms
       in
-        Conv.fconv_rule (rhs_conv (Simplifier.rewrite ctxt)) thm
+        (* TODO: Simplifier.rewrite may introduce beta redexes. 
+          Currently we eliminate them right away. Or is it OK to have beta-redexes? *)
+        Conv.fconv_rule (rhs_conv (Simplifier.rewrite ctxt) then_conv Thm.beta_conversion true) thm
       end
     
       val cthm_monadify = Conv.fconv_rule o (rhs_conv o Monadify.monadify_conv)

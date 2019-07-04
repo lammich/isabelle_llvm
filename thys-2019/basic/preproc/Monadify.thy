@@ -175,7 +175,10 @@ begin
       
           val ctxt = put_simpset HOL_basic_ss ctxt addsimps monad_laws
           val tac = ALLGOALS (simp_tac ctxt)
-        in Refine_Util.f_tac_conv ctxt (monadify ctxt) tac then_conv eta_ret_conv ctxt end ct
+        in 
+          (* TODO: f_tac_conv will choke on beta-redexes! *)
+          Thm.beta_conversion true then_conv Refine_Util.f_tac_conv ctxt (monadify ctxt) tac then_conv eta_ret_conv ctxt 
+        end ct
         
       val monadify_all_conv = Conv.top_sweep_conv monadify_conv
         

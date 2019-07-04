@@ -304,7 +304,7 @@ define { i64, { i64, i64* } } @IICF_Impl_Heap_h_sink_impl({ i64, { i64, i64* } }
   start:
     %x2 = insertvalue { { i64, { i64, i64* } }, i64 } zeroinitializer, { i64, { i64, i64* } } %x, 0
     %x3 = insertvalue { { i64, { i64, i64* } }, i64 } %x2, i64 %x1, 1
-    %x4 = call { i64, { i64, i64* } } @IICF_Impl_Heap_h_sink_impl_f_05771430 ({ { i64, { i64, i64* } }, i64 } %x3)
+    %x4 = call { i64, { i64, i64* } } @IICF_Impl_Heap_h_sink_impl_f_04195160 ({ { i64, { i64, i64* } }, i64 } %x3)
     ret { i64, { i64, i64* } } %x4
 }
 
@@ -313,7 +313,7 @@ define { i64, { i64, i64* } } @IICF_Impl_Heap_h_swim_impl({ i64, { i64, i64* } }
   start:
     %x2 = insertvalue { { i64, { i64, i64* } }, i64 } zeroinitializer, { i64, { i64, i64* } } %x, 0
     %x3 = insertvalue { { i64, { i64, i64* } }, i64 } %x2, i64 %x1, 1
-    %x4 = call { i64, { i64, i64* } } @IICF_Impl_Heap_h_swim_impl_f_05778472 ({ { i64, { i64, i64* } }, i64 } %x3)
+    %x4 = call { i64, { i64, i64* } } @IICF_Impl_Heap_h_swim_impl_f_04204562 ({ { i64, { i64, i64* } }, i64 } %x3)
     ret { i64, { i64, i64* } } %x4
 }
 
@@ -465,7 +465,7 @@ define { i64, { i64, i64* } } @arl_push_back({ i64, { i64, i64* } } %al, i64 %x)
     ret { i64, { i64, i64* } } %x7
 }
 
-define { i64, { i64, i64* } } @IICF_Impl_Heap_h_sink_impl_f_05771430({ { i64, { i64, i64* } }, i64 } %x) {
+define { i64, { i64, i64* } } @IICF_Impl_Heap_h_sink_impl_f_04195160({ { i64, { i64, i64* } }, i64 } %x) {
 
   start:
     %a1 = extractvalue { { i64, { i64, i64* } }, i64 } %x, 0
@@ -574,7 +574,7 @@ define { i64, { i64, i64* } } @IICF_Impl_Heap_h_sink_impl_f_05771430({ { i64, { 
     %yja = insertvalue { i64, { i64, i64* } } %yi, { i64, i64* } %yk, 1
     %yl = insertvalue { { i64, { i64, i64* } }, i64 } zeroinitializer, { i64, { i64, i64* } } %yja, 0
     %x3 = insertvalue { { i64, { i64, i64* } }, i64 } %yl, i64 %xk, 1
-    %x4 = call { i64, { i64, i64* } } @IICF_Impl_Heap_h_sink_impl_f_05771430 ({ { i64, { i64, i64* } }, i64 } %x3)
+    %x4 = call { i64, { i64, i64* } } @IICF_Impl_Heap_h_sink_impl_f_04195160 ({ { i64, { i64, i64* } }, i64 } %x3)
     br label %ctd_ifc
 
   elsec:
@@ -592,7 +592,7 @@ define { i64, { i64, i64* } } @IICF_Impl_Heap_h_sink_impl_f_05771430({ { i64, { 
     ret { i64, { i64, i64* } } %x6
 }
 
-define { i64, { i64, i64* } } @IICF_Impl_Heap_h_swim_impl_f_05778472({ { i64, { i64, i64* } }, i64 } %x) {
+define { i64, { i64, i64* } } @IICF_Impl_Heap_h_swim_impl_f_04204562({ { i64, { i64, i64* } }, i64 } %x) {
 
   start:
     %a1 = extractvalue { { i64, { i64, i64* } }, i64 } %x, 0
@@ -668,7 +668,7 @@ define { i64, { i64, i64* } } @IICF_Impl_Heap_h_swim_impl_f_05778472({ { i64, { 
     %yia = udiv i64 %a2, 2
     %yk = insertvalue { { i64, { i64, i64* } }, i64 } zeroinitializer, { i64, { i64, i64* } } %yha, 0
     %x1 = insertvalue { { i64, { i64, i64* } }, i64 } %yk, i64 %yia, 1
-    %x2 = call { i64, { i64, i64* } } @IICF_Impl_Heap_h_swim_impl_f_05778472 ({ { i64, { i64, i64* } }, i64 } %x1)
+    %x2 = call { i64, { i64, i64* } } @IICF_Impl_Heap_h_swim_impl_f_04204562 ({ { i64, { i64, i64* } }, i64 } %x1)
     br label %ctd_ifa
 
   elsea:
