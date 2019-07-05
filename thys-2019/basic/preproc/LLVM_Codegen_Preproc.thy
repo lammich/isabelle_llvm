@@ -151,10 +151,15 @@ subsection \<open>Preprocessor\<close>
         fun cthm_norm_lambda ctxt thm = let
           val thm = Local_Defs.unfold ctxt @{thms pull_lambda_case} thm
         
-          fun r thm = case Thm.concl_of thm of
+          (*fun r thm = case Thm.concl_of thm of
             @{mpat "Trueprop (_ = (\<lambda>_. _))"} => r (thm RS @{thm fun_cong})
           | @{mpat "_ \<equiv> (\<lambda>_. _)"} => r (thm RS @{thm meta_fun_cong})
           | _ => thm
+          *)
+          
+          fun r thm = case try (fn () => (thm RS @{thm fun_cong})) () of
+            NONE => thm
+          | SOME thm => r thm  
           
         in
           r thm
@@ -163,8 +168,8 @@ subsection \<open>Preprocessor\<close>
       in
         thm 
         |> (simplify (put_simpset HOL_ss ctxt addsimps @{thms Monad.bind_laws atomize_eq}))
-        |> (Conv.fconv_rule (Refine_Util.f_tac_conv ctxt normalize_eq (norm_tac ctxt)))
         |> cthm_norm_lambda ctxt
+        |> (Conv.fconv_rule (Refine_Util.f_tac_conv ctxt normalize_eq (norm_tac ctxt)))
         |> (Conv.fconv_rule (Conv.top_sweep_conv (K (Conv.rewr_conv @{thm unit_meta_eq})) ctxt))
       end
       
