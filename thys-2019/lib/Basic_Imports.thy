@@ -1,6 +1,6 @@
 theory Basic_Imports
 imports
-  Main_Simpset
+  Named_Simpsets
   "Automatic_Refinement.Refine_Util"
   "Automatic_Refinement.Misc"
   Misc_LLang

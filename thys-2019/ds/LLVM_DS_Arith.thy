@@ -91,6 +91,16 @@ abbreviation (input) "word_len \<equiv> \<lambda>_::'a::len0 word. LENGTH('a)"
 lemma snat_lt_max_snat[simp]: "snat w < max_snat (word_len w)"
   by (auto simp: snat_def max_snat_def sint_range')
   
+  
+subsection \<open>Constant Folding\<close>  
+(*
+   TODO: No idea how complete these are 
+*)
+lemmas llvm_num_const_simps[llvm_inline] 
+  = Num.arith_simps power_numeral pred_numeral_simps power_0
+    arith_special numeral_One[symmetric]
+
+  
 subsection \<open>Reflection of Maximum Representable Values\<close>  
   
 definition ll_max_uint :: "'l::len word llM" where [llvm_inline]: "ll_max_uint \<equiv> ll_sub 0 1"

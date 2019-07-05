@@ -4,6 +4,7 @@ imports
   "../kernel/LLVM_Codegen"
   "Monadify"
   "../../lib/Definition_Utils" 
+  "../../lib/Named_Simpsets" 
 keywords "export_llvm" "llvm_deps" :: thy_decl
 begin
 
@@ -42,8 +43,16 @@ subsection \<open>Preprocessor\<close>
   \<close>
   
   named_theorems llvm_code \<open>Isabelle-LLVM code theorems\<close>
-  named_theorems llvm_inline
+  
+  named_simpset llvm_inline = HOL_ss
 
+  attribute_setup llvm_inline = \<open>
+    Attrib.add_del 
+      (Named_Simpsets.add_attr @{named_simpset llvm_inline}) 
+      (Named_Simpsets.add_attr @{named_simpset llvm_inline})
+  \<close>
+    
+  
   lemma llvm_inline_bind_laws[llvm_inline]:
     "bind m return = m"
     "bind (bind m (\<lambda>x. f x)) g = bind m (\<lambda>x. bind (f x) g)"
@@ -80,8 +89,7 @@ subsection \<open>Preprocessor\<close>
       
   
       fun cthm_inline ctxt thm = let
-        val inline_thms = Named_Theorems.get ctxt @{named_theorems llvm_inline}
-        val ctxt = put_simpset HOL_ss ctxt addsimps inline_thms
+        val ctxt = Named_Simpsets.put @{named_simpset llvm_inline} ctxt
       in
         (* TODO: Simplifier.rewrite may introduce beta redexes. 
           Currently we eliminate them right away. Or is it OK to have beta-redexes? *)

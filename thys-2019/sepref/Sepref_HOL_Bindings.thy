@@ -676,7 +676,7 @@ context fixes a::num begin
     "1 :: _ word"
 
   lemma word_numeral_param[sepref_import_param]:
-    "(PR_CONST (numeral a),PR_CONST (numeral a)) \<in> word_rel"  
+    "(numeral a,PR_CONST (numeral a)) \<in> word_rel"  
     "(0,0)\<in>word_rel"
     "(1,1)\<in>word_rel"
     by auto
@@ -1331,6 +1331,8 @@ lemma in_sint_rel_boundsD[sepref_bounds_dest]:
   
 lemmas [sepref_bounds_simps] = max_snat_def max_unat_def max_sint_def min_sint_def
   
+subsection \<open>Default Inlinings\<close>
+lemmas [llvm_inline] = id_def
 
 subsection \<open>HOL Combinators\<close>
 
@@ -1742,6 +1744,9 @@ begin
     
 end    
 
+lemmas [named_ss llvm_inline cong] = refl[of "dflt_option.free_option _"]
+
+
 locale dflt_pure_option = dflt_option +
   assumes A_pure[safe_constraint_rules]: "is_pure A"
 begin
@@ -1842,6 +1847,9 @@ begin
     
     
 end    
+
+lemmas [named_ss llvm_inline cong] = refl[of "dflt_option_private.free_option _"]
+
 
 locale dflt_pure_option_private = dflt_option_private +
   assumes A_pure[safe_constraint_rules]: "is_pure A"

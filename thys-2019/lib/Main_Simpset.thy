@@ -1,4 +1,6 @@
-theory Main_Simpset
+Obsolete, use named_simpset instead
+
+th***eory Main_Simpset
 imports Main
 begin
 
