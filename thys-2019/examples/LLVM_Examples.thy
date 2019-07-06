@@ -5,6 +5,36 @@ imports
   "../ds/LLVM_DS_Array_List"
 begin
 
+lemmas [named_ss llvm_inline cong] = refl[of "numeral _"]
+
+definition test :: "64 word \<Rightarrow> 64 word \<Rightarrow> 64 word llM"
+where [llvm_code]: "test a b \<equiv> doM {
+
+  return (a+b+ 0x18892) 
+}"
+
+ML_val \<open>
+  local open LLC_Preprocessor
+    val ctxt = @{context}
+  in
+
+    val thm = @{thm test_def}
+      |> cthm_inline ctxt
+      |> cthm_monadify ctxt
+  
+  end
+\<close>
+
+
+lemma "foo (test)"
+  unfolding test_def
+  apply (simp named_ss llvm_inline:)
+
+
+export_llvm test
+
+
+
 text \<open>Example and Regression Tests using LLVM-VCG directly, 
 i.e., without Refinement Framework\<close>
 

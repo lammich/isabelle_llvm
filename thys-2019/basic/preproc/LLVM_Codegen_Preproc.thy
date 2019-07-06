@@ -67,7 +67,7 @@ subsection \<open>Preprocessor\<close>
     struct
       open LLC_Lib
           
-      structure Monadify = Gen_Monadify (
+      structure Monadify = Gen_Monadify_Cong (
       
         fun mk_return x = @{mk_term "return ?x ::_ llM"}
         fun mk_bind m f = @{mk_term "bind ?m ?f ::_ llM"}
@@ -280,7 +280,11 @@ subsection \<open>Preprocessor\<close>
         
     end
   \<close>
+
+  declaration \<open>K (LLC_Preprocessor.Monadify.prepare_add_const_decl @{term "numeral a"})\<close>  
   
+  
+    
 subsection \<open>Code Generator Driver\<close>  
   text \<open>
     The driver combines preeprocessing and code generation, 
