@@ -236,6 +236,7 @@ structure Sepref_Translate = struct
     in
       CONVERSION (Id_Op.unprotect_conv ctxt)
       THEN' SELECT_GOAL (Local_Defs.unfold0_tac ctxt @{thms bind_ref_tag_def})
+      THEN' TRY o (hyp_subst_tac ctxt)
       (*THEN' asm_full_simp_tac ctxt*)
     end
   
