@@ -52,4 +52,22 @@ begin
     lemmas custom_hnr[sepref_fr_rules] = customize_hnr_aux[folded op_custom_empty_def]
   end
 
+
+  text \<open>Fold lemmas for manual folding.\<close>
+  (* TODO: Why not use interface and op-id for that? *)
+  lemma fold_op_list_list_push_back: "xss[i:=xss!i@[x]] = op_list_list_push_back xss i x" by simp
+  lemma fold_op_list_list_pop_back: "(last (xss!i), xss[i:=butlast (xss!i)]) = op_list_list_pop_back xss i" by simp
+  lemma fold_op_list_list_upd: "xss[i:=(xss!i)[j:=x]] = op_list_list_upd xss i j x" by simp
+  lemma fold_op_list_list_idx: "xs!i!j = op_list_list_idx xs i j" by simp
+  lemma fold_op_list_list_llen: "length (xs!i) = op_list_list_llen xs i" by simp
+  lemma fold_op_list_list_take: "xss[i:=take n (xss!i)] = op_list_list_take xss i n" by simp
+
+  lemmas fold_op_list_list = 
+    fold_op_list_list_push_back
+    fold_op_list_list_pop_back 
+    fold_op_list_list_upd
+    fold_op_list_list_idx
+    fold_op_list_list_llen
+    fold_op_list_list_take  
+  
 end
