@@ -572,6 +572,21 @@ lemma hn_ASSUME_bind[sepref_comb_rules]:
   apply (auto simp: vassn_tag_def)
   done
     
+text \<open>Manual deallocation. Frees data before its variable goes out of scope\<close>  
+definition "mop_free x \<equiv> RETURN ()"
+sepref_register mop_free
+
+lemma mop_free_hnr[sepref_fr_rules]:
+  assumes "MK_FREE R f"  
+  shows "(f,mop_free)\<in>R\<^sup>d\<rightarrow>\<^sub>aunit_assn"
+  unfolding mop_free_def
+  apply (rule hfrefI)
+  apply (rule hn_refineI)
+  apply (rule htriple_pure_preI)
+  apply (clarsimp 
+    simp: hn_ctxt_def pure_def sep_algebra_simps invalid_assn_def)
+  supply [vcg_rules] = MK_FREED[OF assms]
+  by vcg
     
 subsection "Import of Parametricity Theorems"
 lemma pure_hn_refineI:
