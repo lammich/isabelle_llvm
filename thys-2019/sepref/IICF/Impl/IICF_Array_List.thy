@@ -37,6 +37,15 @@ lemma rdomp_al_dest':
 text \<open>This functions deletes all elements of a resizable array, without resizing it.\<close>
 sepref_decl_op emptied_list: "\<lambda>_::'a list. []::'a list" :: "\<langle>A\<rangle>list_rel \<rightarrow> \<langle>A\<rangle>list_rel" .
 
+sepref_decl_op al_custom_replicate: op_list_replicate :: "nat_rel \<rightarrow> A \<rightarrow> \<langle>A\<rangle>list_rel" .
+
+lemma al_fold_custom_replicate:
+  "replicate = op_al_custom_replicate"
+  "op_list_replicate = op_al_custom_replicate"
+  "mop_list_replicate = mop_al_custom_replicate"
+  by (auto simp: fun_eq_iff)
+
+
 context
   fixes l_dummy :: "'l::len2 itself" 
     and L AA
@@ -72,6 +81,12 @@ begin
     by m_ref  
   sepref_decl_impl (no_register) al_empty: al_empty_hnr_aux .
        
+  lemma al_replicate_hnr_aux:
+    "(uncurry arl_new_repl, uncurry (RETURN oo op_al_custom_replicate)) 
+    \<in> [\<lambda>_. 4 < L]\<^sub>a (snat_assn' TYPE('l))\<^sup>k *\<^sub>a id_assn\<^sup>k \<rightarrow> AA"
+    by m_ref
+  sepref_decl_impl al_replicate: al_replicate_hnr_aux .
+  
 
   lemma al_nth_hnr_aux: "(uncurry arl_nth, uncurry mop_list_get) 
     \<in> AA\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow>\<^sub>a id_assn"
@@ -143,7 +158,6 @@ end
 
 
 
-
 subsection \<open>Ad-Hoc Regression Tests\<close>
 
 experiment
@@ -161,10 +175,18 @@ begin
     let l = l[2:=l!3];
     l \<leftarrow> mop_list_set l 3 x;
     let (_,l) = op_list_pop_last l;
+    
+    l2 \<leftarrow> mop_list_replicate 100 False;
+    l2 \<leftarrow> mop_list_append l2 True;
+    l2 \<leftarrow> mop_list_append l2 True;
+    l2 \<leftarrow> mop_list_append l2 False;
+    l2 \<leftarrow> mop_list_set l2 3 True;
+    
     RETURN l
   }" :: "(snat_assn' TYPE(32))\<^sup>k \<rightarrow>\<^sub>a al_assn' TYPE(32) (snat_assn' TYPE(32))"
     apply (annot_snat_const "TYPE(32)")
     apply (rewrite al_fold_custom_empty[where 'l=32])
+    apply (rewrite al_fold_custom_replicate)
     by sepref
     
   export_llvm example

@@ -73,7 +73,14 @@ begin
 
   definition arl_new_sz :: "'a::llvm_rep itself \<Rightarrow> 'l::len2 word \<Rightarrow> ('a,'l) array_list llM" 
     where [llvm_inline]: "arl_new_sz TYPE('a) n \<equiv> arl_new_sz_raw n"
-      
+
+  definition arl_new_repl :: "'l::len2 word \<Rightarrow> 'a::llvm_rep \<Rightarrow> ('a,'l) array_list llM" 
+    where [llvm_inline]: "arl_new_repl n x \<equiv> doM {
+      a \<leftarrow> narray_new_init n x;
+      return (n,n,a)
+    }"
+    
+          
   definition arl_clear :: "('a::llvm_rep,'l::len2) array_list \<Rightarrow> ('a::llvm_rep,'l) array_list llM"
     where [llvm_code,llvm_inline]: "arl_clear al \<equiv> doM {
       let (l,c,a) = al;
@@ -239,7 +246,17 @@ begin
     unfolding arl_new_sz_def arl_new_sz_raw_def arl_initial_size_def arl_assn_def arl_assn'_def
     apply (vcg_monadify)
     by vcg'
+
+  lemma arl_new_repl_rule[vcg_rules]: 
+    "llvm_htriple 
+      (\<upharpoonleft>snat.assn n ni ** \<up>(LENGTH('c::len2)>4)) 
+      (arl_new_repl (ni::'c word) x) 
+      (\<lambda>ali. \<upharpoonleft>arl_assn (replicate n x) ali)"
+    unfolding arl_new_repl_def arl_initial_size_def arl_assn_def arl_assn'_def
+    apply (vcg_monadify)
+    by vcg'
     
+        
   lemma arl_assn_init_pure: 
     "PRECOND (SOLVE_AUTO (4 < LENGTH('l))) \<Longrightarrow> \<box> \<turnstile> \<upharpoonleft>arl_assn [] (init::(_,'l::len2)array_list)"  
     unfolding arl_assn_def arl_assn'_def vcg_tag_defs
