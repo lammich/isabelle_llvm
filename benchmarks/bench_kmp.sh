@@ -42,7 +42,7 @@ done
 
 if $RUN; then
   run ../etc/kmp_c CPP 50
-  run ../thys/examples/code LLVM 50
+  run ../thys-2019/examples/code LLVM 50
   run ../etc/kmp_impholx SMLX 30
   run ../etc/kmp_imphol SML 10
 fi  

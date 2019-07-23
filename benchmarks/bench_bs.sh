@@ -44,7 +44,7 @@ done
 
 if $RUN; then
   run ../etc/binsearch_c CPP
-  run ../thys/examples/code LLVM
+  run ../thys-2019/examples/code LLVM
   run ../etc/binsearch_impholx SMLX
   run ../etc/binsearch_imphol SML
 fi  

@@ -296,6 +296,7 @@ subsection \<open>Code Generator Driver\<close>
     = struct
     
       val cfg_llvm_debug = Attrib.setup_config_bool @{binding llvm_debug} (K false)
+      val cfg_llvm_gen_header = Attrib.setup_config_bool @{binding llvm_gen_header} (K true)
     
       fun pretty_cthms ctxt cthms = let 
         val ctxt = Config.put Syntax_Trans.eta_contract false ctxt      
@@ -309,9 +310,12 @@ subsection \<open>Code Generator Driver\<close>
       fun pretty_ftab ctxt ftab = Pretty.big_list "Symbol table:" 
         (map (pretty_ftab_entry ctxt) (Termtab.dest ftab))
                 
-      fun consts_to_llvm cns lthy = let
-        val dbg = Config.get lthy cfg_llvm_debug
         
+        
+        
+      fun consts_to_llvm hfname cns tydefs lthy = let
+        val dbg = Config.get lthy cfg_llvm_debug
+        val gen_header = Config.get lthy cfg_llvm_gen_header
         fun trace s = if dbg then Pretty.string_of (s ()) |> tracing else ()
                                                                                                       
         val _ = trace (fn () => Pretty.str "Gathering code theorems")
@@ -319,19 +323,28 @@ subsection \<open>Code Generator Driver\<close>
         val _ = trace (fn () => pretty_cthms lthy cthms)
         
         val _ = trace (fn () => Pretty.str "Computing symbol table")
-        val fixes = map_filter (fn (_,NONE) => NONE | (cn,SOME name) => SOME (cn,name)) cns
+        val fixes = map_filter (fn (_,NONE) => NONE | (cn,SOME rsig) => SOME (cn,LLC_HeaderGen.name_of_rsig rsig)) cns
         val ftab = LLC_Compiler.compute_fun_names fixes cthms
         val _ = trace (fn () => pretty_ftab lthy ftab)
         
                   
         val _ = trace (fn () => Pretty.str "Translating code theorems to IL")
-        val tysxeqns = LLC_Compiler.parse_cthms ftab cthms lthy
-        val _ = trace (fn () => LLC_Intermediate.pretty_llc tysxeqns)
+        val (tys,eqns) = LLC_Compiler.parse_cthms ftab cthms lthy
+        val _ = trace (fn () => LLC_Intermediate.pretty_llc (tys,eqns))
         
         val _ = trace (fn () => Pretty.str "Writing LLVM")
-        val res = LLC_Backend.compile_to_llvm lthy tysxeqns
+        val res = LLC_Backend.compile_to_llvm lthy (tys,eqns)
+        
+        val hdres = if gen_header then let
+            val _ = trace (fn () => Pretty.str "Preparing Header")
+            val sigs = map_filter snd cns
+            val hdres = LLC_HeaderGen.make_header hfname tydefs sigs eqns
+          in hdres end
+          else NONE
+        
+        
       in
-        ((cthms,res), lthy)
+        ((cthms,res,hdres), lthy)
       end
       
       local
@@ -345,28 +358,56 @@ subsection \<open>Code Generator Driver\<close>
           val path = using_master_directory ctxt path
         in path end
       
+        fun remove_ext ext p = let val (p',ext') = Path.split_ext p in if ext=ext' then p' else p end
+        fun remove_all_ext p = case Path.split_ext p of (p,"") => p | (p,_) => remove_all_ext p
+        
+        fun prepare_hpath _ NONE = ("HEADER_NAME",NONE)
+          | prepare_hpath ctxt (SOME spos) = let
+              val path = prepare_path ctxt spos
+                |> remove_ext "ll"
+                |> Path.ext "h"
+              val hfname = remove_all_ext (Path.base path) |> Path.implode
+            in
+              (hfname,SOME path)
+            end
+        
+        
         fun write_out NONE s = writeln s
           | write_out (SOME path) s = File.write path s
       in
-        fun export_llvm cns path lthy = let
+        fun export_llvm cns tydefs path (hfname,hfpath) lthy = let
           val lthy = Config.put Syntax_Trans.eta_contract false lthy
-          val ((cthms,llvm_code),lthy) = consts_to_llvm cns lthy
+          val ((cthms,llvm_code,hcode),lthy) = consts_to_llvm hfname cns tydefs lthy
           val _ = write_out path llvm_code      
+          val _ = case hcode of SOME c => write_out hfpath c | NONE => ()
         in
           (cthms,lthy)
         end
         
-        val export_llvm_cmd = (Args.mode "debug" -- Args.mode "no_while" -- Parse_Spec.opt_thm_name ":" -- (Scan.repeat1 (Parse.term -- Scan.option (@{keyword "is"} |-- Parse.name )) -- Scan.option ((@{keyword "file"} |-- Parse.position Parse.path))) 
-            >> (fn (((dbg,nowhile),bnd),(cns,path)) => fn lthy => let 
+        val export_llvm_cmd = (
+          Args.mode "debug" 
+          -- Args.mode "no_while" 
+          -- Args.mode "no_header" 
+          -- Parse_Spec.opt_thm_name ":" 
+          -- (Scan.repeat1 (Parse.term -- Scan.option (@{keyword "is"} |-- LLC_HeaderGen.parse_raw_sig )) 
+          -- Scan.option (@{keyword "defines"} |-- LLC_HeaderGen.parse_raw_tydefs)
+          -- Scan.option ((@{keyword "file"} |-- Parse.position Parse.path))
+          ) 
+            >> (fn ((((dbg,nowhile),no_header),bnd),((cns,tydefs),path_spos)) => fn lthy => let 
             
               local
                 val lthy = (dbg?Config.put cfg_llvm_debug true) lthy
                 val lthy = (nowhile?Config.put LLC_Lib.llc_compile_while false) lthy
+                val lthy = (no_header?Config.put cfg_llvm_gen_header false) lthy
               in
                 val cns = map (apfst (Syntax.read_term lthy)) cns
-                val path = Option.map (prepare_path lthy) path 
+                val cns = map (apsnd (map_option (LLC_HeaderGen.check_raw_sig lthy))) cns
+                val tydefs = the_default [] (map_option (LLC_HeaderGen.check_raw_tydefs lthy) tydefs)
                 
-                val (cthms,lthy) = export_llvm cns path lthy
+                val path = Option.map (prepare_path lthy) path_spos 
+                val hfnpath = prepare_hpath lthy path_spos
+                
+                val (cthms,lthy) = export_llvm cns tydefs path hfnpath lthy
               end
               
               val (_,lthy) = Local_Theory.note (bnd,cthms) lthy 
@@ -549,6 +590,22 @@ definition fib :: "64 word \<Rightarrow> 64 word llM"
 
 export_llvm fib is fib
 
+
+definition triple_sum :: "(64 word \<times> 64 word \<times> 64 word) \<Rightarrow> 64 word llM" where [llvm_code]:
+  "triple_sum abc \<equiv> doM {
+    a \<leftarrow> ll_extract_fst abc;
+    bc::64 word \<times> 64 word \<leftarrow> ll_extract_snd abc;
+    b \<leftarrow> ll_extract_fst bc;
+    c \<leftarrow> ll_extract_snd bc;
+    r \<leftarrow> ll_add a b;
+    r \<leftarrow> ll_add r c;
+    return r
+   }"
+   
+export_llvm triple_sum is \<open>_ triple_sum(triple)\<close> 
+  defines \<open>typedef struct {int64_t a; struct {int64_t b; int64_t c;};} triple;\<close>
+  
+  
 
 end
 

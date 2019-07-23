@@ -932,7 +932,7 @@ sepref_def compute_butlast_\<ff>s_impl is compute_butlast_\<ff>s
 (*declare compute_butlast_\<ff>s_impl_def[llvm_code]*)
 
 llvm_deps compute_butlast_\<ff>s_impl
-export_llvm compute_butlast_\<ff>s_impl is "KMP_compute_table"
+export_llvm compute_butlast_\<ff>s_impl
 
 (*declare compute_butlast_\<ff>s_impl.refine[sepref_fr_rules]*)
 
@@ -955,12 +955,14 @@ sepref_def kmp_impl is "uncurry kmp3"
   apply sepref_dbg_keep
   done
   
-(*prepare_code_thms (LLVM) [llvm_code] kmp_impl_def*)
-(*declare kmp_impl_def[llvm_code]*)
+
 
 export_llvm 
-  compute_butlast_\<ff>s_impl is "kmp_compute_table"
-  kmp_impl is "kmp"
+  compute_butlast_\<ff>s_impl
+  kmp_impl is "_ kmp(string,string)"
+  defines \<open>
+    typedef struct {int64_t len; char *str;} string;
+  \<close>
   file "code/kmp.ll"
   
 

@@ -1339,8 +1339,7 @@ sepref_def prim6 is "uncurry Prim5.prim5"
   
   
   
-export_llvm prim6  
+export_llvm prim6 
   
-
 
 end

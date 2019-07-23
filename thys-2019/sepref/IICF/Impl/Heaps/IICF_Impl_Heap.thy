@@ -391,7 +391,7 @@ sepref_definition sort_impl [llvm_code] is
 
   
   
-export_llvm 
+export_llvm (no_header)
   sort_impl is "sort" 
   "arl_new_raw :: (64 word,64) array_list llM" is "arl_new"
   "arl_push_back :: _ \<Rightarrow> _ \<Rightarrow> (64 word,64) array_list llM" is "arl_push_back"

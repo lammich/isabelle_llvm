@@ -149,7 +149,7 @@ begin
     [llvm_inline]: "array_of_arl \<equiv> \<lambda>(l,c,a). a"
   
   
-  export_llvm (debug)
+  export_llvm (debug) (no_header)
     "arl_new_raw :: (64 word,64) array_list llM" is "arl_new"
     "arl_new_sz_raw :: 64 word \<Rightarrow> (64 word,64) array_list llM"
     "arl_clear :: (64 word,64) array_list \<Rightarrow> (64 word,64) array_list llM"

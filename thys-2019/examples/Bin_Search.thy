@@ -65,7 +65,17 @@ begin
     apply sepref
     done
     
-  export_llvm (debug) bin_search_impl is bin_search file "code/bin_search.ll"
+  export_llvm bin_search_impl is \<open>int64_t bin_search(larray_t, elem_t)\<close> 
+  defines \<open>
+    typedef uint64_t elem_t;
+    typedef struct {
+      int64_t len;
+      elem_t *data;
+    } larray_t;
+  \<close>
+  file "code/bin_search.ll"
+  
+  
   lemmas bs_impl_correct = bin_search_impl.refine[FCOMP bin_search_correct']
   
   subsubsection \<open>Combined Correctness Theorem\<close>

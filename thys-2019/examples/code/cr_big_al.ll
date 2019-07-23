@@ -33,8 +33,8 @@ define void @LLVM_DS_Array_arraycpy(i64* %dst, i64* %src, i64 %n) {
 define i64 @cr_big_al(i64 %n) {
 
   start:
-    %tmpd = icmp eq i64 8, 0
-    br i1 %tmpd, label %then, label %else
+    %tmp = icmp eq i64 8, 0
+    br i1 %tmp, label %then, label %else
 
   then:
     br label %ctd_if
@@ -87,9 +87,9 @@ define i64 @cr_big_al(i64 %n) {
 
   elsea:
     %xh1 = insertvalue { i64, i64* } zeroinitializer, i64 %cb, 0
-    %tmpfc = insertvalue { i64, i64* } %xh1, i64* %ad, 1
+    %tmpbc = insertvalue { i64, i64* } %xh1, i64* %ad, 1
     %xi = insertvalue { i64, { i64, i64* } } zeroinitializer, i64 %lc, 0
-    %x4 = insertvalue { i64, { i64, i64* } } %xi, { i64, i64* } %tmpfc, 1
+    %x4 = insertvalue { i64, { i64, i64* } } %xi, { i64, i64* } %tmpbc, 1
     %x5 = call { i64, { i64, i64* } } @LLVM_DS_Array_List_arl_resize (i64 %lb, { i64, { i64, i64* } } %x4)
     br label %ctd_ifa
 
@@ -199,8 +199,8 @@ define { i64, { i64, i64* } } @LLVM_DS_Array_List_arl_resize(i64 %c, { i64, { i6
 
   ctd_if:
     %ca1 = phi i64 [ %c, %else ], [ %x1, %ctd_ifa ]
-    %tmpc = icmp eq i64 %ca1, 0
-    br i1 %tmpc, label %thenb, label %elseb
+    %tmpa = icmp eq i64 %ca1, 0
+    br i1 %tmpa, label %thenb, label %elseb
 
   thenb:
     br label %ctd_ifb
