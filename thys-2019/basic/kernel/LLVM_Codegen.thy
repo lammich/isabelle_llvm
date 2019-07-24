@@ -958,9 +958,9 @@ begin
   \<close>  
 
   ML \<open> structure Simple_PP = struct
-    datatype T = Word of string | Special of string | Space | Newline of bool | Block of int * T list
+    datatype T = Word of string | NWord of string | Space of bool | Newline of bool | Block of int * T list
 
-    datatype last_tk = NL | WR | SP (* Newline | word | space or special character *)
+    datatype last_tk = NL | WR | NW | SP (* Newline | word | nonword | space *)
     
     type state = int * last_tk  (* indentation, last token *)
     
@@ -974,16 +974,22 @@ begin
     
     fun string_of' (Word kw) (i,NL) = (indentation i ^ kw, (i,WR))
       | string_of' (Word kw) (i,WR) = (spaceS ^ kw, (i,WR))
+      | string_of' (Word kw) (i,NW) = (kw, (i,WR))
       | string_of' (Word kw) (i,SP) = (kw, (i,WR))
       
-      | string_of' (Special c) (i,NL) = (indentation i ^ c, (i,SP))
-      | string_of' (Special c) (i,WR) = (c, (i,SP))
-      | string_of' (Special c) (i,SP) = (c, (i,SP))
+      | string_of' (NWord c) (i,NL) = (indentation i ^ c, (i,NW))
+      | string_of' (NWord c) (i,WR) = (c, (i,NW))
+      | string_of' (NWord c) (i,NW) = (c, (i,NW))
+      | string_of' (NWord c) (i,SP) = (c, (i,NW))
       
       | string_of' (Newline true) (i,_) = (newlineS, (i,NL))
       | string_of' (Newline false) (i,NL) = ("", (i,NL))
       | string_of' (Newline false) (i,_) = (newlineS, (i,NL))
-      | string_of' (Space) (i,_) = (spaceS, (i,SP))
+      
+      | string_of' (Space true) (i,_) = (spaceS, (i,SP))
+      | string_of' (Space false) (i,NL) = ("", (i,SP))
+      | string_of' (Space false) (i,SP) = ("", (i,SP))
+      | string_of' (Space false) (i,_) = (spaceS, (i,SP))
       
       | string_of' (Block (ii,tks)) (i,lt) = let 
           val (strs,(_,lt)) = fold_map string_of' tks (i+ii,lt)
@@ -995,17 +1001,18 @@ begin
             
     (* Basic Functions *)
     val word = Word
-    val spc = Special
+    val nword = NWord
     val brk = Newline false
     val fbrk = Newline true
-    val sep = Space
+    val sep = Space false
+    val fsep = Space true
     
     fun block_indent i tks = Block (i,tks)
     val block = block_indent 0
     
     (* Derived Functions *)
     
-    fun enclose_indent i lpar rpar prt = block_indent i ([spc lpar,prt,spc rpar])
+    fun enclose_indent i lpar rpar prt = block_indent i ([nword lpar,prt,nword rpar])
 
     fun line prts = block (prts@[fbrk])
     
@@ -1013,16 +1020,16 @@ begin
     val paren = enclose "(" ")"
     val braces = enclose "{" "}"
     
-    fun big_block lpar rpar prts = block [block_indent 1 (spc lpar::brk::prts),brk,spc rpar]
+    fun big_block lpar rpar prts = block [block_indent 1 (nword lpar::brk::prts),brk,nword rpar]
     val big_braces = big_block "{" "}"
     
     fun separate sep prts = block (Library.separate sep prts)
-    val commas = separate (spc ",")
+    val commas = separate (nword ",")
     val brks = separate brk
     val fbrks = separate fbrk
 
     fun list sep lpar rpar prts = enclose lpar rpar (separate sep prts)
-    val parlist = list (spc ",") "(" ")"
+    val parlist = list (nword ",") "(" ")"
         
     (* enclose, enclose_indent, separate, ... *)
   
@@ -1275,13 +1282,14 @@ begin
         | cprim_to_Cs PRIM_UI64 = word "uint64_t"
         | cprim_to_Cs (PRIM_NAMED name) = word name
                                                   
-      fun cfield_to_Cs (FLD_NAMED (ty,name)) = block [ctype_to_Cs ty, word name, spc ";"]  
-        | cfield_to_Cs (FLD_ANON (f1,f2)) = block [word "struct", big_braces [line [cfield_to_Cs f1], line [cfield_to_Cs f2]]]
+      fun cfield_to_Cs (FLD_NAMED (ty,name)) = block [ctype_to_Cs ty, word name, nword ";"]  
+        | cfield_to_Cs (FLD_ANON fs) = block [fldpair_to_Cs fs, nword ";"]
+      and fldpair_to_Cs (f1,f2) = block [word "struct", sep, big_braces [line [cfield_to_Cs f1], line [cfield_to_Cs f2]]]
       and ctype_to_Cs (CTY_PRIM t) = cprim_to_Cs t
-        | ctype_to_Cs (CTY_PTR t) = block [ctype_to_Cs t, spc "*"]
-        | ctype_to_Cs (CTY_PAIR fs) = cfield_to_Cs (FLD_ANON fs)
+        | ctype_to_Cs (CTY_PTR t) = block [ctype_to_Cs t, nword "*"]
+        | ctype_to_Cs (CTY_PAIR fs) = fldpair_to_Cs fs
         
-      fun tydef_to_Cs (TYPEDEF (name,ty)) = block [word "typedef", ctype_to_Cs ty, word name, spc ";"]
+      fun tydef_to_Cs (TYPEDEF (name,ty)) = block [word "typedef", ctype_to_Cs ty, sep, word name, nword ";"]
       
       val tydefs_to_Cs = fbrks o map tydef_to_Cs
         
@@ -1339,8 +1347,14 @@ begin
     (* Optional signature *)
     datatype raw_sig = RSIG of ctype option option * string * ctype option list option
     
+    datatype sigspec = NAME of string | SIG of raw_sig
+    
+    
     fun name_of_rsig (RSIG (_,name,_)) = name
-    fun short_sig name = RSIG (NONE,name,NONE)
+    fun name_of_sigspec (NAME name) = name | name_of_sigspec (SIG sg) = name_of_rsig sg
+    
+    fun short_sig name = NAME name
+    fun long_sig sg = SIG sg
     
     (* Parsing of optional signature *)
     fun parse_wildcard p = Parse.underscore >> K NONE || p >> SOME
@@ -1349,7 +1363,7 @@ begin
         
     val parse_long_sig = 
       parse_wildcard parse_rtype -- parse_id -- Scan.option (parse_parlist (parse_wildcard parse_ctype))
-      >> (fn ((r,n),p) => RSIG (r,n,p))
+      >> (fn ((r,n),p) => long_sig (RSIG (r,n,p)))
                            
     val parse_short_sig = parse_id >> short_sig  
     val parse_sig = parse_long_sig || parse_short_sig
@@ -1404,7 +1418,9 @@ begin
     end handle ERROR msg => error ("Signature " ^ name ^ ": " ^ msg)
     
     
-    fun make_header hfname tydefs sigs eqns = let
+    fun make_header hfname tydefs sigspecs eqns = let
+      val sigs = map_filter (fn (NAME _) => NONE | (SIG sg) => SOME sg) sigspecs
+    
       val dd = check_tydefs tydefs
       val stab = check_sigs dd sigs
 
@@ -1426,7 +1442,7 @@ begin
       
       val h_to_C = let
         open Simple_PP
-        val hfsym = word ("_"^hfname^"_H")
+        val hfsym = word hfname
       in block [
           (* TODO: Include information for which version of ll-file this has been generated! *)
           line [word "// Generated by Isabelle-LLVM. Do not modify."],

@@ -323,7 +323,7 @@ subsection \<open>Code Generator Driver\<close>
         val _ = trace (fn () => pretty_cthms lthy cthms)
         
         val _ = trace (fn () => Pretty.str "Computing symbol table")
-        val fixes = map_filter (fn (_,NONE) => NONE | (cn,SOME rsig) => SOME (cn,LLC_HeaderGen.name_of_rsig rsig)) cns
+        val fixes = map_filter (fn (_,NONE) => NONE | (cn,SOME sigspec) => SOME (cn,LLC_HeaderGen.name_of_sigspec sigspec)) cns
         val ftab = LLC_Compiler.compute_fun_names fixes cthms
         val _ = trace (fn () => pretty_ftab lthy ftab)
         
@@ -337,8 +337,8 @@ subsection \<open>Code Generator Driver\<close>
         
         val hdres = if gen_header then let
             val _ = trace (fn () => Pretty.str "Preparing Header")
-            val sigs = map_filter snd cns
-            val hdres = LLC_HeaderGen.make_header hfname tydefs sigs eqns
+            val sigspecs = map_filter snd cns
+            val hdres = LLC_HeaderGen.make_header hfname tydefs sigspecs eqns
           in hdres end
           else NONE
         
@@ -374,6 +374,34 @@ subsection \<open>Code Generator Driver\<close>
         
         fun write_out NONE s = writeln s
           | write_out (SOME path) s = File.write path s
+          
+        (*  
+        (*
+          Contains a name (used as name for generated LLVM function) and 
+          an optional signature (used for header file generation).
+          
+          Note that this information is redundant, the name in the signature must match
+          the LLVM-name. This redundancy, however, reflects the split of LLVM code 
+          generator and Header file generator.
+        *)  
+        datatype siginfo = SIGI of string * LLC_HeaderGen.raw_sig option  
+          
+        fun sigi_of_sig (rsg as (LLC_HeaderGen.RSIG (_,name,_))) = SIGI (name,SOME rsg)
+        fun sigi_of_name name = SIGI (name,NONE)
+        
+        fun sigi_name (SIGI (name,_)) = name
+        fun sigi_has_sig (SIGI (_,NONE)) = false
+          | sigi_has_sig (SIGI (_,SOME _)) = true
+        
+        fun sigi_the_sig (SIGI (_,SOME sg)) = sg
+          | sigi_the_sig _ = raise Match 
+          
+        val parse_sigi = 
+             (Parse.short_ident || Parse.string) >> sigi_of_name  
+          || xxx, string needs inner parser!
+          
+        *)  
+          
       in
         fun export_llvm cns tydefs path (hfname,hfpath) lthy = let
           val lthy = Config.put Syntax_Trans.eta_contract false lthy
