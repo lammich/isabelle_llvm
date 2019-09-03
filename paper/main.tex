@@ -390,7 +390,7 @@ The code generator maps these instructions to the corresponding LLVM instruction
 
 Integer instructions are defined on the \q{\is{n word}} type. For example, we define:
 \begin{lstlisting}
-  ll_udiv :: "n word => n word => n word"
+  ll_udiv :: "n word => n word => n word llM"
   ll_udiv a b = do { assert (b ~= 0); return (a div b) }
 \end{lstlisting}
 where \q{\is{div}} is the unsigned division from Isabelle's word library.
@@ -421,7 +421,7 @@ constants (i.e., numbers, the null pointer, or a zero-initialized value).
 The condition of a while statement is modeled as a block returning a \q{\is{1 word}}, such that it can be re-evaluated prior to each loop iteration.
 %
 A program is represented by a set of (monomorphic) theorems of the shape
-\q{\is{proc\_i x_1 ... x\_n = cmd}},
+\q{\is{proc\_i x_1 ... x\_n = block}},
 where the \q{\is{proc\_i}} are Isabelle functions, the \q{\is{x\_i}} are variables, and all free variables on the right hand side are among the \q{\is{x\_i}}.
 % As our monad allows arbitrary recursive definitions, we can define arbitrary recursive programs.
 
