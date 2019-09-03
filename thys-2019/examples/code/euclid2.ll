@@ -12,39 +12,47 @@ define i32 @euclid(i32 %a, i32 %b) {
   start:
     %x = insertvalue { i32, i32 } zeroinitializer, i32 %a, 0
     %xa = insertvalue { i32, i32 } %x, i32 %b, 1
-    br label %while_start
-
-  while_start:
-    %xb = phi { i32, i32 } [ %x6, %ctd_if ], [ %xa, %start ]
+    %xb = call { i32, i32 } @LLVM_Examples_euclid2_f_03802048 ({ i32, i32 } %xa)
     %a1 = extractvalue { i32, i32 } %xb, 0
-    %x1 = extractvalue { i32, i32 } %xb, 1
-    %x2 = icmp ne i32 %a1, %x1
-    br i1 %x2, label %while_body, label %while_end
-
-  while_body:
-    %a2 = extractvalue { i32, i32 } %xb, 0
     %b1 = extractvalue { i32, i32 } %xb, 1
-    %tmpa = icmp ule i32 %a2, %b1
-    br i1 %tmpa, label %then, label %else
+    ret i32 %a1
+}
+
+define { i32, i32 } @LLVM_Examples_euclid2_f_03802048({ i32, i32 } %s) {
+
+  start:
+    %a = extractvalue { i32, i32 } %s, 0
+    %x = extractvalue { i32, i32 } %s, 1
+    %ctd = icmp ne i32 %a, %x
+    br i1 %ctd, label %then, label %else
 
   then:
-    %xaa = insertvalue { i32, i32 } zeroinitializer, i32 %a2, 0
-    %x3 = sub i32 %b1, %a2
-    %x4 = insertvalue { i32, i32 } %xaa, i32 %x3, 1
+    %a1 = extractvalue { i32, i32 } %s, 0
+    %b = extractvalue { i32, i32 } %s, 1
+    %tmpa = icmp ule i32 %a1, %b
+    br i1 %tmpa, label %thena, label %elsea
+
+  thena:
+    %xaa = insertvalue { i32, i32 } zeroinitializer, i32 %a1, 0
+    %x1 = sub i32 %b, %a1
+    %x2 = insertvalue { i32, i32 } %xaa, i32 %x1, 1
+    br label %ctd_ifa
+
+  elsea:
+    %xc = sub i32 %a1, %b
+    %xaa1 = insertvalue { i32, i32 } zeroinitializer, i32 %xc, 0
+    %x3 = insertvalue { i32, i32 } %xaa1, i32 %b, 1
+    br label %ctd_ifa
+
+  ctd_ifa:
+    %x4 = phi { i32, i32 } [ %x3, %elsea ], [ %x2, %thena ]
+    %x5 = call { i32, i32 } @LLVM_Examples_euclid2_f_03802048 ({ i32, i32 } %x4)
     br label %ctd_if
 
   else:
-    %xc = sub i32 %a2, %b1
-    %xaa1 = insertvalue { i32, i32 } zeroinitializer, i32 %xc, 0
-    %x5 = insertvalue { i32, i32 } %xaa1, i32 %b1, 1
     br label %ctd_if
 
   ctd_if:
-    %x6 = phi { i32, i32 } [ %x5, %else ], [ %x4, %then ]
-    br label %while_start
-
-  while_end:
-    %a3 = extractvalue { i32, i32 } %xb, 0
-    %b2 = extractvalue { i32, i32 } %xb, 1
-    ret i32 %a3
+    %x6 = phi { i32, i32 } [ %s, %else ], [ %x5, %ctd_ifa ]
+    ret { i32, i32 } %x6
 }

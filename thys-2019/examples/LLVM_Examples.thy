@@ -7,10 +7,10 @@ begin
 
 lemmas [named_ss llvm_inline cong] = refl[of "numeral _"]
 
-definition test :: "64 word \<Rightarrow> 64 word \<Rightarrow> 64 word llM"
+definition test :: "64 word \<Rightarrow> 64 word \<Rightarrow> _ llM"
 where [llvm_code]: "test a b \<equiv> doM {
 
-  return (a+b+ 0x18892) 
+  return (a,b) 
 }"
 
 ML_val \<open>
@@ -26,10 +26,12 @@ ML_val \<open>
 \<close>
 
 
+find_theorems llc_while
+
 lemma "foo (test)"
   unfolding test_def
   apply (simp named_ss llvm_inline:)
-
+  oops
 
 export_llvm test
 
@@ -195,7 +197,10 @@ definition [llvm_code]: "euclid2 (a::32 word) b \<equiv> doM {
   return a
 }"
   
-export_llvm (debug) "euclid2" is euclid file "code/euclid2.ll"
+export_llvm (debug) (no_while) "euclid2" is euclid file "code/euclid2.ll"
+
+
+find_theorems ll_udiv wp
 
   
 lemma gcd_diff1': "gcd (a::int) (b-a) = gcd a b"
@@ -213,12 +218,28 @@ lemma "llvm_htriple
     and R="measure nat"  
   ])
   apply vcg_monadify
-  apply vcg'
-  apply clarsimp_all
-  apply (simp_all add: gcd_diff1 gcd_diff1' uint_arith_simps)
+  apply (vcg'; clarsimp?)
+  apply (simp_all add: gcd_diff1 gcd_diff1')
+  done
+
+lemma "llvm_htriple 
+  (\<upharpoonleft>uint.assn a\<^sub>0 ai ** \<upharpoonleft>uint.assn b\<^sub>0 bi ** \<up>\<^sub>d(0<a\<^sub>0 \<and> 0<b\<^sub>0)) 
+  (euclid2 ai bi) 
+  (\<lambda>ri. \<upharpoonleft>uint.assn (gcd a\<^sub>0 b\<^sub>0) ri)"
+  unfolding euclid2_def
+  apply (rewrite annotate_llc_while[where 
+    I="\<lambda>(ai,bi) t. EXS a b. \<upharpoonleft>uint.assn a ai ** \<upharpoonleft>uint.assn b bi 
+        ** \<up>\<^sub>a(t=a+b) ** \<up>\<^sub>d(0<a \<and> 0<b \<and> gcd a b = gcd a\<^sub>0 b\<^sub>0)" 
+    and R="measure nat"  
+  ])
+  supply [simp] = gcd_diff1 gcd_diff1'
+  apply vcg_monadify
+  apply (vcg')
   done
   
+thm llc_if_def[unfolded to_bool_def,no_vars]    
 thm ll_range_def
+thm llc_while_def[unfolded mwhile_def,no_vars]
 
 find_theorems sint.assn ll_sub
 
