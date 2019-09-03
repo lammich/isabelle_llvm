@@ -69,7 +69,7 @@ begin
     where "free \<equiv> 
       \<lambda>RP_ADDR (ADDR bi ba) \<Rightarrow> doM {
           fcheck mem_err (ba=this_addr);
-          (* TODO: Use load here! *)
+          \<comment>\<open> TODO: Use load here! \<close>
           let L = lift_lens static_err the_memory\<^sub>L \<bullet> (lift_lens mem_err (idx\<^sub>L bi));
           blk \<leftarrow> use L;
           fcheck mem_err (blk \<noteq> None);

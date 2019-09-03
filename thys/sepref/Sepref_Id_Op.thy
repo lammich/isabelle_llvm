@@ -119,7 +119,7 @@ lemma unprotect_rl1: "ID (PR_CONST x) t T \<Longrightarrow> ID (UNPROTECT x) t T
   by simp
 
 subsection \<open> ML-Level code \<close>
-ML {*
+ML \<open>
 infix 0 THEN_ELSE_COMB'
 
 signature ID_OP_TACTICAL = sig
@@ -158,7 +158,7 @@ structure Id_Op_Tactical :ID_OP_TACTICAL = struct
   end
 
 end
-*}
+\<close>
 
 
 named_theorems_rev id_rules "Operation identification rules"
@@ -167,7 +167,7 @@ named_theorems_rev def_pat_rules "Definite operation pattern rules (not backtrac
 
 
 
-ML {*
+ML \<open>
 
   structure Id_Op = struct
 
@@ -189,10 +189,19 @@ ML {*
         @{mk_term env: "?t1.0 $ ?t2.0"}
       end
     | protect env (Abs (x,T,t)) = let
+        val env' = T::env
+        val t = protect env' t
+        val t = @{mk_term env': "PROTECT2 ?t DUMMY"}
+      in
+        Abs (x,T,t)
+      end
+    (* TODO: Avoiding mk_term with loose vars under \<lambda>! Fix that!
+    | protect env (Abs (x,T,t)) = let
         val t = protect (T::env) t
       in
         @{mk_term env: "\<lambda>v_x::?'v_T. PROTECT2 ?t DUMMY"}
       end
+    *)  
     | protect _ t = t
 
     fun protect_conv ctxt = Refine_Util.f_tac_conv ctxt
@@ -323,11 +332,12 @@ ML {*
 
   end
 
-*}
+\<close>
 
 subsection \<open>Default Setup\<close>
 
 subsubsection \<open>Numerals\<close> 
+(* TODO: Either remove, or also add numerals 0 and 1! *)
 lemma pat_numeral[def_pat_rules]: "numeral$x \<equiv> UNPROTECT (numeral$x)" by simp
 
 lemma id_nat_const[id_rules]: "(PR_CONST (a::nat)) ::\<^sub>i TYPE(nat)" by simp

@@ -7,6 +7,7 @@ theory KMP
     "HOL-Library.Sublist"
 begin
 
+
 declare len_greater_imp_nonempty[simp del] min_absorb2[simp]
 
 section\<open>Specification\<close>text_raw\<open>\label{sec:spec}\<close>
@@ -237,7 +238,7 @@ lemma border_positions: "border xs ys \<Longrightarrow> \<forall>i<length xs. ys
 lemma all_positions_drop_length_take: "\<lbrakk>i \<le> length w; i \<le> length x;
   \<forall>j<i. x ! j = w ! (length w + j - i)\<rbrakk>
     \<Longrightarrow> drop (length w - i) w = take i x"
-  by (cases "i = length x") (simp_all add: nth_equalityI)
+  by (cases "i = length x") (auto intro: nth_equalityI)
 
 lemma all_positions_suffix_take: "\<lbrakk>i \<le> length w; i \<le> length x;
   \<forall>j<i. x ! j = w ! (length w + j - i)\<rbrakk>
@@ -916,7 +917,7 @@ abbreviation "tab_assn \<equiv> larray_assn' TYPE(size_t) size_t_assn"
 (*abbreviation "tab_assn \<equiv> array_assn size_t_assn" *) 
   
 subsection \<open>Refinement of Lookup Table Computation\<close>
-sepref_definition compute_butlast_\<ff>s_impl is compute_butlast_\<ff>s 
+sepref_def compute_butlast_\<ff>s_impl is compute_butlast_\<ff>s 
   :: "[\<lambda>s. length s < max_snat LENGTH(size_t)]\<^sub>a (string_assn)\<^sup>k \<rightarrow> tab_assn"
   unfolding compute_butlast_\<ff>s_def
   apply (rewrite in "WHILEIT _ \<hole>" short_circuit_conv)+
@@ -928,12 +929,12 @@ sepref_definition compute_butlast_\<ff>s_impl is compute_butlast_\<ff>s
   done
   
 (*prepare_code_thms (LLVM) [llvm_code] compute_butlast_\<ff>s_impl_def*)
-declare compute_butlast_\<ff>s_impl_def[llvm_code]
+(*declare compute_butlast_\<ff>s_impl_def[llvm_code]*)
 
 llvm_deps compute_butlast_\<ff>s_impl
-export_llvm compute_butlast_\<ff>s_impl is "KMP_compute_table"
+export_llvm compute_butlast_\<ff>s_impl
 
-declare compute_butlast_\<ff>s_impl.refine[sepref_fr_rules]
+(*declare compute_butlast_\<ff>s_impl.refine[sepref_fr_rules]*)
 
 sepref_register compute_\<ff>s
 
@@ -943,7 +944,7 @@ subsection \<open>Refinement of Main Algorithm\<close>
 
 abbreviation "result_assn \<equiv> snat_option_assn' TYPE(size_t)"
   
-sepref_definition kmp_impl is "uncurry kmp3" 
+sepref_def kmp_impl is "uncurry kmp3" 
   :: "[\<lambda>(s,t). length s + length t < max_snat LENGTH(size_t) ]\<^sub>a 
       (string_assn)\<^sup>k *\<^sub>a (string_assn)\<^sup>k \<rightarrow> result_assn"
   unfolding kmp3_def kmp2_def
@@ -954,12 +955,14 @@ sepref_definition kmp_impl is "uncurry kmp3"
   apply sepref_dbg_keep
   done
   
-(*prepare_code_thms (LLVM) [llvm_code] kmp_impl_def*)
-declare kmp_impl_def[llvm_code]
+
 
 export_llvm 
-  compute_butlast_\<ff>s_impl is "kmp_compute_table"
-  kmp_impl is "kmp"
+  compute_butlast_\<ff>s_impl
+  kmp_impl is "_ kmp(string,string)"
+  defines \<open>
+    typedef struct {int64_t len; char *str;} string;
+  \<close>
   file "code/kmp.ll"
   
 
@@ -1008,6 +1011,10 @@ qed
 thm hnr_bind[of \<Gamma> m\<^sub>i \<Gamma>\<^sub>1 R\<^sub>1 m f\<^sub>i \<Gamma>\<^sub>2 R\<^sub>2 f R\<^sub>x \<Gamma>' free]
 
 thm kmp_impl_def
+
+
+term \<open>foo bar \<^cancel>\<open>  @{d} } \<close>\<close>
+
 
 
 end

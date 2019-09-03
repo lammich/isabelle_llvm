@@ -12,10 +12,16 @@ imports
   "Refine_Monadic.Refine_Transfer"
   "Refine_Monadic.Refine_Pfun"
 begin
-  text {*
+  text \<open>
     Monadic Refinement Framework, without Autoref.
-    *}
+    \<close>
 
+  subsection \<open>Adaptations\<close>  
+  declare is_None_def[simp del]  
+  lemma is_None_alt[simp]: "is_None x \<longleftrightarrow> x=None" 
+    by (auto simp: fun_eq_iff is_None_def split: option.splits)
+  
+    
   subsection \<open>Convenience Constructs\<close>
 
   definition "REC_annot pre post body x \<equiv> 

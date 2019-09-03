@@ -1,10 +1,11 @@
 section \<open>Sepref-Definition Command\<close>
 theory Sepref_Definition
-imports Sepref_Rules "Lib/Term_Synth"
+imports Sepref_Translate "Lib/Term_Synth"
 keywords "sepref_definition" :: thy_goal
+      and "sepref_def" :: thy_goal
       and "sepref_thm" :: thy_goal
 begin
-subsection {* Setup of Extraction-Tools *}
+subsection \<open> Setup of Extraction-Tools \<close>
   declare [[cd_patterns "hn_refine _ \<hole> _ _ _"]]
 
 
@@ -46,7 +47,6 @@ subsection {* Setup of Extraction-Tools *}
     "\<lbrakk>CP_UNCURRY f fi; CP_PAT f fpat; INTRO_KD R R'; SPEC_RES_ASSN S S'\<rbrakk> \<Longrightarrow> SYNTH_TERM (SYNTH f ([P]\<^sub>a\<^sub>d R\<rightarrow>S)) ((fpat,SDUMMY)\<in>SDUMMY,(fi,f)\<in>([P]\<^sub>a\<^sub>d R'\<rightarrow>S'))" 
     by (simp add: SYNTH_def)
 
-term starts_with
 
 ML \<open>
   structure Sepref_Definition = struct
@@ -68,7 +68,18 @@ ML \<open>
 
     in       
       val sd_parser = Parse.binding -- Parse.opt_attribs --| @{keyword "is"} 
-        -- Parse.term --| @{keyword "::"} -- Parse.term
+        -- Parse.opt_attribs -- Parse.term --| @{keyword "::"} -- Parse.term
+        
+      val sd_dflt_parser = 
+          Parse.binding 
+        -- Scan.optional Parse.attribs @{attributes [llvm_code]} 
+        --| @{keyword "is"} 
+        -- Scan.optional Parse.attribs @{attributes [sepref_fr_rules]} 
+        -- Parse.term 
+        --| @{keyword "::"} 
+        -- Parse.term
+        
+        
     end  
 
     fun mk_synth_term ctxt t_raw r_raw = let
@@ -80,7 +91,7 @@ ML \<open>
       end  
 
 
-    fun sd_cmd (((name,attribs),t_raw),r_raw) lthy = let
+    fun sd_cmd ((((name,attribs_def),attribs_ref),t_raw),r_raw) lthy = let
       (*local
         val ctxt = Refine_Util.apply_configs flags lthy
       in
@@ -101,7 +112,7 @@ ML \<open>
                  ((Definition_Utils.mk_qualified (Binding.name_of name) "refine_raw",[]),[thm]) 
                  lthy;
 
-            val ((dthm,rthm),lthy) = Definition_Utils.define_concrete_fun NONE name attribs [] thm [pat] lthy
+            val ((dthm,rthm),lthy) = Definition_Utils.define_concrete_fun NONE name attribs_def attribs_ref [] thm [pat] lthy
 
             val _ = Thm.pretty_thm lthy dthm |> Pretty.string_of |> writeln
             val _ = Thm.pretty_thm lthy rthm |> Pretty.string_of |> writeln
@@ -120,6 +131,11 @@ ML \<open>
       "Synthesis of imperative program"
       (sd_parser >> sd_cmd)
 
+    val _ = Outer_Syntax.local_theory_to_proof @{command_keyword "sepref_def"}
+      "Synthesis of imperative program (default attributes)"
+      (sd_dflt_parser >> sd_cmd)
+      
+      
     val st_parser = Parse.binding --| @{keyword "is"} -- Parse.term --| @{keyword "::"} -- Parse.term
 
     fun st_cmd ((name,t_raw),r_raw) lthy = let

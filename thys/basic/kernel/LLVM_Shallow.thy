@@ -158,7 +158,7 @@ begin
   
   definition "ll_add \<equiv> op_lift_arith2' (+)"
   definition "ll_sub \<equiv> op_lift_arith2' (-)"
-  definition "ll_mul \<equiv> op_lift_arith2' ( * )"
+  definition "ll_mul \<equiv> op_lift_arith2' (*)"
   definition "ll_udiv \<equiv> op_lift_arith2 udivrem_is_undef (div)"
   definition "ll_urem \<equiv> op_lift_arith2 udivrem_is_undef (mod)"
   definition "ll_sdiv \<equiv> op_lift_arith2 sdivrem_is_undef (sdiv)"

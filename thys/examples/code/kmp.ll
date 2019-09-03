@@ -20,7 +20,7 @@ define i64 @kmp({ i64, i8* } %x, { i64, i8* } %x1) {
     br label %ctd_if
 
   else:
-    %xaa = call { i64, i64* } @kmp_compute_table ({ i64, i8* } %x)
+    %xaa = call { i64, i64* } @KMP_compute_butlast_ff_s_impl ({ i64, i8* } %x)
     %xb = insertvalue { i64, i64 } zeroinitializer, i64 0, 0
     %tmpaa = insertvalue { i64, i64 } %xb, i64 -1, 1
     %xc = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 0, 0
@@ -208,7 +208,7 @@ define void @LLVM_DS_NArray_narray_free(i64* %p) {
     ret void
 }
 
-define { i64, i64* } @kmp_compute_table({ i64, i8* } %x) {
+define { i64, i64* } @KMP_compute_butlast_ff_s_impl({ i64, i8* } %x) {
 
   start:
     %a1 = extractvalue { i64, i8* } %x, 0

@@ -16,11 +16,17 @@ begin
       unfolding conv_to_is_Nil short_circuit_conv
       by parametricity
       
+    sepref_decl_op list_list_upd: "\<lambda>xss i j x. xss[i:=(xss!i)[j:=x]]" 
+      :: "[\<lambda>(((xss,i),j),x). i<length xss \<and> j<length (xss!i)]\<^sub>f (((LR A \<times>\<^sub>r nat_rel) \<times>\<^sub>r nat_rel) \<times>\<^sub>r A) \<rightarrow> LR A" 
+      unfolding short_circuit_conv
+      by parametricity
+      
     sepref_decl_op list_list_idx: "\<lambda>xss i j. xss!i!j" :: "[\<lambda>((xss,i),j). i<length xss \<and> j<length (xss!i)]\<^sub>f ((LR A \<times>\<^sub>r nat_rel) \<times>\<^sub>r nat_rel) \<rightarrow> A" 
       unfolding short_circuit_conv
       by parametricity
     
     sepref_decl_op list_list_llen: "\<lambda>xss i. length (xss!i)" :: "[\<lambda>(xss,i). i<length xss]\<^sub>f LR A \<times>\<^sub>r nat_rel \<rightarrow> nat_rel" .
+    (* TODO: list_list is a proper subtype of list. So share operations! length, empty, ... *)
     sepref_decl_op list_list_len: "length :: _ list list \<Rightarrow> _" :: "LR A \<rightarrow> nat_rel" .
     
     sepref_decl_op list_list_take: "\<lambda>xss i l. (xss[i:=take l (xss!i)])" 
@@ -46,4 +52,22 @@ begin
     lemmas custom_hnr[sepref_fr_rules] = customize_hnr_aux[folded op_custom_empty_def]
   end
 
+
+  text \<open>Fold lemmas for manual folding.\<close>
+  (* TODO: Why not use interface and op-id for that? *)
+  lemma fold_op_list_list_push_back: "xss[i:=xss!i@[x]] = op_list_list_push_back xss i x" by simp
+  lemma fold_op_list_list_pop_back: "(last (xss!i), xss[i:=butlast (xss!i)]) = op_list_list_pop_back xss i" by simp
+  lemma fold_op_list_list_upd: "xss[i:=(xss!i)[j:=x]] = op_list_list_upd xss i j x" by simp
+  lemma fold_op_list_list_idx: "xs!i!j = op_list_list_idx xs i j" by simp
+  lemma fold_op_list_list_llen: "length (xs!i) = op_list_list_llen xs i" by simp
+  lemma fold_op_list_list_take: "xss[i:=take n (xss!i)] = op_list_list_take xss i n" by simp
+
+  lemmas fold_op_list_list = 
+    fold_op_list_list_push_back
+    fold_op_list_list_pop_back 
+    fold_op_list_list_upd
+    fold_op_list_list_idx
+    fold_op_list_list_llen
+    fold_op_list_list_take  
+  
 end

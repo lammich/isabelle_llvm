@@ -3,7 +3,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include "bin_search.h"
 
+/*
 typedef uint64_t elem_t;
 
 typedef struct {
@@ -12,6 +14,7 @@ typedef struct {
 } larray_t;
 
 int64_t bin_search (larray_t xs, elem_t x);
+*/
 
 int main(int argc, char **argv) {
 

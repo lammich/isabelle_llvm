@@ -286,7 +286,6 @@ begin
         ASSERT (pq\<noteq>[]);
         k \<leftarrow> mop_list_get pq (length pq - 1);
         pq \<leftarrow> mop_list_butlast pq;
-        (*let m = m(k:=None);*)
         RETURN (pq,m)
       }"
 

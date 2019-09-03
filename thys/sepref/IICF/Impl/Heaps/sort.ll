@@ -33,8 +33,8 @@ define void @LLVM_DS_Array_arraycpy(i64* %dst, i64* %src, i64 %n) {
 define { i64, { i64, i64* } } @sort({ i64, { i64, i64* } } %x) {
 
   start:
-    %tmpd = icmp eq i64 8, 0
-    br i1 %tmpd, label %then, label %else
+    %tmp = icmp eq i64 8, 0
+    br i1 %tmp, label %then, label %else
 
   then:
     br label %ctd_if
@@ -98,9 +98,9 @@ define { i64, { i64, i64* } } @sort({ i64, { i64, i64* } } %x) {
 
   elsea:
     %xh1 = insertvalue { i64, i64* } zeroinitializer, i64 %cc, 0
-    %tmpgb = insertvalue { i64, i64* } %xh1, i64* %ac, 1
+    %tmpcb = insertvalue { i64, i64* } %xh1, i64* %ac, 1
     %xj1 = insertvalue { i64, { i64, i64* } } zeroinitializer, i64 %ld, 0
-    %x5 = insertvalue { i64, { i64, i64* } } %xj1, { i64, i64* } %tmpgb, 1
+    %x5 = insertvalue { i64, { i64, i64* } } %xj1, { i64, i64* } %tmpcb, 1
     %x6 = call { i64, { i64, i64* } } @LLVM_DS_Array_List_arl_resize (i64 %lc, { i64, { i64, i64* } } %x5)
     br label %ctd_ifa
 
@@ -128,8 +128,8 @@ define { i64, { i64, i64* } } @sort({ i64, { i64, i64* } } %x) {
     br label %while_start
 
   while_end:
-    %tmpk = icmp eq i64 8, 0
-    br i1 %tmpk, label %thenb, label %elseb
+    %tmpca = icmp eq i64 8, 0
+    br i1 %tmpca, label %thenb, label %elseb
 
   thenb:
     br label %ctd_ifb
@@ -154,7 +154,7 @@ define { i64, { i64, i64* } } @sort({ i64, { i64, i64* } } %x) {
     br label %while_starta
 
   while_starta:
-    %xea2 = phi { { i64, { i64, i64* } }, { i64, { i64, i64* } } } [ %x17, %ctd_ifd ], [ %xm, %ctd_ifb ]
+    %xea2 = phi { { i64, { i64, i64* } }, { i64, { i64, i64* } } } [ %x16, %ctd_ifd ], [ %xm, %ctd_ifb ]
     %a12 = extractvalue { { i64, { i64, i64* } }, { i64, { i64, i64* } } } %xea2, 0
     %a22 = extractvalue { { i64, { i64, i64* } }, { i64, { i64, i64* } } } %xea2, 1
     %l2 = extractvalue { i64, { i64, i64* } } %a22, 0
@@ -220,85 +220,77 @@ define { i64, { i64, i64* } } @sort({ i64, { i64, i64* } } %x) {
     %ch = extractvalue { i64, i64* } %yca, 0
     %ah = extractvalue { i64, i64* } %yca, 1
     %lg1 = sub i64 %lf1, 1
-    %yda = getelementptr i64, i64* %ah, i64 %lg1
-    %r = load i64, i64* %yda
-    %ye = insertvalue { i64, { i64, { i64, i64* } } } zeroinitializer, i64 %r, 0
-    %yf = insertvalue { i64, i64* } zeroinitializer, i64 %ch, 0
-    %tmpua = insertvalue { i64, i64* } %yf, i64* %ah, 1
-    %yg = insertvalue { i64, { i64, i64* } } zeroinitializer, i64 %lg1, 0
-    %yh = insertvalue { i64, { i64, i64* } } %yg, { i64, i64* } %tmpua, 1
-    %yfa = insertvalue { i64, { i64, { i64, i64* } } } %ye, { i64, { i64, i64* } } %yh, 1
-    %yga = icmp ne i64 %la1, 1
-    br i1 %yga, label %thenc, label %elsec
+    %yda = insertvalue { i64, { i64, i64* } } zeroinitializer, i64 %lg1, 0
+    %ye = insertvalue { i64, i64* } zeroinitializer, i64 %ch, 0
+    %yf = insertvalue { i64, i64* } %ye, i64* %ah, 1
+    %yea = insertvalue { i64, { i64, i64* } } %yda, { i64, i64* } %yf, 1
+    %yfa = icmp ne i64 %la1, 1
+    br i1 %yfa, label %thenc, label %elsec
 
   thenc:
-    %ai = extractvalue { i64, { i64, { i64, i64* } } } %yfa, 0
-    %baa = extractvalue { i64, { i64, { i64, i64* } } } %yfa, 1
-    %yha = call { i64, { i64, i64* } } @IICF_Impl_Heap_h_sink_impl ({ i64, { i64, i64* } } %baa, i64 1)
-    %yia = insertvalue { i64, { i64, { i64, i64* } } } zeroinitializer, i64 %xja1, 0
-    %x10 = insertvalue { i64, { i64, { i64, i64* } } } %yia, { i64, { i64, i64* } } %yha, 1
+    %yga = call { i64, { i64, i64* } } @IICF_Impl_Heap_h_sink_impl ({ i64, { i64, i64* } } %yea, i64 1)
+    %yha = insertvalue { i64, { i64, { i64, i64* } } } zeroinitializer, i64 %xja1, 0
+    %x10 = insertvalue { i64, { i64, { i64, i64* } } } %yha, { i64, { i64, i64* } } %yga, 1
     br label %ctd_ifc
 
   elsec:
-    %yha1 = insertvalue { i64, { i64, { i64, i64* } } } zeroinitializer, i64 %xja1, 0
-    %ai1 = extractvalue { i64, { i64, { i64, i64* } } } %yfa, 0
-    %x11 = extractvalue { i64, { i64, { i64, i64* } } } %yfa, 1
-    %x12 = insertvalue { i64, { i64, { i64, i64* } } } %yha1, { i64, { i64, i64* } } %x11, 1
+    %yga1 = insertvalue { i64, { i64, { i64, i64* } } } zeroinitializer, i64 %xja1, 0
+    %x11 = insertvalue { i64, { i64, { i64, i64* } } } %yga1, { i64, { i64, i64* } } %yea, 1
     br label %ctd_ifc
 
   ctd_ifc:
-    %yha2 = phi { i64, { i64, { i64, i64* } } } [ %x12, %elsec ], [ %x10, %thenc ]
-    %a1a = extractvalue { i64, { i64, { i64, i64* } } } %yha2, 0
-    %a2a = extractvalue { i64, { i64, { i64, i64* } } } %yha2, 1
+    %yga2 = phi { i64, { i64, { i64, i64* } } } [ %x11, %elsec ], [ %x10, %thenc ]
+    %a1a = extractvalue { i64, { i64, { i64, i64* } } } %yga2, 0
+    %a2a = extractvalue { i64, { i64, { i64, i64* } } } %yga2, 1
     %lh = extractvalue { i64, { i64, i64* } } %a13, 0
-    %yia1 = extractvalue { i64, { i64, i64* } } %a13, 1
-    %ci = extractvalue { i64, i64* } %yia1, 0
-    %ai2 = extractvalue { i64, i64* } %yia1, 1
+    %yh = extractvalue { i64, { i64, i64* } } %a13, 1
+    %ci = extractvalue { i64, i64* } %yh, 0
+    %ai = extractvalue { i64, i64* } %yh, 1
     %lj = add i64 %lh, 1
     %lk = extractvalue { i64, { i64, i64* } } %a13, 0
-    %yja = extractvalue { i64, { i64, i64* } } %a13, 1
-    %cj = extractvalue { i64, i64* } %yja, 0
-    %aj = extractvalue { i64, i64* } %yja, 1
+    %yia = extractvalue { i64, { i64, i64* } } %a13, 1
+    %cj = extractvalue { i64, i64* } %yia, 0
+    %aj = extractvalue { i64, i64* } %yia, 1
     %cok1 = icmp sle i64 %lj, %cj
     br i1 %cok1, label %thend, label %elsed
 
   thend:
-    %yk = insertvalue { i64, { i64, i64* } } zeroinitializer, i64 %lk, 0
-    %yl = insertvalue { i64, i64* } zeroinitializer, i64 %cj, 0
-    %x13 = insertvalue { i64, i64* } %yl, i64* %aj, 1
-    %x14 = insertvalue { i64, { i64, i64* } } %yk, { i64, i64* } %x13, 1
+    %yj = insertvalue { i64, { i64, i64* } } zeroinitializer, i64 %lk, 0
+    %yk = insertvalue { i64, i64* } zeroinitializer, i64 %cj, 0
+    %x12 = insertvalue { i64, i64* } %yk, i64* %aj, 1
+    %x13 = insertvalue { i64, { i64, i64* } } %yj, { i64, i64* } %x12, 1
     br label %ctd_ifd
 
   elsed:
-    %yk1 = insertvalue { i64, i64* } zeroinitializer, i64 %cj, 0
-    %tmpvb = insertvalue { i64, i64* } %yk1, i64* %aj, 1
-    %yl1 = insertvalue { i64, { i64, i64* } } zeroinitializer, i64 %lk, 0
-    %x15 = insertvalue { i64, { i64, i64* } } %yl1, { i64, i64* } %tmpvb, 1
-    %x16 = call { i64, { i64, i64* } } @LLVM_DS_Array_List_arl_resize (i64 %lj, { i64, { i64, i64* } } %x15)
+    %yj1 = insertvalue { i64, i64* } zeroinitializer, i64 %cj, 0
+    %tmpmb = insertvalue { i64, i64* } %yj1, i64* %aj, 1
+    %yk1 = insertvalue { i64, { i64, i64* } } zeroinitializer, i64 %lk, 0
+    %x14 = insertvalue { i64, { i64, i64* } } %yk1, { i64, i64* } %tmpmb, 1
+    %x15 = call { i64, { i64, i64* } } @LLVM_DS_Array_List_arl_resize (i64 %lj, { i64, { i64, i64* } } %x14)
     br label %ctd_ifd
 
   ctd_ifd:
-    %al1 = phi { i64, { i64, i64* } } [ %x16, %elsed ], [ %x14, %thend ]
+    %al1 = phi { i64, { i64, i64* } } [ %x15, %elsed ], [ %x13, %thend ]
     %ll = extractvalue { i64, { i64, i64* } } %al1, 0
-    %yk2 = extractvalue { i64, { i64, i64* } } %al1, 1
-    %ck = extractvalue { i64, i64* } %yk2, 0
-    %ak = extractvalue { i64, i64* } %yk2, 1
+    %yj2 = extractvalue { i64, { i64, i64* } } %al1, 1
+    %ck = extractvalue { i64, i64* } %yj2, 0
+    %ak = extractvalue { i64, i64* } %yj2, 1
     %pb = getelementptr i64, i64* %ak, i64 %ll
     store i64 %a1a, i64* %pb
     %lm = add i64 %ll, 1
-    %yla = insertvalue { i64, { i64, i64* } } zeroinitializer, i64 %lm, 0
-    %ym = insertvalue { i64, i64* } zeroinitializer, i64 %ck, 0
-    %yn = insertvalue { i64, i64* } %ym, i64* %ak, 1
-    %yma = insertvalue { i64, { i64, i64* } } %yla, { i64, i64* } %yn, 1
-    %yna = insertvalue { { i64, { i64, i64* } }, { i64, { i64, i64* } } } zeroinitializer, { i64, { i64, i64* } } %yma, 0
-    %x17 = insertvalue { { i64, { i64, i64* } }, { i64, { i64, i64* } } } %yna, { i64, { i64, i64* } } %a2a, 1
+    %yka = insertvalue { i64, { i64, i64* } } zeroinitializer, i64 %lm, 0
+    %yl = insertvalue { i64, i64* } zeroinitializer, i64 %ck, 0
+    %ym = insertvalue { i64, i64* } %yl, i64* %ak, 1
+    %yla = insertvalue { i64, { i64, i64* } } %yka, { i64, i64* } %ym, 1
+    %yma = insertvalue { { i64, { i64, i64* } }, { i64, { i64, i64* } } } zeroinitializer, { i64, { i64, i64* } } %yla, 0
+    %x16 = insertvalue { { i64, { i64, i64* } }, { i64, { i64, i64* } } } %yma, { i64, { i64, i64* } } %a2a, 1
     br label %while_starta
 
   while_enda:
     %c_1 = extractvalue { { i64, { i64, i64* } }, { i64, { i64, i64* } } } %xea2, 0
-    %ba1 = extractvalue { { i64, { i64, i64* } }, { i64, { i64, i64* } } } %xea2, 1
-    %uu = extractvalue { i64, { i64, i64* } } %ba1, 0
-    %xfa3 = extractvalue { i64, { i64, i64* } } %ba1, 1
+    %baa = extractvalue { { i64, { i64, i64* } }, { i64, { i64, i64* } } } %xea2, 1
+    %uu = extractvalue { i64, { i64, i64* } } %baa, 0
+    %xfa3 = extractvalue { i64, { i64, i64* } } %baa, 1
     %uua = extractvalue { i64, i64* } %xfa3, 0
     %xga2 = extractvalue { i64, i64* } %xfa3, 1
     call void @LLVM_DS_NArray_narray_free (i64* %xga2)
@@ -312,7 +304,7 @@ define { i64, { i64, i64* } } @IICF_Impl_Heap_h_sink_impl({ i64, { i64, i64* } }
   start:
     %x2 = insertvalue { { i64, { i64, i64* } }, i64 } zeroinitializer, { i64, { i64, i64* } } %x, 0
     %x3 = insertvalue { { i64, { i64, i64* } }, i64 } %x2, i64 %x1, 1
-    %x4 = call { i64, { i64, i64* } } @IICF_Impl_Heap_h_sink_impl_f_07742672 ({ { i64, { i64, i64* } }, i64 } %x3)
+    %x4 = call { i64, { i64, i64* } } @IICF_Impl_Heap_h_sink_impl_f_04112682 ({ { i64, { i64, i64* } }, i64 } %x3)
     ret { i64, { i64, i64* } } %x4
 }
 
@@ -321,7 +313,7 @@ define { i64, { i64, i64* } } @IICF_Impl_Heap_h_swim_impl({ i64, { i64, i64* } }
   start:
     %x2 = insertvalue { { i64, { i64, i64* } }, i64 } zeroinitializer, { i64, { i64, i64* } } %x, 0
     %x3 = insertvalue { { i64, { i64, i64* } }, i64 } %x2, i64 %x1, 1
-    %x4 = call { i64, { i64, i64* } } @IICF_Impl_Heap_h_swim_impl_f_07745030 ({ { i64, { i64, i64* } }, i64 } %x3)
+    %x4 = call { i64, { i64, i64* } } @IICF_Impl_Heap_h_swim_impl_f_04118822 ({ { i64, { i64, i64* } }, i64 } %x3)
     ret { i64, { i64, i64* } } %x4
 }
 
@@ -378,8 +370,8 @@ define { i64, { i64, i64* } } @LLVM_DS_Array_List_arl_resize(i64 %c, { i64, { i6
 
   ctd_if:
     %ca1 = phi i64 [ %c, %else ], [ %x1, %ctd_ifa ]
-    %tmpc = icmp eq i64 %ca1, 0
-    br i1 %tmpc, label %thenb, label %elseb
+    %tmpa = icmp eq i64 %ca1, 0
+    br i1 %tmpa, label %thenb, label %elseb
 
   thenb:
     br label %ctd_ifb
@@ -405,8 +397,8 @@ define { i64, { i64, i64* } } @LLVM_DS_Array_List_arl_resize(i64 %c, { i64, { i6
 define { i64, { i64, i64* } } @arl_new() {
 
   start:
-    %tmpd = icmp eq i64 8, 0
-    br i1 %tmpd, label %then, label %else
+    %tmp = icmp eq i64 8, 0
+    br i1 %tmp, label %then, label %else
 
   then:
     br label %ctd_if
@@ -473,7 +465,7 @@ define { i64, { i64, i64* } } @arl_push_back({ i64, { i64, i64* } } %al, i64 %x)
     ret { i64, { i64, i64* } } %x7
 }
 
-define { i64, { i64, i64* } } @IICF_Impl_Heap_h_sink_impl_f_07742672({ { i64, { i64, i64* } }, i64 } %x) {
+define { i64, { i64, i64* } } @IICF_Impl_Heap_h_sink_impl_f_04112682({ { i64, { i64, i64* } }, i64 } %x) {
 
   start:
     %a1 = extractvalue { { i64, { i64, i64* } }, i64 } %x, 0
@@ -582,7 +574,7 @@ define { i64, { i64, i64* } } @IICF_Impl_Heap_h_sink_impl_f_07742672({ { i64, { 
     %yja = insertvalue { i64, { i64, i64* } } %yi, { i64, i64* } %yk, 1
     %yl = insertvalue { { i64, { i64, i64* } }, i64 } zeroinitializer, { i64, { i64, i64* } } %yja, 0
     %x3 = insertvalue { { i64, { i64, i64* } }, i64 } %yl, i64 %xk, 1
-    %x4 = call { i64, { i64, i64* } } @IICF_Impl_Heap_h_sink_impl_f_07742672 ({ { i64, { i64, i64* } }, i64 } %x3)
+    %x4 = call { i64, { i64, i64* } } @IICF_Impl_Heap_h_sink_impl_f_04112682 ({ { i64, { i64, i64* } }, i64 } %x3)
     br label %ctd_ifc
 
   elsec:
@@ -600,7 +592,7 @@ define { i64, { i64, i64* } } @IICF_Impl_Heap_h_sink_impl_f_07742672({ { i64, { 
     ret { i64, { i64, i64* } } %x6
 }
 
-define { i64, { i64, i64* } } @IICF_Impl_Heap_h_swim_impl_f_07745030({ { i64, { i64, i64* } }, i64 } %x) {
+define { i64, { i64, i64* } } @IICF_Impl_Heap_h_swim_impl_f_04118822({ { i64, { i64, i64* } }, i64 } %x) {
 
   start:
     %a1 = extractvalue { { i64, { i64, i64* } }, i64 } %x, 0
@@ -676,7 +668,7 @@ define { i64, { i64, i64* } } @IICF_Impl_Heap_h_swim_impl_f_07745030({ { i64, { 
     %yia = udiv i64 %a2, 2
     %yk = insertvalue { { i64, { i64, i64* } }, i64 } zeroinitializer, { i64, { i64, i64* } } %yha, 0
     %x1 = insertvalue { { i64, { i64, i64* } }, i64 } %yk, i64 %yia, 1
-    %x2 = call { i64, { i64, i64* } } @IICF_Impl_Heap_h_swim_impl_f_07745030 ({ { i64, { i64, i64* } }, i64 } %x1)
+    %x2 = call { i64, { i64, i64* } } @IICF_Impl_Heap_h_swim_impl_f_04118822 ({ { i64, { i64, i64* } }, i64 } %x1)
     br label %ctd_ifa
 
   elsea:

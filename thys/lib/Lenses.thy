@@ -780,7 +780,7 @@ begin
             val ctxt = Splitter.add_split (#split cs) ctxt
             val ctxt = Splitter.add_split (#split_asm cs) ctxt
           in
-            Locale.intro_locales_tac true ctxt []
+            Locale.intro_locales_tac {strict=false,eager=true} ctxt []
             THEN unfold_tac ctxt [def_thm]
             THEN ALLGOALS (asm_full_simp_tac ctxt)
           end
@@ -925,7 +925,7 @@ begin
               |> Splitter.add_split (#split_asm cs))
 
             fun tac ctxt = 
-              Locale.intro_locales_tac true ctxt [] THEN p_simp_tac ctxt
+              Locale.intro_locales_tac {strict=false,eager=true} ctxt [] THEN p_simp_tac ctxt
 
             val thm = Goal.prove ctxt [] [] iterm (fn {context=ctxt, ...} => tac ctxt)
 
@@ -1010,7 +1010,6 @@ lemmas "get (CTOR \<dots>) =" and "put x (CTOR \<dots>) = "
     | B (name: string)
     | C bool bool int
 
-    declare [[ML_print_depth = 100]]
     private define_lenses test
     print_theorems
 

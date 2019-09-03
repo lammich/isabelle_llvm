@@ -1,6 +1,6 @@
 section \<open>LLVM like Integer Types with Flexible Bit-Width\<close>
 theory LLVM_Integer
-imports "HOL-Word.Word" "Word_Lib.Word_Lemmas"
+imports "HOL-Word.Word" Bits_Natural "Word_Lib.Word_Lemmas"
 begin
 
 (* TODO: Fix in Word.thy! 
@@ -78,6 +78,11 @@ lemma word1_cases[cases type]:
 lemma word1_NOT_eq: "~~(x::1 word) = x+1"
   by (auto simp: NOT_eq)
 
+lemma upcast_no_msb[simp]: "LENGTH('small::len) < LENGTH('big::len) \<Longrightarrow> \<not>msb (UCAST('small \<rightarrow> 'big) x)" 
+  apply (clarsimp simp: ucast_def msb_word_of_int)
+  apply transfer
+  using nth_bintr by auto
+  
 
 subsection \<open>Integer Division with Rounding Towards Zero\<close>
 
@@ -121,24 +126,12 @@ lemma smod_positive[simp]: "(a::int)\<ge>0 \<Longrightarrow> b\<ge>0 \<Longright
   by (auto simp: srem_int_original_def)
 
 
-subsection \<open>Additions to @{theory "HOL-Word.Bool_List_Representation"}\<close>
+subsection \<open>Additions to @{theory "HOL-Word.Bits_Int"}\<close>
 declare bin_to_bl_def[simp del]
 
 (* TODO: Move *)
-(* FIXME: map2 is duplicated from List.map2 *)
 lemma map2_eq_Nil_conv[simp]: "map2 f a b = [] \<longleftrightarrow> a=[] \<or> b=[]"
   by (cases a; cases b; auto)
-  
-(* TODO: Move *)
-lemma bin_trunc_xor':
-  "bintrunc n x XOR bintrunc n y = bintrunc n (x XOR y)"
-  by (auto simp add: bin_eq_iff bin_nth_ops nth_bintr)
-
-lemma uint_xor: "uint (x XOR y) = uint x XOR uint y"
-  by (transfer, simp add: bin_trunc_xor')
-
-  
-  
   
 lemma bin_to_bl_eq_Nil_conv[simp]: "bin_to_bl w i = [] \<longleftrightarrow> w=0"
   by (metis bin_to_bl_aux.Z bin_to_bl_def size_bin_to_bl)
@@ -182,8 +175,7 @@ lemma bintrunc_eq_if_in_range: "bintrunc w i = i \<longleftrightarrow> i\<in>uin
   by (simp add: bintrunc_mod2p int_mod_lem uints_num)
 
 lemma sbintrunc_eq_if_in_range: "sbintrunc (w-Suc 0) i = i \<longleftrightarrow> i\<in>sints w"
-  apply (clarsimp simp: sbintrunc_mod2p sints_def)
-  by (smt eq_mod_iff mem_Collect_eq range_sbintrunc zero_less_power)
+  by (clarsimp simp: sints_def sbintrunc_eq_in_range)
 
 lemma bl_to_bin_in_uints: "bl_to_bin x \<in> uints (length x)"
   using bl_to_bin_def bintrunc_eq_if_in_range by fastforce
@@ -346,7 +338,7 @@ lemma signed_unsigned_compat2_minus[simp]: "signed_unsigned_compat2 (-)"
   apply (pull_push_mods)
   by (simp add: algebra_simps)
 
-lemma signed_unsigned_compat2_mult[simp]: "signed_unsigned_compat2 ( * )"
+lemma signed_unsigned_compat2_mult[simp]: "signed_unsigned_compat2 (*)"
   apply (auto simp: signed_unsigned_compat2_def sbintrunc_mod2p)
   apply pull_push_mods
   by (simp add: algebra_simps)
@@ -354,7 +346,7 @@ lemma signed_unsigned_compat2_mult[simp]: "signed_unsigned_compat2 ( * )"
 
 subsection \<open>Bitwise Interpretation of Operations\<close>
 text \<open>Provides an additional sanity check, by equating our definitions with the definitions found in
-  @{theory "HOL-Word.Bool_List_Representation"}. Unfortunately, they do not define minus there.\<close>
+  @{theory "HOL-Word.Bits_Int"}. Unfortunately, they do not define minus there.\<close>
 
 lemma cnv_plus_rbl_conv: "length a = length b \<Longrightarrow> cnv_uop2 nel (+) a b = rev (rbl_add (rev a) (rev b))"
   apply (rule sym)
@@ -362,7 +354,7 @@ lemma cnv_plus_rbl_conv: "length a = length b \<Longrightarrow> cnv_uop2 nel (+)
   apply (subst bl_bin_bl[symmetric, of b])
   by (auto simp: cnv_uop2_def rbl_add simp del: bl_bin_bl)
 
-lemma cnv_mult_rbl_conv: "length a = length b \<Longrightarrow> cnv_uop2 nel ( * ) a b = rev (rbl_mult (rev a) (rev b))"
+lemma cnv_mult_rbl_conv: "length a = length b \<Longrightarrow> cnv_uop2 nel (*) a b = rev (rbl_mult (rev a) (rev b))"
   apply (rule sym)
   apply (subst bl_bin_bl[symmetric, of a])
   apply (subst bl_bin_bl[symmetric, of b])
@@ -659,7 +651,7 @@ instantiation lint :: "{plus,minus,times,divide,modulo,uminus,signed_div}"
 begin
   lift_definition plus_lint :: "lint \<Rightarrow> lint \<Rightarrow> lint" is "cnv_uop2 (lint_abort) (+)" by simp
   lift_definition minus_lint :: "lint \<Rightarrow> lint \<Rightarrow> lint" is "cnv_uop2 (lint_abort) (-)" by simp
-  lift_definition times_lint :: "lint \<Rightarrow> lint \<Rightarrow> lint" is "cnv_uop2 (lint_abort) ( * )" by simp
+  lift_definition times_lint :: "lint \<Rightarrow> lint \<Rightarrow> lint" is "cnv_uop2 (lint_abort) (*)" by simp
   lift_definition divide_lint :: "lint \<Rightarrow> lint \<Rightarrow> lint" is "cnv_uop2 (lint_abort) (div)" by simp
   lift_definition modulo_lint :: "lint \<Rightarrow> lint \<Rightarrow> lint" is "cnv_uop2 (lint_abort) (mod)" by simp
   
@@ -847,7 +839,7 @@ lemma sint_sext[simp]: "width a \<noteq> 0 \<Longrightarrow> lint_to_sint (sext 
   by transfer auto
 
 
-instantiation lint :: bit
+instantiation lint :: bit_operations
 begin
   lift_definition bitAND_lint :: "lint \<Rightarrow> lint \<Rightarrow> lint" is "cnv_uop2 lint_abort (AND)" by simp
   lift_definition bitOR_lint :: "lint \<Rightarrow> lint \<Rightarrow> lint" is "cnv_uop2 lint_abort (OR)" by simp
@@ -1080,7 +1072,7 @@ lemma word_to_lint_shl[word_to_lint_convs]: "word_to_lint ((a::_::len word) << n
   apply (auto simp: word_to_lint_def)
   apply transfer'
   apply (auto simp: cnv_uop1_def bin_to_bl_eq_iff bintrunc_mod2p shiftl_t2n uint_word_ariths algebra_simps)
-  by (metis mod_mult_cong uint_mod_same word_numeral_alt word_of_int_power_hom word_uint.eq_norm)
+  by (simp add: mod_mult_right_eq semiring_normalization_rules(7) shiftl_int_def)
   
 lemma word_to_lint_lshr[word_to_lint_convs]: "word_to_lint ((a::_::len word) >> n) = bitLSHR (word_to_lint a) n"
   apply (auto simp: word_to_lint_def)

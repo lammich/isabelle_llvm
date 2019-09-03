@@ -293,18 +293,25 @@ begin
   lemma assertL_True[simp]: "assertL True = id\<^sub>L" unfolding assertL_def id\<^sub>L_def by auto
   lemma assertL_False[simp]: "assertL False = no\<^sub>L" unfolding assertL_def id\<^sub>L_def by auto
   
-  
+  lemma pre_get_assertL[simp]: "pre_get (assertL \<Phi>) x = \<Phi>" by (cases \<Phi>; auto)
   
   subsubsection \<open>Alternative Characterization of Memory Functions\<close>
   
   fun baddr_lens where "baddr_lens (BADDR i va) = assertL (i\<ge>0) \<bullet>\<^sub>L idx\<^sub>L (nat i) \<bullet>\<^sub>L lens_of_vaddr va"
   fun addr_lens where "addr_lens (ADDR bi ba) = the_memory\<^sub>L \<bullet>\<^sub>L memory.the_memory\<^sub>L \<bullet>\<^sub>L idx\<^sub>L bi \<bullet>\<^sub>L the\<^sub>L \<bullet>\<^sub>L baddr_lens ba"
   
+  lemma baddr_lens[simp]: "lens (baddr_lens ba)" by (cases ba) auto
+  lemma addr_lens[simp]: "lens (addr_lens a)" by (cases a) auto
+  
   definition "ptr_lens p \<equiv> assertL (llvm_ptr.the_ptr p \<noteq> RP_NULL) \<bullet>\<^sub>L addr_lens (rptr.the_addr (llvm_ptr.the_ptr p))"
   
-  lemma [simp]: "ptr_lens (LLVM_PTR RP_NULL) = no\<^sub>L"
+  lemma ptr_lens_null[simp]: "ptr_lens (LLVM_PTR RP_NULL) = no\<^sub>L"
     unfolding ptr_lens_def by auto
-  
+
+  find_theorems assertL  
+    
+  lemma llvm_load_alt_aux: "xs!i = k \<Longrightarrow> xs[i:=k] = xs" by auto
+    
   lemma llvm_load_alt: "llvm_load p = doM { r\<leftarrow>use (lift_lens MEM_ERROR (ptr_lens p)); return (LLVM_VAL r)}"
     unfolding llvm_load_def llvm_zoom_base_def ptr_lens_def ab.ba.load_def
     apply (cases p; simp)
@@ -313,7 +320,8 @@ begin
         apply (rule) 
         subgoal for s apply (cases s; simp)
           unfolding ab.load_def ab.ba.lens_of_bi_def vload_def
-          apply (fastforce simp add: run_simps split!: mres.splits addr.splits  split: baddr.splits option.splits)
+          apply (cases addr; clarsimp simp: run_simps split!: option.splits)
+          apply (auto simp: run_simps llvm_load_alt_aux split!: baddr.splits option.splits)
           done
         done 
       done 
@@ -336,7 +344,7 @@ begin
         apply (auto simp: run_simps mwp_def split: addr.splits option.splits mres.splits)
         apply (determ \<open>thin_tac "_"\<close>)+
         unfolding llvm_store_unchecked_def ab.ba.store_def llvm_zoom_base_def ptr_lens_def ab.ba.lens_of_bi_def
-        apply (auto simp: run_simps mwp_def split: option.splits mres.split)
+        apply (auto simp: run_simps mwp_def split!: option.splits mres.split)
         apply (auto simp: run_simps ab.store_def vstore_def split: baddr.splits if_splits option.splits)
         apply (case_tac x42)
         apply auto

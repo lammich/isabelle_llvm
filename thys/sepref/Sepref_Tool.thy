@@ -27,7 +27,7 @@ lemma TRANS_init: "\<lbrakk> hn_refine \<Gamma> c \<Gamma>' R a; CNV c c' \<rbra
 
 lemma infer_post_triv: "P \<turnstile> P" by (rule entails_refl)
 
-ML {*
+ML \<open>
   structure Sepref = struct
     structure sepref_preproc_simps = Named_Thms (
       val name = @{binding sepref_preproc}
@@ -129,7 +129,7 @@ ML {*
       #> sepref_opt_simps.setup 
       #> sepref_opt_simps2.setup
   end
-*}
+\<close>
 
 setup Sepref.setup
 
@@ -181,10 +181,6 @@ lemma case_prod_opt2[sepref_opt_simps2]:
 
 
 subsection \<open>Debugging Methods\<close>
-ML \<open>
-  fun SIMPLE_METHOD_NOPARAM' tac = Scan.succeed (fn ctxt => SIMPLE_METHOD' (IF_EXGOAL (tac ctxt)))
-  fun SIMPLE_METHOD_NOPARAM tac = Scan.succeed (fn ctxt => SIMPLE_METHOD (tac ctxt))
-\<close>
 method_setup sepref_dbg_preproc = \<open>SIMPLE_METHOD_NOPARAM' (fn ctxt => K (Sepref_Constraints.ensure_slot_tac) THEN' Sepref.preproc_tac ctxt)\<close>
   \<open>Sepref debug: Preprocessing phase\<close>
 (*method_setup sepref_dbg_id_param = \<open>SIMPLE_METHOD_NOPARAM' Sepref.id_param_tac\<close>
@@ -269,6 +265,7 @@ method_setup sepref_dbg_trans_step_keep = \<open>SIMPLE_METHOD_NOPARAM' Sepref_T
 method_setup sepref_dbg_side = \<open>SIMPLE_METHOD_NOPARAM' (fn ctxt => REPEAT_ALL_NEW_FWD (Sepref_Translate.side_cond_dispatch_tac false (K no_tac) ctxt))\<close>
 method_setup sepref_dbg_side_unfold = \<open>SIMPLE_METHOD_NOPARAM' (Sepref_Translate.side_unfold_tac)\<close>
 method_setup sepref_dbg_side_keep = \<open>SIMPLE_METHOD_NOPARAM' (fn ctxt => REPEAT_ALL_NEW_FWD (Sepref_Translate.side_cond_dispatch_tac true (K no_tac) ctxt))\<close>
+method_setup sepref_dbg_side_bounds = \<open>SIMPLE_METHOD_NOPARAM' (Sepref_Translate.bounds_tac)\<close>
 
 method_setup sepref_dbg_prepare_frame = \<open>SIMPLE_METHOD_NOPARAM' Sepref_Frame.prepare_frame_tac\<close>
   \<open>Sepref debug: Prepare frame inference\<close>
@@ -349,6 +346,20 @@ proof -
     unfolding hr_comp_def
     by vcg
 qed
+
+lemma MK_FREE_hrrcompI[sepref_frame_free_rules]:
+  assumes "\<And>x. MK_FREE (A x) f" 
+  shows "MK_FREE (hrr_comp S A R x) f"
+proof -
+  note [vcg_rules] = assms[THEN MK_FREED]
+  show ?thesis
+    apply rule
+    unfolding hrr_comp_def hr_comp_def
+    apply (simp; safe)
+    apply vcg
+    done
+qed
+
 
 subsubsection \<open>Short-Circuit Boolean Evaluation\<close>
 text \<open>Convert boolean operators to short-circuiting. 

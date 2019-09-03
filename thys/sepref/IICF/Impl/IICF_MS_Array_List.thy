@@ -2,30 +2,6 @@ theory IICF_MS_Array_List
 imports 
   "../Intf/IICF_List" IICF_Array
 begin
-
-  (* TODO: Move *)
-  lemma hfref_bassnI:
-    assumes "\<And>x. \<lbrakk>P x; rdomp (fst A) x\<rbrakk> \<Longrightarrow> fa x \<le> SPEC Q"
-    assumes "(fc,fa)\<in>[P]\<^sub>a A \<rightarrow> R"
-    shows "(fc,fa)\<in>[P]\<^sub>a A \<rightarrow> b_assn R Q"
-  proof (cases A)
-    case [simp]: (Pair Apre Apost)
-    then show ?thesis 
-      apply sepref_to_hoare
-      apply clarsimp
-      apply (rule htriple_pure_preI)
-      supply [vcg_rules] = assms(2)[to_hnr, THEN hn_refineD,unfolded autoref_tag_defs hn_ctxt_def, simplified]
-      apply vcg
-      apply (frule (1) order_trans[OF _ assms(1)])
-      subgoal by (auto simp: pure_part_def rdomp_def) 
-      subgoal by vcg 
-      done
-    
-  qed
-
-
-
-
   definition "ms_irel M N \<equiv> br (\<lambda>(l,xs). take l xs) (\<lambda>(l,xs). l\<le>N \<and> N = length xs \<and> N<M)"
 
   
@@ -78,20 +54,20 @@ begin
   end
 
   type_synonym ('l,'a) marl = "'l word \<times> 'a ptr"
+
+  lemma ms_irel_prenorm: 
+    assumes "((l,xs),xs')\<in>ms_irel M N"
+    shows "length xs = N \<and> l=length xs' \<and> length xs'\<le>N \<and> N < M"
+    using assms
+    unfolding ms_irel_def
+    by (auto simp: in_br_conv)
   
+    
   context
     fixes M :: nat
     defines "M \<equiv> max_snat (LENGTH ('l::len2))"
+    notes [fcomp_prenorm_simps] = ms_irel_prenorm[where M=M]
   begin
-
-    lemma ms_irel_prenorm[fcomp_prenorm_simps]: 
-      assumes "((l,xs),xs')\<in>ms_irel M N"
-      shows "length xs = N" "l=length xs'" "length xs'\<le>N" "N < M"
-      using assms
-      unfolding ms_irel_def
-      by (auto simp: in_br_conv)
-  
-
     abbreviation "marl2_assn \<equiv> snat_assn' TYPE('l) \<times>\<^sub>a array_assn id_assn"
   
     
@@ -199,20 +175,20 @@ begin
 
 
   (* TODO: Move *)    
-  lemma snat_rel_imp_less_max_snat: 
-    "\<lbrakk>(x,n)\<in>snat_rel' TYPE('l::len2); L = LENGTH('l)\<rbrakk> \<Longrightarrow> n<max_snat L"
-    by (auto simp: snat_rel_def snat.rel_def in_br_conv)
-    
     
   schematic_goal [sepref_frame_free_rules]: "MK_FREE (marl_assn' TYPE('l::len2) A N) ?f"
     unfolding marl_assn'_fold'[symmetric]
     by sepref_dbg_side
   
-  
+  lemma marl_assn'_boundsD[sepref_bounds_dest]:
+     "rdomp (marl_assn' TYPE('l::len2) A N) xs \<Longrightarrow> length xs \<le> N \<and> N < max_snat LENGTH('l)"  
+    unfolding marl_assn'_def
+    supply [sepref_bounds_dest] = ms_irel_prenorm
+    by sepref_bounds
+      
   lemma bind_assoc_tagged: "bind$(bind$m$f)$g = bind$m$(\<lambda>\<^sub>2x. bind$(f$x)$g)" 
     unfolding autoref_tag_defs by simp 
       
-  find_theorems name: beta  
     
     
 experiment begin    
@@ -222,7 +198,6 @@ experiment begin
     RETURN (x@[1::nat])
   })" :: "[\<lambda>N. N\<ge>10]\<^sub>a\<^sub>d (snat_assn' TYPE(64))\<^sup>k \<rightarrow> marl_assn' TYPE(64) (snat_assn' TYPE(64))"
     apply (annot_snat_const "TYPE(64)")
-    supply [simp] = snat_rel_imp_less_max_snat
     by sepref
     
 

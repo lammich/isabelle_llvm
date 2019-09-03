@@ -731,7 +731,7 @@ subsection \<open>ML-Level Declarations\<close>
         val res = case res of 
           @{mpat "\<lambda>_. \<langle>_\<rangle>nres_rel"} => res
         | _ => @{mk_term "\<lambda>x. \<langle>?res x\<rangle>nres_rel"}
-        val relt = mk_rel (SOME pre,args,res) |> @{print}
+        val relt = mk_rel (SOME pre,args,res)
         
         val _ = dbg_trace_term lthy "Converted relation" relt
         val _ = Syntax.check_term lthy relt
@@ -944,13 +944,32 @@ subsection \<open>ML-Level Declarations\<close>
       
         fun unfold_PR_CONST_tac ctxt = SELECT_GOAL (Local_Defs.unfold0_tac ctxt @{thms PR_CONST_def})
 
-        fun transfer_precond_rl ctxt t R = let
+        fun transfer_precond_rl fixedTs ctxt t R = let
           (*val tfrees = Term.add_tfreesT (fastype_of t) [] 
           val t' = map_types (map_type_tfree (fn x => if member op= tfrees x then dummyT else TFree x)) t
           *) (* TODO: Brute force approach, that may generalize too much! *)
-          val t' = map_types (K dummyT) t
+
+          (* Subtypes that contain fixed TFrees are mapped structurally, preserving the fixed types, 
+              all other types just become dummyT *)          
+              
+          fun mapT (T as TFree (n,_)) = if member op = fixedTs n then (T, true) else (dummyT, false)
+            | mapT (Type (name,Ts)) = let 
+                val Ts = map mapT Ts 
+              in 
+                if exists I (map snd Ts) then (Type (name,map fst Ts),true) else (dummyT,false) 
+              end
+            | mapT (TVar _) = (dummyT,false)
+              
+              
+          (*fun is_declared_TFree (TFree (n,_)) = Variable.is_declared ctxt n
+            | is_declared_TFree _ = false
+          fun mpaT T = if is_declared_TFree T then T else dummyT
+          fun mpT T = if exists_subtype is_declared_TFree T then map_atyps mpaT T else dummyT
+          *)
+          val t' = map_types (fst o mapT) t
         
           val goal = Sepref_Basic.mk_pair_in_pre t t' R 
+            |> tap (dbg_trace_term ctxt "Precond transfer term before checking")
             |> Syntax.check_term ctxt
             |> Thm.cterm_of ctxt
                                     
@@ -1041,6 +1060,7 @@ subsection \<open>ML-Level Declarations\<close>
           end  
           fun check_invalid (t as @{mpat "hr_comp _ _"}) = err t 
             | check_invalid (t as @{mpat "hrp_comp _ _"}) = err t
+            | check_invalid (t as @{mpat "hrr_comp _ _ _"}) = err t
             | check_invalid (t as @{mpat "pure (the_pure _)"}) = err t
             | check_invalid (t as @{mpat "_ O _"}) = err t
             | check_invalid _ = false
@@ -1072,15 +1092,27 @@ subsection \<open>ML-Level Declarations\<close>
           val parse_precond = Scan.option (@{keyword "["} |-- Parse.term --| @{keyword "]"})
       
           val parse_fref_thm = Scan.option (@{keyword "uses"} |-- Parse.thm)
+          val parse_fixed_types = Scan.optional (@{keyword "fixes"} |-- Scan.repeat1 Parse.typ) []
       
         in
-          val di_parser = parse_flags -- Scan.optional (Parse.binding --| @{keyword ":"}) Binding.empty -- parse_precond -- Parse.thm -- parse_fref_thm
+          val di_parser = 
+              parse_flags 
+           -- Scan.optional (Parse.binding --| @{keyword ":"}) Binding.empty 
+           -- parse_precond 
+           -- Parse.thm 
+           -- parse_fref_thm
+           -- parse_fixed_types
         end  
       
-        fun di_cmd ((((flags,name), precond_raw), i_thm_raw), p_thm_raw) lthy = let
+        fun di_cmd (((((flags,name), precond_raw), i_thm_raw), p_thm_raw), fixedTs_raw) lthy = let
           val i_thm = singleton (Attrib.eval_thms lthy) i_thm_raw
           val p_thm = map_option (singleton (Attrib.eval_thms lthy)) p_thm_raw
       
+          fun map_fixed_Ts (T as TFree (n,_)) = if Variable.is_declared lthy n then n else raise TYPE ("Fixed type must be declared",[T],[]) 
+            | map_fixed_Ts T = raise TYPE ("Only TFrees can be fixed",[T],[])
+          
+          val fixedTs = map (map_fixed_Ts o Syntax.parse_typ lthy) fixedTs_raw 
+          
           local
             val ctxt = Refine_Util.apply_configs flags lthy
           in
@@ -1141,7 +1173,7 @@ subsection \<open>ML-Level Declarations\<close>
             | _ => raise THM("di_cmd: Cannot recognize first prems of transform_pre_param: ", ~1,[thm])
       
           in
-            val thm = if flag_transfer then thm OF [transfer_precond_rl ctxt pre R] else thm
+            val thm = if flag_transfer then thm OF [transfer_precond_rl fixedTs ctxt pre R] else thm
       
             val thm = case precond_raw of 
               NONE => thm

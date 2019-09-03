@@ -91,7 +91,17 @@ abbreviation (input) "word_len \<equiv> \<lambda>_::'a::len0 word. LENGTH('a)"
 lemma snat_lt_max_snat[simp]: "snat w < max_snat (word_len w)"
   by (auto simp: snat_def max_snat_def sint_range')
   
-subsubsection \<open>Reflection of Maximum Representable Values\<close>  
+  
+subsection \<open>Constant Folding\<close>  
+(*
+   TODO: No idea how complete these are 
+*)
+lemmas llvm_num_const_simps[llvm_inline] 
+  = Num.arith_simps power_numeral pred_numeral_simps power_0
+    arith_special numeral_One[symmetric]
+
+  
+subsection \<open>Reflection of Maximum Representable Values\<close>  
   
 definition ll_max_uint :: "'l::len word llM" where [llvm_inline]: "ll_max_uint \<equiv> ll_sub 0 1"
 definition ll_max_sint :: "'l::len2 word llM" where [llvm_inline]: "ll_max_sint \<equiv> doM {r \<leftarrow> ll_max_uint; ll_lshr r 1}"
@@ -150,7 +160,7 @@ lemma ll_max_sint_rule: "llvm_htriple (\<box>) (ll_max_sint::'l::len2 word llM) 
 
 end  
   
-subsubsection \<open>Signed Integers\<close>
+subsection \<open>Signed Integers\<close>
 
 interpretation sint: standard_opr_abstraction sint 
   "\<lambda>_. True" 
@@ -176,7 +186,7 @@ interpretation llvm_prim_arith_setup .
 lemma sint_bin_ops:
   "sint.is_bin_op' ll_add (+) (+)" 
   "sint.is_bin_op' ll_sub (-) (-)"  
-  "sint.is_bin_op' ll_mul ( *) ( *)"  
+  "sint.is_bin_op' ll_mul (*) (*)"  
   "sint.is_bin_op (\<lambda>(_::'a::len word itself) a b. b\<noteq>0 \<and> a sdiv b \<in> sints LENGTH('a)) ll_sdiv (sdiv) (sdiv)"  
   "sint.is_bin_op (\<lambda>(_::'a::len word itself) a b. b\<noteq>0 \<and> a sdiv b \<in> sints LENGTH('a)) ll_srem (smod) (smod)"
   supply [simp del] = in_sints_conv
@@ -238,7 +248,7 @@ end
     
   
   
-subsubsection \<open>Unsigned Integers\<close>
+subsection \<open>Unsigned Integers\<close>
 
 interpretation uint: standard_opr_abstraction uint 
   "\<lambda>_. True" 
@@ -263,16 +273,16 @@ interpretation llvm_prim_arith_setup .
 lemma uint_bin_ops_arith:
   "uint.is_bin_op (\<lambda>(_::'a::len word itself) a b. a+b < max_uint LENGTH('a)) ll_add (+) (+)" 
   "uint.is_bin_op (\<lambda>_ a b. b\<le>a) ll_sub (-) (-)"  
-  "uint.is_bin_op (\<lambda>(_::'a::len word itself) a b. a*b < max_uint LENGTH('a)) ll_mul ( *) ( *)"  
+  "uint.is_bin_op (\<lambda>(_::'a::len word itself) a b. a*b < max_uint LENGTH('a)) ll_mul (*) (*)"  
   "uint.is_bin_op (\<lambda>_ a b. b\<noteq>0) ll_udiv (div) (div)"  
   "uint.is_bin_op (\<lambda>_ a b. b\<noteq>0) ll_urem (mod) (mod)"
   by (all \<open>prove_uint_op simp: uint_mult_lem uint_neq_ZD uint_div uint_mod\<close>)
 
 (* TODO: Remove preconditions! *)
 lemma uint_bin_ops_bitwise:
-  "uint.is_bin_op' ll_and (AND) (AND)" 
-  "uint.is_bin_op' ll_or (OR) (OR)" 
-  "uint.is_bin_op' ll_xor (XOR) (XOR)" 
+  "uint.is_bin_op (\<lambda>_ _ _. True) ll_and (AND) (AND)" 
+  "uint.is_bin_op (\<lambda>_ _ _. True) ll_or (OR) (OR)" 
+  "uint.is_bin_op (\<lambda>_ _ _. True) ll_xor (XOR) (XOR)" 
   by (all \<open>prove_uint_op simp: uint_and uint_or uint_xor\<close>)
 
 lemmas uint_bin_ops = uint_bin_ops_arith uint_bin_ops_bitwise
@@ -347,11 +357,17 @@ interpretation llvm_prim_arith_setup .
 lemma unat_bin_ops:
   "unat.is_bin_op (\<lambda>(_::'a::len word itself) a b. a+b < max_unat LENGTH('a)) ll_add (+) (+)" 
   "unat.is_bin_op (\<lambda>_ a b. b\<le>a) ll_sub (-) (-)"  
-  "unat.is_bin_op (\<lambda>(_::'a::len word itself) a b. a*b < max_unat LENGTH('a)) ll_mul ( *) ( *)"  
+  "unat.is_bin_op (\<lambda>(_::'a::len word itself) a b. a*b < max_unat LENGTH('a)) ll_mul (*) (*)"  
   "unat.is_bin_op (\<lambda>_ a b. b\<noteq>0) ll_udiv (div) (div)"  
   "unat.is_bin_op (\<lambda>_ a b. b\<noteq>0) ll_urem (mod) (mod)"
   by (all \<open>prove_unat_op simp: unat_mult_lem unat_neq_ZD unat_div unat_mod\<close>)
 
+lemma unat_bin_ops_bitwise:
+  "unat.is_bin_op (\<lambda>_ _ _. True) ll_and (AND) (AND)" 
+  "unat.is_bin_op (\<lambda>_ _ _. True) ll_or (OR) (OR)" 
+  "unat.is_bin_op (\<lambda>_ _ _. True) ll_xor (XOR) (XOR)" 
+  by (all \<open>prove_unat_op simp: unat_and unat_or unat_xor\<close>)
+  
 lemma unat_cmp_ops: 
   "unat.is_cmp_op ll_icmp_eq (=) (=)" 
   "unat.is_cmp_op ll_icmp_ne (\<noteq>) (\<noteq>)"
@@ -395,7 +411,7 @@ lemma lt_exp2n_nat_estimate[simp]:
 end  
 
 
-subsubsection \<open>Natural Numbers by signed\<close>
+subsection \<open>Natural Numbers by signed\<close>
 
 
 definition "snat_invar (w::'a::len2 word) \<equiv> \<not>msb w"
@@ -444,7 +460,7 @@ lemma snat_in_bounds_aux: "(a::nat)<2^(x-Suc 0) \<Longrightarrow> a<2^x"
 lemma snat_bin_ops:
   "snat.is_bin_op' ll_add (+) (+)" 
   "snat.is_bin_op (\<lambda>_ a b. b\<le>a) ll_sub (-) (-)"  
-  "snat.is_bin_op' ll_mul ( *) ( *)"  
+  "snat.is_bin_op' ll_mul (*) (*)"  
   "snat.is_bin_op (\<lambda>_ a b. b\<noteq>0) ll_udiv (div) (div)"  
   "snat.is_bin_op (\<lambda>_ a b. b\<noteq>0) ll_urem (mod) (mod)"
   
@@ -554,5 +570,116 @@ proof -
     apply (simp add: nat_mod_distrib nat_mult_distrib nat_diff_distrib' nat_power_eq less_imp_diff_less)
     done
 qed    
+
+
+subsection \<open>Casting\<close>
+
+(* TODO: Add other casts. 
+
+  up/down * su/us/ss/uu
+
+  and su_conv, us_conv
+  
+  Some casts might be expressable as up/downcast followed by conv!
+*)
+
+context begin
+  interpretation llvm_prim_arith_setup .
+
+    
+  definition [llvm_inline]: "unat_snat_upcast TYPE('a::len2) x \<equiv> ll_zext x TYPE('a word)"
+  definition [llvm_inline]: "snat_unat_downcast TYPE('a::len) x \<equiv> ll_trunc x TYPE('a word)"
+    
+  definition [llvm_inline]: "snat_snat_upcast TYPE('a::len2) x \<equiv> ll_zext x TYPE('a word)"
+  definition [llvm_inline]: "snat_snat_downcast TYPE('a::len) x \<equiv> ll_trunc x TYPE('a word)"
+  
+  definition [llvm_inline]: "unat_unat_upcast TYPE('a::len) x \<equiv> ll_zext x TYPE('a word)"
+  definition [llvm_inline]: "unat_unat_downcast TYPE('a::len) x \<equiv> ll_trunc x TYPE('a word)"
+
+  definition unat_snat_conv :: "'l::len2 word \<Rightarrow> 'l word llM" 
+    where [llvm_inline]: "unat_snat_conv x \<equiv> return x"  
+    
+  definition snat_unat_conv :: "'l::len2 word \<Rightarrow> 'l word llM" 
+    where [llvm_inline]: "snat_unat_conv x \<equiv> return x"  
+  
+  lemma unat_snat_upcast_rule[vcg_rules]:
+    "llvm_htriple 
+      (\<up>(is_up' UCAST('small \<rightarrow> 'big)) ** \<upharpoonleft>unat.assn n (ni::'small::len word)) 
+      (unat_snat_upcast TYPE('big::len2) ni) 
+      (\<lambda>r. \<upharpoonleft>snat.assn n r)"
+    unfolding unat.assn_def snat.assn_def unat_snat_upcast_def
+    apply vcg'
+    apply (auto simp: snat_invar_def snat_eq_unat(2) unat_ucast_upcast)
+    done
+
+  lemma snat_unat_downcast_rule[vcg_rules]:
+    "llvm_htriple 
+      (\<up>(is_down' UCAST('big \<rightarrow> 'small)) ** \<upharpoonleft>snat.assn n (ni::'big::len2 word) ** \<up>(n<max_unat LENGTH('small))) 
+      (snat_unat_downcast TYPE('small::len) ni) 
+      (\<lambda>r. \<upharpoonleft>unat.assn n r)"
+    unfolding unat.assn_def snat.assn_def snat_unat_downcast_def
+    apply vcg'
+    apply (auto simp: snat_invar_def snat_eq_unat(2) max_unat_def)
+    by (metis ucast_nat_def unat_of_nat_eq)
+
+  lemma snat_snat_upcast_rule[vcg_rules]:
+    "llvm_htriple 
+      (\<up>(is_up' UCAST('small \<rightarrow> 'big)) ** \<upharpoonleft>snat.assn n (ni::'small::len2 word)) 
+      (snat_snat_upcast TYPE('big::len2) ni) 
+      (\<lambda>r. \<upharpoonleft>snat.assn n r)"
+    unfolding unat.assn_def snat.assn_def snat_snat_upcast_def
+    apply vcg'
+    apply (auto simp: snat_invar_def snat_eq_unat(2) unat_ucast_upcast)
+    done
+
+  lemma snat_snat_downcast_rule[vcg_rules]:
+    "llvm_htriple 
+      (\<up>(is_down' UCAST('big \<rightarrow> 'small)) ** \<upharpoonleft>snat.assn n (ni::'big::len2 word) ** \<up>(n<max_snat LENGTH('small))) 
+      (snat_snat_downcast TYPE('small::len2) ni) 
+      (\<lambda>r. \<upharpoonleft>snat.assn n r)"
+    unfolding snat.assn_def snat_snat_downcast_def
+    apply vcg'
+    apply (clarsimp simp: snat_invar_def max_snat_def)
+    by (metis One_nat_def le_def msb_unat_big snat_eq_unat(1) snat_in_bounds_aux ucast_nat_def unat_of_nat_len)
+
+   lemma unat_unat_upcast_rule[vcg_rules]:
+    "llvm_htriple 
+      (\<up>(is_up' UCAST('small \<rightarrow> 'big)) ** \<upharpoonleft>unat.assn n (ni::'small::len word)) 
+      (unat_unat_upcast TYPE('big::len) ni) 
+      (\<lambda>r. \<upharpoonleft>unat.assn n r)"
+    unfolding unat.assn_def snat.assn_def unat_unat_upcast_def
+    apply vcg'
+    apply (auto simp: snat_invar_def snat_eq_unat(2) unat_ucast_upcast)
+    done
+
+  lemma unat_unat_downcast_rule[vcg_rules]:
+    "llvm_htriple 
+      (\<up>(is_down' UCAST('big \<rightarrow> 'small)) ** \<upharpoonleft>unat.assn n (ni::'big::len word) ** \<up>(n<max_unat LENGTH('small))) 
+      (unat_unat_downcast TYPE('small::len) ni) 
+      (\<lambda>r. \<upharpoonleft>unat.assn n r)"
+    unfolding unat.assn_def unat.assn_def unat_unat_downcast_def
+    apply vcg'
+    apply (auto simp: snat_invar_def snat_eq_unat(2) max_unat_def)
+    by (metis ucast_nat_def unat_of_nat_eq)
+    
+  lemma unat_snat_conv_rule[vcg_rules]: 
+    "llvm_htriple (\<upharpoonleft>unat.assn x (xi::'l::len2 word) ** \<up>(x<max_snat LENGTH('l))) (unat_snat_conv xi) (\<lambda>r. \<upharpoonleft>snat.assn x r)"
+    unfolding unat_snat_conv_def unat.assn_def snat.assn_def
+    apply vcg'
+    by (force simp: max_snat_def snat_invar_alt snat_eq_unat(1))
+  
+  
+    
+  lemma snat_unat_conv_rule[vcg_rules]: 
+    "llvm_htriple (\<upharpoonleft>snat.assn x (xi::'l::len2 word)) (snat_unat_conv xi) (\<lambda>r. \<upharpoonleft>unat.assn x r)"
+    unfolding snat_unat_conv_def unat.assn_def snat.assn_def
+    apply vcg'
+    by (force simp: max_snat_def snat_invar_alt snat_eq_unat(1))
+    
+    
+end
+
+
+
 
 end

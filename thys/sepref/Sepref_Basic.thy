@@ -146,7 +146,7 @@ subsection \<open>Constraints in Refinement Relations\<close>
 definition rdomp :: "('a \<Rightarrow> 'c \<Rightarrow> assn) \<Rightarrow> 'a \<Rightarrow> bool" where
   "rdomp R a \<equiv> \<exists>h c. R a c h"
 
-abbreviation "rdom R \<equiv> Collect (rdomp R)"
+(*abbreviation "rdom R \<equiv> Collect (rdomp R)"*)
 
 lemma rdomp_ctxt[simp]: "rdomp (hn_ctxt R) = rdomp R"
   by (simp add: hn_ctxt_def[abs_def])  
@@ -154,8 +154,12 @@ lemma rdomp_ctxt[simp]: "rdomp (hn_ctxt R) = rdomp R"
 lemma rdomp_pure[simp]: "rdomp (pure R) a \<longleftrightarrow> a\<in>Range R"
   unfolding rdomp_def pure_def by (auto simp: pred_lift_extract_simps)
 
-lemma rdom_pure[simp]: "rdom (pure R) = Range R"
+(*lemma rdom_pure[simp]: "rdom (pure R) = Range R"
   unfolding rdomp_def[abs_def] pure_def by (auto simp: pred_lift_extract_simps)
+*)  
+
+lemma rdomp_invalid_simp[simp]: "rdomp (invalid_assn P) x = rdomp P x"
+  by (auto simp: invalid_assn_def rdomp_def pure_part_def pred_lift_extract_simps)
 
 lemma Range_of_constraint_conv[simp]: "Range (A\<inter>UNIV\<times>C) = Range A \<inter> C"
   by auto
@@ -620,7 +624,7 @@ qed
   
 
 subsection \<open>ML-Level Utilities\<close>
-ML {*
+ML \<open>
   signature SEPREF_BASIC = sig
     (* Destroy lambda term, return function to reconstruct. Bound var is replaced by free. *)
     val dest_lambda_rc: Proof.context -> term -> ((term * (term -> term)) * Proof.context)
@@ -1055,7 +1059,7 @@ ML {*
       msg ^ "\n" ^ Pretty.string_of (Pretty.chunks (Goal_Display.pretty_goals ctxt st))
 
   end
-*}
+\<close>
 
 
 ML \<open>

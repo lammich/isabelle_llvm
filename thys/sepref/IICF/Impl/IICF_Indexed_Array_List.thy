@@ -15,31 +15,11 @@ begin
   abbreviation "snatb_rel' TYPE('l::len2) N \<equiv> b_rel (snat_rel' TYPE('l)) (\<lambda>x. x<N)"
   abbreviation "snatb_assn N \<equiv> b_assn snat_assn (\<lambda>x. x<N)"
   abbreviation "snatb_assn' TYPE('l::len2) N \<equiv> (snatb_assn N :: _ \<Rightarrow> 'l word \<Rightarrow> _)"
-    
-
-  (* TODO: Move *)
-  lemma R_comp_brel_id_conv[fcomp_norm_simps]: "R O b_rel Id P = b_rel R P" by auto
   
   
   (* TODO: Move, clean up proof *)
-  lemma snat_rel_range: "Range (snat_rel' TYPE('l)) = {0..<max_snat LENGTH('l::len2)}"
-    apply (auto simp: Range_iff snat_rel_def snat.rel_def in_br_conv)
-    subgoal for x
-      apply (rule exI[where x="word_of_int (int x)"])
-      apply (auto simp: max_snat_def snat_invar_def)
-      subgoal
-        by (metis One_nat_def snat_eq_unat(1) snat_in_bounds_aux unat_of_nat_eq word_of_nat) 
-      subgoal
-        by (metis One_nat_def Word_Lemmas.of_nat_power diff_less len_gt_0 max_unat_def n_less_equal_power_2 not_msb_from_less power_0 word_of_nat)
-      done
-    done
             
   (* TODO: Move *)  
-  lemma in_snat_nbn_conv: "(a,b)\<in>(R O nbn_rel N) \<longleftrightarrow> (a,b)\<in>R \<and> b<N" by auto
-    
-  lemma range_comp_nbn_conv: "Range (R O nbn_rel N) = Range R \<inter> {0..<N}"
-    by (auto 0 3 simp: b_rel_def)
-    
   
   (*
   lemma range_snatb_conv: "Range (snatb_rel' TYPE('l) N) = {0..<N} \<inter> Range (snat_rel' TYPE('l::len2))"
@@ -351,16 +331,51 @@ begin
     
     definition ial_assn :: "_ \<Rightarrow> _ \<Rightarrow> 'l ial \<Rightarrow> _" where "ial_assn N \<equiv> hr_comp (hr_comp (ial2_assn N) (ial_rel1 N)) (\<langle>nbn_rel N\<rangle>list_rel)"
     lemmas [fcomp_norm_unfold] = ial_assn_def[symmetric]
+
+    (* TODO: Move *)
+    lemma list_rel_below_id_ext: "A\<subseteq>Id \<Longrightarrow> \<langle>A\<rangle>list_rel \<subseteq> Id"
+      by (metis list_rel_id list_rel_mono)
+      
+    lemma b_rel_below: "b_rel R \<Phi> \<subseteq> R" by (simp add: b_rel_def)
+    
+    lemma br_comp_b_rel_Id_conv: "br \<alpha> I O b_rel Id \<Phi> = br \<alpha> (\<lambda>x. I x \<and> \<Phi> (\<alpha> x))"
+      by (auto simp: in_br_conv)
+      
+    find_theorems "?x = ?y" "_\<in>?x \<longleftrightarrow> _\<in>?y"  
+      
+    lemma b_rel_Id_list_rel_conv: "\<langle>b_rel Id \<Phi>\<rangle>list_rel = b_rel Id (\<lambda>xs. \<forall>x\<in>set xs. \<Phi> x)"  
+      apply (clarsimp simp: set_eq_iff)
+      subgoal for xs ys
+        apply (induction xs arbitrary: ys)
+        subgoal by auto
+        subgoal for x xs ys by (cases ys) auto
+        done  
+      done
+      
+    
+    lemma ial_rel1_comp_nbn_rel[fcomp_norm_unfold, simp]: "ial_rel1 N O \<langle>nbn_rel N\<rangle>list_rel = ial_rel1 N"
+      apply (clarsimp simp: ial_rel1_def in_br_conv; safe; clarsimp simp: in_br_conv)
+      subgoal using list_rel_below_id_ext[OF b_rel_below] by auto []
+      subgoal for a b  
+        apply (simp add: b_rel_Id_list_rel_conv br_comp_b_rel_Id_conv in_br_conv)
+        by (metis (full_types) ial_invar.l_set_simp ial_invar_def)
+      done  
+        
+    
+    
+    lemma ial_assn_fold'[fcomp_norm_unfold]: "hrr_comp nat_rel
+                        (hrr_comp nat_rel (\<lambda>N. marl_assn' TYPE('l) snat_assn N \<times>\<^sub>a array_assn snat.option_assn)
+                          ial_rel1)
+                        (\<lambda>x. \<langle>nat_rel\<rangle>list_rel) = ial_assn"
+      unfolding ial_assn_def
+      by (auto simp: fun_eq_iff hrr_comp_nondep hr_comp_assoc)
     
     abbreviation "ial_assn' TYPE('l) N \<equiv> ial_assn N"
 
     
-    find_theorems SYNTH_TERM
-    
     sepref_definition ial_empty_impl [llvm_code]
       is aial_empty :: "idx_assn\<^sup>k \<rightarrow>\<^sub>a\<^sub>d ial2_assn"
       unfolding aial_empty_def
-      supply [simp] = snat_rel_imp_less_max_snat
       by sepref
         
     definition [simp]: "ial_empty_aux (N::nat) \<equiv> op_list_empty"
@@ -377,7 +392,7 @@ begin
       using aial_empty_refine
       by auto
 
-    sepref_decl_impl ial_empty_impl.refine[FCOMP aial_empty_refine'] .
+    sepref_decl_impl ial_empty_impl.refine[FCOMP aial_empty_refine'] uses op_ial_empty.fref[where A="Id"] .
     
     sepref_definition ial_swap_impl [llvm_code] is "uncurry2 aial_swap" :: "(ial2_assn N)\<^sup>d*\<^sub>aidx_assn\<^sup>k*\<^sub>aidx_assn\<^sup>k \<rightarrow>\<^sub>a ial2_assn N"
       unfolding aial_swap_def
@@ -463,8 +478,14 @@ begin
     end            
   end
   
-  schematic_goal [sepref_frame_free_rules]: "MK_FREE (ial_assn N) (?fr)"
+  schematic_goal ial_assn_free[sepref_frame_free_rules]: "MK_FREE (ial_assn N) (?fr)"
     unfolding ial_assn_def
-    by sepref_dbg_side
+    by sepref_dbg_side (* TODO: Use proper method here! *)
   
+  lemma ial_assn_boundD[sepref_bounds_dest]: 
+    "rdomp (ial_assn' TYPE('l::len2) N) xs \<Longrightarrow> length xs \<le> N \<and> N < max_snat LENGTH('l)"
+    unfolding ial_assn_def ial_rel1_def
+    supply [simp] = in_br_conv
+    by sepref_bounds
+    
 end

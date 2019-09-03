@@ -354,7 +354,7 @@ ML \<open>
       Conv.first_conv (map (cong_rl_conv conv) rules)
 
     fun extract_basic_tac ctxt thms = let
-      val ctxt = put_simpset HOL_Main_ss ctxt addsimps @{thms fri_basic_extract_simps} addsimps thms
+      val ctxt = Named_Simpsets.put @{named_simpset Main_ss} ctxt addsimps @{thms fri_basic_extract_simps} addsimps thms
       val cong_thms = Named_Theorems.get ctxt @{named_theorems fri_extract_congs}
     in
       CONVERSION (Conv.top_sweep_conv (fn ctxt => cong_rls_conv (Simplifier.rewrite ctxt) cong_thms) ctxt) 

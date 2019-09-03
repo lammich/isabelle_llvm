@@ -423,7 +423,7 @@ begin
     unfolding is_pure_conv
     by (clarsimp simp: hr_comp_pure)
 
-  lemma rdomp_hrcomp_conv: "rdomp (hr_comp A R) x \<longleftrightarrow> (\<exists>y. rdomp A y \<and> (y,x)\<in>R)"
+  lemma rdomp_hrcomp_conv[simp]: "rdomp (hr_comp A R) x \<longleftrightarrow> (\<exists>y. rdomp A y \<and> (y,x)\<in>R)"
     by (auto simp: rdomp_def hr_comp_def sep_algebra_simps pred_lift_extract_simps)
 
   lemma hn_rel_compI: 
@@ -544,6 +544,15 @@ begin
   lemma hrr_comp_nondep: "hrr_comp T (\<lambda>_. A) R = (\<lambda>x. hr_comp A (R x))"
     unfolding hrr_comp_def
     by (auto simp: fun_eq_iff)
+    
+  (* TODO: Concept of lifting dependent relation over other relation! Allows us to handle hrr_comp R R1 (\<lambda>_. Id) *)
+  lemma hrr_comp_Id_R_Id: "hrr_comp Id R1 (\<lambda>_. Id) = R1"
+    by (auto simp: hrr_comp_def fun_eq_iff pred_lift_extract_simps non_dep_simp[of R1])
+  
+  lemma hrr_comp_id_conv[simp]: "hrr_comp Id R1 R2 = (\<lambda>x. hr_comp (R1 x) (R2 x))"
+    unfolding hrr_comp_def
+    by (auto simp: fun_eq_iff pred_lift_extract_simps non_dep_simp[of R1])
+  
     
   lemma hfref_weaken_pre_nofail: 
     assumes "(f,g) \<in> [P]\<^sub>a\<^sub>d R \<rightarrow> S"  
@@ -1013,9 +1022,6 @@ begin
               SOME P => P 
             | NONE => mk_triv_precond Rs
     
-          val _ = @{print} (P,R,S)
-          val _ = @{print} (fastype_of P,fastype_of R,fastype_of S)
-            
         in 
           @{mk_term "fref ?P ?R ?S"} 
         end

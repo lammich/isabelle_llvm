@@ -28,11 +28,13 @@ lemma frame_thms:
   "P\<turnstile>P' \<Longrightarrow> F\<turnstile>F' \<Longrightarrow> P**F \<turnstile> P'**F'"
   "CONSTRAINT is_pure R \<Longrightarrow> hn_invalid R x y \<turnstile> hn_ctxt R x y"
   "CONSTRAINT is_pure R \<Longrightarrow> hn_ctxt R x y \<turnstile> hn_val UNIV x y"
+  "CONSTRAINT is_pure A \<Longrightarrow> hn_ctxt A x y \<turnstile> hn_invalid A x y"  
   apply -
   applyS simp
   applyS (rule conj_entails_mono; assumption)
   applyS (erule recover_pure_aux)
   applyS (simp, smt entails_def eq_UNIV_iff hn_ctxt_def is_pureE pred_lift_def pure_app_eq)
+  applyS (auto simp: hn_ctxt_def invalid_assn_def is_pure_iff_pure_assn)
   done
 
 named_theorems_rev sepref_frame_match_rules \<open>Sepref: Additional frame rules\<close>
@@ -143,7 +145,21 @@ lemma MERGE_append_END: "MERGE L frl R frr Q \<equiv> MERGE (L**FRI_END) frl (R*
   by (simp add: FRI_END_def)
 
 
-ML {*
+definition "FR_SOLVE_SIMPLE P Q P' Q' \<equiv> P**P' \<turnstile> Q**Q'"
+lemma fr_solve_simple_init: "FR_SOLVE_SIMPLE (Ps**\<box>) (Qs**\<box>) \<box> \<box> \<Longrightarrow> Ps \<turnstile> Qs"
+  and fr_solve_simple_match: "FR_SOLVE_SIMPLE Ps Qs Ps' Qs' \<Longrightarrow> FR_SOLVE_SIMPLE (P**Ps) (P**Qs) Ps' Qs'"
+  and fr_solve_simple_nomatch: "FR_SOLVE_SIMPLE Ps Qs (Ps'**P) (Qs'**Q) \<Longrightarrow> FR_SOLVE_SIMPLE (P**Ps) (Q**Qs) Ps' Qs'"
+  and fr_solve_simple_finalize: "Ps' \<turnstile> Qs' \<Longrightarrow> FR_SOLVE_SIMPLE \<box> \<box> Ps' Qs'"
+  unfolding FR_SOLVE_SIMPLE_def
+  subgoal by simp
+  subgoal by (simp add: conj_entails_mono)
+  subgoal by (simp add: sep.mult_commute sep_conj_left_commute)
+  subgoal by simp
+  done
+  
+  
+  
+ML \<open>
 signature SEPREF_FRAME = sig
 
 
@@ -346,12 +362,19 @@ structure Sepref_Frame : SEPREF_FRAME = struct
     end
   end  
 
+  fun frame_solve_simple_tac ctxt = 
+    resolve_tac ctxt @{thms fr_solve_simple_init}
+    THEN' Frame_Infer.simp_a_tac ctxt
+    THEN' REPEAT_DETERM' (resolve_tac ctxt @{thms fr_solve_simple_match fr_solve_simple_nomatch})
+    THEN' resolve_tac ctxt @{thms fr_solve_simple_finalize}
+    THEN' Frame_Infer.simp_ai_tac ctxt
+  
+  
   fun frame_loop_tac side_tac ctxt = let
 
   in
-    TRY o (
-      REPEAT_ALL_NEW (DETERM o frame_step_tac side_tac false ctxt)
-    )
+    (CONCL_COND' is_merge THEN_ELSE' (K all_tac, frame_solve_simple_tac ctxt)) 
+    THEN' TRY o (REPEAT_ALL_NEW (DETERM o frame_step_tac side_tac false ctxt))
   end
 
 
@@ -491,7 +514,7 @@ structure Sepref_Frame : SEPREF_FRAME = struct
   ) ctxt
 
 end
-*}
+\<close>
 
 setup Sepref_Frame.setup
 

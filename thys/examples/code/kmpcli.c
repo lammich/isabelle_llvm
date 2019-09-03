@@ -3,14 +3,15 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include "kmp.h"
 
-typedef struct {
+/*typedef struct {
   int64_t len;
   char *str;
 } string;
 
 int64_t kmp(string,string);
-
+*/
 
 string string_of_str(char *s) { string r = {strlen(s),s}; return r;}
 

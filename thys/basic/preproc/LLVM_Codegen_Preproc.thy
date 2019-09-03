@@ -4,6 +4,7 @@ imports
   "../kernel/LLVM_Codegen"
   "Monadify"
   "../../lib/Definition_Utils" 
+  "../../lib/Named_Simpsets" 
 keywords "export_llvm" "llvm_deps" :: thy_decl
 begin
 
@@ -18,21 +19,21 @@ begin
   declaration \<open>fn _ => Definition_Utils.declare_extraction_group @{binding LLVM} #> snd\<close>
   declaration \<open>fn _ => Definition_Utils.declare_extraction_group @{binding LLVM_while} #> snd\<close>
     
-  declaration {* fn _ =>
+  declaration \<open> fn _ =>
     Definition_Utils.add_extraction (@{extraction_group LLVM_while},\<^here>) {
       pattern = Logic.varify_global @{term "llc_while b body"},
       gen_thm = @{thm gen_code_thm_llc_while},
       gen_tac = K (K no_tac)
     }
-  *}
+  \<close>
 
-  declaration {*fn _ =>
+  declaration \<open>fn _ =>
     Definition_Utils.add_extraction (@{extraction_group LLVM},\<^here>) {
       pattern = Logic.varify_global @{term "REC (B::('a \<Rightarrow> 'b llM) \<Rightarrow> 'a \<Rightarrow> 'b llM)"},
       gen_thm = @{thm REC_unfold},
       gen_tac = Partial_Function.mono_tac
     }
-  *}
+  \<close>
 
 subsection \<open>Preprocessor\<close>  
   text \<open>
@@ -42,8 +43,16 @@ subsection \<open>Preprocessor\<close>
   \<close>
   
   named_theorems llvm_code \<open>Isabelle-LLVM code theorems\<close>
-  named_theorems llvm_inline
+  
+  named_simpset llvm_inline = HOL_ss
 
+  attribute_setup llvm_inline = \<open>
+    Attrib.add_del 
+      (Named_Simpsets.add_attr @{named_simpset llvm_inline}) 
+      (Named_Simpsets.add_attr @{named_simpset llvm_inline})
+  \<close>
+    
+  
   lemma llvm_inline_bind_laws[llvm_inline]:
     "bind m return = m"
     "bind (bind m (\<lambda>x. f x)) g = bind m (\<lambda>x. bind (f x) g)"
@@ -58,7 +67,7 @@ subsection \<open>Preprocessor\<close>
     struct
       open LLC_Lib
           
-      structure Monadify = Gen_Monadify (
+      structure Monadify = Gen_Monadify_Cong (
       
         fun mk_return x = @{mk_term "return ?x ::_ llM"}
         fun mk_bind m f = @{mk_term "bind ?m ?f ::_ llM"}
@@ -80,10 +89,11 @@ subsection \<open>Preprocessor\<close>
       
   
       fun cthm_inline ctxt thm = let
-        val inline_thms = Named_Theorems.get ctxt @{named_theorems llvm_inline}
-        val ctxt = put_simpset HOL_ss ctxt addsimps inline_thms
+        val ctxt = Named_Simpsets.put @{named_simpset llvm_inline} ctxt
       in
-        Conv.fconv_rule (rhs_conv (Simplifier.rewrite ctxt)) thm
+        (* TODO: Simplifier.rewrite may introduce beta redexes. 
+          Currently we eliminate them right away. Or is it OK to have beta-redexes? *)
+        Conv.fconv_rule (rhs_conv (Simplifier.rewrite ctxt) then_conv Thm.beta_conversion true) thm
       end
     
       val cthm_monadify = Conv.fconv_rule o (rhs_conv o Monadify.monadify_conv)
@@ -149,10 +159,15 @@ subsection \<open>Preprocessor\<close>
         fun cthm_norm_lambda ctxt thm = let
           val thm = Local_Defs.unfold ctxt @{thms pull_lambda_case} thm
         
-          fun r thm = case Thm.concl_of thm of
+          (*fun r thm = case Thm.concl_of thm of
             @{mpat "Trueprop (_ = (\<lambda>_. _))"} => r (thm RS @{thm fun_cong})
           | @{mpat "_ \<equiv> (\<lambda>_. _)"} => r (thm RS @{thm meta_fun_cong})
           | _ => thm
+          *)
+          
+          fun r thm = case try (fn () => (thm RS @{thm fun_cong})) () of
+            NONE => thm
+          | SOME thm => r thm  
           
         in
           r thm
@@ -161,8 +176,8 @@ subsection \<open>Preprocessor\<close>
       in
         thm 
         |> (simplify (put_simpset HOL_ss ctxt addsimps @{thms Monad.bind_laws atomize_eq}))
-        |> (Conv.fconv_rule (Refine_Util.f_tac_conv ctxt normalize_eq (norm_tac ctxt)))
         |> cthm_norm_lambda ctxt
+        |> (Conv.fconv_rule (Refine_Util.f_tac_conv ctxt normalize_eq (norm_tac ctxt)))
         |> (Conv.fconv_rule (Conv.top_sweep_conv (K (Conv.rewr_conv @{thm unit_meta_eq})) ctxt))
       end
       
@@ -265,7 +280,11 @@ subsection \<open>Preprocessor\<close>
         
     end
   \<close>
+
+  declaration \<open>K (LLC_Preprocessor.Monadify.prepare_add_const_decl @{term "numeral a"})\<close>  
   
+  
+    
 subsection \<open>Code Generator Driver\<close>  
   text \<open>
     The driver combines preeprocessing and code generation, 
@@ -277,9 +296,10 @@ subsection \<open>Code Generator Driver\<close>
     = struct
     
       val cfg_llvm_debug = Attrib.setup_config_bool @{binding llvm_debug} (K false)
+      val cfg_llvm_gen_header = Attrib.setup_config_bool @{binding llvm_gen_header} (K true)
     
       fun pretty_cthms ctxt cthms = let 
-        val ctxt = Config.put Syntax_Trans.eta_contract_raw (Config.Bool false) ctxt      
+        val ctxt = Config.put Syntax_Trans.eta_contract false ctxt      
       in Pretty.big_list "Code Theorems" (map (Thm.pretty_thm ctxt) cthms) end
 
       fun pretty_ftab_entry ctxt (t,n) = Pretty.block [
@@ -290,9 +310,12 @@ subsection \<open>Code Generator Driver\<close>
       fun pretty_ftab ctxt ftab = Pretty.big_list "Symbol table:" 
         (map (pretty_ftab_entry ctxt) (Termtab.dest ftab))
                 
-      fun consts_to_llvm cns lthy = let
-        val dbg = Config.get lthy cfg_llvm_debug
         
+        
+        
+      fun consts_to_llvm hfname cns tydefs lthy = let
+        val dbg = Config.get lthy cfg_llvm_debug
+        val gen_header = Config.get lthy cfg_llvm_gen_header
         fun trace s = if dbg then Pretty.string_of (s ()) |> tracing else ()
                                                                                                       
         val _ = trace (fn () => Pretty.str "Gathering code theorems")
@@ -300,19 +323,28 @@ subsection \<open>Code Generator Driver\<close>
         val _ = trace (fn () => pretty_cthms lthy cthms)
         
         val _ = trace (fn () => Pretty.str "Computing symbol table")
-        val fixes = map_filter (fn (_,NONE) => NONE | (cn,SOME name) => SOME (cn,name)) cns
+        val fixes = map_filter (fn (_,NONE) => NONE | (cn,SOME sigspec) => SOME (cn,LLC_HeaderGen.name_of_sigspec sigspec)) cns
         val ftab = LLC_Compiler.compute_fun_names fixes cthms
         val _ = trace (fn () => pretty_ftab lthy ftab)
         
                   
         val _ = trace (fn () => Pretty.str "Translating code theorems to IL")
-        val tysxeqns = LLC_Compiler.parse_cthms ftab cthms lthy
-        val _ = trace (fn () => LLC_Intermediate.pretty_llc tysxeqns)
+        val (tys,eqns) = LLC_Compiler.parse_cthms ftab cthms lthy
+        val _ = trace (fn () => LLC_Intermediate.pretty_llc (tys,eqns))
         
         val _ = trace (fn () => Pretty.str "Writing LLVM")
-        val res = LLC_Backend.compile_to_llvm lthy tysxeqns
+        val res = LLC_Backend.compile_to_llvm lthy (tys,eqns)
+        
+        val hdres = if gen_header then let
+            val _ = trace (fn () => Pretty.str "Preparing Header")
+            val sigspecs = map_filter snd cns
+            val hdres = LLC_HeaderGen.make_header hfname tydefs sigspecs eqns
+          in hdres end
+          else NONE
+        
+        
       in
-        ((cthms,res), lthy)
+        ((cthms,res,hdres), lthy)
       end
       
       local
@@ -326,28 +358,84 @@ subsection \<open>Code Generator Driver\<close>
           val path = using_master_directory ctxt path
         in path end
       
+        fun remove_ext ext p = let val (p',ext') = Path.split_ext p in if ext=ext' then p' else p end
+        fun remove_all_ext p = case Path.split_ext p of (p,"") => p | (p,_) => remove_all_ext p
+        
+        fun prepare_hpath _ NONE = ("HEADER_NAME",NONE)
+          | prepare_hpath ctxt (SOME spos) = let
+              val path = prepare_path ctxt spos
+                |> remove_ext "ll"
+                |> Path.ext "h"
+              val hfname = remove_all_ext (Path.base path) |> Path.implode
+            in
+              (hfname,SOME path)
+            end
+        
+        
         fun write_out NONE s = writeln s
           | write_out (SOME path) s = File.write path s
+          
+        (*  
+        (*
+          Contains a name (used as name for generated LLVM function) and 
+          an optional signature (used for header file generation).
+          
+          Note that this information is redundant, the name in the signature must match
+          the LLVM-name. This redundancy, however, reflects the split of LLVM code 
+          generator and Header file generator.
+        *)  
+        datatype siginfo = SIGI of string * LLC_HeaderGen.raw_sig option  
+          
+        fun sigi_of_sig (rsg as (LLC_HeaderGen.RSIG (_,name,_))) = SIGI (name,SOME rsg)
+        fun sigi_of_name name = SIGI (name,NONE)
+        
+        fun sigi_name (SIGI (name,_)) = name
+        fun sigi_has_sig (SIGI (_,NONE)) = false
+          | sigi_has_sig (SIGI (_,SOME _)) = true
+        
+        fun sigi_the_sig (SIGI (_,SOME sg)) = sg
+          | sigi_the_sig _ = raise Match 
+          
+        val parse_sigi = 
+             (Parse.short_ident || Parse.string) >> sigi_of_name  
+          || xxx, string needs inner parser!
+          
+        *)  
+          
       in
-        fun export_llvm cns path lthy = let
-          val lthy = Config.put Syntax_Trans.eta_contract_raw (Config.Bool false) lthy
-          val ((cthms,llvm_code),lthy) = consts_to_llvm cns lthy
+        fun export_llvm cns tydefs path (hfname,hfpath) lthy = let
+          val lthy = Config.put Syntax_Trans.eta_contract false lthy
+          val ((cthms,llvm_code,hcode),lthy) = consts_to_llvm hfname cns tydefs lthy
           val _ = write_out path llvm_code      
+          val _ = case hcode of SOME c => write_out hfpath c | NONE => ()
         in
           (cthms,lthy)
         end
         
-        val export_llvm_cmd = (Args.mode "debug" -- Args.mode "no_while" -- Parse_Spec.opt_thm_name ":" -- (Scan.repeat1 (Parse.term -- Scan.option (@{keyword "is"} |-- Parse.name )) -- Scan.option ((@{keyword "file"} |-- Parse.position Parse.path))) 
-            >> (fn (((dbg,nowhile),bnd),(cns,path)) => fn lthy => let 
+        val export_llvm_cmd = (
+          Args.mode "debug" 
+          -- Args.mode "no_while" 
+          -- Args.mode "no_header" 
+          -- Parse_Spec.opt_thm_name ":" 
+          -- (Scan.repeat1 (Parse.term -- Scan.option (@{keyword "is"} |-- LLC_HeaderGen.parse_raw_sig )) 
+          -- Scan.option (@{keyword "defines"} |-- LLC_HeaderGen.parse_raw_tydefs)
+          -- Scan.option ((@{keyword "file"} |-- Parse.position Parse.path))
+          ) 
+            >> (fn ((((dbg,nowhile),no_header),bnd),((cns,tydefs),path_spos)) => fn lthy => let 
             
               local
                 val lthy = (dbg?Config.put cfg_llvm_debug true) lthy
                 val lthy = (nowhile?Config.put LLC_Lib.llc_compile_while false) lthy
+                val lthy = (no_header?Config.put cfg_llvm_gen_header false) lthy
               in
                 val cns = map (apfst (Syntax.read_term lthy)) cns
-                val path = Option.map (prepare_path lthy) path 
+                val cns = map (apsnd (map_option (LLC_HeaderGen.check_raw_sig lthy))) cns
+                val tydefs = the_default [] (map_option (LLC_HeaderGen.check_raw_tydefs lthy) tydefs)
                 
-                val (cthms,lthy) = export_llvm cns path lthy
+                val path = Option.map (prepare_path lthy) path_spos 
+                val hfnpath = prepare_hpath lthy path_spos
+                
+                val (cthms,lthy) = export_llvm cns tydefs path hfnpath lthy
               end
               
               val (_,lthy) = Local_Theory.note (bnd,cthms) lthy 
@@ -530,6 +618,22 @@ definition fib :: "64 word \<Rightarrow> 64 word llM"
 
 export_llvm fib is fib
 
+
+definition triple_sum :: "(64 word \<times> 64 word \<times> 64 word) \<Rightarrow> 64 word llM" where [llvm_code]:
+  "triple_sum abc \<equiv> doM {
+    a \<leftarrow> ll_extract_fst abc;
+    bc::64 word \<times> 64 word \<leftarrow> ll_extract_snd abc;
+    b \<leftarrow> ll_extract_fst bc;
+    c \<leftarrow> ll_extract_snd bc;
+    r \<leftarrow> ll_add a b;
+    r \<leftarrow> ll_add r c;
+    return r
+   }"
+   
+export_llvm triple_sum is \<open>_ triple_sum(triple)\<close> 
+  defines \<open>typedef struct {int64_t a; struct {int64_t b; int64_t c;};} triple;\<close>
+  
+  
 
 end
 

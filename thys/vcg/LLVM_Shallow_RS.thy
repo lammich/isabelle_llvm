@@ -94,7 +94,7 @@ definition dr_assn_prefix :: "('a, 'b) dr_assn \<Rightarrow> 'a \<Rightarrow> 'b
 definition "is_pure A \<equiv> \<forall>a c. sep_is_pure_assn (\<upharpoonleft>A a c)"
 
 definition dr_assn_pure_prefix ("\<upharpoonleft>\<^sub>p_" [1000] 1000) where  
-  "\<upharpoonleft>\<^sub>pA a c \<equiv> \<up>pure_part (\<upharpoonleft>A a c) (** \<up>(is_pure A) *)"
+  "\<upharpoonleft>\<^sub>pA a c \<equiv> \<up>pure_part (\<upharpoonleft>A a c)"
   
 definition dr_assn_pure_asm_prefix ("\<flat>\<^sub>p_" [1000] 1000) where  
   "\<flat>\<^sub>pA a c \<equiv> pure_part (\<upharpoonleft>A a c) \<and> is_pure A"

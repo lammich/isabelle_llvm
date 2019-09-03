@@ -313,6 +313,9 @@ lemma b_assn_is_pure[safe_constraint_rules, simp]:
   "is_pure A \<Longrightarrow> is_pure (b_assn A P)"
   by (auto simp: is_pure_conv b_assn_pure_conv)
 
+lemma R_comp_brel_id_conv[fcomp_norm_simps]: "R O b_rel Id P = b_rel R P" by auto
+  
+  
 \<comment> \<open>Most general form\<close>
 lemma b_assn_subtyping_match[sepref_frame_match_rules]:
   assumes "hn_ctxt (b_assn A P) x y \<turnstile> hn_ctxt A' x y"
@@ -362,6 +365,19 @@ lemma b_assn_subtyping_match_eqA_tL[sepref_frame_match_rules]:
   unfolding hn_ctxt_def b_assn_def entails_def vassn_tag_def
   by (auto simp: pred_lift_extract_simps)
 
+  
+lemma b_rel_gen_merge:
+  assumes A: "MERGE1 A f B g C"  
+  shows "MERGE1 (b_assn A P) f (b_assn B Q) g (b_assn C (\<lambda>x. P x \<or> Q x))"  
+  supply [vcg_rules] = MERGE1D[OF A]
+  apply rule
+  by vcg
+  
+lemmas b_rel_merge_eq[sepref_frame_merge_rules] = b_rel_gen_merge[where P=P and Q=P for P, simplified]
+lemmas [sepref_frame_merge_rules] = b_rel_gen_merge
+lemmas b_rel_merge_left[sepref_frame_merge_rules] = b_rel_gen_merge[where Q="\<lambda>_. True", simplified]
+lemmas b_rel_merge_right[sepref_frame_merge_rules] = b_rel_gen_merge[where P="\<lambda>_. True", simplified]
+  
 (*  
 \<comment> \<open>General form\<close>
 lemma b_rel_subtyping_merge[sepref_frame_merge_rules]:
@@ -448,6 +464,41 @@ abbreviation nbn_rel :: "nat \<Rightarrow> (nat \<times> nat) set"
   where "nbn_rel n \<equiv> b_rel nat_rel (\<lambda>x::nat. x<n)"  
 
 
+lemma in_R_comp_nbn_conv: "(a,b)\<in>(R O nbn_rel N) \<longleftrightarrow> (a,b)\<in>R \<and> b<N" by auto
+lemma range_comp_nbn_conv: "Range (R O nbn_rel N) = Range R \<inter> {0..<N}"
+  by (auto 0 3 simp: b_rel_def)
+
+lemma mk_free_b_assn[sepref_frame_free_rules]:
+  assumes "MK_FREE A f"  
+  shows "MK_FREE (b_assn A P) f"  
+proof -
+  note [vcg_rules] = assms[THEN MK_FREED]
+  show ?thesis by rule vcg
+qed
+
+lemma intf_of_b_rel[synth_rules]: "INTF_OF_REL R I \<Longrightarrow> INTF_OF_REL (b_rel R P) I" by simp
+
+lemma b_assn_intf[intf_of_assn]: "intf_of_assn V I \<Longrightarrow> intf_of_assn (b_assn V P) I"
+  by simp
+
+
+text \<open>Introduce extra goal for bounded result\<close>
+lemma hfref_bassn_resI:
+  assumes "\<And>xs. \<lbrakk>rdomp (fst As) xs; C xs\<rbrakk> \<Longrightarrow> a xs \<le>\<^sub>n SPEC P"
+  assumes "(c,a)\<in>[C]\<^sub>a As \<rightarrow> R"
+  shows "(c,a)\<in>[C]\<^sub>a As \<rightarrow> b_assn R P"
+  apply rule
+  apply (rule hn_refine_preI)
+  apply (rule hn_refine_cons[rotated])
+  apply (rule hn_refine_augment_res)
+  apply (rule assms(2)[to_hnr, unfolded hn_ctxt_def autoref_tag_defs])
+  apply simp
+  apply (rule assms(1))
+  apply (auto simp: rdomp_def sep_algebra_simps)
+  done
+
+  
+  
 subsection \<open>Tool Setup\<close>
 lemmas [sepref_relprops] = 
   sepref_relpropI[of IS_LEFT_UNIQUE]
@@ -541,6 +592,11 @@ subsubsection \<open>Operator Setup\<close>
 
 text \<open>Not-Equals is an operator in LLVM, but not in HOL\<close>
 definition [simp]: "op_neq a b \<equiv> a\<noteq>b"  
+(* TODO: Maybe have this pattern rule only for certain types.
+  Otherwise, op_neq has to be implemented by every type that has custom eq-operator!
+
+  The best solution would, or course, be to have a generic algorithm!
+*)
 lemma op_neq_pat[def_pat_rules]: "Not$((=)$a$b) \<equiv> op_neq$a$b" by simp
 sepref_register op_neq_word: "op_neq :: _ word \<Rightarrow> _"
 
@@ -612,11 +668,26 @@ end
 
 context begin  
   interpretation llvm_prim_arith_setup .  
- 
+
+context fixes a::num begin  
+  sepref_register 
+    "numeral a :: _ word"  
+    "0 :: _ word"
+    "1 :: _ word"
+
+  lemma word_numeral_param[sepref_import_param]:
+    "(numeral a,PR_CONST (numeral a)) \<in> word_rel"  
+    "(0,0)\<in>word_rel"
+    "(1,1)\<in>word_rel"
+    by auto
+        
+end
+  
+   
 sepref_register 
   plus_word: "(+):: _ word \<Rightarrow> _"  
   minus_word: "(-):: _ word \<Rightarrow> _"  
-  times_word: "( *):: _ word \<Rightarrow> _"  
+  times_word: "(*):: _ word \<Rightarrow> _"  
   and_word: "(AND):: _ word \<Rightarrow> _"  
   or_word: "(OR):: _ word \<Rightarrow> _"  
   xor_word: "(XOR):: _ word \<Rightarrow> _"  
@@ -624,7 +695,7 @@ sepref_register
 lemma word_param_imports[sepref_import_param]:
   "((+),(+)) \<in> word_rel \<rightarrow> word_rel \<rightarrow> word_rel"
   "((-),(-)) \<in> word_rel \<rightarrow> word_rel \<rightarrow> word_rel"
-  "(( *),( *)) \<in> word_rel \<rightarrow> word_rel \<rightarrow> word_rel"
+  "((*),(*)) \<in> word_rel \<rightarrow> word_rel \<rightarrow> word_rel"
   "((AND),(AND)) \<in> word_rel \<rightarrow> word_rel \<rightarrow> word_rel"
   "((OR),(OR)) \<in> word_rel \<rightarrow> word_rel \<rightarrow> word_rel"
   "((XOR),(XOR)) \<in> word_rel \<rightarrow> word_rel \<rightarrow> word_rel"
@@ -669,7 +740,7 @@ lemma hn_word_icmp_op[sepref_fr_rules]:
   apply (sepref_to_hoare; vcg; fail)+
   done
   
-
+  
 lemma is_init_word[sepref_gen_algo_rules]:
   "GEN_ALGO 0 (is_init word_assn)"
   unfolding GEN_ALGO_def is_init_def
@@ -731,11 +802,11 @@ lemma hn_sint_minus_numeral[sepref_fr_rules]:
 
   
 sepref_register 
-  plus_sword: "(+)::int\<Rightarrow>_"    :: "int \<Rightarrow> int \<Rightarrow> int"
-  minus_sword: "(-)::int\<Rightarrow>_"   :: "int \<Rightarrow> int \<Rightarrow> int"
-  times_sword: "( *)::int\<Rightarrow>_"  :: "int \<Rightarrow> int \<Rightarrow> int"
-  sdiv_sword: "(sdiv)::int\<Rightarrow>_" :: "int \<Rightarrow> int \<Rightarrow> int"
-  smod_sword: "(smod)::int\<Rightarrow>_" :: "int \<Rightarrow> int \<Rightarrow> int"
+  plus_int: "(+)::int\<Rightarrow>_"    :: "int \<Rightarrow> int \<Rightarrow> int"
+  minus_int: "(-)::int\<Rightarrow>_"   :: "int \<Rightarrow> int \<Rightarrow> int"
+  times_int: "(*)::int\<Rightarrow>_"  :: "int \<Rightarrow> int \<Rightarrow> int"
+  sdiv_int: "(sdiv)::int\<Rightarrow>_" :: "int \<Rightarrow> int \<Rightarrow> int"
+  smod_int: "(smod)::int\<Rightarrow>_" :: "int \<Rightarrow> int \<Rightarrow> int"
   
 sepref_register 
   eq_int: "(=)::int\<Rightarrow>_"        :: "int \<Rightarrow> int \<Rightarrow> bool"
@@ -743,7 +814,12 @@ sepref_register
   lt_int: "(<)::int\<Rightarrow>_"        :: "int \<Rightarrow> int \<Rightarrow> bool"
   le_int: "(\<le>)::int\<Rightarrow>_"        :: "int \<Rightarrow> int \<Rightarrow> bool"
   
-  
+sepref_register    
+  and_int: "(AND):: int \<Rightarrow> _"  
+  or_int: "(OR):: int \<Rightarrow> _"  
+  xor_int: "(XOR):: int \<Rightarrow> _"  
+
+    
 thm sint_cmp_ops[THEN sint.hn_cmp_op, folded sint_rel_def, unfolded to_hfref_post]  
 thm sint_bin_ops[THEN sint.hn_bin_op, folded sint_rel_def, unfolded to_hfref_post]  
   
@@ -752,7 +828,7 @@ lemma hn_sint_ops[sepref_fr_rules]:
     \<in> [\<lambda>(a, b). a + b \<in> sints LENGTH('a)]\<^sub>a sint_assn\<^sup>k *\<^sub>a sint_assn\<^sup>k \<rightarrow> sint_assn' TYPE('a::len)"
   "(uncurry ll_sub, uncurry (RETURN \<circ>\<circ> (-)))
     \<in> [\<lambda>(a, b). a - b \<in> sints LENGTH('a)]\<^sub>a sint_assn\<^sup>k *\<^sub>a sint_assn\<^sup>k \<rightarrow> sint_assn' TYPE('a::len)"
-  "(uncurry ll_mul, uncurry (RETURN \<circ>\<circ> ( * )))
+  "(uncurry ll_mul, uncurry (RETURN \<circ>\<circ> (*)))
     \<in> [\<lambda>(a, b). a * b \<in> sints LENGTH('a)]\<^sub>a sint_assn\<^sup>k *\<^sub>a sint_assn\<^sup>k \<rightarrow> sint_assn' TYPE('a::len)"
   "(uncurry ll_sdiv, uncurry (RETURN \<circ>\<circ> (sdiv)))
     \<in> [\<lambda>(a, b). b \<noteq> 0 \<and> a sdiv b \<in> sints LENGTH('a)]\<^sub>a sint_assn\<^sup>k *\<^sub>a sint_assn\<^sup>k \<rightarrow> sint_assn' TYPE('a::len)"
@@ -784,14 +860,129 @@ lemma is_init_sint0[sepref_gen_algo_rules]:
   using is_init_sint[where 'a='a]
   by simp
   
-    
-subsubsection \<open>Natural Numbers by Word\<close>
+
+subsubsection \<open>Natural Numbers by Unsigned Word\<close>
+
+sepref_register 
+  plus_nat: "(+)::nat\<Rightarrow>_"    :: "nat \<Rightarrow> nat \<Rightarrow> nat"
+  minus_nat: "(-)::nat\<Rightarrow>_"   :: "nat \<Rightarrow> nat \<Rightarrow> nat"
+  times_nat: "(*)::nat\<Rightarrow>_"  :: "nat \<Rightarrow> nat \<Rightarrow> nat"
+  div_nat: "(div)::nat\<Rightarrow>_"   :: "nat \<Rightarrow> nat \<Rightarrow> nat"
+  mod_nat: "(mod)::nat\<Rightarrow>_"   :: "nat \<Rightarrow> nat \<Rightarrow> nat"
+  
+sepref_register 
+  eq_nat: "(=)::nat\<Rightarrow>_"        :: "nat \<Rightarrow> nat \<Rightarrow> bool"
+  op_neq_nat: "op_neq::nat\<Rightarrow>_" :: "nat \<Rightarrow> nat \<Rightarrow> bool"
+  lt_nat: "(<)::nat\<Rightarrow>_"        :: "nat \<Rightarrow> nat \<Rightarrow> bool"
+  le_nat: "(\<le>)::nat\<Rightarrow>_"        :: "nat \<Rightarrow> nat \<Rightarrow> bool"
+  
+sepref_register    
+  and_nat: "(AND):: nat \<Rightarrow> _"  
+  or_nat: "(OR):: nat \<Rightarrow> _"  
+  xor_nat: "(XOR):: nat \<Rightarrow> _"  
+  
+
+
+definition unat_rel :: "('a::len word \<times> nat) set" where "unat_rel \<equiv> unat.rel"
+abbreviation "unat_assn \<equiv> pure unat_rel"  
+
+abbreviation (input) "unat_rel' TYPE('a::len) \<equiv> unat_rel :: ('a word \<times> _) set"
+abbreviation (input) "unat_assn' TYPE('a::len) \<equiv> unat_assn :: _ \<Rightarrow> 'a word \<Rightarrow> _"
+
+
+definition [simp]: "unat_const TYPE('a::len) c \<equiv> (c::nat)"
+context fixes c::nat begin
+  sepref_register "unat_const TYPE('a::len) c" :: "nat"
+end
+
+lemma fold_unat:
+  "0 = unat_const TYPE('a::len) 0"  
+  "1 = unat_const TYPE('a::len) 1"  
+  "numeral n \<equiv> (unat_const TYPE('a::len) (numeral n))"
+  by simp_all
+
+  
+lemma hn_unat_0[sepref_fr_rules]:
+  "hn_refine \<box> (return 0) \<box> (unat_assn' TYPE('a::len)) (RETURN$PR_CONST (unat_const TYPE('a) 0))"
+  apply sepref_to_hoare
+  unfolding unat_rel_def unat.rel_def in_br_conv
+  apply vcg
+  done
+  
+lemma hn_unat_1[sepref_fr_rules]:
+  "hn_refine \<box> (return 1) \<box> (unat_assn' TYPE('a::len)) (RETURN$PR_CONST (unat_const TYPE('a) 1))"
+  apply sepref_to_hoare
+  unfolding unat_rel_def unat.rel_def in_br_conv
+  apply vcg
+  done
+  
+  
+lemma hn_unat_numeral[sepref_fr_rules]:
+  "\<lbrakk>numeral n \<in> unats LENGTH('a)\<rbrakk> \<Longrightarrow> 
+    hn_refine \<box> (return (numeral n)) \<box> (unat_assn' TYPE('a::len)) (RETURN$(PR_CONST (unat_const TYPE('a) (numeral n))))"
+  apply sepref_to_hoare unfolding unat_rel_def unat.rel_def in_br_conv 
+  apply vcg'
+  by (metis in_unats_conv int_nat_eq of_nat_numeral uint_nonnegative unat_bintrunc unat_def word_of_int_numeral word_uint.Rep_inverse' word_unat.Rep_cases)
+
+  
+lemma hn_unat_ops[sepref_fr_rules]:
+  "(uncurry ll_add, uncurry (RETURN \<circ>\<circ> (+))) \<in> [\<lambda>(a, b). a + b < max_unat LENGTH('a)]\<^sub>a unat_assn\<^sup>k *\<^sub>a unat_assn\<^sup>k \<rightarrow> unat_assn' TYPE('a::len)"
+  "(uncurry ll_sub, uncurry (RETURN \<circ>\<circ> (-))) \<in> [\<lambda>(a, b). b \<le> a]\<^sub>a unat_assn\<^sup>k *\<^sub>a unat_assn\<^sup>k \<rightarrow> unat_assn"
+  "(uncurry ll_mul, uncurry (RETURN \<circ>\<circ> (*))) \<in> [\<lambda>(a, b). a * b < max_unat LENGTH('a)]\<^sub>a unat_assn\<^sup>k *\<^sub>a unat_assn\<^sup>k \<rightarrow> unat_assn' TYPE('a::len)"
+  "(uncurry ll_udiv, uncurry (RETURN \<circ>\<circ> (div))) \<in> [\<lambda>(a, b). b \<noteq> 0]\<^sub>a unat_assn\<^sup>k *\<^sub>a unat_assn\<^sup>k \<rightarrow> unat_assn"
+  "(uncurry ll_urem, uncurry (RETURN \<circ>\<circ> (mod))) \<in> [\<lambda>(a, b). b \<noteq> 0]\<^sub>a unat_assn\<^sup>k *\<^sub>a unat_assn\<^sup>k \<rightarrow> unat_assn"
+  
+  "(uncurry ll_and, uncurry (RETURN \<circ>\<circ> (AND))) \<in> unat_assn\<^sup>k *\<^sub>a unat_assn\<^sup>k \<rightarrow>\<^sub>a unat_assn"
+  "(uncurry ll_or, uncurry (RETURN \<circ>\<circ> (OR))) \<in> unat_assn\<^sup>k *\<^sub>a unat_assn\<^sup>k \<rightarrow>\<^sub>a unat_assn"
+  "(uncurry ll_xor, uncurry (RETURN \<circ>\<circ> (XOR))) \<in> unat_assn\<^sup>k *\<^sub>a unat_assn\<^sup>k \<rightarrow>\<^sub>a unat_assn"
+  
+  "(uncurry ll_icmp_eq, uncurry (RETURN \<circ>\<circ> (=))) \<in> unat_assn\<^sup>k *\<^sub>a unat_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
+  "(uncurry ll_icmp_ne, uncurry (RETURN \<circ>\<circ> (op_neq))) \<in> unat_assn\<^sup>k *\<^sub>a unat_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
+  "(uncurry ll_icmp_ule, uncurry (RETURN \<circ>\<circ> (\<le>))) \<in> unat_assn\<^sup>k *\<^sub>a unat_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
+  "(uncurry ll_icmp_ult, uncurry (RETURN \<circ>\<circ> (<))) \<in> unat_assn\<^sup>k *\<^sub>a unat_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"  
+  unfolding op_neq_def
+  
+  using unat_bin_ops[THEN unat.hn_bin_op, folded unat_rel_def]
+    and unat_bin_ops_bitwise[THEN unat.hn_bin_op, folded unat_rel_def]
+    and unat_cmp_ops[THEN unat.hn_cmp_op, folded unat_rel_def bool1_rel_def]
+  by (simp_all add: prod_casesK)
+  
+definition [simp]: "unat_init TYPE('a::len) \<equiv> 0::nat"
+
+lemma is_init_unat[sepref_gen_algo_rules]:
+  "GEN_ALGO (unat_init TYPE('a::len)) (is_init (unat_assn' TYPE('a)))"
+  unfolding GEN_ALGO_def unat_init_def is_init_def
+  unfolding unat_rel_def unat.rel_def
+  by (simp add: in_br_conv)
+  
+lemma is_init_unat0[sepref_gen_algo_rules]: 
+  "GEN_ALGO (unat_const TYPE('a::len2) 0) (is_init (unat_assn' TYPE('a)))"
+  using is_init_unat[where 'a='a]
+  by simp
+  
+      
+subsubsection \<open>Natural Numbers by Signed Word\<close>
 
 definition snat_rel :: "('a::len2 word \<times> nat) set" where "snat_rel \<equiv> snat.rel"
 abbreviation "snat_assn \<equiv> pure snat_rel"  
 
 abbreviation (input) "snat_rel' TYPE('a::len2) \<equiv> snat_rel :: ('a word \<times> _) set"
 abbreviation (input) "snat_assn' TYPE('a::len2) \<equiv> snat_assn :: _ \<Rightarrow> 'a word \<Rightarrow> _"
+
+(* TODO: Too many snat_rel_ < max_snat lemma variants! *)
+lemma snat_rel_range: "Range (snat_rel' TYPE('l)) = {0..<max_snat LENGTH('l::len2)}"
+  (* TODO: Clean up proof! *)
+  apply (auto simp: Range_iff snat_rel_def snat.rel_def in_br_conv)
+  subgoal for x
+    apply (rule exI[where x="word_of_int (int x)"])
+    apply (auto simp: max_snat_def snat_invar_def)
+    subgoal
+      by (metis One_nat_def snat_eq_unat(1) snat_in_bounds_aux unat_of_nat_eq word_of_nat) 
+    subgoal
+      by (metis One_nat_def Word_Lemmas.of_nat_power diff_less len_gt_0 max_unat_def n_less_equal_power_2 not_msb_from_less power_0 word_of_nat)
+    done
+  done
+
 
 definition [simp]: "snat_const TYPE('a::len2) c \<equiv> (c::nat)"
 context fixes c::nat begin
@@ -842,23 +1033,10 @@ lemma hn_snat_numeral[sepref_fr_rules]:
   apply vcg'
   done
   
-sepref_register 
-  plus_uword: "(+)::nat\<Rightarrow>_"    :: "nat \<Rightarrow> nat \<Rightarrow> nat"
-  minus_uword: "(-)::nat\<Rightarrow>_"   :: "nat \<Rightarrow> nat \<Rightarrow> nat"
-  times_uword: "( *)::nat\<Rightarrow>_"  :: "nat \<Rightarrow> nat \<Rightarrow> nat"
-  div_uword: "(div)::nat\<Rightarrow>_"   :: "nat \<Rightarrow> nat \<Rightarrow> nat"
-  mod_uword: "(mod)::nat\<Rightarrow>_"   :: "nat \<Rightarrow> nat \<Rightarrow> nat"
-  
-sepref_register 
-  eq_nat: "(=)::nat\<Rightarrow>_"        :: "nat \<Rightarrow> nat \<Rightarrow> bool"
-  op_neq_nat: "op_neq::nat\<Rightarrow>_" :: "nat \<Rightarrow> nat \<Rightarrow> bool"
-  lt_nat: "(<)::nat\<Rightarrow>_"        :: "nat \<Rightarrow> nat \<Rightarrow> bool"
-  le_nat: "(\<le>)::nat\<Rightarrow>_"        :: "nat \<Rightarrow> nat \<Rightarrow> bool"
-  
 lemma hn_snat_ops[sepref_fr_rules]:
   "(uncurry ll_add, uncurry (RETURN \<circ>\<circ> (+))) \<in> [\<lambda>(a, b). a + b < max_snat LENGTH('a)]\<^sub>a snat_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow> snat_assn' TYPE('a::len2)"
   "(uncurry ll_sub, uncurry (RETURN \<circ>\<circ> (-))) \<in> [\<lambda>(a, b). b \<le> a]\<^sub>a snat_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow> snat_assn"
-  "(uncurry ll_mul, uncurry (RETURN \<circ>\<circ> ( * ))) \<in> [\<lambda>(a, b). a * b < max_snat LENGTH('a)]\<^sub>a snat_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow> snat_assn' TYPE('a::len2)"
+  "(uncurry ll_mul, uncurry (RETURN \<circ>\<circ> (*))) \<in> [\<lambda>(a, b). a * b < max_snat LENGTH('a)]\<^sub>a snat_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow> snat_assn' TYPE('a::len2)"
   "(uncurry ll_udiv, uncurry (RETURN \<circ>\<circ> (div))) \<in> [\<lambda>(a, b). b \<noteq> 0]\<^sub>a snat_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow> snat_assn"
   "(uncurry ll_urem, uncurry (RETURN \<circ>\<circ> (mod))) \<in> [\<lambda>(a, b). b \<noteq> 0]\<^sub>a snat_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow> snat_assn"
   
@@ -890,8 +1068,15 @@ subsubsection \<open>Ad-Hoc Method to Annotate Number Constructors\<close>
 lemma annot_num_const_cong: 
   "\<And>a b. snat_const a b = snat_const a b" 
   "\<And>a b. sint_const a b = sint_const a b" 
+  "\<And>a b. unat_const a b = unat_const a b" 
   "ASSERT \<Phi> = ASSERT \<Phi>"
   "WHILEIT I = WHILEIT I"
+  by simp_all
+  
+lemma unat_const_fold: 
+  "0 = unat_const TYPE('a::len) 0"
+  "1 = unat_const TYPE('a::len) 1"
+  "numeral n = unat_const TYPE('a::len) (numeral n)"
   by simp_all
   
 lemma snat_const_fold: 
@@ -908,13 +1093,247 @@ lemma sint_const_fold:
   by simp_all
   
     
+lemma hfref_absfun_convI: "CNV g g' \<Longrightarrow> (f,g') \<in> hfref P A R \<Longrightarrow> (f,g) \<in> hfref P A R" by simp
+
 method annot_sint_const for T::"'a::len itself" = 
-  (simp only: sint_const_fold[where 'a='a] cong: annot_num_const_cong)
+  (rule hfref_absfun_convI),
+  (simp only: sint_const_fold[where 'a='a] cong: annot_num_const_cong),
+  (rule CNV_I)
   
 method annot_snat_const for T::"'a::len2 itself" = 
-  (simp only: snat_const_fold[where 'a='a] cong: annot_num_const_cong)
+  (rule hfref_absfun_convI),
+  (simp only: snat_const_fold[where 'a='a] cong: annot_num_const_cong),
+  (rule CNV_I)
+  
+method annot_unat_const for T::"'a::len itself" = 
+  (rule hfref_absfun_convI),
+  (simp only: unat_const_fold[where 'a='a] cong: annot_num_const_cong),
+  (rule CNV_I)
   
   
+subsubsection \<open>Casting\<close>  
+(* TODO: Add other casts *)
+  
+context fixes T :: "'a::len2 itself" begin
+  definition [simp]: "unat_snat_upcast_aux \<equiv> let _=TYPE('a) in id::nat\<Rightarrow>nat"
+
+  sepref_decl_op unat_snat_upcast: "unat_snat_upcast_aux" :: "nat_rel \<rightarrow> nat_rel" .
+end  
+
+context fixes T :: "'a::len itself" begin
+  definition [simp]: "snat_unat_downcast_aux \<equiv> let _=TYPE('a) in id::nat\<Rightarrow>nat"
+
+  sepref_decl_op snat_unat_downcast: "snat_unat_downcast_aux" :: "nat_rel \<rightarrow> nat_rel" .
+end  
+
+context fixes T :: "'a::len2 itself" begin
+  definition [simp]: "snat_snat_upcast_aux \<equiv> let _=TYPE('a) in id::nat\<Rightarrow>nat"
+
+  sepref_decl_op snat_snat_upcast: "snat_snat_upcast_aux" :: "nat_rel \<rightarrow> nat_rel" .
+
+  definition [simp]: "snat_snat_downcast_aux \<equiv> let _=TYPE('a) in id::nat\<Rightarrow>nat"
+
+  sepref_decl_op snat_snat_downcast: "snat_snat_downcast_aux" :: "nat_rel \<rightarrow> nat_rel" .
+  
+end
+
+context fixes T :: "'a::len itself" begin
+  definition [simp]: "unat_unat_upcast_aux \<equiv> let _=TYPE('a) in id::nat\<Rightarrow>nat"
+  definition [simp]: "unat_unat_downcast_aux \<equiv> let _=TYPE('a) in id::nat\<Rightarrow>nat"
+
+  sepref_decl_op unat_unat_upcast: "unat_unat_upcast_aux" :: "nat_rel \<rightarrow> nat_rel" .
+  sepref_decl_op unat_unat_downcast: "unat_unat_downcast_aux" :: "nat_rel \<rightarrow> nat_rel" .
+end
+
+sepref_decl_op unat_snat_conv: "id::nat\<Rightarrow>_" :: "nat_rel \<rightarrow> nat_rel" .
+sepref_decl_op snat_unat_conv: "id::nat\<Rightarrow>_" :: "nat_rel \<rightarrow> nat_rel" .
+
+
+lemma annot_unat_snat_upcast: "x = op_unat_snat_upcast TYPE('l::len2) x" by simp 
+lemma annot_snat_unat_downcast: "x = op_snat_unat_downcast TYPE('l::len) x" by simp 
+lemma annot_snat_snat_upcast: "x = op_snat_snat_upcast TYPE('l::len2) x" by simp 
+lemma annot_snat_snat_downcast: "x = op_snat_snat_downcast TYPE('l::len2) x" by simp 
+lemma annot_unat_snat_conv: "x = op_unat_snat_conv x" by simp 
+lemma annot_unat_unat_upcast: "x = op_unat_unat_upcast TYPE('l::len) x" by simp 
+lemma annot_unat_unat_downcast: "x = op_unat_unat_downcast TYPE('l::len) x" by simp 
+lemma annot_snat_unat_conv: "x = op_snat_unat_conv x" by simp  
+
+lemma in_unat_rel_conv_assn: "\<up>((xi, x) \<in> unat_rel) = \<upharpoonleft>unat.assn x xi"
+  by (auto simp: unat_rel_def unat.assn_is_rel pure_app_eq)
+
+lemma in_snat_rel_conv_assn: "\<up>((xi, x) \<in> snat_rel) = \<upharpoonleft>snat.assn x xi"
+  by (auto simp: snat_rel_def snat.assn_is_rel pure_app_eq)
+
+context fixes BIG :: "'big::len2" and SMALL :: "'small::len" begin  
+  lemma unat_snat_upcast_refine: 
+    "(unat_snat_upcast TYPE('big::len2), PR_CONST (mop_unat_snat_upcast TYPE('big::len2))) \<in> [\<lambda>_. is_up' UCAST('small \<rightarrow> 'big)]\<^sub>a (unat_assn' TYPE('small::len))\<^sup>k \<rightarrow> snat_assn"
+    supply [simp] = in_unat_rel_conv_assn in_snat_rel_conv_assn
+    apply sepref_to_hoare
+    apply simp
+    by vcg'
+  
+  sepref_decl_impl (ismop) unat_snat_upcast_refine fixes 'big 'small by simp
+  
+  
+  lemma snat_unat_downcast_refine: 
+    "(snat_unat_downcast TYPE('small), PR_CONST (mop_snat_unat_downcast TYPE('small))) 
+      \<in> [\<lambda>x. is_down' UCAST('big \<rightarrow> 'small) \<and> x<max_unat LENGTH('small)]\<^sub>a (snat_assn' TYPE('big))\<^sup>k \<rightarrow> unat_assn"
+    supply [simp] = in_unat_rel_conv_assn in_snat_rel_conv_assn
+    apply sepref_to_hoare
+    apply simp
+    by vcg'
+  
+  sepref_decl_impl (ismop) snat_unat_downcast_refine fixes 'big 'small by simp
+end
+
+context fixes BIG :: "'big::len2" and SMALL :: "'small::len2" begin  
+  lemma snat_snat_upcast_refine: 
+    "(snat_snat_upcast TYPE('big::len2), PR_CONST (mop_snat_snat_upcast TYPE('big::len2))) \<in> [\<lambda>_. is_up' UCAST('small \<rightarrow> 'big)]\<^sub>a (snat_assn' TYPE('small::len2))\<^sup>k \<rightarrow> snat_assn"
+    supply [simp] = in_unat_rel_conv_assn in_snat_rel_conv_assn
+    apply sepref_to_hoare
+    apply simp
+    by vcg'
+  
+  sepref_decl_impl (ismop) snat_snat_upcast_refine fixes 'big 'small by simp
+  
+  lemma snat_snat_downcast_refine: 
+    "(snat_snat_downcast TYPE('small), PR_CONST (mop_snat_snat_downcast TYPE('small))) 
+      \<in> [\<lambda>x. is_down' UCAST('big \<rightarrow> 'small) \<and> x<max_snat LENGTH('small)]\<^sub>a (snat_assn' TYPE('big))\<^sup>k \<rightarrow> snat_assn"
+    supply [simp] = in_unat_rel_conv_assn in_snat_rel_conv_assn
+    apply sepref_to_hoare
+    apply simp
+    by vcg'
+  
+  sepref_decl_impl (ismop) snat_snat_downcast_refine fixes 'big 'small by simp
+  
+end
+
+context fixes BIG :: "'big::len" and SMALL :: "'small::len" begin  
+  lemma unat_unat_upcast_refine: 
+    "(unat_unat_upcast TYPE('big), PR_CONST (mop_unat_unat_upcast TYPE('big))) \<in> [\<lambda>_. is_up' UCAST('small \<rightarrow> 'big)]\<^sub>a (unat_assn' TYPE('small::len))\<^sup>k \<rightarrow> unat_assn"
+    supply [simp] = in_unat_rel_conv_assn
+    apply sepref_to_hoare
+    apply simp
+    by vcg'
+  
+  sepref_decl_impl (ismop) unat_unat_upcast_refine fixes 'big 'small by simp
+  
+  lemma unat_unat_downcast_refine: 
+    "(unat_unat_downcast TYPE('small), PR_CONST (mop_unat_unat_downcast TYPE('small))) 
+      \<in> [\<lambda>x. is_down' UCAST('big \<rightarrow> 'small) \<and> x<max_unat LENGTH('small)]\<^sub>a (unat_assn' TYPE('big::len))\<^sup>k \<rightarrow> unat_assn"
+    supply [simp] = in_unat_rel_conv_assn
+    apply sepref_to_hoare
+    apply simp
+    by vcg'
+  
+  sepref_decl_impl (ismop) unat_unat_downcast_refine fixes 'big 'small by simp
+end
+
+  
+context fixes T::"'l::len2" begin
+  lemma unat_snat_conv_refine: "(\<lambda>x. x, op_unat_snat_conv) 
+    \<in> [\<lambda>x. x<max_snat LENGTH('l::len2)]\<^sub>f unat_rel' TYPE('l) \<rightarrow> snat_rel' TYPE('l)"
+    by (force 
+      intro!: frefI 
+      simp: snat_rel_def unat_rel_def snat.rel_def unat.rel_def
+      simp: in_br_conv max_snat_def snat_invar_alt
+      simp: snat_eq_unat(1)
+      )
+      
+  sepref_decl_impl unat_snat_conv_refine[sepref_param] fixes 'l by auto
+  
+  lemma snat_unat_conv_refine: "(\<lambda>x. x, op_snat_unat_conv)
+    \<in> snat_rel' TYPE('l) \<rightarrow> unat_rel' TYPE('l)"
+    by (force
+      intro!: frefI
+      simp: snat_rel_def unat_rel_def snat.rel_def unat.rel_def
+      simp: in_br_conv max_snat_def snat_invar_alt
+      simp: snat_eq_unat(1)
+      )
+
+  sepref_decl_impl snat_unat_conv_refine[sepref_param] fixes 'l .
+end
+
+
+text \<open>Converting to Word\<close>
+sepref_register "of_nat :: _ \<Rightarrow> _ word "
+lemma of_nat_word_refine[sepref_import_param]: 
+  "(id,of_nat) \<in> unat_rel' TYPE('a::len) \<rightarrow> word_rel"
+  by (auto simp: unat_rel_def unat.rel_def in_br_conv)
+
+
+
+subsubsection \<open>Bit-Shifting\<close>
+
+sepref_register 
+  shl_word: "(<<):: _ word \<Rightarrow> _"  
+  lshr_word: "(>>):: _ word \<Rightarrow> _"  
+  ashr_word: "(>>>):: _ word \<Rightarrow> _"  
+
+context begin
+
+interpretation llvm_prim_arith_setup .
+  
+lemma shl_hnr_unat[sepref_fr_rules]: "(uncurry ll_shl,uncurry (RETURN oo (<<))) \<in> [\<lambda>(a,b). b < LENGTH('a)]\<^sub>a (word_assn :: 'a::len word \<Rightarrow> _)\<^sup>k *\<^sub>a unat_assn\<^sup>k \<rightarrow> word_assn"
+  unfolding unat_rel_def unat.assn_is_rel[symmetric] unat.assn_def
+  apply sepref_to_hoare
+  by vcg'
+
+lemma lshr_hnr_unat[sepref_fr_rules]: "(uncurry ll_lshr,uncurry (RETURN oo (>>))) \<in> [\<lambda>(a,b). b < LENGTH('a)]\<^sub>a (word_assn :: 'a::len word \<Rightarrow> _)\<^sup>k *\<^sub>a unat_assn\<^sup>k \<rightarrow> word_assn"
+  unfolding unat_rel_def unat.assn_is_rel[symmetric] unat.assn_def
+  apply sepref_to_hoare
+  by vcg'
+
+lemma ashr_hnr_unat[sepref_fr_rules]: "(uncurry ll_ashr,uncurry (RETURN oo (>>>))) \<in> [\<lambda>(a,b). b < LENGTH('a)]\<^sub>a (word_assn :: 'a::len word \<Rightarrow> _)\<^sup>k *\<^sub>a unat_assn\<^sup>k \<rightarrow> word_assn"
+  unfolding unat_rel_def unat.assn_is_rel[symmetric] unat.assn_def
+  apply sepref_to_hoare
+  by vcg'
+
+lemma shl_hnr_snat[sepref_fr_rules]: "(uncurry ll_shl,uncurry (RETURN oo (<<))) \<in> [\<lambda>(a,b). b < LENGTH('a)]\<^sub>a (word_assn :: 'a::len2 word \<Rightarrow> _)\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow> word_assn"
+  unfolding snat_rel_def snat.assn_is_rel[symmetric] snat.assn_def
+  supply [simp] = snat_eq_unat
+  apply sepref_to_hoare
+  by vcg'
+  
+lemma lshr_hnr_snat[sepref_fr_rules]: "(uncurry ll_lshr,uncurry (RETURN oo (>>))) \<in> [\<lambda>(a,b). b < LENGTH('a)]\<^sub>a (word_assn :: 'a::len2 word \<Rightarrow> _)\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow> word_assn"
+  unfolding snat_rel_def snat.assn_is_rel[symmetric] snat.assn_def
+  supply [simp] = snat_eq_unat
+  apply sepref_to_hoare
+  by vcg'
+
+lemma ashr_hnr_snat[sepref_fr_rules]: "(uncurry ll_ashr,uncurry (RETURN oo (>>>))) \<in> [\<lambda>(a,b). b < LENGTH('a)]\<^sub>a (word_assn :: 'a::len2 word \<Rightarrow> _)\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow> word_assn"
+  unfolding snat_rel_def snat.assn_is_rel[symmetric] snat.assn_def
+  supply [simp] = snat_eq_unat
+  apply sepref_to_hoare
+  by vcg'
+  
+      
+end
+
+subsubsection \<open>Bounds Solver Setup\<close>
+
+
+lemma in_unat_rel_boundsD[sepref_bounds_dest]: "(w, n) \<in> unat_rel' TYPE('l) \<Longrightarrow> n < max_unat LENGTH('l::len)"
+  by (simp add: unat_rel_def unat.rel_def in_br_conv)
+
+(*lemma snat_rel_imp_less_max_snat: 
+  "\<lbrakk>(x,n)\<in>snat_rel' TYPE('l::len2); L = LENGTH('l)\<rbrakk> \<Longrightarrow> n<max_snat L"
+  by (auto simp: snat_rel_def snat.rel_def in_br_conv)
+*)
+  
+lemma in_snat_rel_boundsD[sepref_bounds_dest]: 
+  "(w, n) \<in> snat_rel' TYPE('l) \<Longrightarrow> n < max_snat LENGTH('l::len2)"
+  by (auto simp: snat_rel_def snat.rel_def in_br_conv)
+  
+lemma in_sint_rel_boundsD[sepref_bounds_dest]: 
+  "(w,i)\<in>sint_rel' TYPE('l::len) \<Longrightarrow> min_sint LENGTH('l) \<le> i \<and> i < max_sint LENGTH('l)"
+  by (auto simp: sint_rel_def sint.rel_def in_br_conv)
+  
+lemmas [sepref_bounds_simps] = max_snat_def max_unat_def max_sint_def min_sint_def
+  
+subsection \<open>Default Inlinings\<close>
+lemmas [llvm_inline] = id_def
+
 subsection \<open>HOL Combinators\<close>
 
 subsubsection \<open>If\<close>
@@ -1325,7 +1744,124 @@ begin
     
 end    
 
-interpretation snat: dflt_option "-1" snat_assn "ll_icmp_eq (-1)"
+lemmas [named_ss llvm_inline cong] = refl[of "dflt_option.free_option _"]
+
+
+locale dflt_pure_option = dflt_option +
+  assumes A_pure[safe_constraint_rules]: "is_pure A"
+begin
+  find_theorems MK_FREE is_pure
+
+  lemma A_free[sepref_frame_free_rules]: "MK_FREE A (\<lambda>_. return ())"
+    by (rule mk_free_is_pure[OF A_pure])
+
+end  
+
+(* TODO: Redundancies with dflt_option *)
+(* TODO: Setup id-op phase to identify those operations *)
+text \<open>Option type via unused implementation value, own set of operations.\<close>  
+locale dflt_option_private =   
+  fixes dflt and A :: "'a \<Rightarrow> 'c::llvm_rep \<Rightarrow> assn" and is_dflt
+  assumes UU: "A a dflt = sep_false"
+  assumes CMP: "llvm_htriple \<box> (is_dflt k) (\<lambda>r. \<upharpoonleft>bool.assn (k=dflt) r)"
+begin
+  
+  definition "option_assn a c \<equiv> if c=dflt then \<up>(a=None) else EXS aa. \<up>(a=Some aa) ** A aa c"
+
+  definition None where [simp]: "None \<equiv> Option.None"
+  definition Some where [simp]: "Some \<equiv> Option.Some"
+  definition the where [simp]: "the \<equiv> Option.the"
+  definition is_None where [simp]: "is_None \<equiv> Autoref_Bindings_HOL.is_None"
+  
+  lemmas fold_None = None_def[symmetric]
+  lemmas fold_Some = Some_def[symmetric]
+  lemmas fold_the = the_def[symmetric]
+  lemmas fold_is_None = is_None_def[symmetric]
+  
+  lemma fold_is_None2: 
+    "a = None \<longleftrightarrow> is_None a"
+    "None = a \<longleftrightarrow> is_None a"
+    by (auto simp: is_None_def None_def split: option.split)
+  
+  lemmas fold_option = fold_None fold_Some fold_the fold_is_None fold_is_None2
+  
+  sepref_register None Some the is_None
+  
+    
+  lemma hn_None[sepref_fr_rules]: "(uncurry0 (return dflt), uncurry0 (RETURN None)) \<in> unit_assn\<^sup>k \<rightarrow>\<^sub>a option_assn"  
+    apply sepref_to_hoare unfolding option_assn_def None_def
+    apply vcg'
+    done
+  
+  lemma hn_Some[sepref_fr_rules]: "(return, RETURN o Some) \<in> A\<^sup>d \<rightarrow>\<^sub>a option_assn"  
+    apply sepref_to_hoare
+    subgoal for a c
+      apply (cases "c=dflt")
+      using UU apply simp
+      unfolding option_assn_def Some_def
+      apply vcg
+      done
+    done
+  
+  lemma hn_the[sepref_fr_rules]: "(return, RETURN o the) \<in> [\<lambda>x. x \<noteq> Option.None]\<^sub>a option_assn\<^sup>d \<rightarrow> A"
+    apply sepref_to_hoare
+    unfolding option_assn_def the_def
+    apply clarsimp
+    apply vcg'
+    done
+    
+  lemma hn_is_None[sepref_fr_rules]: "(is_dflt, RETURN o is_None) \<in> option_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
+    unfolding bool1_rel_def bool.assn_is_rel[symmetric]
+    apply sepref_to_hoare
+    unfolding option_assn_def is_None_def
+    apply clarsimp
+    supply CMP[vcg_rules]
+    apply vcg'
+    done
+    
+  definition [llvm_inline]: "free_option fr c \<equiv> doM { d\<leftarrow>is_dflt c; llc_if d (return ()) (fr c) }"
+    
+  lemma mk_free_option[sepref_frame_free_rules]:
+    assumes [THEN MK_FREED, vcg_rules]: "MK_FREE A fr"  
+    shows "MK_FREE option_assn (free_option fr)"
+    apply rule
+    unfolding free_option_def option_assn_def
+    apply clarsimp
+    supply CMP[vcg_rules]
+    apply vcg
+    done
+    
+  lemma option_assn_pure[safe_constraint_rules]:
+    assumes "is_pure A" 
+    shows "is_pure option_assn"  
+  proof -
+    from assms obtain P where [simp]: "A = (\<lambda>a c. \<up>(P a c))"
+      unfolding is_pure_def by blast
+  
+    show ?thesis  
+      apply (rule is_pureI[where P'="\<lambda>a c. if c=dflt then a=Option.None else \<exists>aa. a=Option.Some aa \<and> P aa c"])
+      unfolding option_assn_def
+      by (auto simp: sep_algebra_simps pred_lift_extract_simps)
+      
+  qed    
+    
+    
+end    
+
+lemmas [named_ss llvm_inline cong] = refl[of "dflt_option_private.free_option _"]
+
+
+locale dflt_pure_option_private = dflt_option_private +
+  assumes A_pure[safe_constraint_rules]: "is_pure A"
+begin
+  lemma A_free[sepref_frame_free_rules]: "MK_FREE A (\<lambda>_. return ())"
+    by (rule mk_free_is_pure[OF A_pure])
+
+end  
+
+
+
+interpretation snat: dflt_pure_option "-1" snat_assn "ll_icmp_eq (-1)"
   apply unfold_locales
   subgoal
     apply (auto simp: snat_rel_def pure_def pred_lift_extract_simps del: ext intro!: ext)
@@ -1339,6 +1875,7 @@ interpretation snat: dflt_option "-1" snat_assn "ll_icmp_eq (-1)"
       apply vcg'
       done
     qed
+  subgoal by simp  
   done
 
 abbreviation snat_option_assn' :: "'a itself \<Rightarrow> nat option \<Rightarrow> 'a::len2 word \<Rightarrow> llvm_amemory \<Rightarrow> bool" where
@@ -1376,29 +1913,25 @@ subsection \<open>Ad-Hoc Regression Tests\<close>
   
 sepref_definition example1 is "\<lambda>x. ASSERT (x\<in>{-10..10}) \<then> 
     RETURN (x<5 \<and> x\<noteq>2 \<longrightarrow> x-2 \<noteq> 0)" :: "(sint_assn' TYPE(7))\<^sup>k \<rightarrow>\<^sub>a (bool1_assn)" 
-  supply [simp] = min_sint_def max_sint_def
   apply (annot_sint_const "TYPE(7)")
-  apply sepref_dbg_keep
+  apply sepref
   done
 
 sepref_definition example2 is "\<lambda>x. ASSERT (x\<in>{-10..10}) \<then> RETURN (x+(-1) * (7 smod 15) - 3 sdiv 2)" :: "(sint_assn' TYPE(7))\<^sup>k \<rightarrow>\<^sub>a (sint_assn' TYPE(7))" 
-  supply [simp] = min_sint_def max_sint_def
   apply (annot_sint_const "TYPE(7)")
-  apply sepref_dbg_keep
+  apply sepref
   done
 
 sepref_definition example1n is "\<lambda>x. ASSERT (x\<in>{2..10}) \<then> 
     RETURN (x<5 \<and> x\<noteq>2 \<longrightarrow> x-2 \<noteq> 0)" :: "(snat_assn' TYPE(7))\<^sup>k \<rightarrow>\<^sub>a (bool1_assn)" 
-  supply [simp] = max_snat_def
   apply (annot_snat_const "TYPE(7)")
-  apply sepref_dbg_keep
+  apply sepref
   done
 
 sepref_definition example2n is "\<lambda>x. ASSERT (x\<in>{5..10}) \<then> RETURN ((x-1) * (7 mod 15) - 3 div 2)" 
   :: "(snat_assn' TYPE(7))\<^sup>k \<rightarrow>\<^sub>a (snat_assn' TYPE(7))" 
-  supply [simp] = max_snat_def
   apply (annot_snat_const "TYPE(7)")
-  apply sepref_dbg_keep
+  apply sepref
   done
   
       

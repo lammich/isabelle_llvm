@@ -111,7 +111,21 @@ begin
     apply vcg
     done
 
-    
+  
+  definition [llvm_code]: "array_grow newsz oldsz src \<equiv> doM {
+    dst \<leftarrow> narray_new TYPE(_) newsz;
+    arraycpy dst src oldsz;
+    narray_free src;
+    return dst
+  }"  
+  
+  lemma narray_grow_rule_snat[vcg_rules]: "llvm_htriple 
+    (\<upharpoonleft>narray_assn src srci ** \<upharpoonleft>snat.assn newsz newszi ** \<upharpoonleft>snat.assn oldsz oldszi ** \<up>(oldsz \<le> length src \<and> oldsz \<le> newsz))
+    (array_grow newszi oldszi srci)
+    (\<lambda>dsti. \<upharpoonleft>narray_assn (take oldsz src@replicate (newsz - oldsz) init) dsti)"
+    unfolding array_grow_def
+    by vcg
+      
       
   definition [llvm_code]: "example1 (n::64 word) \<equiv> doM {
     a \<leftarrow> narray_new TYPE(8 word) n;

@@ -29,6 +29,9 @@ done
 if $REBUILD; then
   cd paper
   ./make.sh
+  cd talk
+  make
+  cd ..
   cd ..
   
   cd thys
@@ -45,13 +48,14 @@ mkdir -p html
 ISABELLE_BROWSER_INFO=$(isabelle getenv ISABELLE_BROWSER_INFO | sed -re 's/.*=//')
 
 cp -a $ISABELLE_BROWSER_INFO/Unsorted/Isabelle_LLVM html/
-cp README.md html/
+cp index.md html/
 cp dist.tgz html/
 cp LICENSE html/
-cp paper/main.pdf html/
+cp paper/main.pdf html/paper.pdf
+cp paper/talk/pres.pdf html/slides.pdf
 
 
-pandoc -V pagetitle="Isabelle LLVM" -s README.md > html/index.html
+pandoc -V pagetitle="Isabelle LLVM" -s index.md > html/index.html
 
 
 if $UPLOAD; then
