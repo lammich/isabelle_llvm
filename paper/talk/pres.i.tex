@@ -197,6 +197,17 @@
 \setbeamertemplate{frametitle}{\vspace{.7em}\insertframetitle\hfill \small\raisebox{10pt}{\insertsectitle}}
 
 
+# Motivation: Fast and Verified Algorithms
+  *<+-> Stepwise refinement
+    * modular and manageable proofs
+    * Isabelle Refinement Framework
+  *<+-> Isabelle Code Generator + Imperative HOL
+    * generates Haskell, OCaML, SML, Scala
+    * doesn't reach efficiency of C/C++
+  *<+-> This paper:
+    * code generation to LLVM
+    * verification infrastructure
+    * link to Refinement Framework
 
 
 % #[t] Motivation: Fast and Verified Algorithms
@@ -329,8 +340,8 @@
           }
         ) s_0
     \end{lstlisting}
-    \pause
-    * partial-function: convenient definition via recursive equations
+%     \pause
+%     * partial-function: convenient definition via recursive equations
 
 
 
@@ -383,14 +394,16 @@
       fib:: 64 word !\mknd{ndparams}!=> 64 word ll!\mknd{ndrettype}!M
       fib n = do {
         t <- ll_icmp_ule n 1;
-        llc_if!\mknd{stmtif}! t (return n) (do {
-          n_1 <- ll_sub!\mknd{stmtsub}! n 1;
-          a   <- fib!\mknd{stmtrec}! n_1;
-          n_2 <- ll_sub n!\mknd{ndargs}! 2;
-          b   <-!\mknd{ndbind}! fib n_2;
-          c   <- ll_add a b;
-          return!\mknd{ndreturn}! c
-        }) }
+        llc_if!\mknd{stmtif}! t
+          (return n)
+          (do {
+            n_1 <- ll_sub!\mknd{stmtsub}! n 1;
+            a   <- fib!\mknd{stmtrec}! n_1;
+            n_2 <- ll_sub n!\mknd{ndargs}! 2;
+            b   <-!\mknd{ndbind}! fib n_2;
+            c   <- ll_add a b;
+            return!\mknd{ndreturn}! c
+          }) }
     \end{lstlisting}
 %     \begin{tikzpicture}[remember picture,overlay,ND/.style={rectangle callout, anchor=west,draw , fill=red!50, callout absolute pointer={#1}}]
 %       \node[ND=(ndrettype.east),anchor=south] at ($(ndrettype.north) + (0,.5cm)$) {\footnotesize state/error monad};
@@ -446,6 +459,7 @@
 
 
 #! Code Generation
+  \uncover<2->{compiling control flow + pretty printing}
 
   {\small\centering
   \begin{minipage}[t]{.35\textwidth}
@@ -453,17 +467,17 @@
       fib:: 64 word => 64 word llM
       fib n = do {
         t <- ll_icmp_ule n 1;
-        llc_if t (return n) (do {
+        llc_if t
 
-
-
-          n_1 <- ll_sub n 1;
-          a   <- fib n_1;
-          n_2 <- ll_sub n 2;
-          b   <- fib n_2;
-          c   <- ll_add a b;
-          return c
-        }) }
+          (return n)
+          (do {
+            n_1 <- ll_sub n 1;
+            a   <- fib n_1;
+            n_2 <- ll_sub n 2;
+            b   <- fib n_2;
+            c   <- ll_add a b;
+            return c
+          }) }
     \end{lstlisting}
   \end{minipage}
   % \hspace*{.04\textwidth}
@@ -491,7 +505,7 @@
   }
 
 #! Memory Model
-  * Inspired by CompCert v1. Structured values.
+  * Inspired by CompCert v1. But with structured values.
 
     \begin{lstlisting}
       memory = block list      block = val list option
@@ -561,8 +575,9 @@
         return (a,b) |-> do { t<-ll_insert_1 init a; ll_insert_2 t b }
       \end{lstlisting}
       \pause
-    * fixed-points: For \is"f" with \is"f = F f", \is"mono F"
-      * Definition containing \is"f": define new recursive function
+    * Define recursive functions for fixed points
+%     * fixed-points: For \is"f" with \is"f = F f", \is"mono F"
+%       * Definition containing \is"f": define new recursive function
 
 #! Example: Preprocessing Euclid's Algorithm
   \small
@@ -590,17 +605,18 @@
   \end{lstlisting}
 
 #! Reasoning about LLVM Programs
-  * Separation logic
-    \begin{lstlisting}
-      \<alpha> :: memory -> amemory :: sep_algebra
-      wp c Q s = \<exists>r s'. run c s = SUCC r s' \and Q r (\<alpha> s')
-      |= {P} c {Q} = \<forall>F s. (P*F) (\<alpha> s) --> wp c (\<lambda>r s'. (Q r * F) s') s
-    \end{lstlisting}
+  * Separation Logic
+    * Hoare-triples
+      \begin{lstlisting}
+        \<alpha> :: memory -> amemory :: sep_algebra
+        wp c Q s = \<exists>r s'. run c s = SUCC r s' \and Q r (\<alpha> s')
+        |= {P} c {Q} = \<forall>F s. (P*F) (\<alpha> s) --> wp c (\<lambda>r s'. (Q r * F) s') s
+      \end{lstlisting}
 
     \pause
     * memory primitives\\
       \is"p|->x" -- \is"p" points to value \is"x"\\
-      \is"m_tag n p" -- ownership of block (not its contents)\\
+      \is"m_tag n p" -- ownership of block (not its contents)\\[1em]
       \is"range {i_1,...,i_n} f p = (p+i_1)|->(f i_1) * ... * (p+i_n)|->(f i_n)"
 
     \pause
@@ -612,8 +628,10 @@
       \end{lstlisting}
 
   \pause
-  * Automation (VCG)
-    * Hoare-rules + heuristics to discharge VCs
+  * Automation: VCG, frame inference, heuristics to discharge VCs
+
+  \pause
+  * Basic Data Structures: signed/unsigned integers, Booleans, arrays
 
 #! Example: Proving Euclid's Algorithm
   \small
@@ -641,47 +659,125 @@
     by ( simp_all add: gcd_diff1 gcd_diff1' )
   \end{lstlisting}
 
-# Basic Data Structure Library
-  *<+-> Use VCG to provide basic data structures
-    * signed/unsigned integers
-    * Booleans
-    * arrays (fixed-size, dynamic)
-
-  *<+-> Used as building-blocks for advanced DS
-    * formalized using Sepref
+% # Basic Data Structure Library
+%   *<+-> Use VCG to provide basic data structures
+%     * signed/unsigned integers
+%     * Booleans
+%     * arrays (fixed-size, dynamic)
+%
+%   *<+-> Used as building-blocks for advanced DS
+%     * formalized using Sepref
 
 \renewcommand{\insertsectitle}{\color{red}{Frontend}}
 
 # Automatic Refinement
+  *<+-> Isabelle Refinement Framework
+    * supports verification by stepwise refinement
+    * many verified algorithms already exists
+
   *<+-> Sepref tool
-    * automatic translation from Refinement Framework to LLVM
-    * tools for data structure development
+    * refinement from Refinement Framework to imperative program
+      * already existed for Imperative/HOL
+      * we adapted it for LLVM
     * existing proofs can be re-used
       * need to be amended if they use arbitrary-precision integers
 
-  *<+-> Advanced Data Structures
-    * dense sets/maps of integers (by array)
-    * heaps, indexed heaps
-    * two-watched-literals for BCP
-    * graphs (by adjacency lists)
-    * ...
+  *<+-> Collections Framework
+    * provides data structures
+    * we ported some to LLVM (work in progress)
+      * dense sets/maps of integers (by array)
+      * heaps, indexed heaps
+      * two-watched-literals for BCP
+      * graphs (by adjacency lists)
+      * ...
 
+%   *<+-> Sepref tool
+%     * automatic translation from Refinement Framework to LLVM
+%     * tools for data structure development
+%     * existing proofs can be re-used
+%       * need to be amended if they use arbitrary-precision integers
+
+%   *<+-> Advanced Data Structures
+%     * dense sets/maps of integers (by array)
+%     * heaps, indexed heaps
+%     * two-watched-literals for BCP
+%     * graphs (by adjacency lists)
+%     * ...
+%
 %   * TODO: Example: Synthesis process?
 %
 %   * TODO: Example: binsearch
 
+#! Example: Binary Search
+  \begin{lstlisting}
+    definition "bin_search xs x = do {
+      (l,h) <- WHILEIT (bin_search_invar xs x)
+        (%(l,h). l<h)
+        (%(l,h). do {
+          ASSERT (l<length xs \<and> h<=length xs \<and> l<=h);
+          let m = l + (h-l) div 2;
+          if xs!m < x then RETURN (m+1,h) else RETURN (l,m)
+        })
+        (0,length xs);
+      RETURN l
+    }"
+  \end{lstlisting}
+  \pause
+
+  \begin{lstlisting}
+  lemma bin_search_correct:
+    sorted xs ==> bin_search xs x <= SPEC (%i. i=find_index (%y. x<=y) xs)"
+  \end{lstlisting}
+
+#! Example: Binary Search --- Refinement
+
+  \begin{lstlisting}
+  sepref_def bin_search_impl is "uncurry bin_search"
+    :: "(larray_assn' TYPE(size_t) (sint_assn' TYPE(elem_t)))$^k$
+        $$* (sint_assn' TYPE(elem_t))$^k$
+       -> snat_assn' TYPE(size_t)"
+    unfolding bin_search_def
+    apply (rule hfref_with_rdomI, annot_snat_const "TYPE(size_t)")
+    by sepref
+  \end{lstlisting}
+  \pause
+
+  \begin{lstlisting}
+  export_llvm bin_search_impl is int64_t bin_search(larray_t, elem_t)
+  defines
+    typedef uint64_t elem_t;
+    typedef struct { int64_t len; elem_t *data; } larray_t;
+  file "code/bin_search.ll"
+  \end{lstlisting}
+
+#! Example: Binary Search --- Generated Code
+  Produces LLVM code and header file:
+  \begin{lstlisting}[language=C]
+    typedef uint64_t elem_t;
+    typedef struct {
+      int64_t len;
+      elem_t*data;
+    } larray_t;
+
+    int64_t bin_search(larray_t,elem_t);
+  \end{lstlisting}
+
+
+\renewcommand{\insertsectitle}{{Benchmarks}}
+
+
 # Case Studies
   *<+-> Binary Search and Knuth-Morris-Pratt
-    * manageable amount of changes to original formalization (Imp.~HOL)
+    * manageable amount of changes to original formalization
 
   *<+-> Efficiency
     * on par with unverified C/C++
     * one order of magnitude faster than original
-    * still 1.5 times faster than SML with fixed-size integers
+%     * still 1.5 times faster than SML with fixed-size integers
 
-\renewcommand{\insertsectitle}{}
+% \renewcommand{\insertsectitle}{}
 
-# Benchmarks: Binary Search
+# Binary Search
 
   \begin{tikzpicture}
     \begin{loglogaxis}[
@@ -754,7 +850,7 @@
 %     $9$      & 1162 & 945  & 20957  & 1409     \\
 %     $10$     & 1293 & 1045 & 23409  & 1564     \\
 
-# Benchmarks: Knuth Morris Pratt
+# Knuth Morris Pratt
   \begin{tikzpicture}
     \begin{semilogyaxis}[
       xlabel={Benchmark Set},
@@ -830,6 +926,7 @@
 %     64-64    & 420 & 531  & 4514 & 809 \\
 %     64-512   & 416 & 523  & 4411 & 799 \\
 
+\renewcommand{\insertsectitle}{}
 
 # Conclusions
   * Fast and verified algorithms
