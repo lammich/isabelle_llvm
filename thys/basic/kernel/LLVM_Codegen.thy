@@ -1029,7 +1029,7 @@ begin
     val fbrks = separate fbrk
 
     fun list sep lpar rpar prts = enclose lpar rpar (separate sep prts)
-    val parlist = list (nword ",") "(" ")"
+    val parlist = list (nword ", ") "(" ")"
         
     (* enclose, enclose_indent, separate, ... *)
   
@@ -1295,7 +1295,7 @@ begin
         
       fun rty_to_Cs NONE = word "void" | rty_to_Cs (SOME ty) = ctype_to_Cs ty
       
-      fun csig_to_Cs (CSIG (rty,name,partys)) = block [rty_to_Cs rty,word name,parlist (map ctype_to_Cs partys),word ";"]
+      fun csig_to_Cs (CSIG (rty,name,partys)) = block [rty_to_Cs rty,fsep,word name,parlist (map ctype_to_Cs partys),word ";"]
                 
       val csigs_to_Cs = fbrks o map csig_to_Cs
     end

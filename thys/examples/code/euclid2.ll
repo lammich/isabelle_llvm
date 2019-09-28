@@ -7,52 +7,52 @@ target triple = "x86_64-pc-linux-gnu"
 
 
 
-define i32 @euclid(i32 %a, i32 %b) {
+define i64 @euclid(i64 %a, i64 %b) {
 
   start:
-    %x = insertvalue { i32, i32 } zeroinitializer, i32 %a, 0
-    %xa = insertvalue { i32, i32 } %x, i32 %b, 1
-    %xb = call { i32, i32 } @LLVM_Examples_euclid2_f_03802048 ({ i32, i32 } %xa)
-    %a1 = extractvalue { i32, i32 } %xb, 0
-    %b1 = extractvalue { i32, i32 } %xb, 1
-    ret i32 %a1
+    %x = insertvalue { i64, i64 } zeroinitializer, i64 %a, 0
+    %xa = insertvalue { i64, i64 } %x, i64 %b, 1
+    %xb = call { i64, i64 } @LLVM_Examples_euclid_f_05181836 ({ i64, i64 } %xa)
+    %a1 = extractvalue { i64, i64 } %xb, 0
+    %b1 = extractvalue { i64, i64 } %xb, 1
+    ret i64 %a1
 }
 
-define { i32, i32 } @LLVM_Examples_euclid2_f_03802048({ i32, i32 } %s) {
+define { i64, i64 } @LLVM_Examples_euclid_f_05181836({ i64, i64 } %s) {
 
   start:
-    %a = extractvalue { i32, i32 } %s, 0
-    %x = extractvalue { i32, i32 } %s, 1
-    %ctd = icmp ne i32 %a, %x
+    %a = extractvalue { i64, i64 } %s, 0
+    %x = extractvalue { i64, i64 } %s, 1
+    %ctd = icmp ne i64 %a, %x
     br i1 %ctd, label %then, label %else
 
   then:
-    %a1 = extractvalue { i32, i32 } %s, 0
-    %b = extractvalue { i32, i32 } %s, 1
-    %tmpa = icmp ule i32 %a1, %b
+    %a1 = extractvalue { i64, i64 } %s, 0
+    %b = extractvalue { i64, i64 } %s, 1
+    %tmpa = icmp ule i64 %a1, %b
     br i1 %tmpa, label %thena, label %elsea
 
   thena:
-    %xaa = insertvalue { i32, i32 } zeroinitializer, i32 %a1, 0
-    %x1 = sub i32 %b, %a1
-    %x2 = insertvalue { i32, i32 } %xaa, i32 %x1, 1
+    %xaa = insertvalue { i64, i64 } zeroinitializer, i64 %a1, 0
+    %x1 = sub i64 %b, %a1
+    %x2 = insertvalue { i64, i64 } %xaa, i64 %x1, 1
     br label %ctd_ifa
 
   elsea:
-    %xc = sub i32 %a1, %b
-    %xaa1 = insertvalue { i32, i32 } zeroinitializer, i32 %xc, 0
-    %x3 = insertvalue { i32, i32 } %xaa1, i32 %b, 1
+    %xc = sub i64 %a1, %b
+    %xaa1 = insertvalue { i64, i64 } zeroinitializer, i64 %xc, 0
+    %x3 = insertvalue { i64, i64 } %xaa1, i64 %b, 1
     br label %ctd_ifa
 
   ctd_ifa:
-    %x4 = phi { i32, i32 } [ %x3, %elsea ], [ %x2, %thena ]
-    %x5 = call { i32, i32 } @LLVM_Examples_euclid2_f_03802048 ({ i32, i32 } %x4)
+    %x4 = phi { i64, i64 } [ %x3, %elsea ], [ %x2, %thena ]
+    %x5 = call { i64, i64 } @LLVM_Examples_euclid_f_05181836 ({ i64, i64 } %x4)
     br label %ctd_if
 
   else:
     br label %ctd_if
 
   ctd_if:
-    %x6 = phi { i32, i32 } [ %s, %else ], [ %x5, %ctd_ifa ]
-    ret { i32, i32 } %x6
+    %x6 = phi { i64, i64 } [ %s, %else ], [ %x5, %ctd_ifa ]
+    ret { i64, i64 } %x6
 }

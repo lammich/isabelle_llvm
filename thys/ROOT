@@ -12,4 +12,4 @@ session Isabelle_LLVM = Refine_Monadic +
   theories
     "examples/Bin_Search"
     "examples/KMP"
-    (* "examples/LLVM_Examples" temporarily disabled, does not compile any more *)
+    "examples/LLVM_Examples"

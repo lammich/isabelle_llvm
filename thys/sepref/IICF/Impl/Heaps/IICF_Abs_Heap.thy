@@ -24,7 +24,7 @@ text \<open>
     definition valid :: "'a heap \<Rightarrow> nat \<Rightarrow> bool" 
       where "valid h i \<equiv> i>0 \<and> i\<le>length h"
 
-    abbreviation \<alpha> :: "'a heap \<Rightarrow> 'a multiset" where "\<alpha> \<equiv> mset"
+    abbreviation (input) \<alpha> :: "'a heap \<Rightarrow> 'a multiset" where "\<alpha> \<equiv> mset"
   
     
     lemma valid_empty[simp]: "\<not>valid [] i" by (auto simp: valid_def)
@@ -244,7 +244,7 @@ text \<open>
         else val_of l k
       )"
       unfolding exch_def val_of_def valid_def
-      by (auto)
+      by (auto simp: swap_nth)
 
     lemma exch_eq[simp]: "exch h i i = h" 
       by (auto simp: exch_def)

@@ -626,6 +626,9 @@ end
 
 subsection \<open>LLVM Code Generator Setup\<close>
 
+lemma elim_higher_order_return[llvm_inline]: "doM { x::_\<Rightarrow>_ \<leftarrow> return f; m x } = m f" by simp
+
+
 text \<open>Useful shortcuts\<close>
 
 subsubsection \<open>Direct Arithmetic\<close>
@@ -717,6 +720,14 @@ lemma inline_return_prod_case[llvm_inline]:
   
 lemma inline_return_prod[llvm_inline]: "return (a,b) = doM { x \<leftarrow> prod_insert_fst init a; x \<leftarrow> prod_insert_snd x b; return x }"  
   by (auto simp: prod_ops_simp)
+  
+lemma ll_extract_pair_pair:
+  "ll_extract_fst (a,b) = return a" 
+  "ll_extract_snd (a,b) = return b" 
+  unfolding ll_extract_fst_def ll_extract_snd_def checked_split_pair_def checked_from_val_def
+  by auto 
+
+  
   
 subsubsection \<open>Marking of constants\<close>    
 definition "ll_const x \<equiv> return x"

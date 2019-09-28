@@ -1,0 +1,18 @@
+[Buildset]
+BuildItems=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x01\x00\x00\x00\x0b\x00\x00\x00\x00\x01\x00\x00\x00\x0e\x00s\x00o\x00r\x00t\x00i\x00n\x00g)
+
+[CustomDefinesAndIncludes][ProjectPath0]
+Path=.
+parseAmbiguousAsCPP=true
+parserArguments=-ferror-limit=100 -fspell-checking -Wdocumentation -Wunused-parameter -Wunreachable-code -Wall -std=c++11
+parserArgumentsC=-ferror-limit=100 -fspell-checking -Wdocumentation -Wunused-parameter -Wunreachable-code -Wall -std=c99
+
+[CustomDefinesAndIncludes][ProjectPath0][Compiler]
+Name=Clang
+
+[CustomDefinesAndIncludes][ProjectPath0][Includes]
+1=/home/j65266pl/devel/isabelle/isabelle_llvm/thys/examples/code
+2=/home/j65266pl/include
+
+[Project]
+VersionControlSupport=kdevgit

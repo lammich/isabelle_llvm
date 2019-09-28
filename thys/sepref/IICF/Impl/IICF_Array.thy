@@ -77,14 +77,20 @@ subsection \<open>Definition of Assertion\<close>
   definition array_assn where "array_assn A \<equiv> hr_comp raw_array_assn (\<langle>the_pure A\<rangle>list_rel)"
   lemmas [safe_constraint_rules] = CN_FALSEI[of is_pure "array_assn A" for A]
 
+  lemma array_assn_comp: "hr_comp (array_assn id_assn) (\<langle>the_pure A\<rangle>list_rel) = array_assn (A)"
+    unfolding array_assn_def by simp
+  
+  
 subsection \<open>Interface Implementation\<close>  
     
 definition [simp]: "array_replicate_init i n \<equiv> replicate n i"
 interpretation array: replicate_init array_replicate_init by unfold_locales simp
 
 
+
+
 context 
-  notes [fcomp_norm_unfold] = array_assn_def[symmetric]
+  notes [fcomp_norm_unfold] = array_assn_def[symmetric] array_assn_comp
   (*notes [simp] = pure_def hn_ctxt_def is_array_def invalid_assn_def*)
 begin  
 
@@ -107,7 +113,14 @@ begin
     done
     
   sepref_decl_impl array_set: array_set_hnr_aux .
+
+  sepref_definition array_swap [llvm_code] is "uncurry2 (mop_list_swap)" 
+    :: "(array_assn id_assn)\<^sup>d *\<^sub>a (snat_assn)\<^sup>k *\<^sub>a (snat_assn)\<^sup>k \<rightarrow>\<^sub>a array_assn id_assn"
+    unfolding gen_mop_list_swap by sepref
+    
+  sepref_decl_impl (ismop) array_swap.refine .
   
+    
   lemma hn_array_repl_init_raw:
     shows "(narray_new TYPE('c::llvm_rep),RETURN o replicate_init_raw) \<in> snat_assn\<^sup>k \<rightarrow>\<^sub>a raw_array_assn"
     unfolding snat_rel_def snat.assn_is_rel[symmetric]
@@ -171,12 +184,15 @@ lemma larray1_rel_prenorm: "((n, xs), ys) \<in> larray1_rel \<longleftrightarrow
   by (auto simp: larray1_rel_def in_br_conv)
 
 
+lemma larray_assn_comp: "hr_comp (larray_assn id_assn) (\<langle>the_pure A\<rangle>list_rel) = larray_assn A"
+  unfolding larray_assn_def by simp
+    
 definition [simp]: "larray_replicate_init i n \<equiv> replicate n i"
 interpretation larray: replicate_init larray_replicate_init by unfold_locales simp
   
 
 context 
-  notes [fcomp_norm_unfold] = raw_larray_assn_def[symmetric] larray_assn_def[symmetric]
+  notes [fcomp_norm_unfold] = raw_larray_assn_def[symmetric] larray_assn_def[symmetric] larray_assn_comp
   notes [fcomp_prenorm_simps] = larray1_rel_prenorm
 begin
 
@@ -286,6 +302,15 @@ sepref_definition la_set_impl [llvm_inline] is "uncurry2 (RETURN ooo la_set1)"
   done
   
 sepref_decl_impl la_set_impl.refine[FCOMP la_set1_refine] .
+
+sepref_definition larray_swap is "uncurry2 (mop_list_swap)" 
+  :: "(larray_assn' TYPE('l::len2) id_assn)\<^sup>d *\<^sub>a (snat_assn)\<^sup>k *\<^sub>a (snat_assn)\<^sup>k \<rightarrow>\<^sub>a larray_assn' TYPE('l::len2) id_assn"
+  unfolding gen_mop_list_swap by sepref
+  
+sepref_decl_impl (ismop) larray_swap.refine .
+
+
+
 
 definition "la_free1 nxs \<equiv> case nxs of (_,xs) \<Rightarrow> op_list_free xs"
 lemma la_free1_refine: "(la_free1,op_list_free) \<in> larray1_rel \<rightarrow> unit_rel" by auto

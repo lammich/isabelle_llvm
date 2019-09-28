@@ -7,7 +7,7 @@ subsection \<open>Swap two elements of a list, by index\<close>
 (* Move to List *)
 
 definition "swap l i j \<equiv> l[i := l!j, j:=l!i]"
-lemma swap_nth[simp]: "\<lbrakk>i < length l; j<length l; k<length l\<rbrakk> \<Longrightarrow>
+lemma swap_nth: "\<lbrakk>i < length l; j<length l; k<length l\<rbrakk> \<Longrightarrow>
   swap l i j!k = (
     if k=i then l!j
     else if k=j then l!i

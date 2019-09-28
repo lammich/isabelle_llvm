@@ -1,11 +1,321 @@
-section \<open>Example\<close>
+section \<open>Examples\<close>
 theory LLVM_Examples
 imports 
   "../ds/LLVM_DS_Dflt"
   "../ds/LLVM_DS_Array_List"
 begin
 
+text \<open>Examples on top of Isabelle-LLVM basic layer. 
+  For the verification of more complex algorithms, consider using
+  Isabelle-LLVM with the Refinement Framework, and the Sepref tool.
+  See, e.g., @{file Bin_Search.thy}.
+\<close>
+
+(* TODO: Parts of this file are incomplete, the examples could me more elaborate! *)
+
+subsection \<open>Numeric Algorithms\<close>
+
+subsubsection \<open>Exponentiation\<close>
+
+definition exp :: "'a::len word \<Rightarrow> 'b::len word llM" where [llvm_code]: "exp r \<equiv> doM {
+  a \<leftarrow> ll_const (unsigned 1);
+  (a,r) \<leftarrow> llc_while 
+    (\<lambda>(a,r). doM { ll_icmp_ult (unsigned 0) r}) 
+    (\<lambda>(a,r). doM {
+      return (a*unsigned 2,r-unsigned 1)
+    })
+    (a,r);
+  return a
+}"
+
+abbreviation exp32::"32 word \<Rightarrow> 32 word llM" where "exp32 \<equiv> exp"
+abbreviation exp64::"64 word \<Rightarrow> 64 word llM" where "exp64 \<equiv> exp"
+
+export_llvm 
+  exp32 is "uint32_t exp32 (uint32_t)" 
+  exp64 is "uint64_t exp64 (uint64_t)" 
+  file "code/exp.ll"
+
+lemma exp_aux1: 
+  assumes "2 ^ nat k < (N::int)" "t \<le> k" "0 < t" 
+  shows "2 * 2 ^ nat (k - t) < N"
+proof -
+  have "\<lbrakk>2 ^ k < N; 0 < t; t \<le> k\<rbrakk> \<Longrightarrow> 2 * 2 ^ (k - t) < (N::int)" for k t :: nat
+    by (metis Suc_leI diff_less less_le_trans not_less power.simps(2) power_increasing_iff rel_simps(49) semiring_norm(76))
+  with assms show ?thesis
+    by (auto simp add: nat_diff_distrib' dest!: nat_mono simp flip: zero_less_nat_eq)
+qed  
+  
+lemma exp_aux2:  "\<lbrakk>t \<le> k; 0 < t\<rbrakk> \<Longrightarrow> nat (1+k-t) = Suc (nat (k-t))" by simp
+
+lemma exp_correct:
+  assumes "LENGTH('b::len) \<ge> 2"
+  shows "llvm_htriple 
+    (\<upharpoonleft>uint.assn k (ki::'a::len word) ** \<up>(2^nat k \<in> uints LENGTH('b))) 
+    (exp ki) 
+    (\<lambda>r::'b word. \<upharpoonleft>uint.assn (2^nat k) r ** \<upharpoonleft>uint.assn k ki)"
+  unfolding exp_def
+  apply (rewrite annotate_llc_while[where 
+    I="\<lambda>(ai,ri) t. EXS a r. \<upharpoonleft>uint.assn a ai ** \<upharpoonleft>uint.assn r ri ** \<up>\<^sub>d( 0\<le>r \<and> r\<le>k \<and> a = 2^nat (k-r) ) ** \<up>\<^sub>!(t = r)"
+    and R="measure nat"
+    ])
+  apply vcg_monadify  
+  apply (vcg'; (clarsimp simp: algebra_simps)?)
+  using assms
+  apply (simp_all add: exp_aux1 exp_aux2)
+  done
+
+
+text \<open>Executability of semantics inside Isabelle\<close>
+value "run (exp64 32) llvm_empty_memory"
+
+
+subsubsection \<open>Base-2 logarithm\<close>
+
+definition log2 :: "nat \<Rightarrow> nat" where "log2 n \<equiv> THE x. 2^x\<le>n \<and> n<2^(x+1)"
+definition log2i :: "int \<Rightarrow> int" where "log2i n \<equiv> int (log2 (nat n))"
+
+lemma strict_mono_ex_approx:
+  fixes f :: "nat \<Rightarrow> nat"
+  assumes "strict_mono f"
+  assumes "f 0 \<le> x"
+  shows "\<exists>n. f n \<le> x \<and> x < f (n+1)"
+  using assms(2)
+proof (induction x)
+  case 0
+  then show ?case
+    by (metis add_gr_0 assms(1) le_zero_eq less_one not_le seq_suble)
+next
+  case (Suc x)
+  then show ?case
+    apply (cases "f 0 \<le> x")
+    apply (metis Suc_eq_plus1 Suc_lessI assms(1) le_SucI nat_in_between_eq(1) strict_mono_Suc_iff)
+    apply (metis add.commute assms(1) le_SucE plus_1_eq_Suc strict_mono_Suc_iff)
+    done
+    
+qed  
+
+lemma strict_mono_unique_approx: 
+  fixes f :: "nat \<Rightarrow> nat"
+  assumes "strict_mono f"
+  assumes "f n \<le> x" "x < f (n + 1)" "f y \<le> x" "x < f (y + 1)" 
+  shows "n=y"
+  using assms
+  apply clarsimp
+  by (meson le_less_trans less_antisym not_less_eq strict_mono_less[OF assms(1)])
+
+lemma strict_mono_ex1_approx:
+  fixes f :: "nat \<Rightarrow> nat"
+  assumes "strict_mono f"
+  assumes "f 0 \<le> x"
+  shows "\<exists>!n. f n \<le> x \<and> x < f (n+1)"
+  apply (rule ex_ex1I)
+  apply (rule strict_mono_ex_approx[OF assms])
+  using strict_mono_unique_approx[OF assms(1)] by blast
+
+lemma strict_mono_exp_nat[simp]: "strict_mono (\<lambda>x. (2::nat)^x)"
+  by (smt Suc_eq_plus1 add_less_same_cancel2 add_numeral_left leI le_simps(3) less_imp_le less_one linorder_cases llvm_num_const_simps(1) n_less_equal_power_2 nat_add_offset_le nat_power_less_imp_less not_one_le_zero numeral_One plus_1_eq_Suc pos2 power.simps(2) semiring_1_no_zero_divisors_class.power_not_zero strict_mono_Suc_iff zero_neq_numeral)
+  
+lemma log2_bounds: "n>0 \<Longrightarrow> 2^log2 n \<le> n \<and> n < 2^(log2 n + 1)"
+  unfolding log2_def
+  using theI'[OF strict_mono_ex1_approx[OF strict_mono_exp_nat], of n]
+  by simp
+
+lemma bounds_log2: "2^x \<le> n \<Longrightarrow> n < 2^(x+1) \<Longrightarrow> log2 n = x"  
+  unfolding log2_def
+  apply (rule)
+  apply simp
+  using strict_mono_unique_approx[OF strict_mono_exp_nat] 
+  by blast
+
+lemma log2i_bounds: "n>0 \<Longrightarrow> 2^nat (log2i n) \<le> n \<and> n < 2^(nat (log2i n) + 1)"
+  unfolding log2i_def apply simp
+  using log2_bounds[of "nat n"]
+  apply simp
+  by (metis nat_eq_numeral_power_cancel_iff power_Suc zless_nat_conj)
+  
+lemma bounds_log2i: "2^nat x \<le> n \<Longrightarrow> n < 2^(nat (x+1)) \<Longrightarrow> log2i n = x"  
+  unfolding log2i_def
+  using bounds_log2[of "nat x" "nat n"]
+  apply simp
+  by (smt One_nat_def Suc_nat_eq_nat_zadd1 add.right_neutral add_Suc_right nat_1 nat_eq_iff nat_less_iff one_add_one one_le_power power.simps(2) power_less_imp_less_exp semiring_1_class.of_nat_power zless_nat_conj)
+  
+find_consts name: clz
+term word_clz  
+  
+definition word_clz' :: "'a::len word \<Rightarrow> nat" where
+  "word_clz' x \<equiv> if x=0 then 0 else word_clz x"
+
+lemma "x\<noteq>0 \<Longrightarrow> word_clz' x = word_clz x" by (simp add: word_clz'_def)  
+  
+lemma of_bl_eqZ: 
+  "\<lbrakk> length xs = LENGTH ('a::len0) \<rbrakk> \<Longrightarrow> (of_bl xs :: 'a word) = 0 \<longleftrightarrow> (xs = replicate LENGTH('a) False)"  
+  apply auto
+  by (metis to_bl_0 to_bl_use_of_bl word_bl_Rep')    
+
+lemma word_clz'_rec: "word_clz' x = (if x <=s 0 then 0 else 1 + word_clz' (x << 1))"  
+  (* TODO: Clean up this mess! *)  
+  apply (clarsimp simp: word_clz'_def word_clz_def)
+  apply (cases "to_bl x")
+  apply auto
+  apply (simp add: word_msb_alt word_sle_msb_le)
+  apply (simp add: word_msb_alt word_sle_msb_le)
+  apply (simp add: word_msb_alt word_sle_msb_le shiftl_bl)
+  apply (subst (asm) of_bl_eqZ)
+  apply (auto) [] 
+  apply (metis length_Cons word_bl_Rep')
+  apply (metis length_append_singleton length_replicate replicate_Suc replicate_append_same rotate1_rl' to_bl_0 word_bl.Rep_eqD)
+  apply (simp add: word_msb_alt word_sle_msb_le)
+  apply (simp add: bl_shiftl shiftl_bl)
+  apply (subst (asm) of_bl_eqZ)
+  apply auto
+  apply (metis length_Cons word_bl_Rep')
+  apply (subst word_bl.Abs_inverse)
+  apply auto 
+  apply (metis length_Cons word_bl_Rep')
+  apply (subgoal_tac "True\<in>set list")
+  apply simp
+  by (simp add: eq_zero_set_bl)
+  
+  
+definition word_clz'_impl :: "'a::len word \<Rightarrow> 'b::len word llM" where [llvm_code]:
+  "word_clz'_impl x \<equiv> doM {
+    (k,x) \<leftarrow> llc_while 
+      (\<lambda>(k,x). ll_cmp (x\<noteq>0)) 
+      (\<lambda>(k,x). doM {x \<leftarrow> ll_shl x (unsigned 1); return (k+unsigned_nat 1,x)}) 
+      (unsigned_nat 0,x);
+    return k
+  }"
+  
+  
+export_llvm "word_clz'_impl :: 64 word \<Rightarrow> 64 word llM"  
+
+find_theorems ll_lshr
+lemma "llvm_htriple (\<box>) (word_clz'_impl x) (\<lambda>ri. EXS r. \<upharpoonleft>unat.assn (word_clz' x) ri)"  
+  unfolding word_clz'_impl_def
+  apply (subst annotate_llc_while[where I="\<lambda>(ki,x') _. EXS k. \<upharpoonleft>unat.assn k ki ** \<up>(word_clz' x = k + word_clz' x')" and R="foo"])
+  apply vcg_monadify
+  unfolding unat.assn_def uint.assn_def
+  supply [simp] = aux1
+  apply vcg'
+  apply (simp add: llvm_prim_arith_setup.ll_icmp_simps)
+  apply vcg'
+  apply (simp add: bool.assn_def)
+  apply fri_keep
+  
+  find_theorems ll_icmp_ne
+  oops
+  xxx, ctd here. VCG seems to expect refinement in any case!
+  apply fri_keep
+  
+  apply simp
+  find_theorems llc_while
+  
+  
+  find_theorems ll_shl
+
+
+  
+oops  
+xxx, ctd here: Find invariant. x + 2^k \<le> x_0 < x + 2^k+1 *** with special case for k=0? 
+or use x*2^k ? With special case upon termination!
+
+
+definition log2_impl :: "'a::len word \<Rightarrow> 'b::len word llM" where
+  "log2_impl x \<equiv> doM {
+    let k = unsigned (0::'b word);
+    (k,_) \<leftarrow> llc_while (\<lambda>(k,x). ll_cmp (x\<noteq>0)) (\<lambda>(k,x). return (k+unsigned 1,x>>1)) (k,x);
+    return k
+  }"
+
+lemma "llvm_htriple (\<upharpoonleft>uint.assn x xi) (log2_impl xi) (\<lambda>ri. EXS r. \<upharpoonleft>uint.assn (log2i x) ri)"  
+  
+  
+
+
+
+
+
+subsubsection \<open>Euclid's Algorithm\<close>
+
+                       
+definition [llvm_code]: "euclid (a::'a::len word) b \<equiv> doM {
+  (a,b) \<leftarrow> llc_while 
+    (\<lambda>(a,b) \<Rightarrow> ll_cmp (a \<noteq> b))
+    (\<lambda>(a,b) \<Rightarrow> if (a\<le>b) then return (a,b-a) else return (a-b,b))
+    (a,b);
+  return a
+}"
+  
+export_llvm (debug) (no_while) 
+  "euclid :: 64 word \<Rightarrow> 64 word \<Rightarrow> 64 word llM" is "uint64_t euclid (uint64_t, uint64_t)"
+  file "code/euclid.ll"
+
+  
+lemma gcd_diff1': "gcd (a::int) (b-a) = gcd a b"
+  by (metis gcd.commute gcd_diff1)   
+  
+
+lemma "llvm_htriple 
+  (\<upharpoonleft>uint.assn a\<^sub>0 ai ** \<upharpoonleft>uint.assn b\<^sub>0 bi ** \<up>\<^sub>d(0<a\<^sub>0 \<and> 0<b\<^sub>0)) 
+  (euclid ai bi) 
+  (\<lambda>ri. \<upharpoonleft>uint.assn (gcd a\<^sub>0 b\<^sub>0) ri)"
+  unfolding euclid_def
+  apply (rewrite annotate_llc_while[where 
+    I="\<lambda>(ai,bi) t. EXS a b. \<upharpoonleft>uint.assn a ai ** \<upharpoonleft>uint.assn b bi 
+        ** \<up>\<^sub>a(t=a+b) ** \<up>\<^sub>d(0<a \<and> 0<b \<and> gcd a b = gcd a\<^sub>0 b\<^sub>0)" 
+    and R="measure nat"  
+  ])
+  apply vcg_monadify
+  apply (vcg'; clarsimp?)
+  apply (simp_all add: gcd_diff1 gcd_diff1')
+  done
+
+subsubsection \<open>Fibonacci Numbers\<close>
+
+definition fib :: "'n::len word \<Rightarrow> 'n word llM" where [llvm_code]: "fib n \<equiv> REC (\<lambda>fib' n. 
+  if n\<le>unsigned 1 then return n 
+  else doM { 
+    n\<^sub>1 \<leftarrow> fib' (n-unsigned 1); 
+    n\<^sub>2 \<leftarrow> fib' (n-unsigned 2); 
+    return (n\<^sub>1+n\<^sub>2)     
+  }) n"
+
+abbreviation fib64 :: "64 word \<Rightarrow> 64 word llM" where "fib64 \<equiv> fib"
+export_llvm thms: fib64
+  
+(* TODO: Arbitrary fixed-point reasoning not yet supported in VCG!
+  set up a rule with pre and post consequence rule, 
+  and seplogic-assertions
+
+lemma
+  assumes MONO: "\<And>x. M.mono_body (\<lambda>fa. F fa x)"
+  assumes "P x s m"
+  assumes "wf R"
+  assumes "\<And>D x s m. \<lbrakk> P x s m; \<And>x' s' m'. \<lbrakk> P x' s' m'; (m',m)\<in>R \<rbrakk> \<Longrightarrow> wp (D x') Q s' \<rbrakk> \<Longrightarrow> wp (F D x) Q s"
+  shows "wp (REC F x) Q s"
+  using assms(3,2)
+  apply (induction m arbitrary: x s rule: wf_induct_rule)
+  apply (subst REC_unfold) apply simp apply (rule MONO)
+  using assms(4) by simp
+  
+  
+
+lemma "llvm_htriple (\<upharpoonleft>uint.assn n ni) (fib ni) (\<lambda>ri. \<upharpoonleft>uint.assn x ri)"
+  unfolding fib_def
+  apply vcg_monadify
+  apply vcg
+  find_theorems wp REC
+*)
+  
+prepare_code_thms (LLVM) [code] fib_def  (* Set up code equation. Required to execute semantics in Isabelle. *)
+
+value "map (\<lambda>n. run (fib64 n) (LLVM_MEMORY (MEMORY []))) [0,1,2,3]"
+
+
+(*
 lemmas [named_ss llvm_inline cong] = refl[of "numeral _"]
+*)
 
 definition test :: "64 word \<Rightarrow> 64 word \<Rightarrow> _ llM"
 where [llvm_code]: "test a b \<equiv> doM {
@@ -101,191 +411,6 @@ export_llvm (debug) test_named file "code/test_named.ll"
 
 
 
-subsection \<open>Numeric Algorithms\<close>
-
-subsubsection \<open>Exponentiation\<close>
-
-definition exp :: "64 word \<Rightarrow> 64 word llM" where [llvm_code]: "exp i \<equiv> doM {
-  s \<leftarrow> prod_insert_fst init 1;
-  s \<leftarrow> prod_insert_snd s i;
-  s \<leftarrow> llc_while
-    (\<lambda>s. doM {
-      i \<leftarrow> prod_extract_snd s;
-      ll_icmp_ne i 0
-    })
-    (\<lambda>s. doM {
-      c \<leftarrow> prod_extract_fst s;
-      i \<leftarrow> prod_extract_snd s;
-      
-      c \<leftarrow> ll_mul c 2;
-      i \<leftarrow> ll_sub i 1;
-      
-      s \<leftarrow> prod_insert_fst init c;
-      s \<leftarrow> prod_insert_snd s i;
-      
-      return s
-    })
-    s;
-
-  prod_extract_fst s
-}"
-
-definition [llvm_code]: "main_exp (argc::32 word) (argv::8 word ptr ptr) \<equiv> doM {
-  argc \<leftarrow> ll_zext argc TYPE(64 word);
-  r \<leftarrow> exp argc;
-  r \<leftarrow> ll_trunc r TYPE(32 word);
-  return r
-}" 
-
-
-text \<open>Executability of semantics inside Isabelle\<close>
-value "run (exp 32) llvm_empty_memory"
-
-definition [llvm_code]: "exp2 r \<equiv> doM {
-  a \<leftarrow> ll_const (unsigned 1);
-  (a,r) \<leftarrow> llc_while 
-    (\<lambda>(a,r). doM { ll_icmp_ult (unsigned 0) r}) 
-    (\<lambda>(a,r). doM {
-      r \<leftarrow> ll_sub r (unsigned 1);
-      a \<leftarrow> ll_mul a (unsigned 2);
-      return (a,r)
-    })
-    (a,r);
-  return a
-}"
-
-export_llvm "exp2 :: 32 word \<Rightarrow> 32 word llM"
-
-lemma exp2_aux1: 
-  assumes "2 ^ nat k < (N::int)" "t \<le> k" "0 < t" 
-  shows "2 * 2 ^ nat (k - t) < N"
-proof -
-  have "\<lbrakk>2 ^ k < N; 0 < t; t \<le> k\<rbrakk> \<Longrightarrow> 2 * 2 ^ (k - t) < (N::int)" for k t :: nat
-    by (metis Suc_leI diff_less less_le_trans not_less power.simps(2) power_increasing_iff rel_simps(49) semiring_norm(76))
-  with assms show ?thesis
-    by (auto simp add: nat_diff_distrib' dest!: nat_mono simp flip: zero_less_nat_eq)
-qed  
-  
-lemma exp2_aux2:  "\<lbrakk>t \<le> k; 0 < t\<rbrakk> \<Longrightarrow> nat (1+k-t) = Suc (nat (k-t))" by simp
-
-lemma 
-  assumes "LENGTH('b::len) \<ge> 2"
-  shows "llvm_htriple 
-    (\<upharpoonleft>uint.assn k (ki::'a::len word) ** \<up>(2^nat k \<in> uints LENGTH('b))) 
-    (exp2 ki) 
-    (\<lambda>r::'b word. \<upharpoonleft>uint.assn (2^nat k) r ** \<upharpoonleft>uint.assn k ki)"
-  unfolding exp2_def
-  apply (rewrite annotate_llc_while[where 
-    I="\<lambda>(ai,ri) t. EXS a r. \<upharpoonleft>uint.assn a ai ** \<upharpoonleft>uint.assn r ri ** \<up>\<^sub>d( 0\<le>r \<and> r\<le>k \<and> a = 2^nat (k-r) ) ** \<up>\<^sub>!(t = r)"
-    and R="measure nat"
-    ])
-  apply vcg_monadify  
-  apply vcg'
-  using assms
-  apply simp_all
-  apply (simp_all add: algebra_simps exp2_aux1 exp2_aux2)
-  done
-
-subsubsection \<open>Euclid's Algorithm\<close>
-
-                       
-definition [llvm_code]: "euclid2 (a::32 word) b \<equiv> doM {
-  (a,b) \<leftarrow> llc_while 
-    (\<lambda>(a,b) \<Rightarrow> ll_cmp (a \<noteq> b))
-    (\<lambda>(a,b) \<Rightarrow> if (a\<le>b) then return (a,b-a) else return (a-b,b))
-    (a,b);
-  return a
-}"
-  
-export_llvm (debug) (no_while) "euclid2" is euclid file "code/euclid2.ll"
-
-
-find_theorems ll_udiv wp
-
-  
-lemma gcd_diff1': "gcd (a::int) (b-a) = gcd a b"
-  by (metis gcd.commute gcd_diff1)   
-  
-
-lemma "llvm_htriple 
-  (\<upharpoonleft>uint.assn a\<^sub>0 ai ** \<upharpoonleft>uint.assn b\<^sub>0 bi ** \<up>\<^sub>d(0<a\<^sub>0 \<and> 0<b\<^sub>0)) 
-  (euclid2 ai bi) 
-  (\<lambda>ri. \<upharpoonleft>uint.assn (gcd a\<^sub>0 b\<^sub>0) ri)"
-  unfolding euclid2_def
-  apply (rewrite annotate_llc_while[where 
-    I="\<lambda>(ai,bi) t. EXS a b. \<upharpoonleft>uint.assn a ai ** \<upharpoonleft>uint.assn b bi 
-        ** \<up>\<^sub>a(t=a+b) ** \<up>\<^sub>d(0<a \<and> 0<b \<and> gcd a b = gcd a\<^sub>0 b\<^sub>0)" 
-    and R="measure nat"  
-  ])
-  apply vcg_monadify
-  apply (vcg'; clarsimp?)
-  apply (simp_all add: gcd_diff1 gcd_diff1')
-  done
-
-lemma "llvm_htriple 
-  (\<upharpoonleft>uint.assn a\<^sub>0 ai ** \<upharpoonleft>uint.assn b\<^sub>0 bi ** \<up>\<^sub>d(0<a\<^sub>0 \<and> 0<b\<^sub>0)) 
-  (euclid2 ai bi) 
-  (\<lambda>ri. \<upharpoonleft>uint.assn (gcd a\<^sub>0 b\<^sub>0) ri)"
-  unfolding euclid2_def
-  apply (rewrite annotate_llc_while[where 
-    I="\<lambda>(ai,bi) t. EXS a b. \<upharpoonleft>uint.assn a ai ** \<upharpoonleft>uint.assn b bi 
-        ** \<up>\<^sub>a(t=a+b) ** \<up>\<^sub>d(0<a \<and> 0<b \<and> gcd a b = gcd a\<^sub>0 b\<^sub>0)" 
-    and R="measure nat"  
-  ])
-  supply [simp] = gcd_diff1 gcd_diff1'
-  apply vcg_monadify
-  apply (vcg')
-  done
-  
-thm llc_if_def[unfolded to_bool_def,no_vars]    
-thm ll_range_def
-thm llc_while_def[unfolded mwhile_def,no_vars]
-
-find_theorems sint.assn ll_sub
-
-thm sint_rules(2)[unfolded sints_num]
-
-
-  
-definition fib :: "64 word \<Rightarrow> 64 word llM" 
-  where [llvm_code]: "fib n \<equiv> REC (\<lambda>fib n. doM { 
-    t\<leftarrow>ll_icmp_ule n 1; 
-    llc_if t 
-      (return n) 
-      (doM { 
-        n\<^sub>1 \<leftarrow> ll_sub n 1; 
-        a\<leftarrow>fib n\<^sub>1; 
-        n\<^sub>2 \<leftarrow> ll_sub n 2; 
-        b\<leftarrow>fib n\<^sub>2; 
-        c\<leftarrow>ll_add a b; 
-        return c })} ) n"
-
-export_llvm fib is fib
-
-find_consts llvm_memory name: empty
-
-prepare_code_thms (LLVM) [code] fib_def
-
-value "map (\<lambda>n. run (fib n) (LLVM_MEMORY (MEMORY []))) [0,1,2,3]"
-
-  
-definition fib' :: "'n::len word \<Rightarrow> 'n word llM" where "fib' n \<equiv> REC (\<lambda>fib' n. 
-  if n\<le>1 then return n 
-  else doM { 
-    n\<^sub>1 \<leftarrow> fib' (n-1); 
-    n\<^sub>2 \<leftarrow> fib' (n-2); 
-    return (n\<^sub>1+n\<^sub>2)     
-  }) n"
-
-prepare_code_thms (LLVM) [llvm_code, code] fib'_def  
-print_theorems
-thm fib'.code(2)[folded fib'.code(1), THEN fun_cong, of n]
-export_llvm thms: "fib' :: 64 word \<Rightarrow> 64 word llM" is fib
-
-thm thms
-thm llvm_inline
-  
-thm llc_while_unfold
 
   
 subsection \<open>Array List Examples\<close>
@@ -566,7 +691,6 @@ llvm_deps foo: "qs_quicksort :: 64 word ptr \<Rightarrow> 64 word \<Rightarrow> 
 export_llvm "qs_quicksort :: 64 word ptr \<Rightarrow> 64 word \<Rightarrow> 64 word \<Rightarrow> unit llM" is "qs_quicksort"
   file \<open>code/qs_quicksort.ll\<close>
 
-definition "swap xs i j \<equiv> xs[ i:= xs!j, j:=xs!i]"
   
 lemma qs_swap_aa_rule[vcg_rules]: "llvm_htriple 
   (\<upharpoonleft>(aa_assn A) xs p ** \<upharpoonleft>snat.assn i ii ** \<upharpoonleft>snat.assn j ji ** \<up>\<^sub>d(i<length xs \<and> j<length xs))

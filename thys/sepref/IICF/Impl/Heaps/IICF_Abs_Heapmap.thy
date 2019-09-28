@@ -205,7 +205,7 @@ begin
           else hm_key_of hm k
           )"
       unfolding hm_exch_def hm_valid_def hm_length_def hm_key_of_def
-      by (auto split: prod.splits)
+      by (auto split: prod.splits simp: swap_nth)
 
     lemma hm_key_of_exch_matching[simp]:  
       "\<lbrakk>hm_valid hm i; hm_valid hm j\<rbrakk> \<Longrightarrow> hm_key_of (hm_exch hm i j) i = hm_key_of hm j"

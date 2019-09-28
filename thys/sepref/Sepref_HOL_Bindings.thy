@@ -651,6 +651,8 @@ subsubsection \<open>Direct Word Arithmetic\<close>
 
 abbreviation "word_rel \<equiv> (Id::(_::len word \<times> _) set)"
 abbreviation "word_assn \<equiv> (id_assn::_::len word \<Rightarrow> _)"
+abbreviation word_assn' :: "'a::len itself \<Rightarrow> 'a word \<Rightarrow> 'a word \<Rightarrow> llvm_amemory \<Rightarrow> bool" 
+  where "word_assn' _ \<equiv> word_assn"
 
 (* TODO: Move *)  
 definition ll_not :: "'a::len word \<Rightarrow> 'a word llM" where 
@@ -927,6 +929,7 @@ lemma hn_unat_numeral[sepref_fr_rules]:
   
 lemma hn_unat_ops[sepref_fr_rules]:
   "(uncurry ll_add, uncurry (RETURN \<circ>\<circ> (+))) \<in> [\<lambda>(a, b). a + b < max_unat LENGTH('a)]\<^sub>a unat_assn\<^sup>k *\<^sub>a unat_assn\<^sup>k \<rightarrow> unat_assn' TYPE('a::len)"
+  "(\<lambda>x. ll_add x 1, (RETURN \<circ> Suc)) \<in> [\<lambda>a. Suc a < max_unat LENGTH('a)]\<^sub>a unat_assn\<^sup>k \<rightarrow> unat_assn' TYPE('a)"
   "(uncurry ll_sub, uncurry (RETURN \<circ>\<circ> (-))) \<in> [\<lambda>(a, b). b \<le> a]\<^sub>a unat_assn\<^sup>k *\<^sub>a unat_assn\<^sup>k \<rightarrow> unat_assn"
   "(uncurry ll_mul, uncurry (RETURN \<circ>\<circ> (*))) \<in> [\<lambda>(a, b). a * b < max_unat LENGTH('a)]\<^sub>a unat_assn\<^sup>k *\<^sub>a unat_assn\<^sup>k \<rightarrow> unat_assn' TYPE('a::len)"
   "(uncurry ll_udiv, uncurry (RETURN \<circ>\<circ> (div))) \<in> [\<lambda>(a, b). b \<noteq> 0]\<^sub>a unat_assn\<^sup>k *\<^sub>a unat_assn\<^sup>k \<rightarrow> unat_assn"
@@ -943,6 +946,7 @@ lemma hn_unat_ops[sepref_fr_rules]:
   unfolding op_neq_def
   
   using unat_bin_ops[THEN unat.hn_bin_op, folded unat_rel_def]
+    and unat_un_ops[THEN unat.hn_un_op, folded unat_rel_def]
     and unat_bin_ops_bitwise[THEN unat.hn_bin_op, folded unat_rel_def]
     and unat_cmp_ops[THEN unat.hn_cmp_op, folded unat_rel_def bool1_rel_def]
   by (simp_all add: prod_casesK)
@@ -1035,6 +1039,7 @@ lemma hn_snat_numeral[sepref_fr_rules]:
   
 lemma hn_snat_ops[sepref_fr_rules]:
   "(uncurry ll_add, uncurry (RETURN \<circ>\<circ> (+))) \<in> [\<lambda>(a, b). a + b < max_snat LENGTH('a)]\<^sub>a snat_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow> snat_assn' TYPE('a::len2)"
+  "(\<lambda>x. ll_add x 1, (RETURN \<circ> Suc)) \<in> [\<lambda>a. Suc a < max_snat LENGTH('a)]\<^sub>a snat_assn\<^sup>k \<rightarrow> snat_assn' TYPE('a::len2)"
   "(uncurry ll_sub, uncurry (RETURN \<circ>\<circ> (-))) \<in> [\<lambda>(a, b). b \<le> a]\<^sub>a snat_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow> snat_assn"
   "(uncurry ll_mul, uncurry (RETURN \<circ>\<circ> (*))) \<in> [\<lambda>(a, b). a * b < max_snat LENGTH('a)]\<^sub>a snat_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow> snat_assn' TYPE('a::len2)"
   "(uncurry ll_udiv, uncurry (RETURN \<circ>\<circ> (div))) \<in> [\<lambda>(a, b). b \<noteq> 0]\<^sub>a snat_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow> snat_assn"
@@ -1046,6 +1051,7 @@ lemma hn_snat_ops[sepref_fr_rules]:
   "(uncurry ll_icmp_slt, uncurry (RETURN \<circ>\<circ> (<))) \<in> snat_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"  
   unfolding op_neq_def
   using snat_bin_ops[THEN snat.hn_bin_op, folded snat_rel_def]
+    and snat_un_ops[THEN snat.hn_un_op, folded snat_rel_def]
     and snat_cmp_ops[THEN snat.hn_cmp_op, folded snat_rel_def bool1_rel_def]
   by simp_all
   

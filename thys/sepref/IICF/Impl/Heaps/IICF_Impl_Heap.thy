@@ -240,11 +240,6 @@ begin
 
   end  
     
-  
-  find_theorems snat_rel ll_icmp_ult
-  
-  sepref_definition foo is "uncurry (\<lambda>a b. RETURN (a<b))" :: "(snat_assn' TYPE('l::len2))\<^sup>k *\<^sub>a (snat_assn' TYPE('l::len2))\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
-    by sepref
 
   global_interpretation heap_impl id snat_assn snat_assn return ll_icmp_sle ll_icmp_slt "TYPE('l::len2)" "LENGTH('l)"
     defines h_update_impl = update_impl
@@ -355,6 +350,8 @@ termination
   apply (relation "measure (\<lambda>(l,u). u-l)")
   by auto
   
+  
+(*  
 lemma nfoldli_range_to_while: "nfoldli [l..<u] c f \<sigma> = do {
     (_,\<sigma>) \<leftarrow> WHILET 
       (\<lambda>(i,\<sigma>). i<u \<and> c \<sigma>) 
@@ -375,7 +372,7 @@ proof (induction l u arbitrary: \<sigma> rule: list_intv_induction.induct)
       by (rewrite WHILET_unfold) (simp add: upt_conv_Cons "1.IH"[OF True, abs_def])
   qed
 qed
-  
+*)  
 
 
 
@@ -383,7 +380,7 @@ sepref_definition sort_impl [llvm_code] is
   "sort_by_prio" :: "[\<lambda>l. length l < max_snat LENGTH(64)]\<^sub>a (al_assn' TYPE(64) (snat_assn' TYPE(64)))\<^sup>k \<rightarrow> al_assn' TYPE(64) (snat_assn' TYPE(64))"
   unfolding sort_by_prio_def[abs_def] 
   apply (rewrite nfoldli_by_idx)
-  apply (rewrite nfoldli_range_to_while)
+  apply (rewrite nfoldli_upt_by_while)
   apply (rewrite heap_fold_custom_empty[where 'l=64 and 'a="64"])
   apply (rewrite at op_list_empty al_fold_custom_empty[where 'l=64])
   apply (annot_snat_const "TYPE(64)")

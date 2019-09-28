@@ -903,7 +903,6 @@ text \<open>We fix a 64 bit type for string positions,
 type_synonym size_t = 64
 abbreviation "size_t_assn \<equiv> snat_assn' TYPE(size_t)"
 
-abbreviation word_assn' :: "'a::len itself \<Rightarrow> 'a word \<Rightarrow> 'a word \<Rightarrow> llvm_amemory \<Rightarrow> bool" where "word_assn' _ \<equiv> word_assn"
 abbreviation "char_assn \<equiv> word_assn' TYPE(8)"
   
 text \<open>A string is represented as array with length value\<close>

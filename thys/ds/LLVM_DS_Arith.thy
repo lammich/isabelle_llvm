@@ -343,7 +343,7 @@ interpretation unat: standard_opr_abstraction unat
 
 
 method prove_unat_op uses simp = (
-  rule unat.is_bin_opI unat.is_cmp_opI; 
+  rule unat.is_bin_opI unat.is_un_opI unat.is_cmp_opI; 
   (auto simp: max_unat_def vcg_normalize_simps simp)?; 
   (determ unat_arith; fail)?)  
 
@@ -368,6 +368,9 @@ lemma unat_bin_ops_bitwise:
   "unat.is_bin_op (\<lambda>_ _ _. True) ll_xor (XOR) (XOR)" 
   by (all \<open>prove_unat_op simp: unat_and unat_or unat_xor\<close>)
   
+lemma unat_un_ops: "unat.is_un_op' (\<lambda>x. ll_add x 1) (\<lambda>x. x+1) Suc"
+  by (prove_unat_op simp: unat_word_ariths)
+  
 lemma unat_cmp_ops: 
   "unat.is_cmp_op ll_icmp_eq (=) (=)" 
   "unat.is_cmp_op ll_icmp_ne (\<noteq>) (\<noteq>)"
@@ -377,6 +380,7 @@ lemma unat_cmp_ops:
   
 lemmas unat_rules[vcg_rules] =
   unat_bin_ops[THEN unat.bin_op_tmpl]
+  unat_un_ops[THEN unat.un_op_tmpl]
   unat_cmp_ops[THEN unat.cmp_op_tmpl]
   
   
@@ -446,7 +450,7 @@ lemma cnv_snat_to_uint:
 
 
 method prove_snat_op uses simp = (
-  rule snat.is_bin_opI snat.is_cmp_opI; 
+  rule snat.is_bin_opI snat.is_un_opI snat.is_cmp_opI; 
   (auto simp: max_snat_def snat_invar_alt snat_eq_unat vcg_normalize_simps simp)?)  
     
 context begin                                             
@@ -485,6 +489,10 @@ lemma snat_bin_ops:
     done
   done
   
+lemma snat_un_ops: "snat.is_un_op' (\<lambda>x. ll_add x 1) (\<lambda>x. x+1) Suc"
+  by (prove_snat_op simp: unat_word_ariths)
+  
+  
 lemma snat_cmp_ops:
   "snat.is_cmp_op ll_icmp_eq (=) (=)" 
   "snat.is_cmp_op ll_icmp_ne (\<noteq>) (\<noteq>)"
@@ -504,6 +512,7 @@ lemma snat_cmp_ops:
   
 lemmas snat_rules[vcg_rules] =
   snat_bin_ops[THEN snat.bin_op_tmpl]
+  snat_un_ops[THEN snat.un_op_tmpl]
   snat_cmp_ops[THEN snat.cmp_op_tmpl]
   
   
