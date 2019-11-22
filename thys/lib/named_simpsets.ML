@@ -19,7 +19,11 @@ sig
 
   val add_cong: string -> thm -> Context.generic -> Context.generic
   val del_cong: string -> thm -> Context.generic -> Context.generic
+
+  val add_procs: string -> simproc list -> Context.generic -> Context.generic
+  val del_procs: string -> simproc list -> Context.generic -> Context.generic
   
+    
   val add_split: string -> thm -> Context.generic -> Context.generic
   val del_split: string -> thm -> Context.generic -> Context.generic
     
@@ -77,6 +81,10 @@ fun del_simp name thm = map_ctxt name (Simplifier.del_simp thm)
 
 fun add_cong name thm = map_ctxt name (Simplifier.add_cong thm)
 fun del_cong name thm = map_ctxt name (Simplifier.del_cong thm)
+
+fun add_procs name procs = map_ctxt name (fn ctxt => ctxt addsimprocs procs)
+fun del_procs name procs = map_ctxt name (fn ctxt => ctxt delsimprocs procs)
+
 
 fun add_split name thm = map_ctxt name (Splitter.add_split thm)
 fun del_split name thm = map_ctxt name (Splitter.del_split thm)

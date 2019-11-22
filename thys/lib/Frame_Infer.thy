@@ -13,6 +13,7 @@ definition "entails" :: "('a::sep_algebra \<Rightarrow> bool) \<Rightarrow> _ \<
 lemma entails_refl[intro!,simp]: "P \<turnstile> P" by (simp add: entails_def)
 
 lemma entails_false[simp, intro!]: "sep_false \<turnstile> Q" by (simp add: entails_def)
+lemma entails_true[simp, intro!]: "P \<turnstile> sep_true" by (simp add: entails_def)
 
 lemma entails_trans[trans]: "P \<turnstile> Q \<Longrightarrow> Q \<turnstile> R \<Longrightarrow> P \<turnstile> R" 
   by (simp add: entails_def)
@@ -92,18 +93,38 @@ lemma fri_reduce_rl:
   
   
 subsection \<open>Configurable Rule Sets\<close>   
-named_theorems fri_prepare_simps
+(*named_theorems fri_prepare_simps*)
+
+named_simpset fri_prepare_simps = HOL_basic_ss_nomatch
+
 named_theorems fri_rules
 named_theorems fri_red_rules
 
 lemma fri_empty_concl_simp: "(\<box> ** FRI_END) = FRI_END" by simp
 
-lemmas [fri_prepare_simps] = sep_conj_assoc sep_conj_empty sep_conj_empty' sep_conj_exists
+lemmas [named_ss fri_prepare_simps] = sep_conj_assoc sep_conj_empty sep_conj_empty' sep_conj_exists
 declare entails_refl[fri_rules]
   
+lemma fri_move_sep_true_forward[named_ss fri_prepare_simps]:
+  "(sep_true ** sep_true) = sep_true"  
+  "(sep_true ** (sep_true**A)) = (sep_true ** A)"
+  "NO_MATCH sep_true A \<Longrightarrow> (A ** sep_true) = (sep_true ** A)"
+  "NO_MATCH sep_true A \<Longrightarrow> (A ** (sep_true ** B)) = (sep_true ** (A**B))"
+  by (auto simp: sep_algebra_simps sep_conj_ac)
+
+lemma fri_prepare_sep_true_concl[named_ss fri_prepare_simps]: 
+  "FRAME_INFER Ps (sep_true ** Q) \<box> = FRAME_INFER Ps Q sep_true"
+  by (auto simp: FRAME_INFER_def sep_algebra_simps sep_conj_ac)
+
 lemma fri_exI: "FRAME_INFER Ps (Qs x) F \<Longrightarrow> FRAME_INFER Ps (EXS x. Qs x) F"
   by (auto simp: FRAME_INFER_def sep_algebra_simps intro: entails_exI) 
 
+lemma fri_trueI: "FRAME_INFER Ps Qs sep_true \<Longrightarrow> FRAME_INFER (sep_true ** Ps) Qs sep_true"  
+  apply (simp add: FRAME_INFER_def sep_algebra_simps)
+  by (smt entails_mp entails_refl fri_move_sep_true_forward(2) sep.mult_commute)
+  
+  
+  
 
 subsection \<open>ML Code\<close>
 
@@ -185,15 +206,15 @@ ML \<open>
         
     (**** Frame Inference Tactic *)
     fun start_tac ctxt = 
-            asm_simp_named_thms_tac ctxt @{named_theorems fri_prepare_simps}
-      THEN' REPEAT' (resolve_tac ctxt @{thms fri_exI})
+            asm_simp_named_tac ctxt @{named_simpset fri_prepare_simps}
+      THEN' REPEAT' (resolve_tac ctxt @{thms fri_exI fri_trueI})
       THEN' resolve_tac ctxt @{thms fri_prepare}
       THEN' simp_only_tac @{thms sep_conj_assoc fri_empty_concl_simp} ctxt
   
     fun end_tac ctxt =   
       simp_ai_tac ctxt
       THEN' resolve_tac ctxt @{thms fri_end}
-      THEN' resolve_tac ctxt @{thms entails_refl}
+      THEN' resolve_tac ctxt @{thms entails_refl entails_true}
       
       
     fun start_round_tac ctxt =
@@ -324,7 +345,7 @@ text \<open>A transformer that applies a configurable set of simplification rule
 named_theorems fri_extract_congs \<open>Congruence rules for extraction\<close>
 named_theorems fri_extract_simps \<open>Simplification rules for extraction\<close>
 
-lemmas fri_basic_extract_simps = pred_lift_move_front_simps sep_conj_exists
+lemmas fri_basic_extract_simps = pred_lift_move_merge_simps sep_conj_exists
 
 
 definition EXTRACT :: "bool \<Rightarrow> bool" where [vcg_tag_defs]: "EXTRACT x \<equiv> x"

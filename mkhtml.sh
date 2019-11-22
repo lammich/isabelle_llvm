@@ -51,8 +51,9 @@ cp -a $ISABELLE_BROWSER_INFO/Unsorted/Isabelle_LLVM html/
 cp index.md html/
 cp dist.tgz html/
 cp LICENSE html/
-cp paper/main.pdf html/paper.pdf
-cp paper/talk/pres.pdf html/slides.pdf
+cp etc/logo/logo_200.png html/
+cp papers/ITP2019/main.pdf html/paper.pdf
+cp papers/ITP2019/talk/pres.pdf html/slides.pdf
 
 
 pandoc -V pagetitle="Isabelle LLVM" -s index.md > html/index.html

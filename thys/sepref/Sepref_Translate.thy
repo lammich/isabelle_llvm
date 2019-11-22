@@ -51,8 +51,9 @@ lemma vassn_tagI: "\<Gamma> h \<Longrightarrow> vassn_tag \<Gamma>"
 lemma vassn_dest[dest!]:
   "vassn_tag (\<Gamma>\<^sub>1 ** \<Gamma>\<^sub>2) \<Longrightarrow> vassn_tag \<Gamma>\<^sub>1 \<and> vassn_tag \<Gamma>\<^sub>2"
   "vassn_tag (hn_ctxt R a b) \<Longrightarrow> rdomp R a"
+  "vassn_tag (\<up>\<Phi>) \<Longrightarrow> \<Phi>"
   unfolding vassn_tag_def hn_ctxt_def rdomp_def[abs_def]
-  by (auto simp: sep_conj_def)
+  by (auto simp: sep_conj_def pred_lift_extract_simps)
 
 lemma entails_preI:
   assumes "vassn_tag A \<Longrightarrow> A \<turnstile> B"
@@ -349,10 +350,10 @@ structure Sepref_Translate = struct
     in
       DETERM o (
         resolve_from_net_tac ctxt comb_rl_net 
-        ORELSE' ( 
+        (*ORELSE' (
           Sepref_Frame.norm_goal_pre_tac ctxt 
           THEN' resolve_from_net_tac ctxt comb_rl_net
-        )
+        )*)
       )
     end
 
@@ -402,7 +403,8 @@ structure Sepref_Translate = struct
 
     (* Translate combinator, operator, or side condition. *)
     fun gen_trans_step_tac dbg ctxt = side_cond_dispatch_tac dbg
-      (trans_comb_tac ctxt ORELSE' gen_trans_op_tac dbg ctxt)
+      ( Sepref_Frame.norm_goal_pre_tac ctxt 
+        THEN' (trans_comb_tac ctxt ORELSE' gen_trans_op_tac dbg ctxt))
       ctxt
 
     val trans_step_tac = gen_trans_step_tac false  

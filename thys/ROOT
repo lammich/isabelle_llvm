@@ -10,6 +10,7 @@ session Isabelle_LLVM = Refine_Monadic +
     "sepref/IICF/IICF"  
     
   theories
+    "examples/sorting/Sorting_Introsort"
     "examples/Bin_Search"
     "examples/KMP"
     "examples/LLVM_Examples"

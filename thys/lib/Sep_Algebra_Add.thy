@@ -245,12 +245,19 @@ text \<open>Relation between \<open>pred_lift\<close> and \<open>pred_K\<close>.
   as simp-lemma, as \<open>sep_true\<close> is an abbreviation for \<open>\<langle>True\<rangle>\<close>\<close>  
 lemma "pred_K \<Phi> = (\<up>\<Phi> ** sep_true)" by (auto simp: pred_lift_def sep_conj_def sep_algebra_simps) 
   
-lemma pred_lift_move_front_simps[sep_algebra_simps]:
+lemma pred_lift_merge_simps[sep_algebra_simps]:
   "(\<up>\<Phi> ** \<up>\<Psi>) = (\<up>(\<Phi>\<and>\<Psi>))"
   "(\<up>\<Phi> ** \<up>\<Psi> ** B) = (\<up>(\<Phi>\<and>\<Psi>) ** B)"
+  by (auto simp: pred_lift_def sep_conj_def sep_algebra_simps)
+
+lemma pred_lift_move_front_simps[sep_algebra_simps]:
   "NO_MATCH (\<up>X) A \<Longrightarrow> (A ** \<up>\<Phi> ** B) = (\<up>\<Phi> ** A ** B)"
   "NO_MATCH (\<up>X) A \<Longrightarrow> (A ** \<up>\<Phi>) = (\<up>\<Phi> ** A)"
   by (auto simp: pred_lift_def sep_conj_def sep_algebra_simps)
+  
+  
+lemmas pred_lift_move_merge_simps = pred_lift_merge_simps pred_lift_move_front_simps
+
   
 lemma pred_lift_extract_simps:
   "(\<up>\<Phi>) h \<longleftrightarrow> \<Phi> \<and> h=0"
@@ -305,7 +312,9 @@ lemma sep_is_pure_assn_conjI: "sep_is_pure_assn A \<Longrightarrow> sep_is_pure_
 lemma pure_part_pure_conj_eq: "pure_part (\<up>P ** Q) \<longleftrightarrow> P \<and> pure_part Q"    
   unfolding pure_part_def by (auto simp: sep_algebra_simps pred_lift_extract_simps)
 
-  
+lemma and_pure_true: "((A ** F) and ((\<up>\<Phi> ** sep_true) ** F)) s \<longrightarrow> ((\<up>\<Phi> ** A) ** F) s"  
+  unfolding sep_conj_def pred_lift_def
+  by (auto simp: sep_algebra_simps)
   
 subsection \<open>Exact Assertion\<close>
   
@@ -464,6 +473,19 @@ qed
 
 lemmas sep_set_img_ins[simp] = sep_set_img_union[where S\<^sub>1="{i}", simplified] for i
 
+lemma sep_set_img_map:
+  assumes "inj_on f I" 
+  shows "(\<Union>*i\<in>f`I. A i) = (\<Union>*i\<in>I. A (f i))"
+proof (cases "finite I")  
+  case True
+  thus ?thesis using assms apply (induction I)
+    by (auto simp: sep_algebra_simps)
+next
+  case False thus ?thesis
+    using assms
+    apply simp
+    using finite_image_iff sep_set_img_infinite by blast
+qed    
 
 lemma sep_set_img_unionI':
   assumes NDUP: "\<And>x. \<lbrakk>x\<in>S\<^sub>2 \<rbrakk> \<Longrightarrow> (P x ** P x) = sep_false"
@@ -524,5 +546,6 @@ proof (cases "finite I")
     by (induction I) (auto simp: sep_is_pure_assn_conjI)
 qed simp
   
+
   
 end

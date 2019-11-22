@@ -18,7 +18,77 @@ lemma WHILEIT_rule_amend_invar:
   using assms by auto
   
 
+(* TODO: Move *)
+abbreviation monadic_If :: "bool nres \<Rightarrow> 'a nres \<Rightarrow> 'a nres \<Rightarrow> 'a nres" ("(if\<^sub>N (_)/ then (_)/ else (_))" [0, 0, 10] 10)
+  where "monadic_If b x y \<equiv> doN { t \<leftarrow> b; if t then x else y }"
+  
+(* TODO: Move *)
+lemma monadic_WHILEIT_rule:
+  assumes "wf R"
+  assumes "I s"
+  assumes STEP: "\<And>s. I s \<Longrightarrow> b s \<le> SPEC (\<lambda>r. if r then c s \<le> SPEC (\<lambda>s'. I s' \<and> (s',s)\<in>R) else \<Phi> s)"
+  shows "monadic_WHILEIT I b c s \<le> SPEC \<Phi>"
+  using \<open>wf R\<close> \<open>I s\<close> apply (induction s rule: wf_induct_rule)
+  apply (subst monadic_WHILEIT_unfold)
+  apply (refine_vcg)
+  apply (rule STEP[THEN order_trans], assumption)
+  apply (refine_vcg)
+  subgoal
+    apply (split if_splits; simp)
+    apply (rule order_trans, assumption)
+    apply (refine_vcg)
+    apply blast
+    done
+  subgoal
+    by auto  
+  done
 
+(* Required as VCG-rule when using monadic_WHILEIT_rule *)    
+lemma split_ifI: "\<lbrakk> b\<Longrightarrow>P; \<not>b\<Longrightarrow>Q \<rbrakk> \<Longrightarrow> If b P Q" by simp 
+  
+
+  (* TODO: Move *)  
+  lemma flatf_fixp_dep_transfer:
+    \<comment> \<open>Transfer rule for fixed points\<close>
+    assumes TR_BOT[simp]: "\<And>x x' arb m. tr arb x x' b m"
+    assumes MONO: "flatf_mono b B"
+    assumes FP': "fp' = B' fp'"
+    assumes R0: "P arb\<^sub>0 x x'"
+    assumes RS: "\<And>f f' x x' arb.
+       \<lbrakk>\<And>x x' arb. P arb x x' \<Longrightarrow> tr arb x x' (f x) (f' x'); P arb x x'; fp' = f'\<rbrakk>
+       \<Longrightarrow> tr arb x x' (B f x) (B' f' x')"
+    shows "tr arb\<^sub>0 x x' (flatf_fp b B x) (fp' x')"
+    supply rl=flatf_fp_induct_pointwise[where 
+      pre="\<lambda>(a,x) y. P a y x" and a="(arb\<^sub>0,_)" and
+      post="\<lambda>(a,x') x fp. tr a x x' fp (fp' x')"
+      , OF _ MONO]
+    apply (rule rl[simplified])
+    apply clarsimp
+    apply (rule R0)
+    apply (subst FP')
+    apply clarsimp
+    apply (blast intro: RS)
+    done
+    
+  lemma RECT_dep_refine:
+    assumes M: "trimono body"
+    assumes R0: "(x,x')\<in>R arb\<^sub>0"
+    assumes S0: "SS = S arb\<^sub>0 x"
+    assumes RS: "\<And>f f' x x' arb. \<lbrakk> \<And>x x' arb. (x,x')\<in>R arb \<Longrightarrow> f x \<le>\<Down>(S arb x) (f' x'); (x,x')\<in>R arb \<rbrakk> 
+      \<Longrightarrow> body f x \<le>\<Down>(S arb x) (body' f' x')"
+    shows "RECT (\<lambda>f x. body f x) x \<le>\<Down>SS (RECT (\<lambda>f' x'. body' f' x') x')"
+    unfolding RECT_def S0
+    apply (clarsimp simp add: M)
+  
+    apply (rule flatf_fixp_dep_transfer[where 
+          fp'="flatf_gfp body" 
+      and B'=body 
+      and P="\<lambda>arb x x'. (x',x)\<in>R arb"
+      and arb\<^sub>0=arb\<^sub>0, 
+      OF _ _ flatf_ord.fixp_unfold[OF M[THEN trimonoD_flatf_ge]] R0])
+    apply simp
+    apply (simp add: trimonoD)
+    by (rule RS)
   
   
   
@@ -41,6 +111,21 @@ lemma slice_empty_range[simp]: "h\<le>l \<Longrightarrow> Misc.slice l h xs = []
 lemma slice_upd: "\<lbrakk>l < h; h \<le> length xs; i < h - l\<rbrakk> \<Longrightarrow> (Misc.slice l h xs)[i:=x] = Misc.slice l h (xs[l + i := x])"
   unfolding Misc.slice_def
   by (simp add: drop_update_swap)
+  
+lemma slice_map: "Misc.slice l h (map f xs) = map f (Misc.slice l h xs)"
+  unfolding Misc.slice_def 
+  by (simp add: drop_map take_map)
+
+lemma slice_upd_sym: "\<lbrakk>l \<le>i; i<h; h \<le> length xs\<rbrakk> \<Longrightarrow> Misc.slice l h (xs[i := x]) = (Misc.slice l h xs)[i-l:=x]"
+  unfolding Misc.slice_def
+  by (simp add: drop_update_swap)
+  
+lemma take_slice: "take n (slice l h xs) = slice l (min h (l+n)) xs"
+  apply (clarsimp simp: Misc.slice_def min_def)
+  using le_add_diff_inverse by fastforce
+
+lemma drop_slice: "drop n (slice l h xs) = slice (l+n) h xs"  
+  by (auto simp: Misc.slice_def drop_take algebra_simps)
   
 (* TODO: Move *)
 lemma swap_nth1[simp]: "\<lbrakk>i<length xs \<rbrakk> \<Longrightarrow> swap xs i j ! i = xs!j"
@@ -173,7 +258,11 @@ lemma slice_eq_mset_subslice: "\<lbrakk> slice_eq_mset l' h' xs xs'; l\<le>l'; l
 
 definition "slice_rel xs\<^sub>0 l h \<equiv> br (Misc.slice l h) (\<lambda>xs. l\<le>h \<and> h\<le>length xs \<and> length xs=length xs\<^sub>0 \<and> take l xs = take l xs\<^sub>0 \<and> drop h xs = drop h xs\<^sub>0)"
   
-definition "idx_shift_rel s \<equiv> {(i,i'). i = i'+s}"
+definition  idx_shift_rel :: "nat \<Rightarrow> nat rel" where "idx_shift_rel s \<equiv> {(i,i'). i = i'+s}"
+
+lemma idx_shift_rel_alt: "l\<le>ii \<Longrightarrow> (ii,i)\<in>idx_shift_rel l \<longleftrightarrow> i=ii-l"
+  by (auto simp: idx_shift_rel_def)
+
 
 lemma slice_nth_refine: "\<lbrakk> (xs,xs')\<in>slice_rel xs\<^sub>0 l h; (i,i')\<in>idx_shift_rel l; i<h \<rbrakk> \<Longrightarrow> xs!i = xs'!i'"  
   by (auto simp: slice_rel_def in_br_conv slice_nth idx_shift_rel_def algebra_simps)
@@ -196,6 +285,118 @@ lemma slice_upd_refine': "\<lbrakk> (xs,xs')\<in>slice_rel xs\<^sub>0 l h; (i,i'
 lemma slice_in_slice_rel[simp]: "\<lbrakk>l\<le>h; h\<le>length xs\<rbrakk> \<Longrightarrow> (xs, Misc.slice l h xs) \<in> slice_rel xs l h"  
   unfolding slice_rel_def in_br_conv by auto
 
+  
+(* TODO: Move *)  
+  
+  definition "list_rel_on R I xs ys \<equiv> I\<subseteq>{0..<length ys} \<and> length xs = length ys \<and> (\<forall>i\<in>I. R (xs!i) (ys!i))"
+
+  lemma list_rel_on_gen_trans[trans]: "list_rel_on R\<^sub>1 I\<^sub>1 xs ys \<Longrightarrow> list_rel_on R\<^sub>2 I\<^sub>2 ys zs \<Longrightarrow> list_rel_on (R\<^sub>1 OO R\<^sub>2) (I\<^sub>1\<inter>I\<^sub>2) xs zs"
+    unfolding list_rel_on_def 
+    by auto
+    
+  lemma list_rel_on_gen_trans'[trans]: "\<lbrakk>list_rel_on R\<^sub>1 I\<^sub>1 xs ys; list_rel_on R\<^sub>2 I\<^sub>2 ys zs; R'=R\<^sub>1 OO R\<^sub>2; I'=I\<^sub>1\<inter>I\<^sub>2\<rbrakk> \<Longrightarrow> list_rel_on R' I' xs zs"
+    unfolding list_rel_on_def 
+    by auto
+  
+  lemma list_rel_on_empty: "list_rel_on R {} xs ys \<longleftrightarrow> length xs = length ys"  
+    unfolding list_rel_on_def 
+    by auto
+
+  lemma list_rel_on_whole: "list_rel_on R {0..<length ys} xs ys \<longleftrightarrow> list_all2 R xs ys"      
+    unfolding list_rel_on_def 
+    by (auto simp: list_all2_conv_all_nth)
+
+  lemma list_rel_on_combine: "list_rel_on R\<^sub>1 I\<^sub>1 xs ys \<Longrightarrow> list_rel_on R\<^sub>2 I\<^sub>2 xs ys \<Longrightarrow> list_rel_on (sup R\<^sub>1 R\<^sub>2) (I\<^sub>1\<union>I\<^sub>2) xs ys"  
+    unfolding list_rel_on_def 
+    by auto
+
+  lemma list_rel_on_mono: "R\<^sub>1\<le>R\<^sub>2 \<Longrightarrow> I\<^sub>2\<subseteq>I\<^sub>1 \<Longrightarrow> list_rel_on R\<^sub>1 I\<^sub>1 \<le> list_rel_on R\<^sub>2 I\<^sub>2"  
+    unfolding list_rel_on_def 
+    by auto
+
+  lemma list_rel_on_union: "list_rel_on R (I\<^sub>1\<union>I\<^sub>2) xs ys \<longleftrightarrow> list_rel_on R I\<^sub>1 xs ys \<and> list_rel_on R I\<^sub>2 xs ys"
+    unfolding list_rel_on_def 
+    by auto
+      
+  lemma list_rel_on_lenD: "list_rel_on R I xs ys \<Longrightarrow> length xs = length ys"          
+    unfolding list_rel_on_def 
+    by auto
+    
+
+  definition "slicep_rel l h \<equiv> {(xsi,xs). xs=slice l h xsi \<and> l\<le>h \<and> h\<le>length xsi}"  
+     
+  definition "eq_outside_range xs xs\<^sub>0 l h \<equiv> l\<le>h \<and> h\<le>length xs\<^sub>0 \<and> length xs=length xs\<^sub>0 \<and> take l xs = take l xs\<^sub>0 \<and> drop h xs = drop h xs\<^sub>0"
+  lemma eq_outside_range_list_rel_on_conv: 
+    "eq_outside_range xs ys l h \<longleftrightarrow> l\<le>h \<and> h\<le>length xs \<and> list_rel_on (=) ({0..<l}\<union>{h..<length ys}) xs ys"
+    unfolding eq_outside_range_def list_rel_on_def
+    apply clarsimp
+    apply (simp only: list_eq_iff_nth_eq) 
+    apply (safe; clarsimp)
+    by (metis diff_less_mono le_add_diff_inverse)
+  
+  lemma eq_outside_rane_lenD: "eq_outside_range xs xs\<^sub>0 l h \<Longrightarrow> length xs = length xs\<^sub>0"
+    unfolding eq_outside_range_def by auto
+
+  lemma eq_outside_range_gen_trans: "\<lbrakk>eq_outside_range xs ys l h; eq_outside_range ys zs l' h'; ll=min l l'; hh=max h h'\<rbrakk> 
+    \<Longrightarrow> eq_outside_range xs zs ll hh"  
+    unfolding eq_outside_range_list_rel_on_conv
+    apply (safe; (clarsimp simp: list_rel_on_lenD)?)
+    subgoal by auto
+    subgoal
+      apply (clarsimp simp: list_rel_on_union; intro conjI)
+      apply (erule (1) list_rel_on_gen_trans'[where I\<^sub>1="{0..<l}" and I\<^sub>2="{0..<l'}"]; auto)
+      apply (erule (1) list_rel_on_gen_trans'[where I\<^sub>1="{h..<_}" and I\<^sub>2="{h'..<_}"]; auto)
+      done
+    done  
+
+  lemma eq_outside_range_triv: "eq_outside_range xs xs l h \<longleftrightarrow> l \<le> h \<and> h \<le> length xs"  
+    unfolding eq_outside_range_def
+    by simp
+    
+          
+  lemma slice_rel_alt: "(xsi,xs)\<in>slice_rel xs\<^sub>0 l h \<longleftrightarrow> (xsi,xs)\<in>slicep_rel l h \<and> eq_outside_range xsi xs\<^sub>0 l h"
+    unfolding slice_rel_def slicep_rel_def eq_outside_range_def in_br_conv
+    by auto
+   
+  lemma slice_eq_outside_range: "\<lbrakk>eq_outside_range xs ys l h; {l..<h}\<inter>{l'..<h'}={}\<rbrakk> \<Longrightarrow> slice l' h' xs = slice l' h' ys"
+    unfolding Misc.slice_def eq_outside_range_def
+    apply simp apply (safe;clarsimp?)
+    subgoal by (metis drop_take le_def min.absorb1 take_take) 
+    subgoal by (metis drop_eq_mono leI) 
+    subgoal by (metis append_take_drop_id)
+    done
+    
+  lemma slicep_rel_eq_outside_range: "\<lbrakk>eq_outside_range xs ys l h; {l..<h}\<inter>{l'..<h'}={}\<rbrakk> 
+    \<Longrightarrow> (xs,ss)\<in>slicep_rel l' h' \<longleftrightarrow> (ys,ss)\<in>slicep_rel l' h'"
+    unfolding slicep_rel_def
+    by (auto simp add: slice_eq_outside_range eq_outside_rane_lenD)
+        
+  lemma slicep_rel_append: "\<lbrakk> (xs,ys\<^sub>1)\<in>slicep_rel l m; (xs,ys\<^sub>2)\<in>slicep_rel m h \<rbrakk> \<Longrightarrow> (xs, ys\<^sub>1@ys\<^sub>2)\<in>slicep_rel l h"
+    unfolding slicep_rel_def
+    by (auto simp: slice_append)
+  
+  lemma slicep_rel_take: "\<lbrakk>(xsi, xs) \<in> slicep_rel l h; n\<le>length xs\<rbrakk> \<Longrightarrow> (xsi, take n xs) \<in> slicep_rel l (n+l)"
+    unfolding slicep_rel_def
+    by (auto simp: take_slice algebra_simps)
+  
+  lemma slicep_rel_drop: "\<lbrakk>(xsi, xs) \<in> slicep_rel l h; n\<le>length xs\<rbrakk> \<Longrightarrow> (xsi, drop n xs) \<in> slicep_rel (n+l) h"
+    unfolding slicep_rel_def
+    by (auto simp: drop_slice algebra_simps)
+  
+  
+(* TODO: Unify these concepts! *)
+lemma slice_eq_mset_alt: 
+  "\<lbrakk>l\<le>h; h\<le>length xs'\<rbrakk> \<Longrightarrow> slice_eq_mset l h xs xs' \<longleftrightarrow> eq_outside_range xs xs' l h \<and> mset (slice l h xs) = mset (slice l h xs')"
+  unfolding slice_eq_mset_def eq_outside_range_def by auto
+
+  
+  
+  
+  
+  
+  
+  
+  
 (* TODO: Move *)
 lemma unat_gtZ_prenorm[fcomp_prenorm_simps]: "(x,y)\<in>unat_rel \<Longrightarrow> 0<x \<longleftrightarrow> 0<y"
   by (simp add: in_br_conv unat.rel_def unat_gt_0 unat_rel_def word_neq_0_conv)

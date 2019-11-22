@@ -1,4 +1,4 @@
-# Isabelle-LLVM
+# ![Isabelle-LLVM Logo](logo_200.png) Isabelle-LLVM
 
 Isabelle-LLVM is a verification framework for Isabelle/HOL that targets LLVM as backend.
 
@@ -19,6 +19,8 @@ Isabelle-LLVM is a verification framework for Isabelle/HOL that targets LLVM as 
     cd benchmarks
     ./bench_bs.sh -r
     ./bench_kmp.sh -r
+    cd sorting
+    make run
 
   Warning: We have only tested this on a Linux x86_64 platform so far. 
   We do not (yet) know how LLVM will digest our code on other platforms.

@@ -17,6 +17,14 @@ begin
   lemma non_dep_K[simp, intro!]: "non_dep (\<lambda>_. c)"  
     by (auto simp: non_dep_def)
     
+  definition "non_dep2 R \<equiv> \<forall>a b. R a b = R undefined undefined"
+  lemma non_dep2_simp: 
+    "non_dep2 R \<Longrightarrow> NO_MATCH undefined x \<Longrightarrow> R x y = R undefined undefined"
+    "non_dep2 R \<Longrightarrow> NO_MATCH undefined y \<Longrightarrow> R x y = R undefined undefined"
+    by (auto simp: non_dep2_def)
+    
+  lemma non_dep2_K[simp, intro!]: "non_dep2 (\<lambda>_ _. c)"  
+    by (auto simp: non_dep2_def)
     
     
     
@@ -159,24 +167,24 @@ begin
     :: "
       ('a \<Rightarrow> bool) 
    \<Rightarrow> (('a \<Rightarrow> 'ai \<Rightarrow> assn) \<times> ('a \<Rightarrow> 'ai \<Rightarrow> assn)) 
-   \<Rightarrow> ('a \<Rightarrow> 'b \<Rightarrow> 'bi \<Rightarrow> assn) 
+   \<Rightarrow> ('a \<Rightarrow> 'ai \<Rightarrow> 'b \<Rightarrow> 'bi \<Rightarrow> assn) 
    \<Rightarrow> (('ai \<Rightarrow> 'bi llM) \<times> ('a\<Rightarrow>'b nres)) set"
    ("[_]\<^sub>a\<^sub>d _ \<rightarrow> _" [0,60,60] 60)
    where
-    "[P]\<^sub>a\<^sub>d RS \<rightarrow> T \<equiv> { (f,g) . \<forall>c a.  P a \<longrightarrow> hn_refine (fst RS a c) (f c) (snd RS a c) (T a) (g a)}"
+    "[P]\<^sub>a\<^sub>d RS \<rightarrow> T \<equiv> { (f,g) . \<forall>c a.  P a \<longrightarrow> hn_refine (fst RS a c) (f c) (snd RS a c) (T a c) (g a)}"
 
-  abbreviation hfrefnd ("[_]\<^sub>a _ \<rightarrow> _" [0,60,60] 60) where "[P]\<^sub>a RS \<rightarrow> T \<equiv> ([P]\<^sub>a\<^sub>d RS \<rightarrow> (\<lambda>_. T))"
+  abbreviation hfrefnd ("[_]\<^sub>a _ \<rightarrow> _" [0,60,60] 60) where "[P]\<^sub>a RS \<rightarrow> T \<equiv> ([P]\<^sub>a\<^sub>d RS \<rightarrow> (\<lambda>_ _. T))"
   abbreviation hfreft ("_ \<rightarrow>\<^sub>a\<^sub>d _" [60,60] 60) where "RS \<rightarrow>\<^sub>a\<^sub>d T \<equiv> ([\<lambda>_. True]\<^sub>a\<^sub>d RS \<rightarrow> T)"
   abbreviation hfreftnd ("_ \<rightarrow>\<^sub>a _" [60,60] 60) where "RS \<rightarrow>\<^sub>a T \<equiv> [\<lambda>_. True]\<^sub>a RS \<rightarrow> T"
 
   lemma hfrefI[intro?]: 
-    assumes "\<And>c a. P a \<Longrightarrow> hn_refine (fst RS a c) (f c) (snd RS a c) (T a) (g a)"
+    assumes "\<And>c a. P a \<Longrightarrow> hn_refine (fst RS a c) (f c) (snd RS a c) (T a c) (g a)"
     shows "(f,g)\<in>hfref P RS T"
     using assms unfolding hfref_def by blast
 
   lemma hfrefD: 
     assumes "(f,g)\<in>hfref P RS T"
-    shows "\<And>c a. P a \<Longrightarrow> hn_refine (fst RS a c) (f c) (snd RS a c) (T a) (g a)"
+    shows "\<And>c a. P a \<Longrightarrow> hn_refine (fst RS a c) (f c) (snd RS a c) (T a c) (g a)"
     using assms unfolding hfref_def by blast
 
   lemma hfref_to_ASSERT_conv: 
@@ -275,7 +283,7 @@ begin
   text \<open>This section contains the lemmas. The ML code is further down. \<close>
   lemma hf2hnr:
     assumes "(f,g) \<in> [P]\<^sub>a\<^sub>d R \<rightarrow> S"
-    shows "\<forall>x xi. P x \<longrightarrow> hn_refine (hn_ctxt (fst R) x xi ** \<box>) (f$xi) (hn_ctxt (snd R) x xi ** \<box>) (S x) (g$x)"
+    shows "\<forall>x xi. P x \<longrightarrow> hn_refine (hn_ctxt (fst R) x xi ** \<box>) (f$xi) (hn_ctxt (snd R) x xi ** \<box>) (S x xi) (g$x)"
     using assms
     unfolding hfref_def 
     by (auto simp: hn_ctxt_def)
@@ -296,21 +304,23 @@ begin
         (hn_ctxt (to_hnr_prod A B) x xi ** \<Gamma>) 
         (fi xi) 
         (hn_ctxt (to_hnr_prod A' B') x xi ** \<Gamma>') 
-        (R x) 
+        (R x xi) 
         (f x))
 \<longleftrightarrow> (\<forall>b bi a ai. P (a,b) \<longrightarrow>
       hn_refine 
         (hn_ctxt A a ai ** hn_ctxt B b bi ** \<Gamma>) 
         (fi (ai,bi)) 
         (hn_ctxt A' a ai ** hn_ctxt B' b bi ** \<Gamma>')
-        (R (a,b))
+        (R (a,b) (ai,bi))
         (f (a,b))
     )"
     by (auto simp: hn_ctxt_def prod_assn_def sep_conj_ac)
     
+  (*  
   lemma hnr_intro_dummy:
     "\<forall>x xi. P x \<longrightarrow> hn_refine (\<Gamma> x xi) (c xi) (\<Gamma>' x xi) (R x) (a x) \<Longrightarrow> \<forall>x xi. P x \<longrightarrow> hn_refine (\<Gamma> x xi ** \<box>) (c xi) (\<Gamma>' x xi ** \<box>) (R x) (a x)" 
     by simp
+  *)
 
   lemma hn_ctxt_ctxt_fix_conv: "hn_ctxt (hn_ctxt R) = hn_ctxt R"
     by (simp add: hn_ctxt_def[abs_def])
@@ -465,14 +475,14 @@ begin
     
     
     
-  definition "hrr_comp R R1 R2 x a c \<equiv> 
-    if non_dep R1 then
-      hr_comp (R1 undefined) (R2 x) a c
+  definition "hrr_comp R R1 R2 x y a c \<equiv> 
+    if non_dep2 R1 then
+      hr_comp (R1 undefined undefined) (R2 x) a c
     else
-      EXS b. \<up>((b,x)\<in>R) ** hr_comp (R1 b) (R2 x) a c"
+      EXS b. \<up>((b,x)\<in>R) ** hr_comp (R1 b y) (R2 x) a c"
   
   lemma hnr_comp:
-    assumes R: "\<And>b1 c1. P b1 \<Longrightarrow> hn_refine (R1 b1 c1 ** \<Gamma>) (c c1) (R1p b1 c1 ** \<Gamma>') (R b1) (b b1)"
+    assumes R: "\<And>b1 c1. P b1 \<Longrightarrow> hn_refine (R1 b1 c1 ** \<Gamma>) (c c1) (R1p b1 c1 ** \<Gamma>') (R b1 c1) (b b1)"
     assumes S: "\<And>a1 b1. \<lbrakk>Q a1; (b1,a1)\<in>R1'\<rbrakk> \<Longrightarrow> (b b1,a a1)\<in>\<langle>R' a1\<rangle>nres_rel"
     assumes PQ: "\<And>a1 b1. \<lbrakk>Q a1; (b1,a1)\<in>R1'\<rbrakk> \<Longrightarrow> P b1"
     assumes Q: "Q a1"
@@ -480,7 +490,7 @@ begin
       (hr_comp R1 R1' a1 c1 ** \<Gamma>) 
       (c c1)
       (hr_comp R1p R1' a1 c1 ** \<Gamma>') 
-      (hrr_comp R1' R R' a1) 
+      (hrr_comp R1' R R' a1 c1) 
       (a a1)"
   proof -
 
@@ -493,11 +503,11 @@ begin
     show ?thesis      
       unfolding hn_refine_alt
       unfolding hr_comp_def hn_rel_def hrr_comp_def
-      apply (cases "non_dep R"; simp)
+      apply (cases "non_dep2 R"; simp)
       subgoal premises prems
         apply (auto simp: sep_algebra_simps)
         using PQ[OF Q] 
-        supply [simp] = non_dep_simp[OF prems]
+        supply [simp] = non_dep2_simp[OF prems]
         apply vcg
         apply (frule S[OF Q])
         apply (erule (2) hnr_comp_aux)
@@ -509,12 +519,13 @@ begin
         apply (frule S[OF Q])
         apply (erule (2) hnr_comp_aux)
         by vcg_try_solve
+        
       done
   qed
   
 
   lemma hnr_comp1_aux:
-    assumes R: "\<And>b1 c1. P b1 \<Longrightarrow> hn_refine (hn_ctxt R1 b1 c1) (c c1) (hn_ctxt R1p b1 c1) (R b1) (b$b1)"
+    assumes R: "\<And>b1 c1. P b1 \<Longrightarrow> hn_refine (hn_ctxt R1 b1 c1) (c c1) (hn_ctxt R1p b1 c1) (R b1 c1) (b$b1)"
     assumes S: "\<And>a1 b1. \<lbrakk>Q a1; (b1,a1)\<in>R1'\<rbrakk> \<Longrightarrow> (b$b1,a$a1)\<in>\<langle>R' a1\<rangle>nres_rel"
     assumes PQ: "\<And>a1 b1. \<lbrakk>Q a1; (b1,a1)\<in>R1'\<rbrakk> \<Longrightarrow> P b1"
     assumes Q: "Q a1"
@@ -522,7 +533,7 @@ begin
       (hr_comp R1 R1' a1 c1) 
       (c c1)
       (hr_comp R1p R1' a1 c1) 
-      (hrr_comp R1' R R' a1) 
+      (hrr_comp R1' R R' a1 c1) 
       (a a1)"
     using assms hnr_comp[where \<Gamma>=\<box> and \<Gamma>'=\<box> and a=a and b=b and c=c and P=P and Q=Q]  
     unfolding hn_ctxt_def
@@ -541,17 +552,17 @@ begin
     apply (auto simp: hn_ctxt_def)
     done
 
-  lemma hrr_comp_nondep: "hrr_comp T (\<lambda>_. A) R = (\<lambda>x. hr_comp A (R x))"
+  lemma hrr_comp_nondep: "hrr_comp T (\<lambda>_ _. A) R = (\<lambda>x _. hr_comp A (R x))"
     unfolding hrr_comp_def
     by (auto simp: fun_eq_iff)
     
   (* TODO: Concept of lifting dependent relation over other relation! Allows us to handle hrr_comp R R1 (\<lambda>_. Id) *)
   lemma hrr_comp_Id_R_Id: "hrr_comp Id R1 (\<lambda>_. Id) = R1"
-    by (auto simp: hrr_comp_def fun_eq_iff pred_lift_extract_simps non_dep_simp[of R1])
+    by (auto simp: hrr_comp_def fun_eq_iff pred_lift_extract_simps non_dep2_simp[of R1])
   
-  lemma hrr_comp_id_conv[simp]: "hrr_comp Id R1 R2 = (\<lambda>x. hr_comp (R1 x) (R2 x))"
+  lemma hrr_comp_id_conv[simp]: "hrr_comp Id R1 R2 = (\<lambda>x y. hr_comp (R1 x y) (R2 x))"
     unfolding hrr_comp_def
-    by (auto simp: fun_eq_iff pred_lift_extract_simps non_dep_simp[of R1])
+    by (auto simp: fun_eq_iff pred_lift_extract_simps non_dep2_simp[of R1])
   
     
   lemma hfref_weaken_pre_nofail: 
@@ -566,7 +577,7 @@ begin
     assumes "\<And>x. P' x \<Longrightarrow> P x"
     assumes "\<And>x y. fst R' x y \<turnstile> fst R x y"
     assumes "\<And>x y. snd R x y \<turnstile> snd R' x y"
-    assumes "\<And>x y a. P' a \<Longrightarrow> S a x y \<turnstile> S' a x y"
+    assumes "\<And>x y a c. P' a \<Longrightarrow> S a c x y \<turnstile> S' a c x y"
     shows "(f,g) \<in> [P']\<^sub>a\<^sub>d R' \<rightarrow> S'"
     unfolding hfref_def
     apply clarsimp
@@ -879,7 +890,7 @@ begin
     by simp
 
   lemma hfsynth_hnr_from_hfI:
-    assumes "\<forall>x xi. P x \<and> hfsynth_ID_R (fst R) x \<longrightarrow> hn_refine (hn_ctxt (fst R) x xi ** \<box>) (f$xi) (hn_ctxt (snd R) x xi ** \<box>) (S x) (g$x)"
+    assumes "\<forall>x xi. P x \<and> hfsynth_ID_R (fst R) x \<longrightarrow> hn_refine (hn_ctxt (fst R) x xi ** \<box>) (f$xi) (hn_ctxt (snd R) x xi ** \<box>) (S x xi) (g$x)"
     shows "(f,g) \<in> [P]\<^sub>a\<^sub>d R \<rightarrow> S"
     using assms
     unfolding hfref_def 
@@ -1797,21 +1808,21 @@ begin
     end
   \<close>
 
-  attribute_setup to_fref = {*
+  attribute_setup to_fref = \<open>
     Scan.succeed (Thm.rule_attribute [] (Sepref_Rules.to_fref o Context.proof_of))
-  *} "Convert parametricity theorem to uncurried fref-form" 
+  \<close> "Convert parametricity theorem to uncurried fref-form" 
 
-  attribute_setup to_foparam = {*
+  attribute_setup to_foparam = \<open>
       Scan.succeed (Thm.rule_attribute [] (Sepref_Rules.to_foparam o Context.proof_of))
-  *} \<open>Convert param or fref rule to first order rule\<close>
+  \<close> \<open>Convert param or fref rule to first order rule\<close>
   (* Overloading existing param_fo - attribute from Parametricity.thy *)
-  attribute_setup param_fo = {*
+  attribute_setup param_fo = \<open>
       Scan.succeed (Thm.rule_attribute [] (Sepref_Rules.to_foparam o Context.proof_of))
-  *} \<open>Convert param or fref rule to first order rule\<close>
+  \<close> \<open>Convert param or fref rule to first order rule\<close>
 
-  attribute_setup to_hnr = {*
+  attribute_setup to_hnr = \<open>
     Scan.succeed (Thm.rule_attribute [] (Sepref_Rules.to_hnr o Context.proof_of))
-  *} "Convert hfref-rule to hnr-rule"
+  \<close> "Convert hfref-rule to hnr-rule"
   
   attribute_setup to_hfref = \<open>Scan.succeed (
       Thm.rule_attribute [] (Context.proof_of #> Sepref_Rules.to_hfref)

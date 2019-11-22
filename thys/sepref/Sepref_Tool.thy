@@ -348,8 +348,8 @@ proof -
 qed
 
 lemma MK_FREE_hrrcompI[sepref_frame_free_rules]:
-  assumes "\<And>x. MK_FREE (A x) f" 
-  shows "MK_FREE (hrr_comp S A R x) f"
+  assumes "\<And>x y. MK_FREE (A x y) f" 
+  shows "MK_FREE (hrr_comp S A R x y) f"
 proof -
   note [vcg_rules] = assms[THEN MK_FREED]
   show ?thesis

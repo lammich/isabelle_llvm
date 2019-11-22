@@ -12,13 +12,13 @@ define i64 @euclid(i64 %a, i64 %b) {
   start:
     %x = insertvalue { i64, i64 } zeroinitializer, i64 %a, 0
     %xa = insertvalue { i64, i64 } %x, i64 %b, 1
-    %xb = call { i64, i64 } @LLVM_Examples_euclid_f_04078526 ({ i64, i64 } %xa)
+    %xb = call { i64, i64 } @LLVM_Examples_euclid_f_04203496 ({ i64, i64 } %xa)
     %a1 = extractvalue { i64, i64 } %xb, 0
     %b1 = extractvalue { i64, i64 } %xb, 1
     ret i64 %a1
 }
 
-define { i64, i64 } @LLVM_Examples_euclid_f_04078526({ i64, i64 } %s) {
+define { i64, i64 } @LLVM_Examples_euclid_f_04203496({ i64, i64 } %s) {
 
   start:
     %a = extractvalue { i64, i64 } %s, 0
@@ -46,7 +46,7 @@ define { i64, i64 } @LLVM_Examples_euclid_f_04078526({ i64, i64 } %s) {
 
   ctd_ifa:
     %x4 = phi { i64, i64 } [ %x3, %elsea ], [ %x2, %thena ]
-    %x5 = call { i64, i64 } @LLVM_Examples_euclid_f_04078526 ({ i64, i64 } %x4)
+    %x5 = call { i64, i64 } @LLVM_Examples_euclid_f_04203496 ({ i64, i64 } %x4)
     br label %ctd_if
 
   else:

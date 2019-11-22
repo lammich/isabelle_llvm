@@ -8,6 +8,6 @@ typedef struct {
   char*str;
 } string;
 
-int64_t kmp(string,string);
+int64_t kmp(string, string);
 
 #endif

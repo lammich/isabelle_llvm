@@ -26,8 +26,20 @@ end
 
 locale generic_wp = generic_wp_defs wp
   for wp :: "'c \<Rightarrow> ('r \<Rightarrow> 's \<Rightarrow> bool) \<Rightarrow> 's \<Rightarrow> bool" +
-  assumes wp_mono: "Q\<le>Q' \<Longrightarrow> wp c Q \<le> wp c Q'"
+  assumes wp_comm_inf: "inf (wp c Q) (wp c Q') = wp c (inf Q Q')"
 begin
+
+  lemma wp_comm_conj: "wp c (\<lambda>r. Q r and Q' r) s \<longleftrightarrow> wp c Q s \<and> wp c Q' s"
+    using wp_comm_inf[of c Q Q']
+    unfolding inf_fun_def inf_bool_def by metis
+
+  lemma wp_comm_conjI: "\<lbrakk> wp c Q s; wp c Q' s \<rbrakk> \<Longrightarrow> wp c (\<lambda>r s. Q r s \<and> Q' r s) s"
+    using wp_comm_inf[of c Q Q']
+    unfolding inf_fun_def inf_bool_def by metis
+
+
+  lemma wp_mono: "Q\<le>Q' \<Longrightarrow> wp c Q \<le> wp c Q'"
+    by (metis (mono_tags) antisym_conv le_inf_iff order_refl wp_comm_inf)
 
   lemma wp_monoI:
     assumes "wp c Q s"
@@ -152,7 +164,40 @@ begin
     by (force simp: htripleF_def intro: wp_monoI)
     
     
+  lemma htriple_conj_pure:
+    fixes \<alpha>
+    assumes "htriple \<alpha> P c Q"
+    assumes "htriple \<alpha> P c (\<lambda>r. \<up>\<Phi> r ** sep_true)"
+    shows "htriple \<alpha> P c (\<lambda>r. \<up>\<Phi> r ** Q r)"
+  proof (rule htripleI)  
+    fix F s
+    assume "(P**F) (\<alpha> s)"
+    from wp_comm_conjI[OF assms[THEN htripleD,OF this]]
+    show "wp c (\<lambda>r s'. ((\<up>\<Phi> r \<and>* Q r) \<and>* F) (\<alpha> s')) s"
+      apply (rule wp_monoI)
+      using and_pure_true unfolding entails_def by blast
+      
+  qed    
+    
 end
+
+experiment begin
+  text \<open>Precondition defined by semantics relation:
+    \<^item> \<open>T c s\<close> command terminates in state \<open>s\<close>
+    \<^item> \<open>R c s r s'\<close> command yields result \<open>r\<close> and new state \<open>s'\<close>
+  \<close>
+  
+  definition "my_wp T (R::_ \<Rightarrow> 's\<Rightarrow>_\<Rightarrow>'s\<Rightarrow>bool) c Q s \<equiv> T c s \<and> (\<forall>r s'. R c s r s' \<longrightarrow> Q r s')"
+  
+
+  interpretation generic_wp "my_wp T R"  
+    apply unfold_locales
+    unfolding my_wp_def
+    by auto
+  
+
+end
+
 
 
 
@@ -319,7 +364,9 @@ section \<open>Setup for mres-Monad\<close>
     by (auto simp: wlp_def mwp_def split: mres.splits)
   
   interpretation generic_wp wp 
-    by unfold_locales (auto simp: wp_def elim!: mwp_cons) 
+    apply unfold_locales 
+    unfolding wp_def fun_eq_iff inf_fun_def inf_bool_def mwp_def
+    by (auto split: mres.split)
 
   lemma wp_return[vcg_normalize_simps]: "wp (return x) Q s \<longleftrightarrow> Q x s"  
     by (auto simp: wp_def run_simps)

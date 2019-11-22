@@ -157,7 +157,11 @@ lemma fr_solve_simple_init: "FR_SOLVE_SIMPLE (Ps**\<box>) (Qs**\<box>) \<box> \<
   subgoal by simp
   done
   
-  
+named_simpset sepref_frame_normrel = HOL_basic_ss_nomatch
+named_theorems sepref_frame_normgoal_intros
+
+lemmas [sepref_frame_normgoal_intros] = impI
+
   
 ML \<open>
 signature SEPREF_FRAME = sig
@@ -193,10 +197,12 @@ signature SEPREF_FRAME = sig
   (* Convert hn_invalid to hn_val UNIV in postcondition of hnr-goal. Makes proving the goal easier.*)
   val weaken_post_tac: Proof.context -> tactic'
 
+  (*
   val add_normrel_eq : thm -> Context.generic -> Context.generic
   val del_normrel_eq : thm -> Context.generic -> Context.generic
   val get_normrel_eqs : Proof.context -> thm list
-
+  *)
+  
   val cfg_debug: bool Config.T
 
   val setup: theory -> theory
@@ -211,7 +217,7 @@ structure Sepref_Frame : SEPREF_FRAME = struct
   val DCONVERSION = Sepref_Debugging.DBG_CONVERSION cfg_debug
   val dbg_msg_tac = Sepref_Debugging.dbg_msg_tac cfg_debug
 
-
+(*
   structure normrel_eqs = Named_Thms (
     val name = @{binding sepref_frame_normrel_eqs}
     val description = "Equations to normalize relations for frame matching"
@@ -220,7 +226,7 @@ structure Sepref_Frame : SEPREF_FRAME = struct
   val add_normrel_eq = normrel_eqs.add_thm
   val del_normrel_eq = normrel_eqs.del_thm
   val get_normrel_eqs = normrel_eqs.get
-
+*)
   (*val mk_entails = HOLogic.mk_binrel @{const_name "entails"}*)
 
 
@@ -352,7 +358,7 @@ structure Sepref_Frame : SEPREF_FRAME = struct
         Named_Theorems_Rev.get ctxt @{named_theorems_rev sepref_frame_match_rules} 
       val merge_thms = @{thms merge_thms} @
         Named_Theorems.get ctxt @{named_theorems sepref_frame_merge_rules}
-      val ss = put_simpset HOL_basic_ss ctxt addsimps normrel_eqs.get ctxt
+      val ss = Named_Simpsets.put @{named_simpset sepref_frame_normrel} ctxt
       fun frame_thm_tac dbg = wrap_side_tac ctxt side_tac dbg (resolve_tac ctxt frame_thms)
       fun merge_thm_tac dbg = wrap_side_tac ctxt side_tac dbg (resolve_tac ctxt merge_thms)
   
@@ -415,7 +421,7 @@ structure Sepref_Frame : SEPREF_FRAME = struct
     CONCL_COND' is_free THEN'
     mk_free_tac ctxt (side_tac ctxt) false
   
-  val setup = normrel_eqs.setup
+  val setup = I
 
   local
     open Sepref_Basic
@@ -477,13 +483,10 @@ structure Sepref_Frame : SEPREF_FRAME = struct
 
 
     fun normrel_conv ctxt = let
-      val ss = put_simpset HOL_basic_ss ctxt addsimps normrel_eqs.get ctxt
+      val ss = Named_Simpsets.put @{named_simpset sepref_frame_normrel} ctxt
     in
       Simplifier.rewrite ss
     end
-
-  in
-    fun align_goal_conv ctxt = f_tac_conv ctxt (align_goal_conv_aux ctxt) (star_permute_tac ctxt)
 
     fun norm_goal_pre_conv ctxt = let
       open Conv
@@ -491,8 +494,13 @@ structure Sepref_Frame : SEPREF_FRAME = struct
     in
       HOL_concl_conv (fn _ => hn_refine_conv nr_conv all_conv all_conv all_conv all_conv) ctxt
     end  
+    
+  in
+    fun align_goal_conv ctxt = f_tac_conv ctxt (align_goal_conv_aux ctxt) (star_permute_tac ctxt)
 
-    fun norm_goal_pre_tac ctxt = CONVERSION (norm_goal_pre_conv ctxt)
+    fun norm_goal_pre_tac ctxt = 
+      CONVERSION (norm_goal_pre_conv ctxt)
+      THEN' REPEAT_DETERM' (resolve_tac ctxt (Named_Theorems.get ctxt @{named_theorems sepref_frame_normgoal_intros}))
 
     fun align_rl_conv ctxt = let
       open Conv
@@ -504,7 +512,9 @@ structure Sepref_Frame : SEPREF_FRAME = struct
 
     fun align_goal_tac ctxt = 
       CONCL_COND' is_hn_refine_concl 
+      (*THEN' norm_goal_pre_tac ctxt*)
       THEN' DCONVERSION ctxt (HOL_concl_conv align_goal_conv ctxt)
+      
   end
 
 
@@ -530,8 +540,19 @@ method extract_hnr_invalids = (
 ) \<comment> \<open>Extract \<open>hn_invalid _ _ _ = true\<close> preconditions from \<open>hn_refine\<close> goal.\<close>
   
 
+lemmas [named_ss sepref_frame_normrel] = sep_conj_assoc
 
-lemmas [sepref_frame_normrel_eqs] = the_pure_pure pure_the_pure
+lemmas [named_ss sepref_frame_normrel] = the_pure_pure pure_the_pure
+
+lemmas [named_ss sepref_frame_normrel] = pred_lift_move_merge_simps
+
+lemma hnr_pre_pureI[sepref_frame_normgoal_intros]:
+  assumes "\<Phi> \<Longrightarrow> hn_refine \<Gamma> c \<Gamma>' R a"
+  shows "hn_refine (\<up>\<Phi> ** \<Gamma>) c \<Gamma>' R a"
+  using assms
+  by (simp add: hnr_pre_pure_conv)
+
+
 
 end
 

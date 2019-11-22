@@ -1,10 +1,12 @@
-# Isabelle-LLVM
+# Isabelle-LLVM (Introsort Case Study)
 
 Isabelle-LLVM is a verification framework for Isabelle/HOL that targets LLVM as backend.
 
+This archive contains the version where we amended the Introsort case study in folder thys/examples/sorting, and
+the corresponding benchmarks in benchmarks/sorting.
+
 ## Prerequisites
   * To compile the LLVM code: Working installation of [LLVM](http://releases.llvm.org/) version >= 6.0.0.
-  * To compile the functional code: An [MLton](http://mlton.org/) compiler version >= 20100608.
   * To re-check the proofs: Working installation of [Isabelle/HOL](https://isabelle.in.tum.de) 
     with the [Archive of Formal Proofs](https://www.isa-afp.org) installed 
     as as described on [https://www.isa-afp.org/using.shtml](https://www.isa-afp.org/using.shtml). 
@@ -13,12 +15,9 @@ Isabelle-LLVM is a verification framework for Isabelle/HOL that targets LLVM as 
 ## Compiling and running benchmarks
   To compile and run the benchmarks
 
-    cd benchmarks
-    ./bench_bs.sh -r
-    ./bench_kmp.sh -r
+    cd benchmarks/sorting
+    make run
 
-  Warning: We have only tested this on a Linux x86_64 platform so far. 
-  We do not (yet) know how LLVM will digest our code on other platforms.
     
 ## Re-Checking the Proofs
   To re-check the proofs, run

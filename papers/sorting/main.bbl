@@ -1,0 +1,599 @@
+%%% -*-BibTeX-*-
+%%% Do NOT edit. File created by BibTeX with style
+%%% ACM-Reference-Format-Journals [18-Jan-2012].
+
+\begin{thebibliography}{41}
+
+%%% ====================================================================
+%%% NOTE TO THE USER: you can override these defaults by providing
+%%% customized versions of any of these macros before the \bibliography
+%%% command.  Each of them MUST provide its own final punctuation,
+%%% except for \shownote{}, \showDOI{}, and \showURL{}.  The latter two
+%%% do not use final punctuation, in order to avoid confusing it with
+%%% the Web address.
+%%%
+%%% To suppress output of a particular field, define its macro to expand
+%%% to an empty string, or better, \unskip, like this:
+%%%
+%%% \newcommand{\showDOI}[1]{\unskip}   % LaTeX syntax
+%%%
+%%% \def \showDOI #1{\unskip}           % plain TeX syntax
+%%%
+%%% ====================================================================
+
+\ifx \showCODEN    \undefined \def \showCODEN     #1{\unskip}     \fi
+\ifx \showDOI      \undefined \def \showDOI       #1{#1}\fi
+\ifx \showISBNx    \undefined \def \showISBNx     #1{\unskip}     \fi
+\ifx \showISBNxiii \undefined \def \showISBNxiii  #1{\unskip}     \fi
+\ifx \showISSN     \undefined \def \showISSN      #1{\unskip}     \fi
+\ifx \showLCCN     \undefined \def \showLCCN      #1{\unskip}     \fi
+\ifx \shownote     \undefined \def \shownote      #1{#1}          \fi
+\ifx \showarticletitle \undefined \def \showarticletitle #1{#1}   \fi
+\ifx \showURL      \undefined \def \showURL       {\relax}        \fi
+% The following commands are used for tagged output and should be
+% invisible to TeX
+\providecommand\bibfield[2]{#2}
+\providecommand\bibinfo[2]{#2}
+\providecommand\natexlab[1]{#1}
+\providecommand\showeprint[2][]{arXiv:#2}
+
+\bibitem[\protect\citeauthoryear{Appel, Dockins, Hobor, Beringer, Dodds,
+  Stewart, Blazy, and Leroy}{Appel et~al\mbox{.}}{2014}]%
+        {App14}
+\bibfield{author}{\bibinfo{person}{Andrew~W. Appel}, \bibinfo{person}{Robert
+  Dockins}, \bibinfo{person}{Aquinas Hobor}, \bibinfo{person}{Lennart
+  Beringer}, \bibinfo{person}{Josiah Dodds}, \bibinfo{person}{Gordon Stewart},
+  \bibinfo{person}{Sandrine Blazy}, {and} \bibinfo{person}{Xavier Leroy}.}
+  \bibinfo{year}{2014}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{Program Logics for Certified Compilers}}.
+\newblock \bibinfo{publisher}{Cambridge University Press},
+  \bibinfo{address}{New York, NY, USA}.
+\newblock
+\showISBNx{110704801X, 9781107048010}
+
+
+\bibitem[\protect\citeauthoryear{Beckert, H\"{a}hnle, and Schmitt}{Beckert
+  et~al\mbox{.}}{2007}]%
+        {BHS07}
+\bibfield{author}{\bibinfo{person}{Bernhard Beckert}, \bibinfo{person}{Reiner
+  H\"{a}hnle}, {and} \bibinfo{person}{Peter~H. Schmitt}.}
+  \bibinfo{year}{2007}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{Verification of Object-oriented Software:
+  The KeY Approach}}.
+\newblock \bibinfo{publisher}{Springer-Verlag}, \bibinfo{address}{Berlin,
+  Heidelberg}.
+\newblock
+\showISBNx{3-540-68977-X, 978-3-540-68977-5}
+
+
+\bibitem[\protect\citeauthoryear{Beckert, Schiffl, Schmitt, and
+  Ulbrich}{Beckert et~al\mbox{.}}{2017}]%
+        {BSSU17}
+\bibfield{author}{\bibinfo{person}{Bernhard Beckert}, \bibinfo{person}{Jonas
+  Schiffl}, \bibinfo{person}{Peter~H. Schmitt}, {and} \bibinfo{person}{Mattias
+  Ulbrich}.} \bibinfo{year}{2017}\natexlab{}.
+\newblock \showarticletitle{Proving JDK's Dual Pivot Quicksort Correct}. In
+  \bibinfo{booktitle}{\emph{VSTTE}}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Bentley and McIlroy}{Bentley and
+  McIlroy}{1993}]%
+        {Bent93}
+\bibfield{author}{\bibinfo{person}{Jon~L. Bentley} {and}
+  \bibinfo{person}{M.~Douglas McIlroy}.} \bibinfo{year}{1993}\natexlab{}.
+\newblock \showarticletitle{Engineering a Sort Function}.
+\newblock \bibinfo{journal}{\emph{Softw. Pract. Exper.}} \bibinfo{volume}{23},
+  \bibinfo{number}{11} (\bibinfo{date}{Nov.} \bibinfo{year}{1993}),
+  \bibinfo{pages}{1249--1265}.
+\newblock
+\showISSN{0038-0644}
+\urldef\tempurl%
+\url{https://doi.org/10.1002/spe.4380231105}
+\showDOI{\tempurl}
+
+
+\bibitem[\protect\citeauthoryear{Blanchette, B{\"{o}}hme, and
+  Paulson}{Blanchette et~al\mbox{.}}{2013}]%
+        {BBP13}
+\bibfield{author}{\bibinfo{person}{Jasmin~Christian Blanchette},
+  \bibinfo{person}{Sascha B{\"{o}}hme}, {and} \bibinfo{person}{Lawrence~C.
+  Paulson}.} \bibinfo{year}{2013}\natexlab{}.
+\newblock \showarticletitle{Extending Sledgehammer with {SMT} Solvers}.
+\newblock \bibinfo{journal}{\emph{J. Autom. Reasoning}} \bibinfo{volume}{51},
+  \bibinfo{number}{1} (\bibinfo{year}{2013}), \bibinfo{pages}{109--128}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.1007/s10817-013-9278-5}
+\showDOI{\tempurl}
+
+
+\bibitem[\protect\citeauthoryear{Blazy and Leroy}{Blazy and Leroy}{2009}]%
+        {BL09}
+\bibfield{author}{\bibinfo{person}{Sandrine Blazy} {and}
+  \bibinfo{person}{Xavier Leroy}.} \bibinfo{year}{2009}\natexlab{}.
+\newblock \showarticletitle{Mechanized semantics for the {Clight} subset of the
+  {C} language}.
+\newblock \bibinfo{journal}{\emph{Journal of Automated Reasoning}}
+  \bibinfo{volume}{43}, \bibinfo{number}{3} (\bibinfo{year}{2009}),
+  \bibinfo{pages}{263--288}.
+\newblock
+\urldef\tempurl%
+\url{http://xavierleroy.org/publi/Clight.pdf}
+\showURL{%
+\tempurl}
+
+
+\bibitem[\protect\citeauthoryear{Bloch}{Bloch}{[n. d.]}]%
+        {bs_flaw_blogpost}
+\bibfield{author}{\bibinfo{person}{Joshua Bloch}.} \bibinfo{year}{[n.
+  d.]}\natexlab{}.
+\newblock \bibinfo{title}{Extra, Extra - Read All About It: Nearly All Binary
+  Searches and Mergesorts are Broken}.
+\newblock   (\bibinfo{year}{[n. d.]}).
+\newblock
+\urldef\tempurl%
+\url{http://googleresearch.blogspot.com/2006/06/extra-extra-read-all-about-it-nearly.html}
+\showURL{%
+\tempurl}
+
+
+\bibitem[\protect\citeauthoryear{boost}{boost}{[n. d.]}]%
+        {boost}
+boost \bibinfo{year}{[n. d.]}\natexlab{}.
+\newblock \bibinfo{title}{Boost {C++} Libraries}.
+\newblock   (\bibinfo{year}{[n. d.]}).
+\newblock
+\urldef\tempurl%
+\url{https://www.boost.org/}
+\showURL{%
+\tempurl}
+
+
+\bibitem[\protect\citeauthoryear{Bornat, Calcagno, O'Hearn, and
+  Parkinson}{Bornat et~al\mbox{.}}{2005}]%
+        {BCOP05}
+\bibfield{author}{\bibinfo{person}{Richard Bornat}, \bibinfo{person}{Cristiano
+  Calcagno}, \bibinfo{person}{Peter O'Hearn}, {and} \bibinfo{person}{Matthew
+  Parkinson}.} \bibinfo{year}{2005}\natexlab{}.
+\newblock \showarticletitle{Permission Accounting in Separation Logic}. In
+  \bibinfo{booktitle}{\emph{Proceedings of the 32Nd ACM SIGPLAN-SIGACT
+  Symposium on Principles of Programming Languages}}
+  \emph{(\bibinfo{series}{POPL '05})}. \bibinfo{publisher}{ACM},
+  \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{259--270}.
+\newblock
+\showISBNx{1-58113-830-X}
+\urldef\tempurl%
+\url{https://doi.org/10.1145/1040305.1040327}
+\showDOI{\tempurl}
+
+
+\bibitem[\protect\citeauthoryear{Brunner and Lammich}{Brunner and
+  Lammich}{2018}]%
+        {BrLa18}
+\bibfield{author}{\bibinfo{person}{Julian Brunner} {and} \bibinfo{person}{Peter
+  Lammich}.} \bibinfo{year}{2018}\natexlab{}.
+\newblock \showarticletitle{Formal Verification of an Executable {LTL} Model
+  Checker with Partial Order Reduction}.
+\newblock \bibinfo{journal}{\emph{J. Autom. Reasoning}} \bibinfo{volume}{60},
+  \bibinfo{number}{1} (\bibinfo{year}{2018}), \bibinfo{pages}{3--21}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.1007/s10817-017-9418-4}
+\showDOI{\tempurl}
+
+
+\bibitem[\protect\citeauthoryear{Calcagno, O'Hearn, and Yang}{Calcagno
+  et~al\mbox{.}}{2007}]%
+        {CHY07}
+\bibfield{author}{\bibinfo{person}{C. Calcagno}, \bibinfo{person}{P.W.
+  O'Hearn}, {and} \bibinfo{person}{Hongseok Yang}.}
+  \bibinfo{year}{2007}\natexlab{}.
+\newblock \showarticletitle{Local Action and Abstract Separation Logic}. In
+  \bibinfo{booktitle}{\emph{LICS 2007}}. \bibinfo{pages}{366--378}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Cao, Beringer, Gruetter, Dodds, and
+  W.~Appel}{Cao et~al\mbox{.}}{2018}]%
+        {CBGD18}
+\bibfield{author}{\bibinfo{person}{Qinxiang Cao}, \bibinfo{person}{Lennart
+  Beringer}, \bibinfo{person}{Samuel Gruetter}, \bibinfo{person}{Josiah Dodds},
+  {and} \bibinfo{person}{Andrew W.~Appel}.} \bibinfo{year}{2018}\natexlab{}.
+\newblock \showarticletitle{VST-Floyd: A Separation Logic Tool to Verify
+  Correctness of {C} Programs}.
+\newblock \bibinfo{journal}{\emph{Journal of Automated Reasoning}}
+  \bibinfo{volume}{61} (\bibinfo{date}{02} \bibinfo{year}{2018}).
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.1007/s10817-018-9457-5}
+\showDOI{\tempurl}
+
+
+\bibitem[\protect\citeauthoryear{Cormen, Leiserson, Rivest, and Stein}{Cormen
+  et~al\mbox{.}}{2009}]%
+        {CLRS09}
+\bibfield{author}{\bibinfo{person}{Thomas~H. Cormen},
+  \bibinfo{person}{Charles~E. Leiserson}, \bibinfo{person}{Ronald~L. Rivest},
+  {and} \bibinfo{person}{Clifford Stein}.} \bibinfo{year}{2009}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{Introduction to Algorithms, Third Edition}
+  (\bibinfo{edition}{3rd} ed.)}.
+\newblock \bibinfo{publisher}{The MIT Press}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{de~Gouw, Rot, de~Boer, Bubel, and
+  H{\"a}hnle}{de~Gouw et~al\mbox{.}}{2015}]%
+        {GRBBH15}
+\bibfield{author}{\bibinfo{person}{Stijn de Gouw}, \bibinfo{person}{Jurriaan
+  Rot}, \bibinfo{person}{Frank~S. de Boer}, \bibinfo{person}{Richard Bubel},
+  {and} \bibinfo{person}{Reiner H{\"a}hnle}.} \bibinfo{year}{2015}\natexlab{}.
+\newblock \showarticletitle{OpenJDK's Java.utils.Collection.sort() Is Broken:
+  The Good, the Bad and the Worst Case}. In \bibinfo{booktitle}{\emph{CAV}}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Edelkamp and Wei{\ss}}{Edelkamp and
+  Wei{\ss}}{2016}]%
+        {EdWe16}
+\bibfield{author}{\bibinfo{person}{Stefan Edelkamp} {and}
+  \bibinfo{person}{Armin Wei{\ss}}.} \bibinfo{year}{2016}\natexlab{}.
+\newblock \showarticletitle{BlockQuicksort: How Branch Mispredictions don't
+  affect Quicksort}.
+\newblock \bibinfo{journal}{\emph{CoRR}}  \bibinfo{volume}{abs/1604.06697}
+  (\bibinfo{year}{2016}).
+\newblock
+\showeprint[arxiv]{1604.06697}
+\urldef\tempurl%
+\url{http://arxiv.org/abs/1604.06697}
+\showURL{%
+\tempurl}
+
+
+\bibitem[\protect\citeauthoryear{Esparza, Lammich, Neumann, Nipkow, Schimpf,
+  and Smaus}{Esparza et~al\mbox{.}}{2013}]%
+        {ELNN13}
+\bibfield{author}{\bibinfo{person}{Javier Esparza}, \bibinfo{person}{Peter
+  Lammich}, \bibinfo{person}{René Neumann}, \bibinfo{person}{Tobias Nipkow},
+  \bibinfo{person}{Alexander Schimpf}, {and} \bibinfo{person}{Jan-Georg
+  Smaus}.} \bibinfo{year}{2013}\natexlab{}.
+\newblock \showarticletitle{A Fully Verified Executable {LTL} Model Checker}.
+\newblock In \bibinfo{booktitle}{\emph{CAV}}. \bibinfo{series}{LNCS},
+  Vol.~\bibinfo{volume}{8044}. \bibinfo{publisher}{Springer},
+  \bibinfo{pages}{463--478}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Filli{\^a}tre and Magaud}{Filli{\^a}tre and
+  Magaud}{1999}]%
+        {FiMa99}
+\bibfield{author}{\bibinfo{person}{Jean-Christophe Filli{\^a}tre} {and}
+  \bibinfo{person}{Nicolas Magaud}.} \bibinfo{year}{1999}\natexlab{}.
+\newblock \showarticletitle{Certification of Sorting Algorithms in the Coq
+  System}.
+\newblock  (\bibinfo{year}{1999}).
+\newblock
+\urldef\tempurl%
+\url{https://www.lri.fr/~filliatr/ftp/publis/Filliatre-Magaud.ps.gz}
+\showURL{%
+\tempurl}
+
+
+\bibitem[\protect\citeauthoryear{Foley and Hoare}{Foley and Hoare}{1971}]%
+        {FoHoa71}
+\bibfield{author}{\bibinfo{person}{M. Foley} {and} \bibinfo{person}{C.~A.~R.
+  Hoare}.} \bibinfo{year}{1971}\natexlab{}.
+\newblock \showarticletitle{{Proof of a recursive program: Quicksort}}.
+\newblock \bibinfo{journal}{\emph{Comput. J.}} \bibinfo{volume}{14},
+  \bibinfo{number}{4} (\bibinfo{date}{01} \bibinfo{year}{1971}),
+  \bibinfo{pages}{391--395}.
+\newblock
+\showISSN{0010-4620}
+\urldef\tempurl%
+\url{https://doi.org/10.1093/comjnl/14.4.391}
+\showDOI{\tempurl}
+\showeprint{http://oup.prod.sis.lan/comjnl/article-pdf/14/4/391/927573/140391.pdf}
+
+
+\bibitem[\protect\citeauthoryear{GNU C++ Library}{GNU C++ Library}{[n. d.]}]%
+        {libstdc++}
+GNU C++ Library \bibinfo{year}{[n. d.]}\natexlab{}.
+\newblock \bibinfo{title}{The {GNU} {C++} Library}.
+\newblock   (\bibinfo{year}{[n. d.]}).
+\newblock
+\urldef\tempurl%
+\url{https://gcc.gnu.org/onlinedocs/libstdc++/}
+\showURL{%
+\tempurl}
+\newblock
+\shownote{Version 7.4.0.}
+
+
+\bibitem[\protect\citeauthoryear{Gordon, Milner, and Wadsworth}{Gordon
+  et~al\mbox{.}}{1979}]%
+        {gordon-et-al-1979}
+\bibfield{author}{\bibinfo{person}{Michael J.~C. Gordon},
+  \bibinfo{person}{Robin Milner}, {and} \bibinfo{person}{Christopher~P.
+  Wadsworth}.} \bibinfo{year}{1979}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{Edinburgh {LCF}: A Mechanised Logic of
+  Computation}}. \bibinfo{series}{LNCS}, Vol.~\bibinfo{volume}{78}.
+\newblock \bibinfo{publisher}{Springer}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Griebel}{Griebel}{2019}]%
+        {Gri19-AFP}
+\bibfield{author}{\bibinfo{person}{Simon Griebel}.}
+  \bibinfo{year}{2019}\natexlab{}.
+\newblock \showarticletitle{Binary Heaps for IMP2}.
+\newblock \bibinfo{journal}{\emph{Archive of Formal Proofs}}
+  (\bibinfo{date}{June} \bibinfo{year}{2019}).
+\newblock
+\showISSN{2150-914x}
+\newblock
+\shownote{\url{http://isa-afp.org/entries/IMP2_Binary_Heap.html}, Formal proof
+  development.}
+
+
+\bibitem[\protect\citeauthoryear{Haslbeck and Lammich}{Haslbeck and
+  Lammich}{2019}]%
+        {HaLa19}
+\bibfield{author}{\bibinfo{person}{{Maximilian P.L.} Haslbeck} {and}
+  \bibinfo{person}{Peter Lammich}.} \bibinfo{year}{2019}\natexlab{}.
+\newblock \showarticletitle{Refinement with Time – Refining the Run-time of
+  Algorithms in Isabelle/HOL}. In \bibinfo{booktitle}{\emph{ITP2019:
+  Interactive Theorem Proving}}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Hoare}{Hoare}{1961}]%
+        {Hoare61}
+\bibfield{author}{\bibinfo{person}{C.~A.~R. Hoare}.}
+  \bibinfo{year}{1961}\natexlab{}.
+\newblock \showarticletitle{Algorithm 64: Quicksort}.
+\newblock \bibinfo{journal}{\emph{Commun. ACM}} \bibinfo{volume}{4},
+  \bibinfo{number}{7} (\bibinfo{date}{July} \bibinfo{year}{1961}),
+  \bibinfo{pages}{321--}.
+\newblock
+\showISSN{0001-0782}
+\urldef\tempurl%
+\url{https://doi.org/10.1145/366622.366644}
+\showDOI{\tempurl}
+
+
+\bibitem[\protect\citeauthoryear{Josuttis}{Josuttis}{2012}]%
+        {Josu12}
+\bibfield{author}{\bibinfo{person}{Nicolai~M. Josuttis}.}
+  \bibinfo{year}{2012}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{The C++ Standard Library: A Tutorial and
+  Reference} (\bibinfo{edition}{2nd} ed.)}.
+\newblock \bibinfo{publisher}{Addison-Wesley Professional}.
+\newblock
+\showISBNx{0321623215, 9780321623218}
+
+
+\bibitem[\protect\citeauthoryear{KIAM~TAN, MYREEN, KUMAR, FOX, OWENS, and
+  NORRISH}{KIAM~TAN et~al\mbox{.}}{2019}]%
+        {KTMK19}
+\bibfield{author}{\bibinfo{person}{YONG KIAM~TAN}, \bibinfo{person}{MAGNUS~O.
+  MYREEN}, \bibinfo{person}{RAMANA KUMAR}, \bibinfo{person}{ANTHONY FOX},
+  \bibinfo{person}{SCOTT OWENS}, {and} \bibinfo{person}{MICHAEL NORRISH}.}
+  \bibinfo{year}{2019}\natexlab{}.
+\newblock \showarticletitle{The verified CakeML compiler backend}.
+\newblock \bibinfo{journal}{\emph{Journal of Functional Programming}}
+  \bibinfo{volume}{29} (\bibinfo{year}{2019}), \bibinfo{pages}{e2}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.1017/S0956796818000229}
+\showDOI{\tempurl}
+
+
+\bibitem[\protect\citeauthoryear{Krauss}{Krauss}{2010}]%
+        {Kr10}
+\bibfield{author}{\bibinfo{person}{Alexander Krauss}.}
+  \bibinfo{year}{2010}\natexlab{}.
+\newblock \showarticletitle{Recursive definitions of monadic functions}. In
+  \bibinfo{booktitle}{\emph{Proc. of PAR}}, Vol.~\bibinfo{volume}{43}.
+  \bibinfo{pages}{1--13}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Lammich}{Lammich}{2015}]%
+        {La15}
+\bibfield{author}{\bibinfo{person}{Peter Lammich}.}
+  \bibinfo{year}{2015}\natexlab{}.
+\newblock \showarticletitle{Refinement to {Imperative/HOL}}.
+\newblock In \bibinfo{booktitle}{\emph{ITP}}. \bibinfo{series}{LNCS},
+  Vol.~\bibinfo{volume}{9236}. \bibinfo{publisher}{Springer},
+  \bibinfo{pages}{253--269}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Lammich}{Lammich}{2016}]%
+        {La16}
+\bibfield{author}{\bibinfo{person}{Peter Lammich}.}
+  \bibinfo{year}{2016}\natexlab{}.
+\newblock \showarticletitle{Refinement based verification of imperative data
+  structures}. In \bibinfo{booktitle}{\emph{{CPP} 2016}},
+  \bibfield{editor}{\bibinfo{person}{Jeremy Avigad} {and} \bibinfo{person}{Adam
+  Chlipala}} (Eds.). \bibinfo{publisher}{{ACM}}, \bibinfo{pages}{27--36}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Lammich}{Lammich}{2019}]%
+        {La19-llvm}
+\bibfield{author}{\bibinfo{person}{Peter Lammich}.}
+  \bibinfo{year}{2019}\natexlab{}.
+\newblock \showarticletitle{{Generating Verified LLVM from Isabelle/HOL}}. In
+  \bibinfo{booktitle}{\emph{10th International Conference on Interactive
+  Theorem Proving (ITP 2019)}} \emph{(\bibinfo{series}{Leibniz International
+  Proceedings in Informatics (LIPIcs)})},
+  \bibfield{editor}{\bibinfo{person}{John Harrison}, \bibinfo{person}{John
+  O'Leary}, {and} \bibinfo{person}{Andrew Tolmach}} (Eds.),
+  Vol.~\bibinfo{volume}{141}. \bibinfo{publisher}{Schloss
+  Dagstuhl--Leibniz-Zentrum fuer Informatik}, \bibinfo{address}{Dagstuhl,
+  Germany}, \bibinfo{pages}{22:1--22:19}.
+\newblock
+\showISBNx{978-3-95977-122-1}
+\showISSN{1868-8969}
+\urldef\tempurl%
+\url{https://doi.org/10.4230/LIPIcs.ITP.2019.22}
+\showDOI{\tempurl}
+
+
+\bibitem[\protect\citeauthoryear{Lammich and Tuerk}{Lammich and Tuerk}{2012}]%
+        {LaTu12}
+\bibfield{author}{\bibinfo{person}{Peter Lammich} {and} \bibinfo{person}{Thomas
+  Tuerk}.} \bibinfo{year}{2012}\natexlab{}.
+\newblock \showarticletitle{Applying Data Refinement for Monadic Programs to
+  {H}opcroft's Algorithm}. In \bibinfo{booktitle}{\emph{ITP 2012}}
+  \emph{(\bibinfo{series}{{LNCS}})}, \bibfield{editor}{\bibinfo{person}{Lennart
+  Beringer} {and} \bibinfo{person}{Amy~P. Felty}} (Eds.),
+  Vol.~\bibinfo{volume}{7406}. \bibinfo{publisher}{Springer},
+  \bibinfo{pages}{166--182}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Lammich and Wimmer}{Lammich and
+  Wimmer}{2019}]%
+        {LaWi19-IMP2}
+\bibfield{author}{\bibinfo{person}{Peter Lammich} {and} \bibinfo{person}{Simon
+  Wimmer}.} \bibinfo{year}{2019}\natexlab{}.
+\newblock \showarticletitle{IMP2 – Simple Program Verification in
+  Isabelle/HOL}.
+\newblock \bibinfo{journal}{\emph{Archive of Formal Proofs}}
+  (\bibinfo{date}{Jan.} \bibinfo{year}{2019}).
+\newblock
+\showISSN{2150-914x}
+\newblock
+\shownote{\url{http://isa-afp.org/entries/IMP2.html}, Formal proof
+  development.}
+
+
+\bibitem[\protect\citeauthoryear{libc++}{libc++}{[n. d.]}]%
+        {libc++}
+libc++ \bibinfo{year}{[n. d.]}\natexlab{}.
+\newblock \bibinfo{title}{"libc++" C++ Standard Library}.
+\newblock   (\bibinfo{year}{[n. d.]}).
+\newblock
+\urldef\tempurl%
+\url{https://libcxx.llvm.org/}
+\showURL{%
+\tempurl}
+
+
+\bibitem[\protect\citeauthoryear{MUSSER}{MUSSER}{1997}]%
+        {Muss97}
+\bibfield{author}{\bibinfo{person}{DAVID~R. MUSSER}.}
+  \bibinfo{year}{1997}\natexlab{}.
+\newblock \showarticletitle{Introspective Sorting and Selection Algorithms}.
+\newblock \bibinfo{journal}{\emph{Software: Practice and Experience}}
+  \bibinfo{volume}{27}, \bibinfo{number}{8} (\bibinfo{year}{1997}),
+  \bibinfo{pages}{983--993}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.1002/(SICI)1097-024X(199708)27:8<983::AID-SPE117>3.0.CO;2-\#}
+\showDOI{\tempurl}
+
+
+\bibitem[\protect\citeauthoryear{Myreen and Owens}{Myreen and Owens}{2014}]%
+        {MyOw14}
+\bibfield{author}{\bibinfo{person}{Magnus~O. Myreen} {and}
+  \bibinfo{person}{Scott Owens}.} \bibinfo{year}{2014}\natexlab{}.
+\newblock \showarticletitle{Proof-producing translation of higher-order logic
+  into pure and stateful {ML}}.
+\newblock \bibinfo{journal}{\emph{J. Funct. Program.}} \bibinfo{volume}{24},
+  \bibinfo{number}{2-3} (\bibinfo{year}{2014}), \bibinfo{pages}{284--315}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.1017/S0956796813000282}
+\showDOI{\tempurl}
+
+
+\bibitem[\protect\citeauthoryear{Nipkow, Paulson, and Wenzel}{Nipkow
+  et~al\mbox{.}}{2002}]%
+        {NPW02}
+\bibfield{author}{\bibinfo{person}{Tobias Nipkow}, \bibinfo{person}{Lawrence~C.
+  Paulson}, {and} \bibinfo{person}{Markus Wenzel}.}
+  \bibinfo{year}{2002}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{{Isabelle/HOL} --- A Proof Assistant for
+  Higher-Order Logic}}. \bibinfo{series}{LNCS}, Vol.~\bibinfo{volume}{2283}.
+\newblock \bibinfo{publisher}{Springer}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Peters}{Peters}{[n. d.]}]%
+        {Peters02}
+\bibfield{author}{\bibinfo{person}{Tim Peters}.} \bibinfo{year}{[n.
+  d.]}\natexlab{}.
+\newblock \bibinfo{title}{Original Description of Timsort}.
+\newblock   (\bibinfo{year}{[n. d.]}).
+\newblock
+\urldef\tempurl%
+\url{https://bugs.python.org/file4451/timsort.txt}
+\showURL{%
+\tempurl}
+\newblock
+\shownote{Accessed 2019-10-21.}
+
+
+\bibitem[\protect\citeauthoryear{Reynolds}{Reynolds}{2002}]%
+        {Rey02}
+\bibfield{author}{\bibinfo{person}{John~C. Reynolds}.}
+  \bibinfo{year}{2002}\natexlab{}.
+\newblock \showarticletitle{Separation Logic: A Logic for Shared Mutable Data
+  Structures}. In \bibinfo{booktitle}{\emph{Proc of. Logic in Computer Science
+  (LICS)}}. \bibinfo{publisher}{IEEE}, \bibinfo{pages}{55--74}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Rust Programmin Language}{Rust Programmin
+  Language}{[n. d.]}]%
+        {rustlang}
+Rust Programmin Language \bibinfo{year}{[n. d.]}\natexlab{}.
+\newblock \bibinfo{title}{The Rust Programmin Language}.
+\newblock   (\bibinfo{year}{[n. d.]}).
+\newblock
+\urldef\tempurl%
+\url{https://www.rust-lang.org/}
+\showURL{%
+\tempurl}
+
+
+\bibitem[\protect\citeauthoryear{Sedgewick and Wayne}{Sedgewick and
+  Wayne}{2011}]%
+        {SeWa11}
+\bibfield{author}{\bibinfo{person}{Robert Sedgewick} {and}
+  \bibinfo{person}{Kevin Wayne}.} \bibinfo{year}{2011}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{Algorithms} (\bibinfo{edition}{4th} ed.)}.
+\newblock \bibinfo{publisher}{Addison-Wesley Professional}.
+\newblock
+\showISBNx{032157351X, 9780321573513}
+
+
+\bibitem[\protect\citeauthoryear{WILLIAMS}{WILLIAMS}{1964}]%
+        {Will64}
+\bibfield{editor}{\bibinfo{person}{J.~W.~J. WILLIAMS}} (Ed.).
+  \bibinfo{year}{1964}\natexlab{}.
+\newblock \showarticletitle{Algorithm 232: Heapsort}.
+\newblock \bibinfo{journal}{\emph{Commun. ACM}} \bibinfo{volume}{7},
+  \bibinfo{number}{6} (\bibinfo{date}{June} \bibinfo{year}{1964}),
+  \bibinfo{pages}{347--349}.
+\newblock
+\showISSN{0001-0782}
+\urldef\tempurl%
+\url{https://doi.org/10.1145/512274.512284}
+\showDOI{\tempurl}
+
+
+\bibitem[\protect\citeauthoryear{Wimmer and Lammich}{Wimmer and
+  Lammich}{2018}]%
+        {WiLa18}
+\bibfield{author}{\bibinfo{person}{Simon Wimmer} {and} \bibinfo{person}{Peter
+  Lammich}.} \bibinfo{year}{2018}\natexlab{}.
+\newblock \showarticletitle{Verified Model Checking of Timed Automata}. In
+  \bibinfo{booktitle}{\emph{TACAS 2018}}. \bibinfo{pages}{61--78}.
+\newblock
+
+
+\end{thebibliography}

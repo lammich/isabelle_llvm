@@ -265,7 +265,7 @@ definition "b_assn A P \<equiv> \<lambda>x y. \<up>(P x) ** A x y"
 
 lemma b_assn_pure_conv[constraint_simps]: "b_assn (pure R) P = pure (b_rel R P)"
   by (auto del: ext intro!: ext simp: b_rel_def b_assn_def pure_def pred_lift_extract_simps)
-lemmas [sepref_import_rewrite, sepref_frame_normrel_eqs, fcomp_norm_unfold] 
+lemmas [sepref_import_rewrite, named_ss sepref_frame_normrel, fcomp_norm_unfold] 
   = b_assn_pure_conv[symmetric]
 
 lemma b_rel_nesting[simp]: 
@@ -281,7 +281,7 @@ lemma b_assn_triv[simp]:
   "b_assn A (\<lambda>_. True) = A"
   by (auto simp: b_assn_def pure_def pred_lift_extract_simps del: ext intro!: ext)
 
-lemmas [constraint_simps,sepref_import_rewrite, sepref_frame_normrel_eqs, fcomp_norm_unfold]
+lemmas [constraint_simps,sepref_import_rewrite, named_ss sepref_frame_normrel, fcomp_norm_unfold]
   = b_rel_nesting b_assn_nesting
 
 lemma b_rel_simp[simp]: "(x,y)\<in>b_rel R P \<longleftrightarrow> (x,y)\<in>R \<and> P y"
@@ -1357,7 +1357,7 @@ lemma hn_if_aux:
 proof (cases a, goal_cases)
   assume NF: "nofail (if a then b else c)"
   
-  have [vcg_normalize_simps, fri_prepare_simps]: "hn_val bool1_rel = \<upharpoonleft>bool.assn"
+  have [vcg_normalize_simps, named_ss fri_prepare_simps]: "hn_val bool1_rel = \<upharpoonleft>bool.assn"
     unfolding bool1_rel_def bool.assn_is_rel hn_ctxt_def ..
   
   note [vcg_rules] = MERGED[OF MERGE]  
@@ -1543,7 +1543,7 @@ lemma unit_hnr[sepref_import_param]: "((),())\<in>unit_rel" by auto
 subsection "Product"
 
 
-lemmas [sepref_import_rewrite, sepref_frame_normrel_eqs, fcomp_norm_unfold] = prod_assn_pure_conv[symmetric]
+lemmas [sepref_import_rewrite, named_ss sepref_frame_normrel, fcomp_norm_unfold] = prod_assn_pure_conv[symmetric]
 
 
 (* TODO Add corresponding rules for other types and add to datatype snippet *)
@@ -1619,26 +1619,44 @@ lemma drop_pureD: "is_pure A \<Longrightarrow> hn_ctxt A a b \<turnstile> \<box>
 
 lemma hn_case_prod_aux:
   assumes FR: "\<Gamma> \<turnstile> hn_ctxt (prod_assn P1 P2) p' p ** \<Gamma>1"
-  assumes Pair: "\<And>a1 a2 a1' a2'. \<lbrakk>p'=(a1',a2')\<rbrakk> 
+  assumes Pair: "\<And>a1 a2 a1' a2'. \<lbrakk>p'=(a1',a2'); p=(a1,a2)\<rbrakk> 
     \<Longrightarrow> hn_refine (hn_ctxt P1 a1' a1 ** hn_ctxt P2 a2' a2 ** \<Gamma>1 ** hn_invalid (prod_assn P1 P2) p' p) (f a1 a2) 
-          (hn_ctxt P1' a1' a1 ** hn_ctxt P2' a2' a2 ** hn_ctxt XX1 p' p ** \<Gamma>1') R (f' a1' a2')"
+          (hn_ctxt P1' a1' a1 ** hn_ctxt P2' a2' a2 ** hn_ctxt XX1 p' p ** \<Gamma>1') (R a1' a2' a1 a2) (f' a1' a2')"
   assumes PURE: "Sepref_Basic.is_pure XX1"
   shows "hn_refine \<Gamma> (case_prod f p) (hn_ctxt (prod_assn P1' P2') p' p ** \<Gamma>1')
-    R (case_prod f' p')" (is "?G \<Gamma>")
+    (R (fst p') (snd p') (fst p) (snd p)) (case_prod f' p')" (is "?G \<Gamma>")
     apply1 (rule hn_refine_cons_pre[OF FR])
     apply1 extract_hnr_invalids
     apply1 (cases p; cases p'; simp add: prod_assn_pair_conv[THEN prod_assn_ctxt])
     apply (rule hn_refine_cons[OF _ Pair _ entails_refl])
     applyS (simp add: hn_ctxt_def)
     applyS simp
+    applyS simp
     using PURE apply (sep_drule drop_pureD[OF PURE])
     by (simp add: hn_ctxt_def sep_conj_ac)
   
     
-    
-lemma hn_case_prod'[sepref_comb_rules]:
+(* TODO: This has caused "ENTER MATCH" unifier problems with flex-flex pairs. So disabled by default,
+  and hn_case_prod_simple' is enabled, where the result cannot depend on the elements of the pair. *)    
+lemma hn_case_prod':
   assumes FR: "\<Gamma> \<turnstile> hn_ctxt (prod_assn P1 P2) p' p ** \<Gamma>1"
-  assumes Pair: "\<And>a1 a2 a1' a2'. \<lbrakk>p'=(a1',a2')\<rbrakk> 
+  assumes Pair: "\<And>a1 a2 a1' a2'. \<lbrakk>p'=(a1',a2'); p=(a1,a2)\<rbrakk> 
+    \<Longrightarrow> hn_refine (hn_ctxt P1 a1' a1 ** hn_ctxt P2 a2' a2 ** \<Gamma>1 ** hn_invalid (prod_assn P1 P2) p' p) (f a1 a2) 
+          (\<Gamma>2 a1 a2 a1' a2') (R a1' a2' a1 a2) (f' a1' a2')"
+  assumes FR2: "\<And>a1 a2 a1' a2'. \<Gamma>2 a1 a2 a1' a2' \<turnstile> hn_ctxt P1' a1' a1 ** hn_ctxt P2' a2' a2 ** hn_ctxt XX1 p' p ** \<Gamma>1'"        
+  assumes PURE: "CONSTRAINT Sepref_Basic.is_pure XX1"
+  shows "hn_refine \<Gamma> (case_prod f p) (hn_ctxt (prod_assn P1' P2') p' p ** \<Gamma>1')
+    (R (fst p') (snd p') (fst p) (snd p)) (case_prod$(\<lambda>\<^sub>2a b. f' a b)$p')" (is "?G \<Gamma>")
+    unfolding autoref_tag_defs PROTECT2_def
+    apply (rule hn_case_prod_aux[OF _ hn_refine_cons_post])
+    apply fact
+    apply fact
+    using FR2 apply blast
+    using PURE by simp
+
+lemma hn_case_prod_simple'[sepref_comb_rules]:
+  assumes FR: "\<Gamma> \<turnstile> hn_ctxt (prod_assn P1 P2) p' p ** \<Gamma>1"
+  assumes Pair: "\<And>a1 a2 a1' a2'. \<lbrakk>p'=(a1',a2'); p=(a1,a2)\<rbrakk> 
     \<Longrightarrow> hn_refine (hn_ctxt P1 a1' a1 ** hn_ctxt P2 a2' a2 ** \<Gamma>1 ** hn_invalid (prod_assn P1 P2) p' p) (f a1 a2) 
           (\<Gamma>2 a1 a2 a1' a2') R (f' a1' a2')"
   assumes FR2: "\<And>a1 a2 a1' a2'. \<Gamma>2 a1 a2 a1' a2' \<turnstile> hn_ctxt P1' a1' a1 ** hn_ctxt P2' a2' a2 ** hn_ctxt XX1 p' p ** \<Gamma>1'"        
@@ -1651,7 +1669,8 @@ lemma hn_case_prod'[sepref_comb_rules]:
     apply fact
     using FR2 apply blast
     using PURE by simp
-
+    
+    
 lemma hn_Pair[sepref_fr_rules]: "(uncurry (return oo Pair), uncurry (RETURN oo Pair)) \<in> A\<^sup>d *\<^sub>a B\<^sup>d \<rightarrow>\<^sub>a A\<times>\<^sub>aB"    
   by sepref_to_hoare vcg
     

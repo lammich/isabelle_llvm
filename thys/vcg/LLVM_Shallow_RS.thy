@@ -107,7 +107,7 @@ lemma pure_fri_rule[fri_rules]: "PRECOND (SOLVE_ASM (\<flat>\<^sub>pA a c)) \<Lo
   apply (auto simp: sep_algebra_simps)
   done
 
-lemma prepare_pure_assn[fri_prepare_simps]: "\<upharpoonleft>A a c = \<upharpoonleft>\<^sub>pA a c" if "is_pure A"
+lemma prepare_pure_assn[named_ss fri_prepare_simps]: "\<upharpoonleft>A a c = \<upharpoonleft>\<^sub>pA a c" if "is_pure A"
   using that 
   by (simp add: dr_assn_pure_prefix_def is_pure_def)
 
@@ -118,8 +118,8 @@ lemma extract_pure_assn[fri_extract_simps]: "\<upharpoonleft>A a c = \<up>\<flat
   done
   
 attribute_setup is_pure_rule = \<open>Attrib.add_del 
-    (VCG_Lib.chained_decl_attr @{context} @{attributes [fri_prepare_simps, fri_extract_simps]})
-    (VCG_Lib.chained_decl_attr @{context} @{attributes [fri_prepare_simps del, fri_extract_simps del]})
+    (VCG_Lib.chained_decl_attr @{context} @{attributes [named_ss fri_prepare_simps, fri_extract_simps]})
+    (VCG_Lib.chained_decl_attr @{context} @{attributes [named_ss fri_prepare_simps del, fri_extract_simps del]})
   \<close>
   \<open>Rules to introduce pure assertions\<close>
 
@@ -389,7 +389,7 @@ lemma ll_free_rule[vcg_rules]:
   "
   unfolding ll_free_def ll_pto_def ll_malloc_tag_def ll_range_def vcg_tag_defs
   supply [simp] = list_conj_eq_sep_set_img abase_ptr_def aidx_ptr_def 
-  supply [fri_prepare_simps] = sep_set_img_pull_EXS
+  supply [named_ss fri_prepare_simps] = sep_set_img_pull_EXS
   by vcg
   
 end  

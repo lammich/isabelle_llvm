@@ -64,6 +64,12 @@ text \<open>
     
       fun asm_simp_named_thms_tac ctxt n = asm_simp_only_tac (Named_Theorems.get ctxt n) ctxt  
       
+      fun simp_named_tac ctxt ss = simp_tac (Named_Simpsets.put ss ctxt)
+      fun full_simp_named_tac ctxt ss = full_simp_tac (Named_Simpsets.put ss ctxt)
+      fun asm_simp_named_tac ctxt ss = asm_simp_tac (Named_Simpsets.put ss ctxt)
+      fun asm_full_simp_named_tac ctxt ss = asm_full_simp_tac (Named_Simpsets.put ss ctxt)
+      
+      
 
       fun rewrite_only_conv thms ctxt = Simplifier.rewrite (put_simpset HOL_basic_ss ctxt 
         addsimps thms)

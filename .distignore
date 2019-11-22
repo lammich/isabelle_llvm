@@ -1,5 +1,5 @@
 *~
-paper
+papers
 dist.tgz
 mkdist.sh
 mkhtml.sh
@@ -7,3 +7,6 @@ html
 TODO
 others
 .distignore
+thys-2018
+.git
+

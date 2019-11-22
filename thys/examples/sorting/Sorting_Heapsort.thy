@@ -540,9 +540,9 @@ end
     
 context heap_context begin  
   
-  definition sift_down :: "nat \<Rightarrow> 'a list \<Rightarrow> 'a list nres" where "sift_down i xs \<equiv> doN {
-    ASSERT (in_heap i \<and> i<length xs);
-    (xs,i,_) \<leftarrow> WHILEIT (\<lambda>(xs,i,ctd). in_heap i) 
+  definition sift_down :: "nat \<Rightarrow> 'a list \<Rightarrow> 'a list nres" where "sift_down i\<^sub>0 xs \<equiv> doN {
+    ASSERT (in_heap i\<^sub>0 \<and> i\<^sub>0<length xs);
+    (xs,i,_) \<leftarrow> WHILEIT (\<lambda>(xs,i,ctd). in_heap i \<and> i\<ge>i\<^sub>0) 
       (\<lambda>(xs,i,ctd). has_rchild i \<and> ctd) 
       (\<lambda>(xs,i,ctd). doN {
         lc \<leftarrow> mop_list_get xs (lchild i);
@@ -559,9 +559,9 @@ context heap_context begin
           RETURN (xs,lchild i,True)
         } else RETURN (xs,i,False)
       }) 
-    (xs,i,True);
+    (xs,i\<^sub>0,True);
   
-    ASSERT (in_heap i);
+    ASSERT (in_heap i \<and> i\<ge>i\<^sub>0);
     ASSERT (has_lchild i \<longrightarrow> lchild i < length xs);
     
     if has_lchild i \<and> xs!i \<^bold>< xs!lchild i then
@@ -597,10 +597,13 @@ context heap_context begin
     subgoal using btu_sift_down_init by auto
     subgoal unfolding is_heap_btu_def by auto
     subgoal by (force simp: asym wo_leI simp: btu_heapify_down_right)   
+    subgoal using children_greater(2) le_trans less_imp_le_nat by blast
+    
     subgoal by (simp add: diff_less_mono2 less_Suc_eq)
     subgoal by simp (metis wo_leI wo_less_trans)
     subgoal by (simp add: diff_less_mono less_imp_le)
     subgoal by (force simp add: btu_heapify_down_left asym wo_leI)
+    subgoal using children_greater(1) dual_order.strict_trans2 less_imp_le by blast
     subgoal by (simp add: diff_less_mono2 less_Suc_eq)
     subgoal apply simp using local.trans wo_leI by blast
     subgoal by (simp add: diff_less_mono less_imp_le)
@@ -650,10 +653,10 @@ context heap_context begin
     
     
   text \<open>Deferred swap optimization\<close>
-  definition sift_down1 :: "nat \<Rightarrow> 'a list \<Rightarrow> 'a list nres" where "sift_down1 i xs \<equiv> doN {
-    ASSERT (in_heap i);
-    v \<leftarrow> mop_list_get xs i;
-    (xs,i,_) \<leftarrow> WHILEIT (\<lambda>(xs,i,ctd). in_heap i) (\<lambda>(xs,i,ctd). has_rchild i \<and> ctd) (\<lambda>(xs,i,ctd). doN {
+  definition sift_down1 :: "nat \<Rightarrow> 'a list \<Rightarrow> 'a list nres" where "sift_down1 i\<^sub>0 xs \<equiv> doN {
+    ASSERT (in_heap i\<^sub>0);
+    v \<leftarrow> mop_list_get xs i\<^sub>0;
+    (xs,i,_) \<leftarrow> WHILEIT (\<lambda>(xs,i,ctd). in_heap i \<and> i\<ge>i\<^sub>0) (\<lambda>(xs,i,ctd). has_rchild i \<and> ctd) (\<lambda>(xs,i,ctd). doN {
       lc \<leftarrow> mop_list_get xs (lchild i);
       rc \<leftarrow> mop_list_get xs (rchild i);
     
@@ -668,9 +671,9 @@ context heap_context begin
         xs \<leftarrow> mop_list_set xs i t;
         RETURN (xs,lchild i,True)
       } else RETURN (xs,i,False)
-    }) (xs,i,True);
+    }) (xs,i\<^sub>0,True);
 
-    ASSERT (in_heap i);
+    ASSERT (in_heap i \<and> i\<ge>i\<^sub>0);
     ASSERT (has_lchild i \<longrightarrow> lchild i < length xs);
     
     xs \<leftarrow> (if has_lchild i \<and> v \<^bold>< xs!lchild i then doN {
@@ -724,74 +727,76 @@ context heap_context begin
   
   definition "ihs_opt_rel \<equiv> {((xs,i,ctd),(xs',i',ctd')). xs' = xs \<and> i' = i+l \<and> ctd'=ctd }"
   
+  lemma ihs_opt_rel_alt: "((xs,i,ctd), (xs',i',ctd'))\<in>ihs_opt_rel \<longleftrightarrow> xs'=xs \<and> (i',i)\<in>idx_shift_rel l \<and> ctd'=ctd"
+    unfolding ihs_opt_rel_def idx_shift_rel_def by auto
 
-  (* Auxiliary definitions to reduce proof complexity in sepref-step.
-    TODO: Without these, the sepref step gets really slow, which is another indication that we
-      should separate the bound-proofs from the actual transfer step!
-  *)
+    
   definition [simp]: "mop_lchild2 i \<equiv> doN { ASSERT (2*i+1<h); RETURN (2*i+1) }"
   definition [simp]: "mop_rchild2 i \<equiv> doN { ASSERT (2*i+2<h); RETURN (2*i+2) }"
   definition [simp]: "has_rchild2 i \<equiv> i<(h-l-1) div 2"
   definition [simp]: "has_lchild2 i \<equiv> i<(h-l) div 2"
-  definition [simp]: "mop_geth2 xs i \<equiv> doN { ASSERT(l+i\<le>h); mop_list_get xs (l+i) }"
-  definition [simp]: "mop_seth2 xs i x \<equiv> doN { ASSERT(l+i\<le>h); mop_list_set xs (l+i) x }"
-
+      
 end  
   
 concrete_definition mop_lchild3 is heap_context.mop_lchild2_def
 concrete_definition mop_rchild3 is heap_context.mop_rchild2_def
 concrete_definition has_rchild3 is heap_context.has_rchild2_def
 concrete_definition has_lchild3 is heap_context.has_lchild2_def
-concrete_definition mop_geth3   is heap_context.mop_geth2_def
-concrete_definition mop_seth3   is heap_context.mop_seth2_def
   
 lemmas h_aux_refines = mop_lchild3.refine mop_rchild3.refine has_rchild3.refine 
-  has_lchild3.refine mop_geth3.refine mop_seth3.refine  
+  has_lchild3.refine  
 
 context heap_context begin  
   
+  
   definition sift_down2 :: "nat \<Rightarrow> 'a list \<Rightarrow> 'a list nres" where "sift_down2 i\<^sub>0 xs \<equiv> doN {
-    ASSERT (l\<le>i\<^sub>0 \<and> l<h);
-    let i = i\<^sub>0 - l;
-    v \<leftarrow> mop_geth3 l h xs i;
+    ASSERT (l\<le>i\<^sub>0 \<and> i\<^sub>0<h);
+    let i\<^sub>1 = i\<^sub>0 - l;
     
-    (xs,i,_) \<leftarrow> WHILEIT (\<lambda>(xs,i,ctd). i<h-l) (\<lambda>(xs,i,ctd). has_rchild3 l h i \<and> ctd) (\<lambda>(xs,i,ctd). doN {
+    v \<leftarrow> mop_list_get xs (i\<^sub>1+l);
+    
+    (xs,i,_) \<leftarrow> WHILEIT (\<lambda>(xs,i,ctd). i<h-l \<and> i\<ge>i\<^sub>1) (\<lambda>(xs,i,ctd). has_rchild3 l h i \<and> ctd) (\<lambda>(xs,i,ctd). doN {
       lci \<leftarrow> mop_lchild3 h i;
       rci \<leftarrow> mop_rchild3 h i;
-      lc \<leftarrow> mop_geth3 l h xs lci;
-      rc \<leftarrow> mop_geth3 l h xs rci;
+      ASSERT (lci+l<h \<and> rci+l<h);
+      ASSERT (lci\<noteq>i \<and> rci\<noteq>i \<and> lci\<noteq>rci);
+      lc \<leftarrow> mop_list_get xs (lci+l);
+      rc \<leftarrow> mop_list_get xs (rci+l);
     
+      ASSERT (i+l<h);
+      
       if lc \<^bold>< rc then
         if v \<^bold>< rc then doN {
-          xs \<leftarrow> mop_seth3 l h xs i rc;
+          xs \<leftarrow> mop_list_set xs (i+l) rc;
           RETURN (xs,rci,True)
         } else RETURN (xs,i,False)
       else if v \<^bold>< lc then doN {
-        xs \<leftarrow> mop_seth3 l h xs i lc;
+        xs \<leftarrow> mop_list_set xs (i+l) lc;
         RETURN (xs,lci,True)
       } else RETURN (xs,i,False)
-    }) (xs,i,True);
+    }) (xs,i\<^sub>1,True);
+    
+    ASSERT (i\<ge>i\<^sub>1 \<and> i+l<h);
     
     if has_lchild3 l h i then doN {
       lci \<leftarrow> mop_lchild3 h i;
-      lc \<leftarrow> mop_geth3 l h xs lci;
+      ASSERT (lci+l<h);
+      ASSERT (lci\<noteq>i);
+      lc \<leftarrow> mop_list_get xs (lci+l);
       if v \<^bold>< lc then doN {
-        xs \<leftarrow> mop_seth3 l h xs i lc;
-        xs \<leftarrow> mop_seth3 l h xs lci v;
+        xs \<leftarrow> mop_list_set xs (i+l) lc;
+        xs \<leftarrow> mop_list_set xs (lci+l) v;
         RETURN xs
       } else doN {
-        xs \<leftarrow> mop_seth3 l h xs i v;
+        xs \<leftarrow> mop_list_set xs (i+l) v;
         RETURN xs
       }  
     } else doN {
-      xs \<leftarrow> mop_seth3 l h xs i v;
+      xs \<leftarrow> mop_list_set xs (i+l) v;
       RETURN xs
-    }  
+    }
   }"
     
-  lemma ihs_opt_rel_alt: "((xs,i,ctd), (xs',i',ctd'))\<in>ihs_opt_rel \<longleftrightarrow> xs'=xs \<and> (i',i)\<in>idx_shift_rel l \<and> ctd'=ctd"
-    unfolding ihs_opt_rel_def idx_shift_rel_def by auto
-  
   lemma idx_shift_adjust:
     assumes "(i',i)\<in>idx_shift_rel l"
     shows 
@@ -803,6 +808,7 @@ context heap_context begin
       "i+l = i'"
       "i'<x \<longleftrightarrow> i<x-l"
       "i'\<le>h \<longleftrightarrow> i\<le>h-l"
+      "x\<le>i' \<longleftrightarrow> x-l\<le>i"
     using assms
     thm lchild_ihs
     unfolding idx_shift_rel_def 
@@ -819,7 +825,7 @@ context heap_context begin
     apply (simp cong: if_cong)
     apply (rewrite at "let i=i-l in _" Let_def)
     apply (intro refine0)
-    apply (all \<open>unfold in_heap_def; simp_all; fail \<close>) [3]
+    apply (all \<open>unfold in_heap_def; simp_all; fail \<close>) [2]
     apply (rule bind_refine)
     focus
       apply refine_rcg
@@ -835,7 +841,10 @@ context heap_context begin
       supply [split del] = if_split
       apply (cases s; simp)
       apply (cases s'; simp)
-      apply (split if_split; intro conjI impI; simp)
+      apply (intro refine0)
+      subgoal by (clarsimp simp: idx_shift_adjust ihs_opt_rel_alt)
+      
+      apply (split if_split; intro conjI impI)
       subgoal
         apply refine_rcg
         apply (simp_all add: ihs_opt_rel_alt)
@@ -850,29 +859,162 @@ context heap_context begin
         done
     done
   done  
+  
+  
+  (* Auxiliary definitions to reduce proof complexity in sepref-step.
+    TODO: Without these, the sepref step gets really slow, which is another indication that we
+      should separate the bound-proofs from the actual transfer step!
+  *)
+  definition [simp]: "mop_geth2 xs i \<equiv> doN { ASSERT(l+i\<le>h); mop_eo_extract xs (l+i) }"
+  definition [simp]: "mop_seth2 xs i x \<equiv> doN { ASSERT(l+i\<le>h); mop_eo_set xs (l+i) x }"
 
+end  
+  
+concrete_definition mop_geth3 is heap_context.mop_geth2_def
+concrete_definition mop_seth3 is heap_context.mop_seth2_def
+  
+lemmas h_aux_refines2 = mop_geth3.refine mop_seth3.refine  
+
+context heap_context begin  
+  
+  definition sift_down3 :: "nat \<Rightarrow> 'a list \<Rightarrow> 'a list nres" where "sift_down3 i\<^sub>0 xs \<equiv> doN {
+    ASSERT (l\<le>i\<^sub>0 \<and> i\<^sub>0<h);
+    let i\<^sub>1 = i\<^sub>0 - l;
+    xs \<leftarrow> mop_to_eo_conv xs;
+    (v,xs) \<leftarrow> mop_geth3 l h xs i\<^sub>1;
     
-end        
-
-thm mop_lchild3.refine
+    (xs,i,_) \<leftarrow> WHILEIT (\<lambda>(xs,i,ctd). i<h-l \<and> i\<ge>i\<^sub>1) (\<lambda>(xs,i,ctd). has_rchild3 l h i \<and> ctd) (\<lambda>(xs,i,ctd). doN {
+      lci \<leftarrow> mop_lchild3 h i;
+      rci \<leftarrow> mop_rchild3 h i;
     
-concrete_definition sift_down3 for less l h i\<^sub>0 xs is heap_context.sift_down2_def 
-
-
-
+      ASSERT (l+lci<h \<and> l+rci<h \<and> l+lci \<noteq> l+rci);
+      b \<leftarrow> mop_cmpo_idxs xs (l+lci) (l+rci);
+      
+      if b then doN {
+        b \<leftarrow> mop_cmpo_v_idx xs v (l+rci);
+        if b then doN {
+          (rc,xs) \<leftarrow> mop_geth3 l h xs rci;
+          xs \<leftarrow> mop_seth3 l h xs i rc;
+          RETURN (xs,rci,True)
+        } else RETURN (xs,i,False)
+      } else doN {
+        b \<leftarrow> mop_cmpo_v_idx xs v (l+lci);
+        if b then doN {
+          (lc,xs) \<leftarrow> mop_geth3 l h xs lci;
+          xs \<leftarrow> mop_seth3 l h xs i lc;
+          RETURN (xs,lci,True)
+        } else RETURN (xs,i,False)
+      }
+    }) (xs,i\<^sub>1,True);
     
+    ASSERT (i\<ge>i\<^sub>1);
+    
+    if has_lchild3 l h i then doN {
+      lci \<leftarrow> mop_lchild3 h i;
+      ASSERT (l+lci<h);
+      b \<leftarrow> mop_cmpo_v_idx xs v (l+lci);
+      if b then doN {
+        (lc,xs) \<leftarrow> mop_geth3 l h xs lci;
+        xs \<leftarrow> mop_seth3 l h xs i lc;
+        xs \<leftarrow> mop_seth3 l h xs lci v;
+        xs \<leftarrow> mop_to_wo_conv xs;
+        RETURN xs
+      } else doN {
+        xs \<leftarrow> mop_seth3 l h xs i v;
+        xs \<leftarrow> mop_to_wo_conv xs;
+        RETURN xs
+      }  
+    } else doN {
+      xs \<leftarrow> mop_seth3 l h xs i v;
+      xs \<leftarrow> mop_to_wo_conv xs;
+      RETURN xs
+    }  
+  }" 
+    
+  
+  (* TODO: Move. Use also in insort. Maybe generalize to index set? *)
+  definition "woe_eq_except i xs' xs \<equiv> length xs' = length xs \<and> xs'!i=None \<and> (\<forall>j\<in>{0..<length xs}-{i}. xs'!j = Some (xs!j))"
+  
+  lemma woe_eq_except_init[simp]: "i<length xs \<Longrightarrow> woe_eq_except i ((map Some xs)[i := None]) xs"
+    unfolding woe_eq_except_def by auto
+  
+  lemma woe_eq_except_length[simp]: "woe_eq_except i xs' xs \<Longrightarrow> length xs'=length xs"
+    unfolding woe_eq_except_def by auto
+    
+  lemma woe_eq_except_nth_eq_Some: "\<lbrakk>woe_eq_except i xs' xs; j<length xs\<rbrakk> \<Longrightarrow> xs'!j = Some v \<longleftrightarrow> (j\<noteq>i \<and> v = xs!j)"  
+    unfolding woe_eq_except_def 
+    by force
+    
+  lemma woe_eq_except_nth: "\<lbrakk>woe_eq_except i xs' xs; j<length xs; j\<noteq>i\<rbrakk> \<Longrightarrow> xs'!j = Some (xs!j)"  
+    unfolding woe_eq_except_def 
+    by force
+    
+  lemma woe_eq_except_ith[simp]: "\<lbrakk>woe_eq_except i xs' xs\<rbrakk> \<Longrightarrow> xs'!i = None"  
+    unfolding woe_eq_except_def 
+    by force
+    
+  lemma woe_eq_except_upd:
+    assumes "woe_eq_except i xs' xs" "i'<length xs" "i<length xs" "i\<noteq>i'"
+    shows "woe_eq_except i' (xs'[i':=None,i:=Some v]) (xs[i:=v])"
+    using assms unfolding woe_eq_except_def by (auto simp: nth_list_update)
+    
+    
+  
+  definition "sd23_rel \<equiv> {((xs',i',ctd'),(xs,i,ctd)). i'=i \<and> ctd'=ctd \<and> i+l<length xs \<and> woe_eq_except (i+l) xs' xs }"
+  
+  lemma in_sd23_rel_conv: "((xs',i',ctd'),(xs,i,ctd))\<in>sd23_rel \<longleftrightarrow> i'=i \<and> ctd'=ctd \<and> i+l<length xs \<and> woe_eq_except (i+l) xs' xs"
+    by (auto simp: sd23_rel_def)
+  
+    
+  lemma sift_down3_refine: "sift_down3 i xs \<le>\<Down>Id (sift_down2 i xs)"
+    unfolding sift_down3_def sift_down2_def
+    supply [simp del] = conc_Id
+    apply (simp add: Let_def mop_geth3_def cong: if_cong)
+    
+    apply (intro refine0)
+    apply clarsimp_all [3]
+    apply (rule bind_refine)
+    apply (rule WHILEIT_refine)
+    apply (rule introR[where R=sd23_rel])
+    apply (auto simp: sd23_rel_def) []
+    apply (auto simp: sd23_rel_def) []
+    apply (auto simp: sd23_rel_def) []
+    subgoal
+      apply clarsimp
+      apply (intro refine0 bind_refine')
+      apply refine_dref_type
+      supply [[put_named_ss Main_ss]]
+      apply (use [[put_named_ss Main_ss]] in \<open>auto simp: conc_Id in_sd23_rel_conv woe_eq_except_length woe_eq_except_nth\<close>) [4]
+      unfolding mop_seth3_def
+      apply refine_vcg
+      apply (auto simp: in_sd23_rel_conv woe_eq_except_length woe_eq_except_nth algebra_simps woe_eq_except_ith woe_eq_except_upd)
+      done
+    subgoal
+      apply (clarsimp split: prod.splits split del: if_split cong: if_cong simp: mop_seth3_def)
+      apply refine_rcg
+      apply refine_dref_type
+      supply [[put_named_ss Main_ss]]
+      apply (auto simp: conc_Id in_sd23_rel_conv woe_eq_except_length woe_eq_except_nth algebra_simps woe_eq_except_ith woe_eq_except_upd in_set_conv_nth nth_list_update list_eq_iff_nth_eq)
+      done      
+    done
+  
+end
+
+concrete_definition sift_down4 is heap_context.sift_down3_def
+
 context heap_context begin  
 
-  lemma sift_down3_full_refine: "sift_down3 (\<^bold><) l h i xs \<le> sift_down i xs"
+  lemma sift_down4_full_refine: "sift_down4 (\<^bold><) l h i xs \<le> sift_down i xs"
   proof -
-    note sift_down3.refine[OF heap_context_axioms, symmetric, THEN meta_eq_to_obj_eq]
+    note sift_down4.refine[OF heap_context_axioms, symmetric, THEN meta_eq_to_obj_eq]
+    also note sift_down3_refine 
     also note sift_down2_refine 
     also note sift_down1_refine 
     finally show ?thesis by simp
   qed
 
-  lemmas sift_down3_btu_correct = order_trans[OF sift_down3_full_refine sift_down_btu_correct]
-  lemmas sift_down3_restore_correct = order_trans[OF sift_down3_full_refine sift_down_restore_correct]
+  lemmas sift_down4_btu_correct = order_trans[OF sift_down4_full_refine sift_down_btu_correct]
+  lemmas sift_down4_restore_correct = order_trans[OF sift_down4_full_refine sift_down_restore_correct]
   
   definition "heapify_btu xs\<^sub>0 \<equiv> doN {
     ASSERT(h>0);
@@ -881,7 +1023,7 @@ context heap_context begin
       (\<lambda>(xs,l'). doN {
         ASSERT (l'>0);
         let l'=l'-1;
-        xs \<leftarrow> sift_down3 (\<^bold><) l h l' xs;
+        xs \<leftarrow> sift_down4 (\<^bold><) l h l' xs;
         RETURN (xs,l')
       })
       (xs\<^sub>0,h-1);
@@ -891,7 +1033,7 @@ context heap_context begin
   lemma heapify_btu_correct: "\<lbrakk> l<h; h\<le>length xs\<^sub>0 \<rbrakk> \<Longrightarrow> heapify_btu xs\<^sub>0 \<le> SPEC (\<lambda>xs. slice_eq_mset l h xs xs\<^sub>0 \<and> is_heap xs)"
     unfolding heapify_btu_def
     apply simp
-    apply (refine_vcg WHILET_rule[where I="\<lambda>(xs,l'). heapify_btu_invar xs\<^sub>0 l' xs \<and> l'\<ge>l" and R="measure snd"] sift_down3_btu_correct)
+    apply (refine_vcg WHILET_rule[where I="\<lambda>(xs,l'). heapify_btu_invar xs\<^sub>0 l' xs \<and> l'\<ge>l" and R="measure snd"] sift_down4_btu_correct)
     apply (all \<open>(auto;fail)?\<close>)
     apply clarsimp_all (* Required to get rid of local variables that will obfuscate locale abbreviations! *)
     subgoal by (simp add: heapify_btu_invar_def btu_heapify_init)
@@ -929,9 +1071,9 @@ context weak_ordering begin
       ) 
         (\<lambda>(xs,h). Suc l < h) 
         (\<lambda>(xs,h). doN {
-          ASSERT (h>0);
+          ASSERT (h>0 \<and> l\<noteq>h-1);
           xs \<leftarrow> mop_list_swap xs l (h-1);
-          xs \<leftarrow> sift_down3 (\<^bold><) l (h-1) l xs;
+          xs \<leftarrow> sift_down4 (\<^bold><) l (h-1) l xs;
           RETURN (xs,h-1)
         })
         (xs,h\<^sub>0);
@@ -1028,7 +1170,7 @@ context weak_ordering begin
             
           note G1 G2 G3
         } note aux=this
-        note rl = N.sift_down3_restore_correct[OF _ sift_down_invar_init[OF \<open>is_heap xs\<close> \<open>Suc l < h\<close>]]
+        note rl = N.sift_down4_restore_correct[OF _ sift_down_invar_init[OF \<open>is_heap xs\<close> \<open>Suc l < h\<close>]]
         
         show ?thesis
           apply (refine_vcg rl)
@@ -1054,8 +1196,15 @@ context weak_ordering begin
       subgoal
         by (simp add: sorted_wrt01)
       done
-      
+                                                                                        
   qed
+  
+  lemma heapsort_correct': "\<lbrakk>(xs,xs')\<in>Id; (l,l')\<in>Id; (h,h')\<in>Id\<rbrakk> \<Longrightarrow> heapsort xs l h \<le>\<Down>Id (slice_sort_spec (\<^bold><) xs' l' h')"
+    unfolding slice_sort_spec_alt
+    apply (refine_vcg heapsort_correct)
+    apply (auto simp: slice_eq_mset_alt)
+    done
+  
 end
 
 concrete_definition heapsort1 for less xs\<^sub>0 l h\<^sub>0 is weak_ordering.heapsort_def
@@ -1067,8 +1216,6 @@ end
 
 
 
-     
-  
 context sort_impl_context begin
 
 sepref_register mop_lchild3 mop_rchild3 has_rchild3 has_lchild3 mop_geth3  mop_seth3  
@@ -1084,28 +1231,28 @@ sepref_def has_lchild_impl [llvm_inline] is "uncurry2 (RETURN ooo has_lchild3)" 
 sepref_def has_rchild_impl [llvm_inline] is "uncurry2 (RETURN ooo has_rchild3)" :: "[\<lambda>((l,h),i). l<h]\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow> bool1_assn"
   unfolding has_rchild3_def apply (annot_snat_const "TYPE (size_t)") by sepref
 
-sepref_def mop_geth_impl [llvm_inline] is "uncurry3 mop_geth3" :: "size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a arr_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a elem_assn"
+sepref_def mop_geth_impl [llvm_inline] is "uncurry3 mop_geth3" :: "size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (eoarray_assn elem_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a elem_assn \<times>\<^sub>a eoarray_assn elem_assn"
   unfolding mop_geth3_def by sepref
   
-sepref_def mop_seth_impl [llvm_inline] is "uncurry4 mop_seth3" :: "size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a arr_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a elem_assn\<^sup>k \<rightarrow>\<^sub>a arr_assn"
+  
+sepref_def mop_seth_impl [llvm_inline] is "uncurry4 mop_seth3" :: "size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (eoarray_assn elem_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a elem_assn\<^sup>d \<rightarrow>\<^sub>a eoarray_assn elem_assn"
   unfolding mop_seth3_def by sepref
   
-sepref_register "sift_down3 (\<^bold><)"
-sepref_def sift_down_impl is "uncurry3 (PR_CONST (sift_down3  (\<^bold><)))" :: "size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a arr_assn\<^sup>d \<rightarrow>\<^sub>a arr_assn"
-  unfolding sift_down3_def PR_CONST_def
-  apply sepref_dbg_keep
-  done
+sepref_register "sift_down4 (\<^bold><)"
+sepref_def sift_down_impl is "uncurry3 (PR_CONST (sift_down4 (\<^bold><)))" :: "size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (woarray_assn elem_assn)\<^sup>d \<rightarrow>\<^sub>a (woarray_assn elem_assn)"
+  unfolding sift_down4_def PR_CONST_def
+  by sepref (* Takes loooong! *)
 
 sepref_register "heapify_btu1 (\<^bold><)"
-sepref_def heapify_btu_impl is "uncurry2 (PR_CONST (heapify_btu1  (\<^bold><)))" :: "size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a arr_assn\<^sup>d \<rightarrow>\<^sub>a arr_assn"
+sepref_def heapify_btu_impl is "uncurry2 (PR_CONST (heapify_btu1  (\<^bold><)))" :: "size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (woarray_assn elem_assn)\<^sup>d \<rightarrow>\<^sub>a (woarray_assn elem_assn)"
   unfolding heapify_btu1_def PR_CONST_def
   apply (annot_snat_const "TYPE (size_t)")
   by sepref
   
 sepref_register "heapsort1 (\<^bold><)"
-sepref_def heapsort_impl is "uncurry2 (PR_CONST (heapsort1  (\<^bold><)))" :: "arr_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a arr_assn"
+sepref_def heapsort_impl is "uncurry2 (PR_CONST (heapsort1  (\<^bold><)))" :: "(woarray_assn elem_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a (woarray_assn elem_assn)"
   unfolding heapsort1_def PR_CONST_def
-  apply (rewrite at "sift_down3 _ _ _ \<hole> _" fold_COPY)
+  apply (rewrite at "sift_down4 _ _ _ \<hole> _" fold_COPY)
   apply (annot_snat_const "TYPE (size_t)")
   by sepref
 
@@ -1116,7 +1263,7 @@ lemmas heapsort_hnr[sepref_fr_rules] = heapsort_impl.refine[unfolded heapsort1.r
 end  
 
 (*  
-global_interpretation heapsort_interp: sort_impl_context "(\<le>)" "(<)" ll_icmp_ult unat_assn
+global_interpretation heapsort_interp: pure_sort_impl_context "(\<le>)" "(<)" ll_icmp_ult unat_assn
   defines heapsort_interp_mop_lchild_impl  = heapsort_interp.mop_lchild_impl 
       and heapsort_interp_mop_rchild_impl  = heapsort_interp.mop_rchild_impl 
       and heapsort_interp_has_rchild_impl  = heapsort_interp.has_rchild_impl 
@@ -1130,7 +1277,6 @@ global_interpretation heapsort_interp: sort_impl_context "(\<le>)" "(<)" ll_icmp
 
 export_llvm "heapsort_interp_heapsort_impl :: 64 word ptr \<Rightarrow> _" is "uint64_t* heapsort(uint64_t*, int64_t,int64_t)"
   file "../code/heapsort.ll"
-
 *)
 
 end

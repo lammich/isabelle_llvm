@@ -371,19 +371,23 @@ begin
       using hm_empty_op_aref by (auto simp: hm_empty_op_N)
           
       
-    sepref_definition hm_empty_impl is "hm_empty_op'" :: "[\<lambda>_. 4<LENGTH('l)]\<^sub>a\<^sub>d (snat_assn' TYPE('l))\<^sup>k \<rightarrow> hm2_assn"
+    sepref_definition hm_empty_impl is "hm_empty_op'" :: "[\<lambda>_. 4<LENGTH('l)]\<^sub>a\<^sub>d (snat_assn' TYPE('l))\<^sup>k \<rightarrow> (\<lambda>N _. hm2_assn N)"
       unfolding hm_empty_op_def hm_empty_op'_def hm2_assn_def
       apply (rule hfref_with_rdomI)
       by sepref
       
-    definition "hm12_assn \<equiv> hrr_comp nat_rel hm2_assn (\<lambda>_. heapmap_rel)"
+    definition "hm12_assn N \<equiv> hrr_comp nat_rel (\<lambda>N _. hm2_assn N) (\<lambda>_. heapmap_rel) N ()"
     
     lemma hm12_assn_fold': "hr_comp (hm2_assn N) heapmap_rel = hm12_assn N"
       unfolding hm12_assn_def
       by auto
+      
+    lemma hm12_assn_fold'': "hrr_comp nat_rel (\<lambda>N _. hm2_assn N) (\<lambda>_. heapmap_rel) = (\<lambda>N _. hm12_assn N)"  
+      unfolding hm12_assn_def
+      by auto
     
     context 
-      notes [fcomp_norm_unfold] = hm12_assn_def[symmetric] hm12_assn_fold'
+      notes [fcomp_norm_unfold] = hm12_assn_def[symmetric] hm12_assn_fold' hm12_assn_fold''
     begin
     
       lemmas hm_empty_ref12 = hm_empty_impl.refine[FCOMP hm_empty_op'_aref]
@@ -403,7 +407,7 @@ begin
 
     definition "hm_assn N \<equiv> hr_comp (hm12_assn N) (\<langle>nat_rel, Id\<rangle>map_rel)"
     
-    lemma hm_assn_fold': "hrr_comp nat_rel hm12_assn (\<lambda>x. \<langle>nat_rel, Id\<rangle>map_rel) = hm_assn"
+    lemma hm_assn_fold': "hrr_comp nat_rel (\<lambda>N _. hm12_assn N) (\<lambda>x. \<langle>nat_rel, Id\<rangle>map_rel) = (\<lambda>N _. hm_assn N)"
       by (auto simp: hm_assn_def fun_eq_iff)
     
     context

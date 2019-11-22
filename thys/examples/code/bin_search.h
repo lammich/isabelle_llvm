@@ -9,6 +9,6 @@ typedef struct {
   elem_t*data;
 } larray_t;
 
-int64_t bin_search(larray_t,elem_t);
+int64_t bin_search(larray_t, elem_t);
 
 #endif

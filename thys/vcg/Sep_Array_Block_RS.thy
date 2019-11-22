@@ -376,7 +376,7 @@ begin
     supply [vcg_rules] = ba.block_lifter.lift_operation[simplified, OF _ _ checked_idx_baddr_rule]
     supply [vcg_rules] = ba.block_lifter.lift_operation[simplified, OF _ _ return_rule]
     supply [simp] = pto_notZ checked_idx_baddr_pres_tag abase_baddr_def
-    supply [fri_prepare_simps] = aidx_baddr_simp
+    supply [named_ss fri_prepare_simps] = aidx_baddr_simp
     supply [split] = baddr.splits
     apply vcg
     done

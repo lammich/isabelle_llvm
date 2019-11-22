@@ -92,11 +92,17 @@ begin
                                      (\<langle>the_pure A\<rangle>list_rel)" 
     *)
     
-    definition "marl_assn' TYPE('l) A \<equiv> hrr_comp nat_rel
-                                    (\<lambda>N. hr_comp marl2_assn (ms_irel M N))
-                                    (\<lambda>_. \<langle>the_pure A\<rangle>list_rel)"
+    definition "marl_assn' TYPE('l) A N \<equiv> hrr_comp nat_rel
+                                    (\<lambda>N _. hr_comp marl2_assn (ms_irel M N))
+                                    (\<lambda>_. \<langle>the_pure A\<rangle>list_rel) N ()"
                                          
-    lemmas [fcomp_norm_unfold] = marl_assn'_def[symmetric, folded M_def]
+    lemmas [fcomp_norm_unfold] = marl_assn'_def[symmetric, abs_def]
+    
+    lemma marl_assn'_fold''[fcomp_norm_unfold]:
+      "hrr_comp nat_rel (\<lambda>x _. hr_comp (snat_assn \<times>\<^sub>a array_assn id_assn) (ms_irel M x)) (\<lambda>x. \<langle>the_pure A\<rangle>list_rel)
+      = (\<lambda>N _. marl_assn' TYPE('l) A N)"
+      unfolding marl_assn'_def
+      by auto
     
     lemma marl_assn'_fold'[fcomp_norm_unfold]: 
       "hr_comp (hr_comp (snat_assn \<times>\<^sub>a array_assn id_assn) (ms_irel M N)) (\<langle>the_pure A\<rangle>list_rel)
@@ -104,7 +110,7 @@ begin
       unfolding marl_assn'_def
       unfolding hrr_comp_def 
       apply (auto simp: fun_eq_iff sep_algebra_simps pred_lift_extract_simps)
-      unfolding non_dep_def by metis+
+      unfolding non_dep2_def by metis+
     
     sepref_decl_impl marl_empty: marl_empty_impl.refine[FCOMP ms_empty_correct'] by simp 
   
@@ -196,7 +202,7 @@ experiment begin
   sepref_definition test is "\<lambda>N. (do {
     let x = op_marl_empty N;
     RETURN (x@[1::nat])
-  })" :: "[\<lambda>N. N\<ge>10]\<^sub>a\<^sub>d (snat_assn' TYPE(64))\<^sup>k \<rightarrow> marl_assn' TYPE(64) (snat_assn' TYPE(64))"
+  })" :: "[\<lambda>N. N\<ge>10]\<^sub>a\<^sub>d (snat_assn' TYPE(64))\<^sup>k \<rightarrow> (\<lambda>N _. marl_assn' TYPE(64) (snat_assn' TYPE(64)) N)"
     apply (annot_snat_const "TYPE(64)")
     by sepref
     
