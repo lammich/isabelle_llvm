@@ -3,8 +3,6 @@ imports Sorting_Quicksort_Scheme
 begin
 
 
-
-
 (* TODO: Move *)
 
 
@@ -283,8 +281,7 @@ context sort_impl_context begin
   (* Approximation of what would be generated for pure elements *)      
   thm is_unguarded_insert_impl_def[unfolded eo_extract_impl_def cmpo_v_idx_impl_def, simplified bind_laws split]  
   
-  term "ll_icmp_slt"
-    
+  (* For presentation in paper *)
   lemma "is_unguarded_insert_impl \<equiv> \<lambda>xs _ i. doM {
      x \<leftarrow> array_nth xs i;
      (xs, i) \<leftarrow> llc_while (\<lambda>(xs, i). doM {
@@ -694,6 +691,152 @@ context sort_impl_context begin
     by sepref
     
 end    
+
+    
+(*
+  
+context parameterized_weak_ordering begin  
+
+  definition "is_insert_param GUARDED cparam xs l i \<equiv> doN {
+  
+    ASSERT (i<length xs);
+    
+    \<^cancel>\<open>ASSERT (set xs \<subseteq> cdom);\<close>
+    
+    xs \<leftarrow> mop_to_eo_conv xs;
+    
+    (x,xs) \<leftarrow> mop_eo_extract xs i;
+
+    \<^cancel>\<open>
+    ASSERT (x \<in> cdom);
+    ASSERT (\<forall>x. Some x \<in> set xs \<longrightarrow> x\<in>cdom);
+    \<close>
+      
+    (xs,i)\<leftarrow>monadic_WHILEIT (\<lambda>(xs',i'). True) 
+      (\<lambda>(xs,i). if \<not>GUARDED \<or> i>l then doN {ASSERT (i>0); pcmpo_v_idx2 cparam xs x (i-1)} else RETURN False) (\<lambda>(xs,i). doN {
+        ASSERT (i>0);
+        (t,xs) \<leftarrow> mop_eo_extract xs (i-1);
+        xs \<leftarrow> mop_eo_set xs i t;
+        let i = i-1;
+        RETURN (xs,i)
+      }) (xs,i);
+  
+    xs \<leftarrow> mop_eo_set xs i x;  
+    
+    xs \<leftarrow> mop_to_wo_conv xs;
+    
+    RETURN xs
+  }"
+  
+    
+  lemma is_insert_param_refine[refine]:
+    assumes "(xs',xs)\<in>cdom_list_rel cparam"
+    assumes "(l',l)\<in>Id"
+    assumes "(i',i)\<in>Id"
+    shows "is_insert_param GUARDED cparam xs' l' i' \<le>\<Down>(cdom_list_rel cparam) (is_insert3 GUARDED xs l i)"
+    supply [refine_dref_RELATES] = RELATESI[of "cdom_list_rel cparam"] RELATESI[of "cdom_olist_rel cparam"]
+    unfolding is_insert_param_def is_insert3_def
+    apply refine_rcg
+    apply (refine_dref_type)
+    using assms
+    by (auto simp: cdom_list_rel_def cdom_olist_rel_def in_br_conv)
+      
+
+end
+
+    
+context parameterized_sort_impl_context begin
+    
+  sepref_register 
+    is_guarded_param_insert3: "is_insert_param True"
+    is_unguarded_param_insert3: "is_insert_param False"
+  
+  sepref_def is_guarded_param_insert_impl is "uncurry3 (PR_CONST (is_insert_param True))" 
+    :: "cparam_assn\<^sup>k*\<^sub>a(woarray_assn elem_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a woarray_assn elem_assn"
+    unfolding is_insert_param_def PR_CONST_def
+    apply (simp named_ss HOL_ss:)
+    supply [[goals_limit = 1]]
+    apply (annot_snat_const "TYPE(size_t)")
+    by sepref
+
+  sepref_def is_unguarded_param_insert_impl is "uncurry3 (PR_CONST (is_insert_param False))" 
+    :: "cparam_assn\<^sup>k*\<^sub>a(woarray_assn elem_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a woarray_assn elem_assn"
+    unfolding is_insert_param_def PR_CONST_def
+    apply (simp named_ss HOL_ss:)
+    supply [[goals_limit = 1]]
+    apply (annot_snat_const "TYPE(size_t)")
+    by sepref
+  
+
+  definition "gen_insertion_sort_param GUARDED cparam l i h xs \<equiv> doN {
+    (xs,_)\<leftarrow>WHILET
+      (\<lambda>(xs,i). i<h) 
+      (\<lambda>(xs,i). doN {
+        xs \<leftarrow> is_insert_param GUARDED cparam xs l i;
+        ASSERT (i<h);
+        let i=i+1;
+        RETURN (xs,i)
+      }) (xs,i);
+    RETURN xs
+  }"  
+
+  lemma gen_insertion_sort_param_refinep[refine]:
+    "\<lbrakk>
+      (l',l)\<in>Id; (i',i)\<in>Id; (h',h)\<in>Id; (xs',xs)\<in>cdom_list_rel cparam
+    \<rbrakk> \<Longrightarrow> gen_insertion_sort_param GUARDED cparam l' i' h' xs' 
+    \<le> \<Down>(cdom_list_rel cparam) (gen_insertion_sort2 GUARDED l i h xs)"
+    unfolding gen_insertion_sort_param_def gen_insertion_sort2_def
+    supply [refine_dref_RELATES] = RELATESI[of "cdom_list_rel cparam"]
+    apply refine_rcg
+    apply refine_dref_type
+    apply auto
+    done
+
+  definition "final_insertion_sort_param cparam xs l h \<equiv> doN {
+    ASSERT (l<h);
+    if h-l \<le> is_threshold then
+      gen_insertion_sort_param True cparam l (l+1) h xs
+    else doN {
+      xs \<leftarrow> gen_insertion_sort_param True cparam l (l+1) (l+is_threshold) xs;
+      gen_insertion_sort_param False cparam l (l+is_threshold) h xs
+    }
+  }"  
+  
+  lemma final_insertion_sort_param_refine: "\<lbrakk>
+    (l',l)\<in>Id; (h',h)\<in>Id; (xs',xs)\<in>cdom_list_rel cparam
+  \<rbrakk> \<Longrightarrow> final_insertion_sort_param cparam xs' l' h' 
+    \<le> \<Down>(cdom_list_rel cparam) (final_insertion_sort2 xs l h)"  
+    unfolding final_insertion_sort_param_def final_insertion_sort2_def
+    apply refine_rcg
+    apply auto
+    done
+    
+  sepref_register 
+    unguarded_insertion_sort_param: "gen_insertion_sort_param False"
+    guarded_insertion_sort_param: "gen_insertion_sort_param True"
+    
+  sepref_def unguarded_insertion_sort_param_impl is "uncurry4 (PR_CONST (gen_insertion_sort_param False))" 
+    :: "cparam_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (woarray_assn elem_assn)\<^sup>d \<rightarrow>\<^sub>a woarray_assn elem_assn"
+    unfolding gen_insertion_sort_param_def PR_CONST_def
+    apply (annot_snat_const "TYPE(size_t)")
+    by sepref
+    
+  sepref_def guarded_insertion_sort_param_impl is "uncurry4 (PR_CONST (gen_insertion_sort_param True))" 
+    :: "cparam_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (woarray_assn elem_assn)\<^sup>d \<rightarrow>\<^sub>a woarray_assn elem_assn"
+    unfolding gen_insertion_sort_param_def PR_CONST_def
+    apply (annot_snat_const "TYPE(size_t)")
+    by sepref
+    
+  sepref_register final_insertion_sort_param
+  sepref_def final_insertion_sort_param_impl is "uncurry3 (PR_CONST final_insertion_sort_param)" 
+    :: "cparam_assn\<^sup>k *\<^sub>a (woarray_assn elem_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a woarray_assn elem_assn"
+    unfolding final_insertion_sort_param_def PR_CONST_def
+    apply (annot_snat_const "TYPE(size_t)")
+    by sepref
+    
+end
+
+*)
 
 
 end

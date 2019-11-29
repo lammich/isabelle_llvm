@@ -32,7 +32,7 @@ begin
     unfolding hn_ctxt_def invalid_assn_def pure_def
     by vcg'
   
-  
+  lemma unborrow_nofail[refine_pw_simps]: "nofail (unborrow a b) \<longleftrightarrow> a=b" by (auto simp: unborrow_def refine_pw_simps)  
   
   
   text \<open>Assertion that adds constraint on concrete value. Used to carry through concrete equalities.\<close>

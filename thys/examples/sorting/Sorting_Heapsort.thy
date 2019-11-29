@@ -2,6 +2,10 @@ theory Sorting_Heapsort
 imports Sorting_Setup
 begin
 
+(*
+  TODO: Fix section structure
+*)
+
 
 locale heap_range_context = 
   fixes l h :: nat
@@ -1215,9 +1219,6 @@ context weak_ordering begin
 end
 
 
-
-context sort_impl_context begin
-
 sepref_register mop_lchild3 mop_rchild3 has_rchild3 has_lchild3 mop_geth3  mop_seth3  
 sepref_def mop_lchild_impl [llvm_inline] is "uncurry mop_lchild3" :: "size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a size_assn"
   unfolding mop_lchild3_def apply (annot_snat_const "TYPE (size_t)") by sepref
@@ -1237,6 +1238,10 @@ sepref_def mop_geth_impl [llvm_inline] is "uncurry3 mop_geth3" :: "size_assn\<^s
   
 sepref_def mop_seth_impl [llvm_inline] is "uncurry4 mop_seth3" :: "size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (eoarray_assn elem_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a elem_assn\<^sup>d \<rightarrow>\<^sub>a eoarray_assn elem_assn"
   unfolding mop_seth3_def by sepref
+  
+
+
+context sort_impl_context begin
   
 sepref_register "sift_down4 (\<^bold><)"
 sepref_def sift_down_impl is "uncurry3 (PR_CONST (sift_down4 (\<^bold><)))" :: "size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (woarray_assn elem_assn)\<^sup>d \<rightarrow>\<^sub>a (woarray_assn elem_assn)"
@@ -1261,6 +1266,259 @@ lemmas heapsort_hnr[sepref_fr_rules] = heapsort_impl.refine[unfolded heapsort1.r
   
   
 end  
+            
+subsection \<open>Parameterized Comparison\<close>
+context parameterized_weak_ordering1 begin
+
+
+  definition sift_down_param :: "'cparam \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> 'a list \<Rightarrow> 'a list nres" 
+  where "sift_down_param cparam l h i\<^sub>0 xs \<equiv> doN {
+    ASSERT (l\<le>i\<^sub>0 \<and> i\<^sub>0<h);
+    let i\<^sub>1 = i\<^sub>0 - l;
+    xs \<leftarrow> mop_to_eo_conv xs;
+    (v,xs) \<leftarrow> mop_geth3 l h xs i\<^sub>1;
+    
+    (xs,i,_) \<leftarrow> WHILEIT (\<lambda>(xs,i,ctd). i<h-l \<and> i\<ge>i\<^sub>1) (\<lambda>(xs,i,ctd). has_rchild3 l h i \<and> ctd) (\<lambda>(xs,i,ctd). doN {
+      lci \<leftarrow> mop_lchild3 h i;
+      rci \<leftarrow> mop_rchild3 h i;
+    
+      ASSERT (l+lci<h \<and> l+rci<h \<and> l+lci \<noteq> l+rci);
+      b \<leftarrow> pcmpo_idxs2 cparam xs (l+lci) (l+rci);
+      
+      if b then doN {
+        b \<leftarrow> pcmpo_v_idx2 cparam xs v (l+rci);
+        if b then doN {
+          (rc,xs) \<leftarrow> mop_geth3 l h xs rci;
+          xs \<leftarrow> mop_seth3 l h xs i rc;
+          RETURN (xs,rci,True)
+        } else RETURN (xs,i,False)
+      } else doN {
+        b \<leftarrow> pcmpo_v_idx2 cparam xs v (l+lci);
+        if b then doN {
+          (lc,xs) \<leftarrow> mop_geth3 l h xs lci;
+          xs \<leftarrow> mop_seth3 l h xs i lc;
+          RETURN (xs,lci,True)
+        } else RETURN (xs,i,False)
+      }
+    }) (xs,i\<^sub>1,True);
+    
+    ASSERT (i\<ge>i\<^sub>1);
+    
+    if has_lchild3 l h i then doN {
+      lci \<leftarrow> mop_lchild3 h i;
+      ASSERT (l+lci<h);
+      b \<leftarrow> pcmpo_v_idx2 cparam xs v (l+lci);
+      if b then doN {
+        (lc,xs) \<leftarrow> mop_geth3 l h xs lci;
+        xs \<leftarrow> mop_seth3 l h xs i lc;
+        xs \<leftarrow> mop_seth3 l h xs lci v;
+        xs \<leftarrow> mop_to_wo_conv xs;
+        RETURN xs
+      } else doN {
+        xs \<leftarrow> mop_seth3 l h xs i v;
+        xs \<leftarrow> mop_to_wo_conv xs;
+        RETURN xs
+      }  
+    } else doN {
+      xs \<leftarrow> mop_seth3 l h xs i v;
+      xs \<leftarrow> mop_to_wo_conv xs;
+      RETURN xs
+    }  
+  }" 
+
+  
+  lemma mop_geth3_cdom_refine: "\<lbrakk>
+    (l',l)\<in>Id; (h',h)\<in>Id; (i',i)\<in>Id; (xs',xs)\<in>cdom_olist_rel cparam
+  \<rbrakk> \<Longrightarrow> mop_geth3 l' h' xs' i' 
+    \<le> \<Down>(br id (\<lambda>x. x \<in> cdom cparam) \<times>\<^sub>r cdom_olist_rel cparam) (mop_geth3 l h xs i)"
+    unfolding mop_geth3_def
+    apply refine_rcg
+    by auto
+
+  lemma mop_seth3_cdom_refine: "\<lbrakk>
+    (l',l)\<in>Id; (h',h)\<in>Id; (i',i)\<in>Id; (xs',xs)\<in>cdom_olist_rel cparam; (v',v)\<in>Id; v\<in>cdom cparam
+  \<rbrakk> \<Longrightarrow> mop_seth3 l' h' xs' i' v' 
+    \<le> \<Down>(cdom_olist_rel cparam) (mop_seth3 l h xs i v)"
+    unfolding mop_seth3_def
+    apply refine_rcg
+    by auto
+    
+      
+  lemma sift_down_param_refine[refine]: "\<lbrakk> (l',l)\<in>Id; (h',h)\<in>Id; (i\<^sub>0',i\<^sub>0)\<in>Id; (xs',xs)\<in>cdom_list_rel cparam \<rbrakk> 
+    \<Longrightarrow> sift_down_param cparam l' h' i\<^sub>0' xs' \<le> \<Down>(cdom_list_rel cparam) (sift_down4 (less' cparam) l h i\<^sub>0 xs)"
+    unfolding sift_down_param_def sift_down4_def
+    apply (refine_rcg mop_geth3_cdom_refine mop_seth3_cdom_refine)
+    apply (all \<open>(intro IdI)?;(elim conjE IdE Pair_inject)?;(assumption)?\<close>)
+    supply [refine_dref_RELATES] = RELATESI[of "cdom_list_rel cparam"] RELATESI[of "cdom_olist_rel cparam"]
+    apply refine_dref_type
+    (* Note: The 3 simps below are an optimization for speed. Just a simp_all on the 65 subgoals takes too long.*)
+    apply (simp_all named_ss HOL_ss: IdI split in_br_conv prod_rel_iff cdom_olist_rel_def id_def)
+    apply simp_all
+    apply (simp_all split: prod.splits)
+    done
+    
+    
+  definition "heapify_btu_param cparam l h xs\<^sub>0 \<equiv> doN {
+    ASSERT(h>0);
+    (xs,l') \<leftarrow> WHILET 
+      (\<lambda>(xs,l'). l'>l) 
+      (\<lambda>(xs,l'). doN {
+        ASSERT (l'>0);
+        let l'=l'-1;
+        xs \<leftarrow> sift_down_param cparam l h l' xs;
+        RETURN (xs,l')
+      })
+      (xs\<^sub>0,h-1);
+    RETURN xs
+  }"    
+    
+  lemma heapify_btu_param_refine[refine]: 
+    "\<lbrakk> (l',l)\<in>Id; (h',h)\<in>Id; (xs',xs)\<in>cdom_list_rel cparam\<rbrakk> 
+    \<Longrightarrow> heapify_btu_param cparam l' h' xs' \<le> \<Down>(cdom_list_rel cparam) (heapify_btu1 (less' cparam) l h xs)"
+    unfolding heapify_btu_param_def heapify_btu1_def
+    apply (refine_rcg prod_relI)
+    supply [refine_dref_RELATES] = RELATESI[of "cdom_list_rel cparam"]
+    apply refine_dref_type
+    by auto
+    
+  term heapsort1  
+    
+  definition heapsort_param :: "'cparam \<Rightarrow> 'a list \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> 'a list nres" 
+  where "heapsort_param cparam xs\<^sub>0 l h\<^sub>0 \<equiv> doN {
+    ASSERT (l\<le>h\<^sub>0);
+    if h\<^sub>0-l > 1 then doN {
+      xs \<leftarrow> heapify_btu_param cparam l h\<^sub>0 xs\<^sub>0;
+      
+      (xs,h)\<leftarrow>WHILET
+        (\<lambda>(xs,h). Suc l < h) 
+        (\<lambda>(xs,h). doN {
+          ASSERT (h>0 \<and> l\<noteq>h-1);
+          xs \<leftarrow> mop_list_swap xs l (h-1);
+          xs \<leftarrow> sift_down_param cparam l (h-1) l xs;
+          RETURN (xs,h-1)
+        })
+        (xs,h\<^sub>0);
+      
+      RETURN xs
+    } else
+      RETURN xs\<^sub>0
+  }"
+
+  lemma heapsort_param_refine[refine]: "\<lbrakk>
+    (l',l)\<in>Id; (h',h)\<in>Id; (xs',xs)\<in>cdom_list_rel cparam
+  \<rbrakk> \<Longrightarrow> heapsort_param cparam xs' l' h' \<le> \<Down>(cdom_list_rel cparam) (heapsort1 (less' cparam) xs l h)"  
+    unfolding heapsort_param_def heapsort1_def mop_list_swap_alt (* TODO: inlined mop-list-swap refinement proof! *)
+    apply refine_rcg
+    supply [refine_dref_RELATES] = RELATESI[of "cdom_list_rel cparam"]
+    apply refine_dref_type
+    apply (auto simp: in_br_conv cdom_list_rel_alt)
+    done
+  
+  
+  lemma heapsort_param_correct: 
+    assumes "(xs',xs)\<in>Id" "(l',l)\<in>Id" "(h',h)\<in>Id"
+    shows "heapsort_param cparam xs' l' h' \<le> pslice_sort_spec cdom pless cparam xs l h"
+  proof -
+    note heapsort_param_refine[unfolded heapsort1.refine[OF WO.weak_ordering_axioms, symmetric]]
+    also note WO.heapsort_correct'
+    also note slice_sort_spec_xfer
+    finally show ?thesis 
+      unfolding pslice_sort_spec_def
+      apply refine_vcg
+      using assms unfolding cdom_list_rel_alt
+      by (simp add: in_br_conv)
+    
+  qed
+
+  lemma heapsort_param_correct': 
+    shows "(PR_CONST heapsort_param, PR_CONST (pslice_sort_spec cdom pless)) \<in> Id \<rightarrow> Id \<rightarrow> Id \<rightarrow> Id \<rightarrow> \<langle>Id\<rangle>nres_rel"
+    using heapsort_param_correct 
+    apply (intro fun_relI nres_relI) 
+    by simp
+    
+  
+  
+end
+
+context parameterized_sort_impl_context
+begin
+  sepref_register "sift_down_param"
+  sepref_def sift_down_impl is "uncurry4 (PR_CONST sift_down_param)" 
+    :: "cparam_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (woarray_assn elem_assn)\<^sup>d \<rightarrow>\<^sub>a (woarray_assn elem_assn)"
+    unfolding sift_down_param_def PR_CONST_def
+    by sepref (* Takes loooong! *)
+  
+
+sepref_register "heapify_btu_param"
+sepref_def heapify_btu_impl is "uncurry3 (PR_CONST heapify_btu_param)" 
+  :: "cparam_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (woarray_assn elem_assn)\<^sup>d \<rightarrow>\<^sub>a (woarray_assn elem_assn)"
+  unfolding heapify_btu_param_def PR_CONST_def
+  apply (annot_snat_const "TYPE (size_t)")
+  by sepref
+  
+sepref_register "heapsort_param"
+sepref_def heapsort_param_impl is "uncurry3 (PR_CONST heapsort_param)" 
+  :: "cparam_assn\<^sup>k *\<^sub>a (woarray_assn elem_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a (woarray_assn elem_assn)"
+  unfolding heapsort_param_def PR_CONST_def
+  apply (rewrite at "sift_down_param _ _ _ \<hole> _" fold_COPY)
+  apply (annot_snat_const "TYPE (size_t)")
+  by sepref
+
+(*
+
+TODO: Show that this refines a param_sort_spec!
+
+lemmas heapsort_hnr[sepref_fr_rules] = heapsort_param_impl.refine[unfolded heapsort_param.refine[OF weak_ordering_axioms,symmetric]]  
+*)
+
+
+lemmas heapsort_param_hnr 
+  = heapsort_param_impl.refine[FCOMP heapsort_param_correct']
+
+
+end
+
+
+subsection \<open>Compare Indexes into Value Array\<close>
+
+definition idx_less :: "'a::linorder list \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where "idx_less vs i j \<equiv> vs!i < vs!j"
+definition idx_cdom :: "'a::linorder list \<Rightarrow> nat set" where "idx_cdom vs \<equiv> {0..<length vs}"
+
+definition "idx_pcmp vs i j \<equiv> do {
+  ASSERT (i<length vs \<and> j<length vs);
+  RETURN (vs!i < vs!j)
+}"
+
+sepref_def idx_pcmp_impl is "uncurry2 idx_pcmp" :: 
+  "(array_assn snat_assn)\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
+  unfolding idx_pcmp_def
+  by sepref
+  
+
+interpretation IDXO: weak_ordering_on_lt "idx_cdom vs" "idx_less vs"
+  apply unfold_locales
+  unfolding idx_less_def by auto
+
+interpretation IDXO: parameterized_weak_ordering1 idx_cdom idx_less idx_pcmp
+  apply unfold_locales
+  unfolding idx_pcmp_def
+  apply refine_vcg
+  apply (auto simp: idx_less_def idx_cdom_def)
+  done
+
+global_interpretation IDXO: parameterized_sort_impl_context 
+  idx_cdom idx_less idx_pcmp idx_pcmp_impl "array_assn snat_assn" size_assn
+  defines IDXO_heapsort_param_impl = IDXO.heapsort_param_impl  
+      and IDXO_sift_down_impl = IDXO.sift_down_impl
+      and IDXO_heapify_btu_impl = IDXO.heapify_btu_impl
+    (*and IDXO_pcmp_impl = IDXO.pcmp_impl*)
+  
+  apply unfold_locales
+  unfolding GEN_ALGO_def refines_param_relp_def (* TODO: thm gen_refines_param_relpI *)
+  by (rule idx_pcmp_impl.refine)
+
+
+export_llvm (debug) "IDXO_heapsort_param_impl :: 64 word ptr \<Rightarrow> _"
 
 (*  
 global_interpretation heapsort_interp: pure_sort_impl_context "(\<le>)" "(<)" ll_icmp_ult unat_assn
