@@ -693,8 +693,6 @@ context sort_impl_context begin
 end    
 
     
-(*
-  
 context parameterized_weak_ordering begin  
 
   definition "is_insert_param GUARDED cparam xs l i \<equiv> doN {
@@ -728,19 +726,63 @@ context parameterized_weak_ordering begin
     RETURN xs
   }"
   
-    
+
+  term is_insert4
+      
   lemma is_insert_param_refine[refine]:
     assumes "(xs',xs)\<in>cdom_list_rel cparam"
     assumes "(l',l)\<in>Id"
     assumes "(i',i)\<in>Id"
-    shows "is_insert_param GUARDED cparam xs' l' i' \<le>\<Down>(cdom_list_rel cparam) (is_insert3 GUARDED xs l i)"
+    shows "is_insert_param GUARDED cparam xs' l' i' \<le>\<Down>(cdom_list_rel cparam) (WO.is_insert3 cparam GUARDED xs l i)"
     supply [refine_dref_RELATES] = RELATESI[of "cdom_list_rel cparam"] RELATESI[of "cdom_olist_rel cparam"]
-    unfolding is_insert_param_def is_insert3_def
+    unfolding is_insert_param_def WO.is_insert3_def
     apply refine_rcg
     apply (refine_dref_type)
     using assms
-    by (auto simp: cdom_list_rel_def cdom_olist_rel_def in_br_conv)
+    by (auto simp: cdom_list_rel_alt cdom_olist_rel_alt in_br_conv)
       
+  definition "gen_insertion_sort_param GUARDED cparam l i h xs \<equiv> doN {
+    (xs,_)\<leftarrow>WHILET
+      (\<lambda>(xs,i). i<h) 
+      (\<lambda>(xs,i). doN {
+        xs \<leftarrow> is_insert_param GUARDED cparam xs l i;
+        ASSERT (i<h);
+        let i=i+1;
+        RETURN (xs,i)
+      }) (xs,i);
+    RETURN xs
+  }"  
+
+  lemma gen_insertion_sort_param_refinep[refine]:
+    "\<lbrakk>
+      (l',l)\<in>Id; (i',i)\<in>Id; (h',h)\<in>Id; (xs',xs)\<in>cdom_list_rel cparam
+    \<rbrakk> \<Longrightarrow> gen_insertion_sort_param GUARDED cparam l' i' h' xs' 
+    \<le> \<Down>(cdom_list_rel cparam) (WO.gen_insertion_sort2 cparam GUARDED l i h xs)"
+    unfolding gen_insertion_sort_param_def WO.gen_insertion_sort2_def
+    supply [refine_dref_RELATES] = RELATESI[of "cdom_list_rel cparam"]
+    apply refine_rcg
+    apply refine_dref_type
+    apply auto
+    done
+
+  definition "final_insertion_sort_param cparam xs l h \<equiv> doN {
+    ASSERT (l<h);
+    if h-l \<le> is_threshold then
+      gen_insertion_sort_param True cparam l (l+1) h xs
+    else doN {
+      xs \<leftarrow> gen_insertion_sort_param True cparam l (l+1) (l+is_threshold) xs;
+      gen_insertion_sort_param False cparam l (l+is_threshold) h xs
+    }
+  }"  
+  
+  lemma final_insertion_sort_param_refine[refine]: "\<lbrakk>
+    (l',l)\<in>Id; (h',h)\<in>Id; (xs',xs)\<in>cdom_list_rel cparam
+  \<rbrakk> \<Longrightarrow> final_insertion_sort_param cparam xs' l' h' 
+    \<le> \<Down>(cdom_list_rel cparam) (WO.final_insertion_sort2 cparam xs l h)"  
+    unfolding final_insertion_sort_param_def WO.final_insertion_sort2_def
+    apply refine_rcg
+    apply auto
+    done
 
 end
 
@@ -768,48 +810,6 @@ context parameterized_sort_impl_context begin
     by sepref
   
 
-  definition "gen_insertion_sort_param GUARDED cparam l i h xs \<equiv> doN {
-    (xs,_)\<leftarrow>WHILET
-      (\<lambda>(xs,i). i<h) 
-      (\<lambda>(xs,i). doN {
-        xs \<leftarrow> is_insert_param GUARDED cparam xs l i;
-        ASSERT (i<h);
-        let i=i+1;
-        RETURN (xs,i)
-      }) (xs,i);
-    RETURN xs
-  }"  
-
-  lemma gen_insertion_sort_param_refinep[refine]:
-    "\<lbrakk>
-      (l',l)\<in>Id; (i',i)\<in>Id; (h',h)\<in>Id; (xs',xs)\<in>cdom_list_rel cparam
-    \<rbrakk> \<Longrightarrow> gen_insertion_sort_param GUARDED cparam l' i' h' xs' 
-    \<le> \<Down>(cdom_list_rel cparam) (gen_insertion_sort2 GUARDED l i h xs)"
-    unfolding gen_insertion_sort_param_def gen_insertion_sort2_def
-    supply [refine_dref_RELATES] = RELATESI[of "cdom_list_rel cparam"]
-    apply refine_rcg
-    apply refine_dref_type
-    apply auto
-    done
-
-  definition "final_insertion_sort_param cparam xs l h \<equiv> doN {
-    ASSERT (l<h);
-    if h-l \<le> is_threshold then
-      gen_insertion_sort_param True cparam l (l+1) h xs
-    else doN {
-      xs \<leftarrow> gen_insertion_sort_param True cparam l (l+1) (l+is_threshold) xs;
-      gen_insertion_sort_param False cparam l (l+is_threshold) h xs
-    }
-  }"  
-  
-  lemma final_insertion_sort_param_refine: "\<lbrakk>
-    (l',l)\<in>Id; (h',h)\<in>Id; (xs',xs)\<in>cdom_list_rel cparam
-  \<rbrakk> \<Longrightarrow> final_insertion_sort_param cparam xs' l' h' 
-    \<le> \<Down>(cdom_list_rel cparam) (final_insertion_sort2 xs l h)"  
-    unfolding final_insertion_sort_param_def final_insertion_sort2_def
-    apply refine_rcg
-    apply auto
-    done
     
   sepref_register 
     unguarded_insertion_sort_param: "gen_insertion_sort_param False"
@@ -835,8 +835,6 @@ context parameterized_sort_impl_context begin
     by sepref
     
 end
-
-*)
 
 
 end

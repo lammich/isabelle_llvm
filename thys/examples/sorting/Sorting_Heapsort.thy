@@ -1268,7 +1268,7 @@ lemmas heapsort_hnr[sepref_fr_rules] = heapsort_impl.refine[unfolded heapsort1.r
 end  
             
 subsection \<open>Parameterized Comparison\<close>
-context parameterized_weak_ordering1 begin
+context parameterized_weak_ordering begin
 
 
   definition sift_down_param :: "'cparam \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> 'a list \<Rightarrow> 'a list nres" 
@@ -1478,47 +1478,6 @@ lemmas heapsort_param_hnr
 
 end
 
-
-subsection \<open>Compare Indexes into Value Array\<close>
-
-definition idx_less :: "'a::linorder list \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool" where "idx_less vs i j \<equiv> vs!i < vs!j"
-definition idx_cdom :: "'a::linorder list \<Rightarrow> nat set" where "idx_cdom vs \<equiv> {0..<length vs}"
-
-definition "idx_pcmp vs i j \<equiv> do {
-  ASSERT (i<length vs \<and> j<length vs);
-  RETURN (vs!i < vs!j)
-}"
-
-sepref_def idx_pcmp_impl is "uncurry2 idx_pcmp" :: 
-  "(array_assn snat_assn)\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
-  unfolding idx_pcmp_def
-  by sepref
-  
-
-interpretation IDXO: weak_ordering_on_lt "idx_cdom vs" "idx_less vs"
-  apply unfold_locales
-  unfolding idx_less_def by auto
-
-interpretation IDXO: parameterized_weak_ordering1 idx_cdom idx_less idx_pcmp
-  apply unfold_locales
-  unfolding idx_pcmp_def
-  apply refine_vcg
-  apply (auto simp: idx_less_def idx_cdom_def)
-  done
-
-global_interpretation IDXO: parameterized_sort_impl_context 
-  idx_cdom idx_less idx_pcmp idx_pcmp_impl "array_assn snat_assn" size_assn
-  defines IDXO_heapsort_param_impl = IDXO.heapsort_param_impl  
-      and IDXO_sift_down_impl = IDXO.sift_down_impl
-      and IDXO_heapify_btu_impl = IDXO.heapify_btu_impl
-    (*and IDXO_pcmp_impl = IDXO.pcmp_impl*)
-  
-  apply unfold_locales
-  unfolding GEN_ALGO_def refines_param_relp_def (* TODO: thm gen_refines_param_relpI *)
-  by (rule idx_pcmp_impl.refine)
-
-
-export_llvm (debug) "IDXO_heapsort_param_impl :: 64 word ptr \<Rightarrow> _"
 
 (*  
 global_interpretation heapsort_interp: pure_sort_impl_context "(\<le>)" "(<)" ll_icmp_ult unat_assn

@@ -1183,7 +1183,7 @@ define { i64, { i64, i8* } }* @Sorting_Introsort_str_sort_introsort_aux_impl({ i
     %tmpab = insertvalue { i64, { i64, i64 } } %xa, { i64, i64 } %tmpa, 1
     %xb = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } zeroinitializer, { i64, { i64, i8* } }* %x, 0
     %x5 = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %xb, { i64, { i64, i64 } } %tmpab, 1
-    %x6 = call { i64, { i64, i8* } }* @Sorting_Introsort_str_sort_introsort_aux_impl_f_011410114 ({ { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %x5)
+    %x6 = call { i64, { i64, i8* } }* @Sorting_Introsort_str_sort_introsort_aux_impl_f_012727448 ({ { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %x5)
     ret { i64, { i64, i8* } }* %x6
 }
 
@@ -1351,7 +1351,7 @@ define i64* @introsort_aux(i64* %x, i64 %x1, i64 %x2, i64 %x3) {
     %tmpab = insertvalue { i64, { i64, i64 } } %xa, { i64, i64 } %tmpa, 1
     %xb = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %x, 0
     %x5 = insertvalue { i64*, { i64, { i64, i64 } } } %xb, { i64, { i64, i64 } } %tmpab, 1
-    %x6 = call i64* @Sorting_Introsort_unat_sort_introsort_aux_impl_f_011389204 ({ i64*, { i64, { i64, i64 } } } %x5)
+    %x6 = call i64* @Sorting_Introsort_unat_sort_introsort_aux_impl_f_012708230 ({ i64*, { i64, { i64, i64 } } } %x5)
     ret i64* %x6
 }
 
@@ -1730,7 +1730,7 @@ define { i64, { i64, i8* } }* @Sorting_Introsort_str_sort_unguarded_insertion_so
     ret { i64, { i64, i8* } }* %a12
 }
 
-define { i64, { i64, i8* } }* @Sorting_Introsort_str_sort_introsort_aux_impl_f_011410114({ { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %x) {
+define { i64, { i64, i8* } }* @Sorting_Introsort_str_sort_introsort_aux_impl_f_012727448({ { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %x) {
 
   start:
     %a1 = extractvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %x, 0
@@ -1913,7 +1913,7 @@ define { i64, { i64, i8* } }* @Sorting_Introsort_str_sort_introsort_aux_impl_f_0
     %tmpga = insertvalue { i64, { i64, i64 } } %yb, { i64, i64 } %tmpfa, 1
     %yc = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } zeroinitializer, { i64, { i64, i8* } }* %a1ca, 0
     %yd = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %yc, { i64, { i64, i64 } } %tmpga, 1
-    %yaa = call { i64, { i64, i8* } }* @Sorting_Introsort_str_sort_introsort_aux_impl_f_011410114 ({ { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %yd)
+    %yaa = call { i64, { i64, i8* } }* @Sorting_Introsort_str_sort_introsort_aux_impl_f_012727448 ({ { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %yd)
     %yba = sub i64 %a2b, 1
     %yf2 = insertvalue { i64, i64 } zeroinitializer, i64 %a1b, 0
     %tmphb = insertvalue { i64, i64 } %yf2, i64 %yba, 1
@@ -1921,7 +1921,7 @@ define { i64, { i64, i8* } }* @Sorting_Introsort_str_sort_introsort_aux_impl_f_0
     %tmpia = insertvalue { i64, { i64, i64 } } %yg2, { i64, i64 } %tmphb, 1
     %yh2 = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } zeroinitializer, { i64, { i64, i8* } }* %yaa, 0
     %x12 = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %yh2, { i64, { i64, i64 } } %tmpia, 1
-    %x13 = call { i64, { i64, i8* } }* @Sorting_Introsort_str_sort_introsort_aux_impl_f_011410114 ({ { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %x12)
+    %x13 = call { i64, { i64, i8* } }* @Sorting_Introsort_str_sort_introsort_aux_impl_f_012727448 ({ { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %x12)
     br label %ctd_ifa
 
   ctd_ifa:
@@ -1965,7 +1965,7 @@ define i64* @Sorting_Introsort_unat_sort_unguarded_insertion_sort_impl(i64 %x, i
     ret i64* %a12
 }
 
-define i64* @Sorting_Introsort_unat_sort_introsort_aux_impl_f_011389204({ i64*, { i64, { i64, i64 } } } %x) {
+define i64* @Sorting_Introsort_unat_sort_introsort_aux_impl_f_012708230({ i64*, { i64, { i64, i64 } } } %x) {
 
   start:
     %a1 = extractvalue { i64*, { i64, { i64, i64 } } } %x, 0
@@ -2148,7 +2148,7 @@ define i64* @Sorting_Introsort_unat_sort_introsort_aux_impl_f_011389204({ i64*, 
     %tmpga = insertvalue { i64, { i64, i64 } } %yb, { i64, i64 } %tmpfa, 1
     %yc = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %a1ca, 0
     %yd = insertvalue { i64*, { i64, { i64, i64 } } } %yc, { i64, { i64, i64 } } %tmpga, 1
-    %yaa = call i64* @Sorting_Introsort_unat_sort_introsort_aux_impl_f_011389204 ({ i64*, { i64, { i64, i64 } } } %yd)
+    %yaa = call i64* @Sorting_Introsort_unat_sort_introsort_aux_impl_f_012708230 ({ i64*, { i64, { i64, i64 } } } %yd)
     %yba = sub i64 %a2b, 1
     %yf2 = insertvalue { i64, i64 } zeroinitializer, i64 %a1b, 0
     %tmphb = insertvalue { i64, i64 } %yf2, i64 %yba, 1
@@ -2156,7 +2156,7 @@ define i64* @Sorting_Introsort_unat_sort_introsort_aux_impl_f_011389204({ i64*, 
     %tmpia = insertvalue { i64, { i64, i64 } } %yg2, { i64, i64 } %tmphb, 1
     %yh2 = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %yaa, 0
     %x12 = insertvalue { i64*, { i64, { i64, i64 } } } %yh2, { i64, { i64, i64 } } %tmpia, 1
-    %x13 = call i64* @Sorting_Introsort_unat_sort_introsort_aux_impl_f_011389204 ({ i64*, { i64, { i64, i64 } } } %x12)
+    %x13 = call i64* @Sorting_Introsort_unat_sort_introsort_aux_impl_f_012708230 ({ i64*, { i64, { i64, i64 } } } %x12)
     br label %ctd_ifa
 
   ctd_ifa:

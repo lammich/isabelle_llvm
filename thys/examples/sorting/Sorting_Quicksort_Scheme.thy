@@ -3,6 +3,7 @@ imports Sorting_Setup Sorting_Partially_Sorted
 begin
 
 
+  abbreviation "is_threshold \<equiv> 16::nat"
 
   context weak_ordering begin
 
@@ -10,9 +11,6 @@ begin
       ASSERT (length xs \<ge> 4); 
       SPEC (\<lambda>(xs1,xs2). mset xs = mset xs1 + mset xs2 \<and> xs1\<noteq>[] \<and> xs2\<noteq>[] \<and> slice_LT (\<^bold>\<le>) xs1 xs2)
     }"
-
-    abbreviation "is_threshold \<equiv> 16::nat"
-
     definition introsort_aux1 :: "'a list \<Rightarrow> nat \<Rightarrow> 'a list nres" where "introsort_aux1 xs d \<equiv> RECT (\<lambda>introsort_aux1 (xs,d). doN {
       if length xs > is_threshold then doN {
         if d=0 then

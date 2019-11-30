@@ -6,6 +6,10 @@ DONE verified bin-search
 
 DONE: Heap and Heapmap
 
+Instantiate higher-order (template) parameters in preprocessor
+  (could also help for locale instantiations, e.g., in the sorting examples)
+
+
 Elaborate memory model: No confusion for better verifiability!
 
 Refinement framework: more flexible matching, 

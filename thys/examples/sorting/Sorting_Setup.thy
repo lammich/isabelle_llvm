@@ -492,7 +492,7 @@ definition "pslice_sort_spec cdom pless cparam xs l h \<equiv> doN {
 }"  
   
 
-locale parameterized_weak_ordering1 =
+locale parameterized_weak_ordering =
   fixes cdom :: "'cparam \<Rightarrow> 'a set"
     and pless :: "'cparam \<Rightarrow> 'a \<Rightarrow> 'a \<Rightarrow> bool"
     and pcmp :: "'cparam \<Rightarrow> 'a \<Rightarrow> 'a \<Rightarrow> bool nres"
@@ -840,7 +840,7 @@ lemma gen_refines_param_relpD: "GEN_ALGO Rimpl (refines_param_relp P A R)
   by (simp add: GEN_ALGO_def refines_param_relp_def)
 
 
-locale parameterized_sort_impl_context = parameterized_weak_ordering1 +
+locale parameterized_sort_impl_context = parameterized_weak_ordering +
   constrains "cdom" :: "'cparam \<Rightarrow> _" and pless :: _ and pcmp :: "'cparam \<Rightarrow> 'a \<Rightarrow> 'a \<Rightarrow> bool nres"
   fixes pcmp_impl :: "'cparami \<Rightarrow> 'ai::llvm_rep \<Rightarrow> 'ai \<Rightarrow> 1 word llM"
     and cparam_assn :: "'cparam \<Rightarrow> 'cparami \<Rightarrow> assn"
