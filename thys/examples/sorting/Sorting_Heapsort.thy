@@ -1440,25 +1440,37 @@ context parameterized_weak_ordering begin
   
 end
 
+context parameterized_sort_impl_context begin
+
+sepref_def mop_geth_impl [llvm_inline] is "uncurry3 mop_geth3" :: "size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a eo_assn\<^sup>d *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a elem_assn \<times>\<^sub>a eo_assn"
+  unfolding mop_geth3_def by sepref
+  
+sepref_def mop_seth_impl [llvm_inline] is "uncurry4 mop_seth3" :: "size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a eo_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a elem_assn\<^sup>d \<rightarrow>\<^sub>a eo_assn"
+  unfolding mop_seth3_def by sepref
+  
+
+end
+
+
 context parameterized_sort_impl_context
 begin
   sepref_register "sift_down_param"
   sepref_def sift_down_impl is "uncurry4 (PR_CONST sift_down_param)" 
-    :: "cparam_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (woarray_assn elem_assn)\<^sup>d \<rightarrow>\<^sub>a (woarray_assn elem_assn)"
+    :: "cparam_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a wo_assn\<^sup>d \<rightarrow>\<^sub>a wo_assn"
     unfolding sift_down_param_def PR_CONST_def
     by sepref (* Takes loooong! *)
   
 
 sepref_register "heapify_btu_param"
 sepref_def heapify_btu_impl is "uncurry3 (PR_CONST heapify_btu_param)" 
-  :: "cparam_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (woarray_assn elem_assn)\<^sup>d \<rightarrow>\<^sub>a (woarray_assn elem_assn)"
+  :: "cparam_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a wo_assn\<^sup>d \<rightarrow>\<^sub>a wo_assn"
   unfolding heapify_btu_param_def PR_CONST_def
   apply (annot_snat_const "TYPE (size_t)")
   by sepref
   
 sepref_register "heapsort_param"
 sepref_def heapsort_param_impl is "uncurry3 (PR_CONST heapsort_param)" 
-  :: "cparam_assn\<^sup>k *\<^sub>a (woarray_assn elem_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a (woarray_assn elem_assn)"
+  :: "cparam_assn\<^sup>k *\<^sub>a wo_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a wo_assn"
   unfolding heapsort_param_def PR_CONST_def
   apply (rewrite at "sift_down_param _ _ _ \<hole> _" fold_COPY)
   apply (annot_snat_const "TYPE (size_t)")

@@ -832,6 +832,88 @@ end
 
 text \<open>The compare function takes an external parameter.\<close>  
 
+term mop_eo_set
+
+locale random_access_iterator =
+  fixes wo_assn :: "'a list \<Rightarrow> 'oi::llvm_rep \<Rightarrow> assn"
+    and eo_assn :: "'a option list \<Rightarrow> 'oi \<Rightarrow> assn"
+    and elem_assn :: "'a \<Rightarrow> 'ai::llvm_rep \<Rightarrow> assn"
+    and to_eo_impl :: "'oi \<Rightarrow> 'oi llM"
+    and to_wo_impl :: "'oi \<Rightarrow> 'oi llM"
+    and extract_impl :: "'oi \<Rightarrow> 'size::len2 word \<Rightarrow> ('ai \<times> 'oi) llM"
+    and set_impl :: "'oi \<Rightarrow> 'size word \<Rightarrow> 'ai \<Rightarrow> 'oi llM"
+  assumes
+          to_eo_hnr: "(to_eo_impl, mop_to_eo_conv) \<in> wo_assn\<^sup>d \<rightarrow>\<^sub>a\<^sub>d (\<lambda>_ ai. cnc_assn (\<lambda>x. x=ai) eo_assn)" 
+      and to_wo_hnr: "(to_wo_impl, mop_to_wo_conv) \<in> eo_assn\<^sup>d \<rightarrow>\<^sub>a\<^sub>d (\<lambda>_ ai. cnc_assn (\<lambda>x. x=ai) wo_assn)"
+      and eo_extract_hnr_aux: "(uncurry extract_impl, uncurry mop_eo_extract) \<in> eo_assn\<^sup>d *\<^sub>a snat_assn\<^sup>k \<rightarrow>\<^sub>a\<^sub>d (\<lambda>_ (ai,_). elem_assn \<times>\<^sub>a cnc_assn (\<lambda>x. x = ai) eo_assn)"
+      and eo_set_hnr_aux: "(uncurry2 set_impl, uncurry2 mop_eo_set) \<in> eo_assn\<^sup>d *\<^sub>a snat_assn\<^sup>k *\<^sub>a elem_assn\<^sup>d \<rightarrow>\<^sub>a\<^sub>d (\<lambda>_ ((ai,_),_). cnc_assn (\<lambda>x. x=ai) eo_assn)"
+      
+  notes [[sepref_register_adhoc to_eo_impl to_wo_impl extract_impl set_impl]]
+begin
+
+context
+  notes [fcomp_norm_simps] = option_rel_id_simp list_rel_id prod_rel_id_simp hrr_comp_id_conv
+begin  
+
+  private method rl_mono = 
+    (rule hfref_cons; 
+      clarsimp_all; 
+      clarsimp_all simp: cnc_assn_def sep_algebra_simps entails_lift_extract_simps)
+
+  lemma eo_extract_nodep_hnr_aux: 
+    "(uncurry extract_impl, uncurry mop_eo_extract) \<in> eo_assn\<^sup>d *\<^sub>a snat_assn\<^sup>k \<rightarrow>\<^sub>a elem_assn \<times>\<^sub>a eo_assn"
+    using eo_extract_hnr_aux 
+    by rl_mono
+
+  lemma eo_set_nodep_hnr_aux: 
+    "(uncurry2 set_impl, uncurry2 mop_eo_set) \<in> eo_assn\<^sup>d *\<^sub>a snat_assn\<^sup>k *\<^sub>a elem_assn\<^sup>d \<rightarrow>\<^sub>a eo_assn"
+    using eo_set_hnr_aux
+    by rl_mono
+    
+  lemma to_eo_nodep_hnr[sepref_fr_rules]: "(to_eo_impl, mop_to_eo_conv) \<in> wo_assn\<^sup>d \<rightarrow>\<^sub>a eo_assn"
+    using to_eo_hnr
+    by rl_mono
+
+  lemma to_wo_nodep_hnr[sepref_fr_rules]: "(to_wo_impl, mop_to_wo_conv) \<in> eo_assn\<^sup>d \<rightarrow>\<^sub>a wo_assn"
+    using to_wo_hnr
+    by rl_mono
+  
+        
+    
+  sepref_decl_impl (ismop,no_register) eo_extract: eo_extract_hnr_aux .
+  sepref_decl_impl (ismop) eo_extract_nodep: eo_extract_nodep_hnr_aux .
+  
+  sepref_decl_impl (ismop,no_register) eo_set: eo_set_hnr_aux .
+  sepref_decl_impl (ismop) eo_set_nodep: eo_set_nodep_hnr_aux .
+        
+    
+  lemmas eo_hnr_dep = eo_extract_dep_hnr eo_extract_hnr_mop eo_set_hnr eo_set_hnr_mop 
+    to_eo_hnr to_wo_hnr
+  lemmas eo_hnr_nodep = eo_extract_nodep_hnr eo_extract_nodep_hnr_mop eo_set_nodep_hnr eo_set_nodep_hnr_mop
+    to_eo_nodep_hnr to_wo_nodep_hnr
+    
+    
+  sepref_definition swap_eo_impl_aux is "uncurry2 swap_eo" :: "wo_assn\<^sup>d *\<^sub>a (snat_assn' TYPE('size))\<^sup>k *\<^sub>a (snat_assn' TYPE('size))\<^sup>k \<rightarrow>\<^sub>a wo_assn"
+    unfolding swap_eo_def
+    by sepref
+    
+end    
+    
+concrete_definition (in -) swap_eo_impl[llvm_inline] is random_access_iterator.swap_eo_impl_aux_def
+  
+context
+  notes [fcomp_norm_simps] = option_rel_id_simp list_rel_id prod_rel_id_simp hrr_comp_id_conv
+begin  
+  sepref_decl_impl (ismop) swap_eo_impl_aux.refine[FCOMP swap_eo_refine, unfolded swap_eo_impl.refine[OF random_access_iterator_axioms]]
+     uses mop_list_swap.fref[where A=Id] .
+
+end     
+       
+(*  sepref_decl_impl (ismop) swap_eo_impl.refine[FCOMP swap_eo_refine] uses mop_list_swap.fref[where A=Id] .*)
+    
+    
+end
+
 
 definition "refines_param_relp P A R Rimpl \<equiv> (uncurry2 Rimpl,uncurry2 R) \<in> P\<^sup>k*\<^sub>aA\<^sup>k*\<^sub>aA\<^sup>k\<rightarrow>\<^sub>abool1_assn"
 
@@ -840,11 +922,20 @@ lemma gen_refines_param_relpD: "GEN_ALGO Rimpl (refines_param_relp P A R)
   by (simp add: GEN_ALGO_def refines_param_relp_def)
 
 
-locale parameterized_sort_impl_context = parameterized_weak_ordering +
+locale parameterized_sort_impl_context = random_access_iterator + parameterized_weak_ordering + 
   constrains "cdom" :: "'cparam \<Rightarrow> _" and pless :: _ and pcmp :: "'cparam \<Rightarrow> 'a \<Rightarrow> 'a \<Rightarrow> bool nres"
-  fixes pcmp_impl :: "'cparami \<Rightarrow> 'ai::llvm_rep \<Rightarrow> 'ai \<Rightarrow> 1 word llM"
+    and elem_assn :: "'a \<Rightarrow> 'ai::llvm_rep \<Rightarrow> assn"
+    and wo_assn :: "'a list \<Rightarrow> 'oi::llvm_rep \<Rightarrow> assn"
+    and eo_assn :: "'a option list \<Rightarrow> 'oi \<Rightarrow> assn"
+    and elem_assn :: "'a \<Rightarrow> 'ai::llvm_rep \<Rightarrow> assn"
+    and to_eo_impl :: "'oi \<Rightarrow> 'oi llM"
+    and to_wo_impl :: "'oi \<Rightarrow> 'oi llM"
+    and extract_impl :: "'oi \<Rightarrow> size_t word \<Rightarrow> ('ai \<times> 'oi) llM"
+    and set_impl :: "'oi \<Rightarrow> size_t word \<Rightarrow> 'ai \<Rightarrow> 'oi llM"
+    
+  fixes pcmp_impl :: "'cparami \<Rightarrow> 'ai \<Rightarrow> 'ai \<Rightarrow> 1 word llM"
     and cparam_assn :: "'cparam \<Rightarrow> 'cparami \<Rightarrow> assn"
-    and elem_assn :: "'a \<Rightarrow> 'ai \<Rightarrow> assn"
+    
   assumes lt_impl: "GEN_ALGO pcmp_impl (refines_param_relp cparam_assn elem_assn pcmp)"
   notes pcmp_aux_hnr[sepref_fr_rules] = gen_refines_param_relpD[OF lt_impl]
   
@@ -859,25 +950,26 @@ begin
   sepref_register pcmpo_idxs2 pcmpo_v_idx2 pcmpo_idx_v2 pcmp_idxs2
 
   sepref_def pcmpo_idxs_impl [llvm_inline] is "uncurry3 (PR_CONST pcmpo_idxs2)" :: 
-    "cparam_assn\<^sup>k*\<^sub>a(eoarray_assn elem_assn)\<^sup>k *\<^sub>a snat_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
+    "cparam_assn\<^sup>k *\<^sub>a eo_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
     unfolding pcmpo_idxs2_def PR_CONST_def
     supply [sepref_fr_rules] = eo_hnr_dep
     by sepref
     
+    
   sepref_def pcmpo_v_idx_impl [llvm_inline] is "uncurry3 (PR_CONST pcmpo_v_idx2)" :: 
-    "cparam_assn\<^sup>k*\<^sub>a(eoarray_assn elem_assn)\<^sup>k *\<^sub>a elem_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
+    "cparam_assn\<^sup>k *\<^sub>a eo_assn\<^sup>k *\<^sub>a elem_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
     unfolding pcmpo_v_idx2_def PR_CONST_def
     supply [sepref_fr_rules] = eo_hnr_dep
     by sepref
 
   sepref_def pcmpo_idx_v_impl [llvm_inline] is "uncurry3 (PR_CONST pcmpo_idx_v2)" :: 
-    "cparam_assn\<^sup>k*\<^sub>a(eoarray_assn elem_assn)\<^sup>k *\<^sub>a snat_assn\<^sup>k *\<^sub>a elem_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
+    "cparam_assn\<^sup>k *\<^sub>a eo_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a elem_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
     unfolding pcmpo_idx_v2_def PR_CONST_def
     supply [sepref_fr_rules] = eo_hnr_dep
     by sepref
 
   sepref_def pcmp_idxs_impl [llvm_inline] is "uncurry3 (PR_CONST pcmp_idxs2)" :: 
-    "cparam_assn\<^sup>k*\<^sub>a(woarray_assn elem_assn)\<^sup>k *\<^sub>a snat_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
+    "cparam_assn\<^sup>k *\<^sub>a wo_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
     unfolding pcmp_idxs2_def PR_CONST_def
     supply [sepref_fr_rules] = eo_hnr_dep
     by sepref

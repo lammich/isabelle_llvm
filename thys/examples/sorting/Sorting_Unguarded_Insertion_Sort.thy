@@ -794,7 +794,7 @@ context parameterized_sort_impl_context begin
     is_unguarded_param_insert3: "is_insert_param False"
   
   sepref_def is_guarded_param_insert_impl is "uncurry3 (PR_CONST (is_insert_param True))" 
-    :: "cparam_assn\<^sup>k*\<^sub>a(woarray_assn elem_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a woarray_assn elem_assn"
+    :: "cparam_assn\<^sup>k *\<^sub>a wo_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a wo_assn"
     unfolding is_insert_param_def PR_CONST_def
     apply (simp named_ss HOL_ss:)
     supply [[goals_limit = 1]]
@@ -802,7 +802,7 @@ context parameterized_sort_impl_context begin
     by sepref
 
   sepref_def is_unguarded_param_insert_impl is "uncurry3 (PR_CONST (is_insert_param False))" 
-    :: "cparam_assn\<^sup>k*\<^sub>a(woarray_assn elem_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a woarray_assn elem_assn"
+    :: "cparam_assn\<^sup>k *\<^sub>a wo_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a wo_assn"
     unfolding is_insert_param_def PR_CONST_def
     apply (simp named_ss HOL_ss:)
     supply [[goals_limit = 1]]
@@ -816,20 +816,20 @@ context parameterized_sort_impl_context begin
     guarded_insertion_sort_param: "gen_insertion_sort_param True"
     
   sepref_def unguarded_insertion_sort_param_impl is "uncurry4 (PR_CONST (gen_insertion_sort_param False))" 
-    :: "cparam_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (woarray_assn elem_assn)\<^sup>d \<rightarrow>\<^sub>a woarray_assn elem_assn"
+    :: "cparam_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a wo_assn\<^sup>d \<rightarrow>\<^sub>a wo_assn"
     unfolding gen_insertion_sort_param_def PR_CONST_def
     apply (annot_snat_const "TYPE(size_t)")
     by sepref
     
   sepref_def guarded_insertion_sort_param_impl is "uncurry4 (PR_CONST (gen_insertion_sort_param True))" 
-    :: "cparam_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (woarray_assn elem_assn)\<^sup>d \<rightarrow>\<^sub>a woarray_assn elem_assn"
+    :: "cparam_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a wo_assn\<^sup>d \<rightarrow>\<^sub>a wo_assn"
     unfolding gen_insertion_sort_param_def PR_CONST_def
     apply (annot_snat_const "TYPE(size_t)")
     by sepref
     
   sepref_register final_insertion_sort_param
   sepref_def final_insertion_sort_param_impl is "uncurry3 (PR_CONST final_insertion_sort_param)" 
-    :: "cparam_assn\<^sup>k *\<^sub>a (woarray_assn elem_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a woarray_assn elem_assn"
+    :: "cparam_assn\<^sup>k *\<^sub>a wo_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a wo_assn"
     unfolding final_insertion_sort_param_def PR_CONST_def
     apply (annot_snat_const "TYPE(size_t)")
     by sepref

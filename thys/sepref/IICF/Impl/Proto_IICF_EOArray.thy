@@ -63,7 +63,7 @@ begin
 
   
   lemma eo_extract_hnr_aux: "(uncurry eo_extract_impl,uncurry (RETURN oo op_eo_extract)) 
-    \<in> [\<lambda>(xs,i). i<length xs \<and> xs!i\<noteq>None]\<^sub>a\<^sub>d (eoarray_assn A)\<^sup>d *\<^sub>a snat_assn\<^sup>k \<rightarrow> (\<lambda>_ cargs. A\<times>\<^sub>acnc_assn (\<lambda>x. x=fst cargs) (eoarray_assn A))"  
+    \<in> [\<lambda>(xs,i). i<length xs \<and> xs!i\<noteq>None]\<^sub>a\<^sub>d (eoarray_assn A)\<^sup>d *\<^sub>a snat_assn\<^sup>k \<rightarrow> (\<lambda>_ (ai,_). A\<times>\<^sub>acnc_assn (\<lambda>x. x=ai) (eoarray_assn A))"  
     unfolding snat_rel_def snat.assn_is_rel[symmetric]
     apply sepref_to_hoare
     apply (clarsimp simp: invalid_assn_def eoarray_assn_def cnc_assn_def[abs_def])

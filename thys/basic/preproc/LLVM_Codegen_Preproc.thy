@@ -445,8 +445,12 @@ subsection \<open>Code Generator Driver\<close>
         val llvm_deps_cmd = Parse_Spec.opt_thm_name ":" -- Scan.repeat1 Parse.term
           >> (fn (bnd,cns) => fn lthy => let
               val cns = map (Syntax.read_term lthy) cns
+              val _ = writeln "Gathering code theorems"
+              
               val (cthms,lthy) = LLC_Preprocessor.gather_code_thms cns lthy
               val (_,lthy) = Local_Theory.note (bnd,cthms) lthy 
+              
+              val _ = writeln "Done"
               
               val _ = pretty_cthms lthy cthms |> Pretty.string_of |> writeln
           

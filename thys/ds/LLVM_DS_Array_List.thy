@@ -297,7 +297,7 @@ begin
     "llvm_htriple 
       (\<upharpoonleft>arl_assn al ali ** \<upharpoonleft>snat.assn i ii ** \<up>\<^sub>d(i<length al)) 
       (arl_upd ali ii x)
-      (\<lambda>ali. \<upharpoonleft>arl_assn (al[i:=x]) ali)"
+      (\<lambda>ali'. \<upharpoonleft>arl_assn (al[i:=x]) ali' ** \<up>(ali' = ali))"
     unfolding arl_assn_def arl_assn'_def arl_upd_def
     by vcg
     

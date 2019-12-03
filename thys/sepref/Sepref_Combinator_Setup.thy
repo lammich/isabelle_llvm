@@ -463,7 +463,10 @@ ML \<open>
       else 
         let
           val ct = Thm.cterm_of ctxt t
-          val thm = Drule.infer_instantiate' ctxt [SOME ct] @{thm UNPROTECT_def[symmetric]}
+          val thm = @{thm UNPROTECT_def[symmetric]} |> Thm.incr_indexes (Thm.maxidx_of_cterm ct + 1)
+            (* TODO: Should we better import stuff into some context? *)
+          
+          val thm = Drule.infer_instantiate' ctxt [SOME ct] thm
             |> Conv.fconv_rule (Conv.arg1_conv (Id_Op.protect_conv ctxt))
         in
           (SOME thm,@{mk_term "PR_CONST ?t"})

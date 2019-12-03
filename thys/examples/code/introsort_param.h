@@ -3,9 +3,22 @@
 #define _INTROSORT_PARAM_H 1
 
 
+typedef struct {
+  int64_t size;
+  struct {
+    int64_t capacity;
+    int32_t*data;
+  };
+} array_list_32_64;
+typedef struct {
+  int64_t size;
+  struct {
+    int64_t capacity;
+    int64_t*data;
+  };
+} array_list_64_64;
 
-
-uint64_t* heapsort_idxs(uint32_t*, uint64_t*, int64_t, int64_t);
-uint64_t* introsort_idxs(uint32_t*, uint64_t*, int64_t, int64_t);
+uint64_t* heapsort_idxs(array_list_32_64, uint64_t*, int64_t, int64_t);
+uint64_t* introsort_idxs(array_list_32_64, uint64_t*, int64_t, int64_t);
 
 #endif

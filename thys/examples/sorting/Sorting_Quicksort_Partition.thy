@@ -488,7 +488,7 @@ end
 context parameterized_sort_impl_context begin
 
   (* TODO: Move *)
-  abbreviation "arr_assn \<equiv> woarray_assn elem_assn"
+  abbreviation "arr_assn \<equiv> wo_assn"
 
   
 sepref_register qsp_next_l_param qsp_next_h_param
@@ -515,7 +515,7 @@ sepref_def qs_partition_impl is "uncurry4 (PR_CONST qs_partition_param)" :: "cpa
 
 sepref_register move_median_to_first_param
 
-sepref_def move_median_to_first_param_impl [llvm_inline] 
+sepref_def move_median_to_first_param_impl (*[llvm_inline] *)
   is "uncurry5 (PR_CONST move_median_to_first_param)" 
   :: "cparam_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (arr_assn)\<^sup>d \<rightarrow>\<^sub>a arr_assn"
   unfolding move_median_to_first_param_def PR_CONST_def
@@ -523,7 +523,7 @@ sepref_def move_median_to_first_param_impl [llvm_inline]
   
   
 sepref_register partition_pivot_param  
-sepref_def partition_pivot_impl [llvm_inline] 
+sepref_def partition_pivot_impl (*[llvm_inline] *)
   is "uncurry3 (PR_CONST partition_pivot_param)" 
   :: "cparam_assn\<^sup>k *\<^sub>a arr_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a arr_assn \<times>\<^sub>a size_assn"
   unfolding partition_pivot_param_def PR_CONST_def    
