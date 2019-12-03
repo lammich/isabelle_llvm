@@ -393,5 +393,7 @@ export_llvm
   file "../code/introsort_param.ll"
 
   
+  thm ALO.introsort_param_impl_correct
+  
   
 end
