@@ -5,6 +5,24 @@ Isabelle-LLVM is a verification framework for Isabelle/HOL that targets LLVM as 
 ## Getting Started
   You can [browse the theories](Isabelle_LLVM/) or [download](dist.tgz) the files.
 
+  Warning: the .thy files in the download are best viewed with the [Isabelle/HOL](https://isabelle.in.tum.de) IDE.
+
+### Starting Points for Browsing
+  Here are some default starting points for browsing the theories
+
+#### Verified Algorithms
+  [Introsort](Isabelle_LLVM/Sorting_Introsort.html)
+
+  [PDQ Sort](Isabelle_LLVM/Sorting_PDQ.html)
+
+  [Knuth Morris Pratt String Search](Isabelle_LLVM/KMP.html)
+
+#### Isabelle-LLVM
+  [IICF (Isabelle-LLVM + Refinement Framework + Collection Framework)](Isabelle_LLVM/IICF.html)
+
+  [Shallow Embedding of LLVM Semantics](Isabelle_LLVM/LLVM_Shallow.html)
+
+
 ## Prerequisites
   * To compile the LLVM code: Working installation of [LLVM](http://releases.llvm.org/) version >= 6.0.0.
   * To compile the functional code: An [MLton](http://mlton.org/) compiler version >= 20100608.
@@ -22,6 +40,7 @@ Isabelle-LLVM is a verification framework for Isabelle/HOL that targets LLVM as 
     cd sorting
     make run
 
+  This will run the binary search, KMP, and sorting benchmarks.
   Warning: We have only tested this on a Linux x86_64 platform so far. 
   We do not (yet) know how LLVM will digest our code on other platforms.
     
@@ -30,11 +49,12 @@ Isabelle-LLVM is a verification framework for Isabelle/HOL that targets LLVM as 
 
       cd thys 
       isabelle build -D.
-      
+
   Here, <code>isabelle</isabelle> must refer to <code>/your/path/to/Isabelle2019/bin/isabelle</code> from your Isabelle installation.
   This will invoke Isabelle to check all proofs and re-generate the exported code.
 
-## Publications
-  [ITP'2019 Paper](paper.pdf) [Slides](slides.pdf)
+## Talks and Publications
+  [ITP'2019 Paper](paper_ITP2019.pdf) [Slides](slides_ITP2019.pdf)
 
+  [Dec 2019 Talk in Rennes](rennes2019.pdf)
 

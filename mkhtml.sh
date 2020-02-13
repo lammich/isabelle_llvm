@@ -27,17 +27,20 @@ done
 
 
 if $REBUILD; then
-  cd paper
+  cd papers/ITP2019
   ./make.sh
   cd talk
   make
-  cd ..
-  cd ..
-  
+  cd $BASEDIR
+
+  cd papers/2019_Rennes_Talk
+  make
+  cd $BASEDIR
+
   cd thys
   isabelle build -v -d '$AFP' -D .
-  cd ..
-  
+  cd $BASEDIR
+
   ./mkdist.sh
 fi
 
@@ -52,9 +55,9 @@ cp index.md html/
 cp dist.tgz html/
 cp LICENSE html/
 cp etc/logo/logo_200.png html/
-cp papers/ITP2019/main.pdf html/paper.pdf
-cp papers/ITP2019/talk/pres.pdf html/slides.pdf
-
+cp papers/ITP2019/main.pdf html/paper_ITP2019.pdf
+cp papers/ITP2019/talk/pres.pdf html/slides_ITP2019.pdf
+cp papers/2019_Rennes_Talk/pres.pdf html/rennes2019.pdf
 
 pandoc -V pagetitle="Isabelle LLVM" -s index.md > html/index.html
 

@@ -681,15 +681,32 @@ struct less<llstring>
 
 #endif
 
+
+// Disable branch-prediction optimization for all iterators, to make it comparable with our impl!
+template<class Iter, class Compare>
+inline void boost_pdqsort(Iter first, Iter last, Compare comp) {
+    if (first == last) return;
+    boost::sort::pdqsort_detail::pdqsort_loop<Iter, Compare, false >( first, last, comp, boost::sort::pdqsort_detail::log2(last - first));
+}
+
+template<class Iter>
+inline void boost_pdqsort(Iter first, Iter last) {
+    typedef typename std::iterator_traits<Iter>::value_type T;
+    boost_pdqsort(first, last, std::less<T>());
+}
+
+
 void test_uint(string name, size_t NITER, vector<uint64_t> B) {
   std::vector<uint64_t> A (B);
 
   auto comp = std::less<uint64_t>();
 #ifndef NO_LLVM
   if (name=="isabelle::sort") sort_test(A,B,NITER,comp,[&]{ introsort(A.data (), 0, A.size());});
+  else if (name=="isabelle::pdqsort") sort_test(A,B,NITER,comp,[&]{ pdqsort(A.data (), 0, A.size());});
   else
 #endif
   if (name=="std::sort") sort_test(A,B,NITER,comp,[&]{ std::sort(A.begin (), A.end (), comp);});
+  else if (name=="boost::pdqsort") sort_test(A,B,NITER,comp,[&]{ boost_pdqsort(A.begin (), A.end (), comp);});
   else {
     cout<<"No such sorting algorithm "<<name<<endl;
     exit(1);
@@ -703,6 +720,8 @@ void test_llstring(string name, size_t NITER, vector<llstring> &B) {
   auto comp = std::less<llstring>();
 
   if (name=="isabelle::sort") sort_test(A,B,NITER,comp,[&]{ str_introsort(A.data (), 0, A.size());});
+  else if (name=="isabelle::pdqsort") sort_test(A,B,NITER,comp,[&]{ str_pdqsort(A.data (), 0, A.size());});
+  else if (name=="boost::pdqsort") sort_test(A,B,NITER,comp,[&]{ boost_pdqsort(A.begin (), A.end (), comp);});
   else if (name=="std::sort") sort_test(A,B,NITER,comp,[&]{ std::sort(A.begin (), A.end (), comp);});
   else {
     cout<<"No such sorting algorithm "<<name<<endl;

@@ -837,7 +837,7 @@ context heap_context begin
       apply refine_dref_type
       apply (simp_all add: ihs_opt_rel_alt)
       apply (all \<open>(determ \<open>elim conjE\<close>)?; simp?\<close>)
-      apply (clarsimp_all simp: idx_shift_adjust ihs_opt_rel_alt simp del: in_heap_simps)
+      apply (clarsimp_all simp: idx_shift_adjust ihs_opt_rel_alt simp del: in_heap_simps) (** Takes loooong *)
       unfolding in_heap_def idx_shift_rel_def ihs_opt_rel_alt
       apply (auto simp: algebra_simps)
       solved
@@ -939,7 +939,7 @@ context heap_context begin
   (* TODO: Move. Use also in insort. Maybe generalize to index set? *)
   definition "woe_eq_except i xs' xs \<equiv> length xs' = length xs \<and> xs'!i=None \<and> (\<forall>j\<in>{0..<length xs}-{i}. xs'!j = Some (xs!j))"
   
-  lemma woe_eq_except_init[simp]: "i<length xs \<Longrightarrow> woe_eq_except i ((map Some xs)[i := None]) xs"
+  lemma woe_eq_except_init: "i<length xs \<Longrightarrow> woe_eq_except i ((map Some xs)[i := None]) xs"
     unfolding woe_eq_except_def by auto
   
   lemma woe_eq_except_length[simp]: "woe_eq_except i xs' xs \<Longrightarrow> length xs'=length xs"
@@ -980,7 +980,7 @@ context heap_context begin
     apply (rule bind_refine)
     apply (rule WHILEIT_refine)
     apply (rule introR[where R=sd23_rel])
-    apply (auto simp: sd23_rel_def) []
+    apply (auto simp: sd23_rel_def woe_eq_except_init) []
     apply (auto simp: sd23_rel_def) []
     apply (auto simp: sd23_rel_def) []
     subgoal

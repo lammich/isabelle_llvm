@@ -1,4 +1,4 @@
-default: do_benchmark do_benchmark_gcc
+default: do_benchmark do_benchmark_gcc sexplore
 
 gcode=../../thys/examples/code
 libs=../../src/lib_isabelle_llvm.cpp ../../src/lib_isabelle_llvm.c
@@ -8,6 +8,9 @@ cflags=-std=c++11 -stdlib=libstdc++ -Wall -Wno-unused-function -O3 -flto -I${HOM
 
 compile=clang++ $(cflags)
 compile_gcc=g++ -std=c++11 -Wall -Wno-unused-function -flto -O4 -I${HOME}/include
+
+sexplore: sexplore.cpp
+	$(compile) ./sexplore.cpp -o sexplore
 
 file_generator: file_generator.cpp Makefile
 	$(compile) ./file_generator.cpp -o file_generator

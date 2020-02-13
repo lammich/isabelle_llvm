@@ -182,6 +182,14 @@ lemma slice_sort_spec_alt: "slice_sort_spec lt xs l h = doN {
   by (auto simp: pw_eq_iff refine_pw_simps)
       
   
+  lemma slice_sort_spec_sem_alt: "slice_sort_spec lt xs l h = doN {
+      ASSERT (l \<le> h \<and> h \<le> length xs);
+      SPEC (\<lambda>xs'. slice_eq_mset l h xs xs' \<and> sorted_wrt_lt lt (slice l h xs'))
+    }"
+    unfolding slice_sort_spec_alt
+    by (auto simp: pw_eq_iff refine_pw_simps slice_eq_mset_alt slice_eq_mset_eq_length eq_outside_rane_lenD dest: eq_outside_range_sym)
+  
+  
   
 text \<open> Sorting a permutation of a list amounts to sorting the list! \<close>
 lemma sort_spec_permute: "\<lbrakk>mset xs' = mset xs; sort_spec lt xs' ys\<rbrakk> \<Longrightarrow> sort_spec lt xs ys"

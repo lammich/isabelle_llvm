@@ -64,7 +64,7 @@ begin
     apply (annot_snat_const "TYPE(size_t)")
     apply sepref
     done
-    
+
   export_llvm bin_search_impl is \<open>int64_t bin_search(larray_t, elem_t)\<close> 
   defines \<open>
     typedef uint64_t elem_t;

@@ -5,7 +5,7 @@ begin
   definition "am1_rel N
     \<equiv> br (\<lambda>xs k. if k<length xs then xs!k else None) (\<lambda>xs. length xs = N)"
     
-
+    
   definition "am1_empty N \<equiv> replicate N None"
   definition "am1_update k v xs \<equiv> mop_list_set xs k (Some v)"
   definition "am1_delete k xs \<equiv> mop_list_set xs k None"

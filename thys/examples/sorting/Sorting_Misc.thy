@@ -3,6 +3,12 @@ imports "../../sepref/IICF/IICF" "HOL-Library.Discrete"
 begin
   hide_const (open) pi Word.slice
 
+
+lemma WHILEIT_unfold': "WHILEIT I b c s = doN { ASSERT (I s); if b s then doN { s\<leftarrow>c s; WHILEIT I b c s } else RETURN s }"
+  apply (rewrite in "\<hole>=_" WHILEIT_unfold)
+  by (auto)
+
+  
 (* TODO: Move *)  
 lemma WHILEIT_rule_amend_invar:
   assumes "wf R"
@@ -92,6 +98,17 @@ lemma split_ifI: "\<lbrakk> b\<Longrightarrow>P; \<not>b\<Longrightarrow>Q \<rbr
   
   
   
+lemma sorted_lelI:
+  assumes "transp R"
+  assumes "sorted_wrt R xs\<^sub>1"  
+  assumes "sorted_wrt R xs\<^sub>2"  
+  assumes "xs\<^sub>1\<noteq>[] \<Longrightarrow> R (last xs\<^sub>1) x"
+  assumes "\<forall>y\<in>set xs\<^sub>2. R x y"
+  shows "sorted_wrt R (xs\<^sub>1@x#xs\<^sub>2)"
+  using assms
+  apply (cases xs\<^sub>1 rule: rev_cases)
+  apply (auto simp: sorted_wrt_append dest: transpD)
+  done
   
 (* TODO: Move *) thm specify_left
 lemma specify_left_pw: "\<lbrakk> nofail m; \<And>v. inres m v \<Longrightarrow> f v \<le> m' \<rbrakk> \<Longrightarrow> doN { v\<leftarrow>m; f v} \<le> m'"
@@ -126,6 +143,11 @@ lemma take_slice: "take n (slice l h xs) = slice l (min h (l+n)) xs"
 
 lemma drop_slice: "drop n (slice l h xs) = slice (l+n) h xs"  
   by (auto simp: Misc.slice_def drop_take algebra_simps)
+  
+lemma slice_Suc_conv: "\<lbrakk>l\<le>h; Suc h\<le>length xs\<rbrakk> \<Longrightarrow> slice l (Suc h) xs = slice l h xs @ [xs!h]"  
+  apply (auto simp add: list_eq_iff_nth_eq slice_nth nth_append)
+  by (metis Nat.le_imp_diff_is_add Suc_diff_le add.commute less_antisym)
+  
   
 (* TODO: Move *)
 lemma swap_nth1[simp]: "\<lbrakk>i<length xs \<rbrakk> \<Longrightarrow> swap xs i j ! i = xs!j"
@@ -180,6 +202,12 @@ lemma set_slice_conv: "\<lbrakk> h\<le>length xs \<rbrakk> \<Longrightarrow> set
     by (smt Misc.slice_def add_diff_inverse_nat diff_less_mono dual_order.trans leD less_imp_le_nat nth_drop nth_take)
   done
   
+lemma set_slice_subsetI: "\<lbrakk> l'\<le>l; h\<le>h' \<rbrakk> \<Longrightarrow> set (slice l h xs) \<subseteq> set (slice l' h' xs)"
+  unfolding Misc.slice_def
+  apply auto
+  by (metis (no_types, hide_lams) drop_take in_mono min.absorb1 set_drop_subset_set_drop set_take_subset subset_eq take_take)
+
+  
 lemma slice_singleton[simp]: "l<length xs \<Longrightarrow> slice l (Suc l) xs = [xs!l]"  
   by (simp add: Misc.slice_def drop_Suc_nth)
   
@@ -206,6 +234,8 @@ lemma slice_eq_mset_swapI: "\<lbrakk>i\<in>{l..<h}; j\<in>{l..<h}; h\<le>length 
 lemma slice_eq_mset_swap[simp]: 
   "\<lbrakk>i\<in>{l..<h}; j\<in>{l..<h}; h\<le>length ys \<rbrakk> \<Longrightarrow> slice_eq_mset l h (swap xs i j) ys \<longleftrightarrow> slice_eq_mset l h xs ys"  
   "\<lbrakk>i\<in>{l..<h}; j\<in>{l..<h}; h\<le>length xs \<rbrakk> \<Longrightarrow> slice_eq_mset l h (swap xs i j) ys \<longleftrightarrow> slice_eq_mset l h xs ys"  
+  "\<lbrakk>i\<in>{l..<h}; j\<in>{l..<h}; h\<le>length ys \<rbrakk> \<Longrightarrow> slice_eq_mset l h xs (swap ys i j) \<longleftrightarrow> slice_eq_mset l h xs ys"  
+  "\<lbrakk>i\<in>{l..<h}; j\<in>{l..<h}; h\<le>length xs \<rbrakk> \<Longrightarrow> slice_eq_mset l h xs (swap ys i j) \<longleftrightarrow> slice_eq_mset l h xs ys"  
   by (auto simp: slice_eq_mset_def slice_swap)
   
   
@@ -286,6 +316,13 @@ lemma slice_in_slice_rel[simp]: "\<lbrakk>l\<le>h; h\<le>length xs\<rbrakk> \<Lo
   unfolding slice_rel_def in_br_conv by auto
 
   
+lemma slice_rel_rebase: "(xsi', xs) \<in> slice_rel xsi l h \<Longrightarrow> slice_rel xsi l h = slice_rel xsi' l h"
+  by (auto simp: slice_rel_def in_br_conv)
+
+
+  
+  
+  
 (* TODO: Move *)  
   
   definition "list_rel_on R I xs ys \<equiv> I\<subseteq>{0..<length ys} \<and> length xs = length ys \<and> (\<forall>i\<in>I. R (xs!i) (ys!i))"
@@ -353,6 +390,10 @@ lemma slice_in_slice_rel[simp]: "\<lbrakk>l\<le>h; h\<le>length xs\<rbrakk> \<Lo
     unfolding eq_outside_range_def
     by simp
     
+  
+  lemma eq_outside_range_sym: "eq_outside_range xs xs' l h \<Longrightarrow> eq_outside_range xs' xs l h"
+    unfolding eq_outside_range_def by auto
+    
           
   lemma slice_rel_alt: "(xsi,xs)\<in>slice_rel xs\<^sub>0 l h \<longleftrightarrow> (xsi,xs)\<in>slicep_rel l h \<and> eq_outside_range xsi xs\<^sub>0 l h"
     unfolding slice_rel_def slicep_rel_def eq_outside_range_def in_br_conv
@@ -384,6 +425,21 @@ lemma slice_in_slice_rel[simp]: "\<lbrakk>l\<le>h; h\<le>length xs\<rbrakk> \<Lo
     by (auto simp: drop_slice algebra_simps)
   
   
+  lemma eq_outside_range_nth:
+    "eq_outside_range xs xs' l h \<Longrightarrow> i<l \<Longrightarrow> xs!i = xs'!i"
+    "eq_outside_range xs xs' l h \<Longrightarrow> h\<le>i \<Longrightarrow> xs!i = xs'!i"
+    unfolding eq_outside_range_def
+    apply (clarsimp_all)
+    subgoal by (metis nth_take)
+    subgoal by (metis le_Suc_ex nth_drop)
+    done
+    
+  lemma eq_outside_erange_upd_inside: "\<lbrakk> i\<in>{l..<h} \<rbrakk> \<Longrightarrow> eq_outside_range xs (xs'[i:=x]) l h \<longleftrightarrow> eq_outside_range xs xs' l h"
+    unfolding eq_outside_range_def
+    by auto
+  
+    
+    
 (* TODO: Unify these concepts! *)
 lemma slice_eq_mset_alt: 
   "\<lbrakk>l\<le>h; h\<le>length xs'\<rbrakk> \<Longrightarrow> slice_eq_mset l h xs xs' \<longleftrightarrow> eq_outside_range xs xs' l h \<and> mset (slice l h xs) = mset (slice l h xs')"
@@ -452,6 +508,40 @@ lemma size_refine[sepref_fr_rules]: "LENGTH('a)>2 \<Longrightarrow> (return o (\
   supply [simp] = in_br_conv word_size size_fits_snat_aux2
   apply vcg'
   by (simp add: size_fits_snat_aux snat_eq_unat(1) unat_of_nat_eq)
+  
+  
+(* TODO: Move *)  
+(* Assertion-guarded operations on nats, which are going to be refined to bounded numbers *)
+    named_theorems mop_nat_defs
+
+  definition mop_nat_sub :: "nat \<Rightarrow> nat \<Rightarrow> nat nres" where [mop_nat_defs]: "mop_nat_sub a b \<equiv> doN { ASSERT (a\<ge>b); RETURN (a-b) }"
+  definition mop_nat_add_bnd :: "nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat nres" where [mop_nat_defs]: "mop_nat_add_bnd h a b \<equiv> doN { ASSERT (a+b\<le>h); RETURN (a+b) }"
+  definition mop_nat_div :: "nat \<Rightarrow> nat \<Rightarrow> nat nres" where [mop_nat_defs]: "mop_nat_div a b \<equiv> doN { ASSERT (b\<noteq>0); RETURN (a div b) }"
+  
+  sepref_register mop_nat_sub mop_nat_add_bnd mop_nat_div
+  
+  context fixes dummy :: "'l::len2" begin
+    private abbreviation (input) "N \<equiv> snat_assn' TYPE('l)"
+  
+    sepref_def snat_sub_impl [llvm_inline] is "uncurry mop_nat_sub" :: "N\<^sup>k*\<^sub>aN\<^sup>k\<rightarrow>\<^sub>aN"
+      unfolding mop_nat_defs by sepref
+  
+    sepref_def snat_add_bnd_impl [llvm_inline] is "uncurry2 mop_nat_add_bnd" :: "N\<^sup>k*\<^sub>aN\<^sup>k*\<^sub>aN\<^sup>k\<rightarrow>\<^sub>aN"
+      unfolding mop_nat_defs by sepref
+  
+    sepref_def snat_div_impl [llvm_inline] is "uncurry mop_nat_div" :: "N\<^sup>k*\<^sub>aN\<^sup>k\<rightarrow>\<^sub>aN"
+      unfolding mop_nat_defs by sepref
+
+  end    
+      
+
+  
+  
+  
+  
+  
+  
+  
   
 
 end
