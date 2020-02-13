@@ -55,6 +55,9 @@ definition bitOR_nat :: "nat \<Rightarrow> nat \<Rightarrow> nat" where
 definition bitXOR_nat :: "nat \<Rightarrow> nat \<Rightarrow> nat" where
   "bitXOR i j = nat (bitXOR (int i) (int j))"
 
+definition msb_nat :: "nat \<Rightarrow> bool" where
+  "msb i = msb (int i)"
+
 instance ..
 
 end
@@ -119,6 +122,9 @@ lift_definition bitOR_natural :: \<open>natural \<Rightarrow> natural \<Rightarr
 
 lift_definition bitXOR_natural :: \<open>natural \<Rightarrow> natural \<Rightarrow> natural\<close>
   is \<open>bitXOR :: nat \<Rightarrow> nat \<Rightarrow> nat\<close> .
+
+lift_definition msb_natural :: \<open>natural \<Rightarrow> bool\<close>
+  is \<open>msb :: nat \<Rightarrow> bool\<close> .
 
 end
 
