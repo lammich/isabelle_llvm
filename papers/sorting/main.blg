@@ -1,101 +1,50 @@
 This is BibTeX, Version 0.99d (TeX Live 2017/Debian)
 Capacity: max_strings=100000, hash_size=100000, hash_prime=85009
 The top-level auxiliary file: main.aux
-The style file: ACM-Reference-Format.bst
-Reallocated singl_function (elt_size=4) to 100 items from 50.
-Reallocated wiz_functions (elt_size=4) to 6000 items from 3000.
+The style file: abbrv.bst
 Database file #1: bib.bib
-Reallocated singl_function (elt_size=4) to 100 items from 50.
-Reallocated glb_str_ptr (elt_size=4) to 20 items from 10.
-Reallocated global_strs (elt_size=20001) to 20 items from 10.
-Reallocated glb_str_end (elt_size=4) to 20 items from 10.
-Reallocated singl_function (elt_size=4) to 100 items from 50.
-Warning--empty publisher in BSSU17
-Warning--empty address in BSSU17
-Warning--page numbers missing in both pages and numpages fields in BSSU17
-Warning--numpages field, but no articleno or eid field, in Bent93
-Warning--empty year in bs_flaw_blogpost
-Warning--empty author in boost
-Warning--empty year in boost
-Warning--numpages field, but no articleno or eid field, in BCOP05
-Warning--empty publisher in CHY07
-Warning--empty address in CHY07
-Warning--page numbers missing in both pages and numpages fields in CBGD18
-Warning--empty address in CLRS09
-Warning--empty publisher in GRBBH15
-Warning--empty address in GRBBH15
-Warning--page numbers missing in both pages and numpages fields in GRBBH15
-Warning--page numbers missing in both pages and numpages fields in EdWe16
-Warning--empty address in ELNN13
-Warning--no journal in FiMa99
-Warning--no number and no volume in FiMa99
-Warning--page numbers missing in both pages and numpages fields in FiMa99
-Warning--empty author in libstdc++
-Warning--empty year in libstdc++
-Warning--empty address in gordon-et-al-1979
-Warning--no number and no volume in Gri19-AFP
-Warning--page numbers missing in both pages and numpages fields in Gri19-AFP
-Warning--empty publisher in HaLa19
-Warning--empty address in HaLa19
-Warning--page numbers missing in both pages and numpages fields in HaLa19
-Warning--empty address in Josu12
-Warning--empty publisher in Kr10
-Warning--empty address in Kr10
-Warning--empty address in La15
-Warning--empty address in La16
-Warning--empty address in LaTu12
-Warning--no number and no volume in LaWi19-IMP2
-Warning--page numbers missing in both pages and numpages fields in LaWi19-IMP2
-Warning--empty author in libc++
-Warning--empty year in libc++
-Warning--empty address in NPW02
-Warning--empty year in Peters02
-Warning--empty address in Rey02
-Warning--empty author in rustlang
-Warning--empty year in rustlang
-Warning--empty address in SeWa11
-Warning--numpages field, but no articleno or eid field, in Will64
-Warning--empty publisher in WiLa18
-Warning--empty address in WiLa18
-You've used 41 entries,
-            5733 wiz_defined-function locations,
-            1602 strings with 21314 characters,
-and the built_in function-call counts, 44366 in all, are:
-= -- 5467
-> -- 1455
-< -- 0
-+ -- 478
-- -- 523
-* -- 3160
-:= -- 4461
-add.period$ -- 214
-call.type$ -- 41
-change.case$ -- 265
-chr.to.int$ -- 41
-cite$ -- 88
-duplicate$ -- 4003
-empty$ -- 2858
-format.name$ -- 623
-if$ -- 10660
-int.to.chr$ -- 2
-int.to.str$ -- 1
-missing$ -- 131
-newline$ -- 452
-num.names$ -- 303
-pop$ -- 1592
+Warning--to sort, need author or key in Will64
+Warning--empty author in Will64
+Warning--empty journal in FiMa99
+You've used 33 entries,
+            2118 wiz_defined-function locations,
+            708 strings with 7758 characters,
+and the built_in function-call counts, 10003 in all, are:
+= -- 970
+> -- 366
+< -- 13
++ -- 150
+- -- 113
+* -- 601
+:= -- 1526
+add.period$ -- 94
+call.type$ -- 33
+change.case$ -- 157
+chr.to.int$ -- 0
+cite$ -- 36
+duplicate$ -- 446
+empty$ -- 922
+format.name$ -- 113
+if$ -- 2217
+int.to.chr$ -- 0
+int.to.str$ -- 33
+missing$ -- 29
+newline$ -- 157
+num.names$ -- 58
+pop$ -- 219
 preamble$ -- 1
-purify$ -- 594
+purify$ -- 125
 quote$ -- 0
-skip$ -- 1348
+skip$ -- 360
 stack$ -- 0
-substring$ -- 3120
-swap$ -- 388
-text.length$ -- 0
+substring$ -- 545
+swap$ -- 123
+text.length$ -- 13
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 915
-warning$ -- 47
-while$ -- 299
-width$ -- 0
-write$ -- 836
-(There were 47 warnings)
+type$ -- 124
+warning$ -- 3
+while$ -- 88
+width$ -- 35
+write$ -- 333
+(There were 3 warnings)

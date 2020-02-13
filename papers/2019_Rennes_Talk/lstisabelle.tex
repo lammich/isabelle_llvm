@@ -12,12 +12,12 @@
 
 \lstdefinelanguage{isabelle}{
   morekeywords={theorem,theorems,corollary,lemma,lemmas,locale,begin,end,fixes,assumes,shows,and,class,
-    constrains , definition, defines, where, apply, done,unfolding, primrec, fun, using, by, for, uses, file,
+    constrains , definition, where, apply, done,unfolding, primrec, fun, using, by, for, uses, file,
     schematic_lemma, concrete_definition, prepare_code_thms, export_code, datatype, type_synonym, typedef, value,
-    proof, next, qed, show, have, hence, thus, interpretation, fix, context, sepref_definition,is,export_llvm
+    proof, next, qed, show, have, hence, thus, interpretation, fix, context, sepref_definition,sepref_def,is,export_llvm
  } ,
   morekeywords=[2]{rec, return, bind, foreach, if, then, else, do, let, in, res, spec, fail, assert, while, case, of, 
-    check},
+    check, get, set},
 %  morekeywords=[3]{length,mod,insert},
 %   morekeywords=[4]{simp,auto,intro,elim,rprems,refine_mono,refine_rcg},
   sensitive=True,
@@ -35,8 +35,8 @@
     mathescape=true,
     escapeinside={--"}{"},
     basicstyle={\itshape},
-    keywordstyle=\rm\bfseries,
-    keywordstyle=[2]\rm\tt,
+    keywordstyle=\rm\ttfamily\fontseries{b}\selectfont,
+    keywordstyle=[2]\rm\ttfamily\fontseries{m}\selectfont,
     keywordstyle=[3]\rm,
     keywordstyle=[4]\rm,
     showstringspaces=false,
@@ -50,8 +50,8 @@
   {\\\$}{{$\mathbin{\,\$\,}$}}1
   {->}{{$\rightarrow$}}1
   {<-}{{$\leftarrow$}}1
-%   {<.}{{$\langle$}}1
-%   {.>}{{$\rangle$}}1
+  {<.}{{$\langle$}}1
+  {.>}{{$\rangle$}}1
   {<=}{{$\le$}}1
   {>=}{{$\ge$}}1
   {<->}{{$\leftrightarrow$}}1
@@ -172,7 +172,6 @@
   {<*lex*>}{{$\times_{\sf lex}$}}1
   {\\<open>}{{\rm\guilsinglleft}}1
   {\\<close>}{{\rm\guilsinglright}}1
-  {\\<box>}{{$\square$}}1
 }
 
 % \newcommand{\is}{\lstinline[language=isabelle,basicstyle=\normalsize\ttfamily\slshape]}

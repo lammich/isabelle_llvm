@@ -1,0 +1,2934 @@
+\documentclass[fleqn]{beamer}
+
+
+\mode<presentation>
+{
+  \usetheme{default}
+%   \useinnertheme[shadow=true]{rounded}
+
+  \useinnertheme{circles}
+  
+%    \useoutertheme{infolines}
+  % or ...
+  \setbeamersize{text margin left=1em,text margin right=1em}
+
+%   \setbeamercovered{transparent}
+  % or whatever (possibly just delete it)
+
+  \beamertemplatenavigationsymbolsempty
+  
+% Display frame numbers in footline
+  \setbeamertemplate{footline}[frame number]
+}
+
+\usepackage{etex}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{amsmath}
+% \usepackage{amsthm}
+% \usepackage{stmaryrd}
+\usepackage{lmodern}
+\usepackage{mathpartir}
+
+\usepackage{centernot}
+
+\usepackage{colortbl}
+\usepackage{multirow}
+
+\usepackage[purexy]{qsymbols}
+\usepackage{graphicx}
+
+\usepackage{cprotect}
+\usepackage{listings}
+\usepackage{lstautogobble}
+\usepackage{relsize}
+
+\usepackage[noend]{algpseudocode}
+
+\usepackage{ifthen}
+\usepackage{pgf}
+\usepackage{tikz}
+\usetikzlibrary{scopes}
+\usetikzlibrary{decorations}
+  \usetikzlibrary{decorations.pathmorphing}
+\usetikzlibrary{arrows}
+\usetikzlibrary{automata}
+\usetikzlibrary{positioning}
+\usetikzlibrary{chains}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{shapes.callouts}
+\usetikzlibrary{shapes.misc}
+\usetikzlibrary{shapes.multipart}
+\usetikzlibrary{fit}
+\usetikzlibrary{calc}
+
+\usepackage{pgfplots}
+
+% \tikzstyle{stack}=[inner sep=0pt,minimum size=2mm]
+% \tikzstyle{ssline}=[->,snake=snake,segment amplitude=.2mm,segment length=3mm,line after snake=1mm]
+% \tikzstyle{fgnode}=[circle,draw,inner sep=0pt,minimum size=2mm]
+
+\tikzset{
+  -|-/.style={
+    to path={
+      (\tikztostart) -| ($(\tikztostart)!#1!(\tikztotarget)$) |- (\tikztotarget)
+      \tikztonodes
+    }
+  },
+  -|-/.default=0.5,
+  |-|/.style={
+    to path={
+      (\tikztostart) |- ($(\tikztostart)!#1!(\tikztotarget)$) -| (\tikztotarget)
+      \tikztonodes
+    }
+  },
+  |-|/.default=0.5,
+}
+
+
+\tikzset{
+  invisible/.style={opacity=0},
+  visible on/.style={alt=#1{}{invisible}},
+  alt/.code args={<#1>#2#3}{%
+    \alt<#1>{\pgfkeysalso{#2}}{\pgfkeysalso{#3}} % \pgfkeysalso doesn't change the path
+  },
+}
+
+
+
+% The goal is to translate
+%    \overlaynode<red,blue>{hallo};
+% into
+%    \node[red]{hallo};
+%    \node[blue]{hallo};
+\makeatletter
+\def\overlaynode<#1>#2;{
+        \gdef\stacknodecommonpart{#2}
+        \pgfkeys{/typeset node/.list={#1}}
+        % we are lazy
+        % pgfkeys will translate
+        %    \pgfkeys{/typeset node/.list={red,blue}}
+        % into
+        %    \pgfkeys{/typeset node=red}
+        %    \pgfkeys{/typeset node=blue}
+}
+\pgfkeys{
+    /typeset node/.code={
+        \edef\pgf@marshal{\noexpand\node[#1]\stacknodecommonpart;}
+        \pgf@marshal
+    }
+}
+% \tikz{
+%     \overlaynode<red,{blue,xshift=1}>{{Hello}}; % notice the nested {{}}
+% %   \overlaynode<red,{blue,xshift=1}>[]{Hello}; % workaround
+%     \overlaynode<red,{blue,rotate=5}>at(1,0)[draw]{from};
+%     \overlaynode<red,{blue,scale=1.1}>[circle]at(2,0)[draw]{the};
+%     \overlaynode<red,{blue,opacity=.5}>[fill=yellow!50]at(3,0){other};
+%     \overlaynode<{red,rectangle callout,fill},{blue,ellipse callout,draw}>at(4,0){side};
+% }
+% \tikz{
+%     \overlaynode<
+%             {fill=red,callout absolute pointer=(45:2)},
+%             {fill=yellow,callout absolute pointer=(135:2),callout pointer shorten=1cm},
+%             {fill=green,callout relative pointer=(-135:2),callout pointer width=.5cm},
+%             {fill=blue,callout relative pointer=(-45:2),callout pointer shorten=1cm,callout pointer width=.5cm}
+%         >
+%         [rectangle callout,text=white]
+%         at(0,0){can you}
+%     ;
+% }
+
+\def\overlaynodedrawfill{\pgfutil@ifnextchar[{\overlaynodedrawfill@opt}{\overlaynodedrawfill@opt[]}}
+\def\overlaynodedrawfill@opt[#1]<#2>#3;{
+    \begin{scope}[transparency group,draw=black,fill=white,line cap=round,line join=round,#1]
+        \pgfmathsetmacro\pgflinewidthdouble{2\pgflinewidth}
+        \overlaynode<#2>[draw=pgfstrokecolor,line width=\pgflinewidthdouble]#3;
+        \overlaynode<#2>[fill=pgffillcolor]#3;
+    \end{scope}
+}
+
+\makeatother
+
+
+% \tikz{
+%     \overlaynodedrawfill[draw=magenta,fill=cyan,opacity=.5]<
+%             {callout absolute pointer=(45:2)},
+%             {callout absolute pointer=(135:2),callout pointer shorten=1cm},
+%             {callout relative pointer=(-135:2),callout pointer width=.5cm},
+%             {callout relative pointer=(-45:2),callout pointer shorten=1cm,callout pointer width=.5cm}
+%         >
+%         [rectangle callout]
+%         at(0,0){hear me}
+%     ;
+% }
+%
+% \tikz{
+%     \overlaynodedrawfill<
+%             {cloud callout,callout absolute pointer=(90:2),inner sep=-20},
+%             {rectangle callout,callout absolute pointer=(210:2),minimum height=30},
+%             {ellipse callout,callout absolute  pointer=(-30:2)}
+%         >
+%         at(0,0){nice to meet you}
+%     ;
+% }
+%
+% \tikz{
+%     \overlaynodedrawfill<
+%             {starburst},
+%             {cloud,inner sep=-10}
+%         >
+%         at(0,0){where you been}
+%     ;
+% }
+%
+% \usetikzlibrary{shapes.arrows}
+% \tikz{
+%     \overlaynodedrawfill[arrow box,text opacity=0,minimum height=50,minimum width=50,inner xsep=-10]<
+%             {rotate=22.5},
+%             {rotate=45},
+%             {rotate=67.5},
+%             {text opacity=1}
+%         >
+%         at(0,0){I can}
+%     ;
+% }
+%
+
+
+
+
+
+
+
+
+\usepackage{packages/isabelle}
+\usepackage{packages/isabelletags}
+\usepackage{packages/isabellesym}
+\usepackage{packages/comment}
+
+% \isabellestyle{it}
+
+\def\isachardoublequote{}%
+\def\isachardoublequoteopen{}%
+\def\isachardoublequoteclose{}%
+
+\newcommand{\isainnerkeyword}[1]{{\textbf{#1}}}
+\newcommand{\isasymexistsA}{\isamath{\exists_{\textsc A}\,}}
+
+
+\def\isadelimproof{}
+\def\endisadelimproof{}
+\def\isatagproof{}
+\def\endisatagproof{}
+\def\isafoldproof{}
+\def\isadelimproof{}
+\def\endisadelimproof{}
+
+\def\isastylescript{\sl}%
+
+
+\input{lstisabelle}
+\newcommand{\isai}{\lstinline[language=isabelle,basicstyle=\normalsize\ttfamily\slshape]}
+
+\newcommand\CC{C\nolinebreak[4]\hspace{-.05em}\raisebox{.3ex}{\relsize{-1}{\textbf{++}}}}
+
+\newcommand{\eqdef}{\mathrel{{=}_{def}}}
+\newcommand{\iffdef}{\mathrel{{\mathord{\iff}\!\!}_{def}}}
+
+
+\makeatletter
+\newcommand*{\overlaynumber}{\number\beamer@slideinframe}
+\makeatother
+
+\AtBeginSection[] % Do nothing for \section*
+{
+  \begin{frame}<beamer>
+    \frametitle{Outline}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
+
+\title{Generating Verified LLVM from Isabelle/HOL}
+
+% \subtitle
+% {Subtitle} % (optional)
+
+\author[Peter Lammich]{Peter Lammich}
+% - Use the \inst{?} command only if the authors have different
+%   affiliation.
+
+\institute[UoM] % (optional, but mostly needed)
+{ The University of Manchester}
+% - Use the \inst command only if there are several affiliations.
+% - Keep it simple, no one is interested in your street address.
+
+\date {December 2019}
+% {2008-12-01}
+
+
+% If you have a file called "university-logo-filename.xxx", where xxx
+% is a graphic format that can be processed by latex or pdflatex,
+% resp., then you can add a logo as follows:
+
+% \pgfdeclareimage[height=0.5cm]{university-logo}{university-logo-filename}
+% \logo{\pgfuseimage{university-logo}}
+
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+
+
+% If you wish to uncover everything in a step-wise fashion, uncomment
+% the following command: 
+
+%\beamerdefaultoverlayspecification{<+->}
+
+%\mathchardef\-="2D
+%\renewcommand\-{\text{-}}
+
+\newcommand{\mc}{\color{blue}}
+\newcommand{\term}[1]{{\mc#1}}
+
+\let\olddisplaystyle\displaystyle
+\newcommand{\mydisplaystyle}{\olddisplaystyle\mc}
+\let\displaystyle\mydisplaystyle
+
+\newcommand{\smc}{\everymath{\mc}}
+\smc
+
+\lstset{basicstyle=\color{blue}}
+
+% \newcommand<>{\btikzset}[2]{\alt#3{\tikzset{#1}}{\tikzset{#2}}}
+
+\tikzset{onslide/.code args={<#1>#2}{%
+  \only<#1>{\pgfkeysalso{#2}} % \pgfkeysalso doesn't change the path
+}}
+
+\tikzset{uncover/.code args={<#1>#2}{%
+  \uncover<#1>{\pgfkeysalso{#2}} % \pgfkeysalso doesn't change the path
+}}
+
+
+\tikzset{>=latex}
+
+
+\lstset{autogobble}
+
+\newcommand{\natN}{{\text{nat}_{\mathord{<}N}}}
+
+\newcommand{\high}[1]{{\color{blue}#1}}
+
+\begin{document}
+% \input{macros}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+
+\newcommand{\insertsectitle}{}
+
+\setbeamertemplate{frametitle}{\vspace{.7em}\insertframetitle\hfill \small\raisebox{10pt}{\insertsectitle}}
+
+\begin{frame}{Motivation}
+
+  \begin{itemize}
+   \item<+-> Desirable properties of software
+    \begin{itemize}
+     \item<+-> \onslide<.->{correct}\onslide<+->{ (formally verified)}
+     \item<+-> fast
+     \item<+-> manageable implementation\only<+->{ and proof} effort
+    \end{itemize}
+   \item<+-> Choose two!
+   \item<+-> This talk: towards faster verified algorithms at manageable effort
+
+  \end{itemize}
+\end{frame}
+\def\algoAugment{
+  \begin{algorithmic}
+    \Procedure{augment}{$g,f,p$}
+      \State{$c_p \gets \min\{ g_f(u,v) \mid (u,v)\in p \}$}
+      \ForAll{$(u,v)\in p$}
+        \If{$(u,v)\in g$}~$f(u,v)\gets f(u,v) + c_p$
+        \Else~$f(v,u)\gets f(v,u) - c_p$
+        \EndIf
+      \EndFor
+      \Return{$f$}
+    \EndProcedure
+  \end{algorithmic}
+}
+
+\def\algoEdka{
+  \begin{algorithmic}
+    \Procedure{Edmonds-Karp}{$g,s,t$}
+      \State{$f\gets \lambda(u,v).~0$}
+      \While{exists augmenting path in $g_f$}
+        \State{$p \gets {}$ shortest augmenting path}
+        \State{$f \gets $\Call{augment}{$g,f,p$}}
+      \EndWhile
+    \EndProcedure
+  \end{algorithmic}
+}
+
+\begin{frame}{Introduction}
+  \begin{itemize}
+   \item<+-> What does it need to formally verify an algorithm?
+    \begin{itemize}
+     \item<+-> E.g. maxflow algorithms
+
+    \end{itemize}
+  \end{itemize}
+  \uncover<+->{
+  \begin{minipage}{.6\textwidth}
+  \small\color{black}
+  \algoAugment
+  \algoEdka
+  \end{minipage}%
+  \begin{minipage}{.39\textwidth}\hspace*{-2em}
+  \vspace*{-3em}
+  \begin{tikzpicture}[node distance = 2cm, auto]
+    \definecolor{capacity}{rgb}{0,0,0}
+    \definecolor{flow}{rgb}{0,0,.7}
+
+    \tikzstyle{flow}=[text=flow,swap]
+    \tikzstyle{dflow}=[color=flow, draw opacity=.5]
+    \tikzstyle{aug}=[color=red, draw opacity=.5, line width = 2pt]
+    \tikzstyle{lab}=[text=capacity]
+
+    \tikzstyle{nd}=[shape=circle,draw, minimum size = 7mm]
+
+    \node[nd] (s) {s};
+    \node[nd] (a) [above right of = s] {a};
+    \node[nd] (b) [below right of = s] {b};
+    \node[nd] (c) [right of = a] {c};
+    \node[nd] (d) [right of = b] {d};
+    \node[nd] (t) [below right of = c] {t};
+
+    \draw[->] (s) to node[lab] {3} (a);
+    \draw[->] (s) to node[lab] {5} (b);
+    \draw[->] (a) to node[lab] {6} (c);
+    \draw[->] (b) to node[lab] {3} (d);
+    \draw[->] (c) to node[lab] {4} (t);
+    \draw[->] (d) to node[lab] {4} (t);
+
+    \draw[->] (a) to node[lab] {3} (d);
+
+    \draw[dflow,line width = 3pt] (s) to node[flow] {3} (a);
+    \draw[dflow,line width = 3pt] (a) to node[flow] {3} (d);
+    \draw[dflow,line width = 3pt] (d) to node[flow] {3} (t);
+
+    \draw[aug] (s) to (b);
+    \draw[aug] (b) to (d);
+    \draw[aug] (d) to (t);
+
+  \end{tikzpicture}
+  \end{minipage}
+
+  \vfill
+
+  $g$: flow network \hfill $s,t$: source, target \hfill $g_f$: residual network
+
+  }
+
+
+\end{frame}
+\begin{frame}[t]{Correctness}
+
+  {\small
+    \algoEdka
+  }
+
+  \vfill
+
+
+  \only<2-4>{
+    \begin{theorem}[Ford-Fulkerson]
+      For a flow network $g$ and flow $f$, the following 3 statements are equivalent
+      \begin{enumerate}
+        \item $f$ is a maximum flow
+        \item the residual network $g_f$ contains no augmenting path
+        \item $|f|$ is the capacity of a (minimal) cut of $g$
+      \end{enumerate}
+    \end{theorem}
+    \uncover<3-4>{
+      \begin{proof}
+        a few pages of definitions and textbook proof (e.g. Cormen).
+
+        \uncover<4>{using basic concepts such as numbers, sets, and graphs.}
+      \end{proof}
+    }
+  }
+
+  \only<5-7>{
+    \begin{theorem}
+      Let $\delta_f$ be the length of a shortest $s,t$ - path in $g_f$.
+
+      When augmenting with a shortest path,
+      \begin{itemize}
+        \item either $\delta_f$ decreases
+        \item $\delta_f$ remains the same, and the number of edges in $g_f$ that lay on a shortest path decreases.
+      \end{itemize}
+    \end{theorem}
+    \uncover<6-7>{
+      \begin{proof}
+        two more textbook pages.
+
+        \uncover<7>{using lemmas about graphs and shortest paths.}
+      \end{proof}
+    }
+  }
+
+\end{frame}
+\begin{frame}{Background Theory}
+  \begin{itemize}
+   \item<1-> E.g. graph theory
+   \item<2-> Typically requires powerful (interactive) prover
+    \begin{itemize}
+     \item with good library support (to not re-invent too many wheels)
+
+    \end{itemize}
+   \item<3-> we use Isabelle
+      \begin{itemize}
+       \item<4-> Isabelle/HOL: based on Higher-Order Logic
+       \item<5-> powerful automation (e.g. sledgehammer)
+       \item<6-> large collection of libraries
+       \item<7-> Archive of Formal Proofs
+       \item<8-> mature, production quality IDE, based on JEdit
+
+      \end{itemize}
+  \end{itemize}
+  \vfill
+
+  \hfill
+  \uncover<4->{\includegraphics[width=.1\textwidth]{isabelle_hol.eps}}\hfill
+  \uncover<5->{\includegraphics[width=.1\textwidth]{sledgehammer.png}}\hfill
+  \uncover<6->{\includegraphics[width=.1\textwidth]{books.png}}\hfill
+  \uncover<7->{\includegraphics[width=.1\textwidth]{isabelle_afp.eps}}\hfill
+  \uncover<8->{\includegraphics[width=.1\textwidth]{JEdit_Logo.png}}\hfill{}
+
+
+\end{frame}
+\begin{frame}[fragile]{Implementation}
+  \begin{minipage}{.49\textwidth}
+  \footnotesize
+  \algoEdka
+  \end{minipage}%
+  \begin{minipage}{.49\textwidth}
+  \tiny
+  \begin{lstlisting}[language=C++]
+    int edmonds_karp(int s, int t) {
+        int flow = 0;
+        vector<int> parent(n);
+        int new_flow;
+
+        while (new_flow = bfs(s, t, parent)) {
+            flow += new_flow;
+            int cur = t;
+            while (cur != s) {
+                int prev = parent[cur];
+                capacity[prev][cur] -= new_flow;
+                capacity[cur][prev] += new_flow;
+                cur = prev;
+            }
+        }
+
+        return flow;
+    }
+    \end{lstlisting}
+  \end{minipage}
+
+
+
+  \onslide<+->
+  textbook proof typically covers abstract algorithm.
+
+  \onslide<+->
+  but this is quite far from implementation. Still missing:
+
+  \begin{itemize}
+   \item<+-> optimizations: e.g., work on residual network instead of flow
+   \item<+-> algorithm to find shortest augmenting path (BFS)
+   \item<+-> efficient data structures: adjacency lists, weight matrix, FIFO-queue, ...
+   \item<+-> code extraction
+
+  \end{itemize}
+\end{frame}
+\begin{frame}[fragile]{Keeping it Manageable}
+
+  \begin{itemize}
+   \item<+-> A manageable proof needs modularization:
+    \begin{itemize}
+     \item<+-> Prove separately, then assemble
+
+    \end{itemize}
+   \item<+-> Formal framework: Refinement
+    \begin{itemize}
+     \item<+-> e.g.\ implement BFS, and prove it finds shortest paths
+     \item<+-> insert implementation into \textsc{EdmondsKarp}
+    \end{itemize}
+   \item<+-> Data refinement
+    \begin{itemize}
+     \item<+-> BFS implementation uses adjacency lists. \textsc{EdmondsKarp} used abstract graphs.
+     \item<+-> refinement relations between
+        \begin{itemize}
+         \item nodes and int64s (\high{node$_{64}$});
+         \item adjacency lists and graphs (\high{adjl});
+         \item arrays and paths (\high{array}).
+        \end{itemize}
+      \onslide<+->
+      \begin{lstlisting}
+        (s$_\dagger$,s) \<in> node$_{64}$; (t$_\dagger$,t) \<in> node$_{64}$; (g$_\dagger$,g) \<in> adjl
+        ==> (bfs s$_\dagger$ t$_\dagger$ g$_\dagger$, find_shortest s t g) \<in> array
+      \end{lstlisting}
+
+      \onslide<+->
+      Shortcut notation: \is{(bfs,find_shortest) \<in> node$_{64}$->node$_{64}$->adjl->array}
+    \end{itemize}
+   \item<+-> Implementations used for different parts must fit together!
+
+  \end{itemize}
+\end{frame}
+\begin{frame}{Refinement Architecture (simplified)}
+  \begin{tikzpicture}[auto]
+
+    \tikzstyle{eannot}=[font=\small, align=left]
+
+    \node[visible on=<2->] (fsp) {shortest-path-spec};
+    \node[visible on=<3->] (bfs1) [below = of fsp] {bfs-1};
+    \node[visible on=<5->] (bfs) [below = of bfs1] {bfs};
+
+%     \draw [->] (fsp) -- node [label=right:{''textbook'' proof}] {} -- (bfs1);
+
+    \draw[visible on=<3->,->] (fsp) to node[eannot,visible on=<4->] (l1) {''textbook'' proof} (bfs1);
+    \draw[visible on=<5->,->] (bfs1) to node[eannot,visible on=<6->] (l2) {graph $\to$ adj.-list\\queue $\to$ ring-buffer} (bfs);
+
+    \node[visible on=<7->,fit=(fsp)(bfs1)(bfs)(l1)(l2), shape=rectangle, draw] (boxbfs) {};
+
+    \node[visible on=<8->] (cmf) [right = 3.5cm of fsp] {maxflow-spec};
+    \node[visible on=<9->] (edka1) [below = of cmf] {EdmondsKarp-1};
+    \node[visible on=<11->] (edka2) [below = of edka1] {EdmondsKarp-2};
+    \node[visible on=<13->] (edka) [below = 2cm of edka2] {EdmondsKarp};
+
+    \draw[visible on=<9->, ->] (cmf) to node[eannot,visible on=<10->] (l3) {''textbook'' proof} (edka1);
+    \draw[visible on=<11->, ->] (edka1) to node[eannot,visible on=<12->] (l4) {modify residual graph} (edka2);
+    \draw[visible on=<13->, ->] (edka2) to node[eannot,visible on=<14->] (usebfs) {node $\to$ int\\graph $\to$ adj.-list\\capacity,flow $\to$ array\\shortest-path $\to$ bfs} (edka);
+
+    \draw[visible on=<14->,->,dashed] (boxbfs) to[-|-] (usebfs.west);
+
+
+    \only<15> {
+    \overlaynodedrawfill[align=center]<
+            {callout absolute pointer=(l1)},
+            {callout absolute pointer=(l3)},
+            {callout absolute pointer=(l4)}
+        >
+        [rectangle callout, below = of boxbfs]
+        {substantial ideas \\ requires interactive proof}
+    ;
+    }
+
+    \only<16> {
+    \overlaynodedrawfill[align=center]<
+            {callout absolute pointer=(l2)},
+            {callout absolute pointer=(usebfs)}
+        >
+        [rectangle callout, below = of boxbfs]
+        {straightforward \\ mainly automatic}
+    ;
+    }
+
+
+
+  \end{tikzpicture}
+
+
+\end{frame}
+\begin{frame}{The Isabelle Refinement Framework}
+  \begin{itemize}
+   \item<+-> Formalization of Refinement in Isabelle/HOL
+   \item<+-> Batteries included
+    \begin{itemize}
+     \item<+-> Verification Condition Generator
+     \item<+-> Collection Framework
+     \item<+-> (Semi)automatic data refinement
+    \end{itemize}
+   \item<+-> Some highlights
+    \begin{itemize}
+     \item<+-> GRAT UNSAT certification toolchain
+      \begin{itemize}
+       \item formally verified
+       \item faster than (verified and unverified) competitors
+      \end{itemize}
+     \item<+-> Introsort (on par with libstd++ std::sort)
+     \item<+-> Timed Automata model checker
+     \item<+-> CAVA LTL model checker
+     \item<+-> Network flow (Push-Relabel and Edmonds Karp)
+
+
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+\begin{frame}{Formalizing Refinement}
+  \begin{itemize}
+   \item<+-> Formal model for algorithms
+    \begin{itemize}
+     \item Require: nondeterminism, pointers/heap, (data) refinement
+     \item VCG, also for refinements
+     \item can get very complex!
+    \end{itemize}
+   \item<+-> Current approach:
+    \begin{enumerate}
+     \item NRES: nondeterminism error monad with refinement ... but no heap
+      \begin{itemize}
+       \item simpler model, usable tools (e.g. VCG)
+      \end{itemize}
+     \item HEAP: deterministic heap-error monad
+      \begin{itemize}
+       \item separation logic based VCG
+      \end{itemize}
+    \end{enumerate}
+   \item<+-> Automated transition from NRES to HEAP
+    \begin{itemize}
+     \item automatic data refinement (e.g. integer by int64)
+     \item automatic placement on heap (e.g. list by array)
+     \item some in-bound proof obligations left to user
+
+
+
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+\begin{frame}{Code Generation}
+  Translate HEAP to compilable code
+  \onslide<+->
+
+  \begin{minipage}{.69\textwidth}
+  \begin{enumerate}
+   \item<+-> Imperative-HOL:
+    \begin{itemize}
+     \item based on Isabelle's code generator
+     \item OCaml,SML,Haskell,Scala (using imp. features)
+     \item results cannot compete with optimized C/C++
+    \end{itemize}
+   \item<+-> NEW!: Isabelle-LLVM
+    \begin{itemize}
+     \item shallow embedding of fragment of LLVM-IR
+     \item pretty-print to actual LLVM IR text
+     \item then use LLVM optimizer and compiler
+     \item faster programs
+     \item thinner (unverified) compilation layer
+    \end{itemize}
+  \end{enumerate}
+  \end{minipage}%
+  \begin{minipage}{.3\textwidth}
+    \uncover<3->{
+    \vfill
+    \includegraphics[width=3cm]{isabelle-llvm.png}}
+  \end{minipage}
+
+
+\end{frame}
+\begin{frame}{Knuth Morris Pratt}
+  \begin{tikzpicture}
+    \begin{semilogyaxis}[
+      xlabel={Benchmark Set},
+      xlabel near ticks,
+      ylabel={Time/ms},
+      legend style = {
+        legend pos=outer north east,
+        cells={anchor=west}
+      },
+      ybar=0pt,
+      ymin=0, ymax=1e4,
+      bar width=4pt,
+      symbolic x coords={16-8,16-64,16-512,32-8,32-64,32-512,64-8,64-64,64-512},
+      xtick=data,
+%       nodes near coords,
+%       nodes near coords align={vertical},
+      x tick label style={rotate=45,anchor=east},
+    ]
+
+      \addplot[color=blue,fill=blue] coordinates {
+        (16-8,   4616)
+        (16-64,  4621)
+        (16-512, 4573)
+        (32-8,   4471)
+        (32-64,  4523)
+        (32-512, 4456)
+        (64-8,   4433)
+        (64-64,  4514)
+        (64-512, 4411)
+      };
+      \addlegendentry{Imperative HOL};
+
+      \addplot[color=green,fill=green] coordinates {
+        (16-8,   597)
+        (16-64,  598)
+        (16-512, 590)
+        (32-8,   551)
+        (32-64,  552)
+        (32-512, 544)
+        (64-8,   530)
+        (64-64,  531)
+        (64-512, 523)
+      };
+      \addlegendentry{LLVM};
+
+      \addplot[color=red,fill=red] coordinates {
+        (16-8,   499)
+        (16-64,  511)
+        (16-512, 513)
+        (32-8,   453)
+        (32-64,  465)
+        (32-512, 463)
+        (64-8,   418)
+        (64-64,  420)
+        (64-512, 416)
+      };
+      \addlegendentry{C++ (unverified)};
+
+
+    \end{semilogyaxis}
+  \end{tikzpicture}
+
+  Execute $a$-$l$ benchmark set from StringBench. Stop at first match.
+
+
+\end{frame}
+\begin{frame}{Verified Introsort Algorithm}
+  \begin{tikzpicture}
+    \begin{semilogyaxis}[
+%       xlabel={Benchmark Set},
+      xlabel near ticks,
+      ylabel={Time/ms},
+      legend style = {
+        legend pos=outer north east,
+        cells={anchor=west},
+        font=\scriptsize
+      },
+      ybar=0pt,
+%      ymin=0,
+%       ymax=1e4,
+      bar width=1.5pt,
+      symbolic x coords={rev-sorted-end-10,rev-sorted-end-1,sorted-end-.1,almost-sorted-50,random-boolean,organ-pipe,sorted-end-10,equal,rev-sorted-middle-.1,rev-sorted,sorted-middle-1,rev-sorted-middle-10,random,almost-sorted-.1,sorted,rev-sorted-middle-1,sorted-middle-.1,almost-sorted-10,almost-sorted-1,sorted-middle-10,rev-sorted-end-.1,sorted-end-1,random-dup-10,},      xtick=data,
+%       nodes near coords,
+%       nodes near coords align={vertical},
+      x tick label style={rotate=45,anchor=east,font=\tiny},
+%      ytick={1e3,1e4,1e5},
+%       ytick distance = 10,
+      ytickten = {1,2,3,4,5},
+    ]
+
+      \only<1> {
+
+      \addplot[color=red,fill=red] coordinates {
+      (rev-sorted-end-10,3827)
+      (rev-sorted-end-1,4186)
+      (sorted-end-.1,4781)
+      (almost-sorted-50,6477)
+      (random-boolean,1667)
+      (organ-pipe,8457)
+      (sorted-end-10,6043)
+      (equal,1142)
+      (rev-sorted-middle-.1,3342)
+      (rev-sorted,981)
+      (sorted-middle-1,3799)
+      (rev-sorted-middle-10,5527)
+      (random,7368)
+      (almost-sorted-.1,1419)
+      (sorted,1438)
+      (rev-sorted-middle-1,3302)
+      (sorted-middle-.1,3448)
+      (almost-sorted-10,3107)
+      (almost-sorted-1,1590)
+      (sorted-middle-10,5514)
+      (rev-sorted-end-.1,6211)
+      (sorted-end-1,9103)
+      (random-dup-10,8175)
+      };
+      \addlegendentry{Isabelle-LLVM};
+      \addplot[color=blue,fill=blue] coordinates {
+      (rev-sorted-end-10,3787)
+      (rev-sorted-end-1,3815)
+      (sorted-end-.1,4982)
+      (almost-sorted-50,6480)
+      (random-boolean,1669)
+      (organ-pipe,9203)
+      (sorted-end-10,6312)
+      (equal,1318)
+      (rev-sorted-middle-.1,3544)
+      (rev-sorted,963)
+      (sorted-middle-1,3376)
+      (rev-sorted-middle-10,5460)
+      (random,7405)
+      (almost-sorted-.1,1376)
+      (sorted,1349)
+      (rev-sorted-middle-1,3380)
+      (sorted-middle-.1,3548)
+      (almost-sorted-10,2994)
+      (almost-sorted-1,1740)
+      (sorted-middle-10,5574)
+      (rev-sorted-end-.1,5880)
+      (sorted-end-1,9601)
+      (random-dup-10,8190)
+      };
+      \addlegendentry{libstd++ (unverified)};
+      }
+
+      \only<2> {
+        \addplot[color=red,fill=red] coordinates {
+        (rev-sorted-end-10,7950)
+        (rev-sorted-end-1,9595)
+        (sorted-end-.1,12218)
+        (almost-sorted-50,10358)
+        (random-boolean,4167)
+        (organ-pipe,23599)
+        (sorted-end-10,14195)
+        (equal,3975)
+        (rev-sorted-middle-.1,8619)
+        (rev-sorted,3544)
+        (sorted-middle-1,8138)
+        (rev-sorted-middle-10,10667)
+        (random,12192)
+        (almost-sorted-.1,4910)
+        (sorted,4928)
+        (rev-sorted-middle-1,8137)
+        (sorted-middle-.1,8642)
+        (almost-sorted-10,6400)
+        (almost-sorted-1,5015)
+        (sorted-middle-10,10758)
+        (rev-sorted-end-.1,14688)
+        (sorted-end-1,25431)
+        (random-dup-10,11578)
+        };
+        \addlegendentry{Isabelle-LLVM};
+
+        \addplot[color=blue,fill=blue] coordinates {
+        (rev-sorted-end-10,7712)
+        (rev-sorted-end-1,9233)
+        (sorted-end-.1,11285)
+        (almost-sorted-50,10103)
+        (random-boolean,4195)
+        (organ-pipe,20921)
+        (sorted-end-10,14007)
+        (equal,3939)
+        (rev-sorted-middle-.1,8269)
+        (rev-sorted,3415)
+        (sorted-middle-1,7787)
+        (rev-sorted-middle-10,10040)
+        (random,11910)
+        (almost-sorted-.1,4828)
+        (sorted,4785)
+        (rev-sorted-middle-1,7852)
+        (sorted-middle-.1,8274)
+        (almost-sorted-10,6319)
+        (almost-sorted-1,4908)
+        (sorted-middle-10,10423)
+        (rev-sorted-end-.1,13509)
+        (sorted-end-1,21205)
+        (random-dup-10,11221)
+        };
+        \addlegendentry{libstd++ (unverified)};
+      }
+    \end{semilogyaxis}
+  \end{tikzpicture}
+
+  Sorting $100\cdot10^6$ \texttt{uint64}s on
+  \only<1>{Intel Core i7-8665U CPU, 32GiB RAM}\only<2>{AMD Opteron 6176 24 core, 128GiB RAM}.
+
+
+
+\end{frame}
+\begin{frame}{Isabelle-LLVM: Overview}
+
+  \center
+  \begin{tikzpicture}[
+      BX/.style={rectangle,draw,align=center,outer sep=0,inner sep=0,minimum height=1cm,node distance=1cm, anchor=south west,transform shape,text=lightgray},
+      TCB/.style={onslide=<4->{fill=green!30,text=black}},
+      basic layer/.style={onslide=<3->{fill=blue!30,text=black}},
+      FE/.style={onslide=<2->{fill=red!30,text=black}},
+%       APP/.style={onslide=<2->{text=black}},
+      scale=.8
+    ]
+
+    \node [BX,text width=10cm,text=black] at (0,0) {LLVM Code};
+    \node [BX,text width=10cm, TCB] at (0,1) {Code Generator};
+    \node [BX,text width=10cm, TCB] at (0,2) {Semantics};
+    \node [BX,text width=5cm, minimum height=3cm, basic layer] at (0,3) {Preprocessor};
+    \node [BX,text width=5cm, basic layer] at (5,3) {Separation Logic};
+    \node [BX,text width=5cm, minimum height=2cm, basic layer] at (5,4) {\\[1cm]VCG};
+    \node [BX,text width=5cm,fill=white, basic layer] at (2.5,5) {Basic Data Structures};
+    \node [BX,text width=10cm, FE] at (0,6) {Sepref Tool};
+    \node [BX,text width=5cm,FE] at (0,7) {Refinement Framework};
+    \node [BX,text width=5cm,FE] at (5,7) {Collection Framework};
+    \node [BX,text width=10cm,,text=black] at (0,8) {Verified Algorithms};
+
+    \node [label=left:{\color{white}\color<4->{green}Kernel (TCB)}] at (0,2) {};
+    \node [label=left:{\color{white}\color<3->{blue}Basic Layer}] at (0,4.5) {};
+    \node [label=left:{\color{white}\color<2->{red}Frontend}] at (0,7) {};
+%     \node [label=left:{\color{white}\color<2->{black}Applications}] at (0,8.5) {};
+
+
+%     \node [text width=5cm,thispaper] at (0,2) {Separation Logic};
+%     \node [text width=5cm, minimum height=2cm] at (5,1) {Refinement Framework};
+%     \node [text width=2.5cm,thispaper] at (0,3) {Imperative Collections};
+%     \node [text width=3.5cm,thispaper] at (2.5,3) {Refinement to Imp/HOL};
+%     \node [text width=2.5cm] at (6,3) {Functional Collections};
+%     \node [text width=1.5cm, minimum height=2cm] at (8.5,3) {Abstract Algorithms};
+%     \node [text width=8.5cm,thispaper] at (0,4) {Automatic Refinement};
+%     \node [text width=10cm,thispaper] at (0,5) {Efficient Imperative Algorithms};
+  \end{tikzpicture}
+
+%   \uncover<2->{\color{green}TCB}~~\uncover<3->{\color{blue}Basic Layer}~~\uncover<4->{\color{red}Frontend}
+
+
+%
+%   Diagram!
+%   * Trusted Code Base
+%     * Code generator (Pretty-printing + ctrl flow compiler)
+%     * LLVM semantics (based on state/error monad, memory model, shallow embedding)
+%
+%   * Tools
+%     * Preprocessor
+%     * VCG
+%     * Sepref (Link to Refinement Framework)
+
+
+\end{frame}
+\renewcommand{\insertsectitle}{\color{green}{Kernel}}
+
+
+\begin{frame}{LLVM Semantics}
+  \begin{itemize}
+   \item<+-> We don't need to formalize all of LLVM!
+    \begin{itemize}
+     \item just enough to express meaningful programs
+     \item abstract away certain details (e.g. in memory model)
+    \end{itemize}
+   \item<+-> Trade-off
+    \begin{itemize}
+     \item complexity of semantics vs. trusted steps in code generator
+    \end{itemize}
+   \item<+-> Our choice:
+    \begin{itemize}
+     \item rather simple semantics
+     \item code generator does some translations
+
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+\begin{frame}[fragile]{Basics}
+  \begin{itemize}
+   \item LLVM operations described in state/error monad
+    \begin{lstlisting}
+    \<alpha> llM = llM (run: "memory => \<alpha> mres")
+    \<alpha> mres = NTERM | FAIL | SUCC \<alpha> memory
+    \end{lstlisting}
+
+    \pause
+
+      \begin{lstlisting}
+        ll_udiv :: "n word => n word => n word llM"
+        ll_udiv a b = do { assert (b ~= 0); return (a div b) }
+      \end{lstlisting}
+
+    \pause
+
+      \begin{lstlisting}
+        llc_if b t e = if b~=0 then t else e
+      \end{lstlisting}
+
+    \pause
+
+   \item Recursion via fixed-point
+    \begin{lstlisting}
+      llc_while b f s_0 = fixp (%W s.
+          do {
+            ctd <- b s;
+            if ctd~=0 then do {s <- f s; W s} else return s
+          }
+        ) s_0
+    \end{lstlisting}
+%     \pause
+%     * partial-function: convenient definition via recursive equations
+
+
+
+%
+%   * Standard operations: \is{return, bind, fail, get, set, rec}
+%     * from HOL: \is{if, let}
+%     * derived: \is{assert, while}, ...
+
+
+
+% # Shallow Embedding
+%   *<+-> LLVM-program: set of function definition theorems
+%     * arbitrary recursive functions definable (fixed-points in monad)
+%   *<+-> Argument and return types
+%     * pointers, pairs, \is{n}-bit words
+%     * monomorphic
+%   *<+-> Only contains instructions and other defined functions
+%     * only variable and constant parameters (flattened expressions)
+%   *<+-> Code generator
+%     * Pretty-print and compile control flow
+%
+
+
+%     \begin{lstlisting}
+%     program = (thm: proc_name args = block)^*
+%     block = do { var <- cmd; block } | return var
+%     cmd = ll_<opcode> arg^* | proc_name arg^* | llc_if arg block block
+%     \end{lstlisting}
+%
+%     * arguments must be variables or constants
+%     * definitions must be monomorphic
+%     * variable and return types of shape
+%       * \is{V = V ptr | V\<times>V | n word}
+%       * pointers, pairs, integers of width \is{n}
+%
+%   \pause
+%
+%
+%   * Semantics provides definitions for \is{ll_<opcode>} constants
+%     \begin{lstlisting}
+%       ll_udiv :: "n word => n word => n word llM"
+%       ll_udiv a b = do { assert (b ~= 0); return (a div b) }
+%     \end{lstlisting}
+
+  \end{itemize}
+\end{frame}
+\begin{frame}[fragile]{Shallow Embedding}
+  \newcommand{\mknd}[1]{\makebox[0pt]{\tikz[remember picture]{\node (#1) {};}}}
+  {\small\centering
+  \begin{minipage}[t]{.35\textwidth}
+    \begin{lstlisting}[escapechar=!]
+      fib:: 64 word !\mknd{ndparams}!=> 64 word ll!\mknd{ndrettype}!M
+      fib n = do {
+        t <- ll_icmp_ule n 1;
+        llc_if!\mknd{stmtif}! t
+          (return n)
+          (do {
+            n_1 <- ll_sub!\mknd{stmtsub}! n 1;
+            a   <- fib!\mknd{stmtrec}! n_1;
+            n_2 <- ll_sub n!\mknd{ndargs}! 2;
+            b   <-!\mknd{ndbind}! fib n_2;
+            c   <- ll_add a b;
+            return!\mknd{ndreturn}! c
+          }) }
+    \end{lstlisting}
+%     \begin{tikzpicture}[remember picture,overlay,ND/.style={rectangle callout, anchor=west,draw , fill=red!50, callout absolute pointer={#1}}]
+%       \node[ND=(ndrettype.east),anchor=south] at ($(ndrettype.north) + (0,.5cm)$) {\footnotesize state/error monad};
+%       \pause
+%       \node[ND=(ndparams.east)] at ($(ndparams -| 6,0) + (0,.5cm)$) {\footnotesize parameter types: words, pointers, pairs};
+%       \pause
+%       \node[ND=(stmtif.east)] at ($(stmtif -| 6,0) + (0,.5cm)$) {\footnotesize control flow (if, [optional: while])};
+%       \pause
+%       \node[ND=(stmtsub.east)] at ($(stmtsub -| 6,0)+(0,.5cm)$) {\footnotesize standard instructions};
+%       \pause
+%       \node[ND=(stmtrec.east)] at ($(stmtrec -| 6,0)+(0,.5cm)$) {\footnotesize function calls};
+%       \pause
+%       \node[ND=(ndargs.east)] at ($(ndargs -| 6,0)+(0,.5cm)$) {\footnotesize arguments: variables and constants};
+%       \pause
+%       \node[ND=(ndbind.east)] at ($(ndbind -| 6,0)+(0,.5cm)$) {\footnotesize monad: bind, return};
+%     \end{tikzpicture}
+    \begin{tikzpicture}[remember picture,overlay,ND/.style={anchor=west}]
+      \pause
+      \node[ND,anchor=south] at ($(ndrettype.north) + (0,.5cm)$) (X) {\footnotesize state/error monad};
+      \draw (X) -- (ndrettype);
+
+      \pause
+      \node[ND] at ($(ndparams -| 6,0) + (0,.5cm)$) (X) {\footnotesize types: words, pointers, pairs};
+      \draw (X.west) -- (ndparams);
+
+      \pause
+      \node[ND=(ndbind.east)] at ($(ndbind -| 6,0)+(0,.5cm)$) (X) {\footnotesize monad: bind, return};
+      \draw (X.west) -- (ndbind);
+      \draw (X.west) -- (ndreturn);
+
+      \pause
+      \node[ND=(stmtsub.east)] at ($(stmtsub -| 6,0)+(0,.5cm)$) (X) {\footnotesize standard instructions (\is{ll_<opcode>})};
+      \draw (X.west) -- (stmtsub);
+
+      \pause
+      \node[ND=(ndargs.east)] at ($(ndargs -| 6,0)+(0,.5cm)$) (X) {\footnotesize arguments: variables and constants};
+      \draw (X.west) -- (ndargs);
+
+      \pause
+      \node[ND=(stmtif.east)] at ($(stmtif -| 6,0) + (0,.5cm)$) (X) {\footnotesize control flow (if, [optional: while])};
+      \draw (X.west) -- (stmtif);
+
+      \pause
+      \node[ND=(stmtrec.east)] at ($(stmtrec -| 6,0)+(0,.5cm)$) (X) {\footnotesize function calls};
+      \draw (X.west) -- (stmtrec);
+
+    \end{tikzpicture}
+  \end{minipage}
+  }
+
+
+
+
+
+\end{frame}
+\begin{frame}[fragile]{Code Generation}
+  \uncover<2->{compiling control flow + pretty printing}
+
+  {\small\centering
+  \begin{minipage}[t]{.35\textwidth}
+    \begin{lstlisting}
+      fib:: 64 word => 64 word llM
+      fib n = do {
+        t <- ll_icmp_ule n 1;
+        llc_if t
+
+          (return n)
+          (do {
+            n_1 <- ll_sub n 1;
+            a   <- fib n_1;
+            n_2 <- ll_sub n 2;
+            b   <- fib n_2;
+            c   <- ll_add a b;
+            return c
+          }) }
+    \end{lstlisting}
+  \end{minipage}
+  % \hspace*{.04\textwidth}
+  \hfill\pause
+  \begin{minipage}[t]{.57\textwidth}
+    \begin{lstlisting}[language=LLVM, literate={}]
+    define i64 @fib(i64 %x) {
+      start:
+        %t = icmp ule i64 %x, 1
+        br i1 %t, label %then, label %else
+      then:
+        br label %ctd_if
+      else:
+        %n_1 = sub i64 %x, 1
+        %a    = call i64 @fib (i64 %n_1)
+        %n_2 = sub i64 %x, 2
+        %b    = call i64 @fib (i64 %n_2)
+        %c    = add i64 %a, %b
+        br label %ctd_if
+      ctd_if:
+        %x1a = phi i64 [%x,%then], [%c,%else]
+        ret i64 %x1a }
+    \end{lstlisting}
+  \end{minipage}
+  }
+
+\end{frame}
+\begin{frame}[fragile]{Memory Model}
+  \begin{itemize}
+   \item Inspired by CompCert v1. But with structured values.
+
+    \begin{lstlisting}
+      memory = block list      block = val list option
+      val = n word | ptr | val\<times>val
+      rptr = NULL | ADDR nat nat (dir list)      dir = FST | SND
+    \end{lstlisting}
+
+    \begin{itemize}
+     \item \is{ADDR i j p} block index, value index, path to value
+
+    \end{itemize}
+  \end{itemize}
+  \pause
+
+  \begin{itemize}
+   \item Typeclass \is{llvm_rep}: shallow to deep embedding
+    \begin{lstlisting}
+    to_val :: 'a => val
+    from_val :: val => 'a
+    init :: 'a  $\text{\color{darkgray} -- Zero initializer}$
+    \end{lstlisting}
+
+  \end{itemize}
+  \pause
+
+  \begin{itemize}
+   \item Shallow pointers carry phantom type
+    \begin{lstlisting}
+      'a ptr = PTR rptr
+    \end{lstlisting}
+
+
+  \end{itemize}
+\end{frame}
+\begin{frame}[fragile]{Example: malloc}
+  \begin{lstlisting}
+    allocn (v::val) (s::nat) = do {
+      bs <- get;
+      set (bs@[Some (replicate s v)]);
+      return (ADDR |bs| 0 []) }
+  \end{lstlisting}
+  \pause
+
+  \begin{lstlisting}
+    ll_malloc (s::n word) :: 'a ptr = do {
+      assert (unat n > 0); $\text{\color{darkgray}-- Disallow empty malloc}$
+      r <- allocn (to_val (init::'a)) (unat n);
+      return (PTR r) }
+  \end{lstlisting}
+  \pause
+
+  \begin{itemize}
+   \item Code generator maps \is{ll_malloc} to libc's \is{calloc}.
+    \begin{itemize}
+     \item out-of-memory: terminate in defined way \is{exit(1)}
+
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+\renewcommand{\insertsectitle}{\color{blue}{Basic Layer}}
+
+\begin{frame}[fragile]{Preprocessor}
+  \begin{itemize}
+   \item Restricted terms accepted by code generator
+    \begin{itemize}
+     \item good to keep code generation simple
+     \item tedious to write manually
+    \end{itemize}
+  \end{itemize}
+  \pause
+  \begin{itemize}
+   \item Preprocessor transforms terms into restricted format
+      \pause
+    \begin{itemize}
+     \item proves equality (via Isabelle kernel)
+      \pause
+     \item monomorphization (instantiate polymorphic definitions)
+      \pause
+     \item flattening of expressions
+      \begin{lstlisting}
+        return ((a+b)+c) |-> do {t<-ll_add a b; ll_add t c}
+      \end{lstlisting}
+      \pause
+     \item tuples
+      \begin{lstlisting}
+        return (a,b) |-> do { t<-ll_insert_1 init a; ll_insert_2 t b }
+      \end{lstlisting}
+      \pause
+     \item Define recursive functions for fixed points
+%     * fixed-points: For \is"f" with \is"f = F f", \is"mono F"
+%       * Definition containing \is"f": define new recursive function
+
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+\begin{frame}[fragile]{Example: Preprocessing Euclid's Algorithm}
+  \small
+  \begin{lstlisting}
+  euclid :: 64 word => 64 word => 64 word
+  euclid a b = do {
+    (a,b) <- llc_while
+      (%(a,b) => ll_cmp (a ~= b))
+      (%(a,b) => if (a<=b) then return (a,b-a) else return (a-b,b))
+      (a,b);
+    return a }
+  \end{lstlisting}
+  \pause
+  preprocessor defines function \is{euclid_0} and proves
+  \begin{lstlisting}
+  euclid a b = do {
+      ab <- ll_insert_1 init a; ab <- ll_insert_2 ab b;
+      ab <- euclid_0 ab;
+      ll_extract_1 ab  }
+  euclid_0 s = do {
+    a <- ll_extract_1 s;
+    b <- ll_extract_2 s;
+    ctd <- ll_icmp_ne a b;
+    llc_if ctd do {...; euclid_0 ...} }
+  \end{lstlisting}
+
+\end{frame}
+\begin{frame}[fragile]{Reasoning about LLVM Programs}
+  \begin{itemize}
+   \item Separation Logic
+    \begin{itemize}
+     \item Hoare-triples
+      \begin{lstlisting}
+        \<alpha> :: memory -> amemory :: sep_algebra
+        wp c Q s = \<exists>r s'. run c s = SUCC r s' \and Q r (\<alpha> s')
+        |= {P} c {Q} = \<forall>F s. (P*F) (\<alpha> s) --> wp c (\<lambda>r s'. (Q r * F) s') s
+      \end{lstlisting}
+
+    \end{itemize}
+    \pause
+    \begin{itemize}
+     \item memory primitives\\
+      \is"p|->x" -- \is"p" points to value \is"x"\\
+      \is"m_tag n p" -- ownership of block (not its contents)\\[.5em]
+      \is"range {i_1,...,i_n} f p = (p+i_1)|->(f i_1) * ... * (p+i_n)|->(f i_n)"
+
+    \end{itemize}
+    \pause
+    \begin{itemize}
+     \item rules for commands
+      \begin{lstlisting}
+        b ~= 0 ==> |= {\<box>} ll_udiv a b {%r. r = a div b}
+        |= {p|->x} ll_load p {%r. r=x * p|->x}
+        |= {n~=0} ll_malloc n {%p. range {0..<n} (%_. init) p * m_tag n p}
+        |= {range {0..<n} xs p * m_tag n p} ll_free p {%_. \<box>}
+      \end{lstlisting}
+
+    \end{itemize}
+  \end{itemize}
+  \pause
+  \begin{itemize}
+   \item Automation: VCG, frame inference, heuristics to discharge VCs
+
+  \end{itemize}
+  \pause
+  \begin{itemize}
+   \item Basic Data Structures: signed/unsigned integers, Booleans, arrays
+
+  \end{itemize}
+\end{frame}
+\begin{frame}[fragile]{Example: Proving Euclid's Algorithm}
+  \small
+  \begin{lstlisting}[escapechar=!]
+    lemma
+    |= {uint$_{64}$ a a\impl * uint$_{64}$ b b\impl * 0<a * 0<b} euclid a\impl b\impl {%r\impl. uint$_{64}$ (gcd a b) r\impl}
+    !\pause!
+    unfolding euclid_def
+    apply (rewrite annotate_llc_while[where I = ... and R = measure nat])
+    !\pause!
+    apply (vcg; clarsimp?)
+  \end{lstlisting}
+  \pause
+
+  {\everymath{\color{darkgray}}
+  \begin{lstlisting}[basicstyle=\color{darkgray}]
+    Subgoals:
+      1. !!x y. [| gcd x y = gcd a b; x ~= y; x <= y; ... |] ==> gcd x (y - x) = gcd a b
+      2. !!x y. [| gcd x y = gcd a b; \<not> x <= y; ... |] ==> gcd (x - y) y = gcd a b
+  \end{lstlisting}
+  }
+  \pause
+
+  \begin{lstlisting}
+    by ( simp_all add: gcd_diff1 gcd_diff1' )
+  \end{lstlisting}
+
+% # Basic Data Structure Library
+%   *<+-> Use VCG to provide basic data structures
+%     * signed/unsigned integers
+%     * Booleans
+%     * arrays (fixed-size, dynamic)
+%
+%   *<+-> Used as building-blocks for advanced DS
+%     * formalized using Sepref
+
+\end{frame}
+\renewcommand{\insertsectitle}{\color{red}{Frontend}}
+
+\begin{frame}{Automatic Refinement}
+  \begin{itemize}
+   \item<+-> Isabelle Refinement Framework
+    \begin{itemize}
+     \item supports verification by stepwise refinement
+     \item many verified algorithms already exists
+
+    \end{itemize}
+   \item<+-> Sepref tool
+    \begin{itemize}
+     \item refinement from Refinement Framework to imperative program
+      \begin{itemize}
+       \item already existed for Imperative/HOL
+       \item we adapted it for LLVM
+      \end{itemize}
+     \item existing proofs can be re-used
+      \begin{itemize}
+       \item need to be amended if they use arbitrary-precision integers
+
+      \end{itemize}
+    \end{itemize}
+   \item<+-> Collections Framework
+    \begin{itemize}
+     \item provides data structures
+     \item we ported some to LLVM (work in progress)
+      \begin{itemize}
+       \item dense sets/maps of integers (by array)
+       \item heaps, indexed heaps
+       \item two-watched-literals for BCP
+       \item graphs (by adjacency lists)
+       \item ...
+
+%   *<+-> Sepref tool
+%     * automatic translation from Refinement Framework to LLVM
+%     * tools for data structure development
+%     * existing proofs can be re-used
+%       * need to be amended if they use arbitrary-precision integers
+
+%   *<+-> Advanced Data Structures
+%     * dense sets/maps of integers (by array)
+%     * heaps, indexed heaps
+%     * two-watched-literals for BCP
+%     * graphs (by adjacency lists)
+%     * ...
+%
+%   * TODO: Example: Synthesis process?
+%
+%   * TODO: Example: binsearch
+
+      \end{itemize}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+\begin{frame}[fragile]{Example: Binary Search}
+  \begin{lstlisting}
+    definition "bin_search xs x = do {
+      (l,h) <- WHILEIT (bin_search_invar xs x)
+        (%(l,h). l<h)
+        (%(l,h). do {
+          ASSERT (l<length xs \<and> h<=length xs \<and> l<=h);
+          let m = l + (h-l) div 2;
+          if xs!m < x then RETURN (m+1,h) else RETURN (l,m)
+        })
+        (0,length xs);
+      RETURN l
+    }"
+  \end{lstlisting}
+  \pause
+
+  \begin{lstlisting}
+  lemma bin_search_correct:
+    sorted xs ==> bin_search xs x <= SPEC (%i. i=find_index (%y. x<=y) xs)"
+  \end{lstlisting}
+
+\end{frame}
+\begin{frame}[t,fragile]{Example: Binary Search --- Refinement}
+  \begin{lstlisting}
+  sepref_def bin_search_impl is "uncurry bin_search"
+    :: "(larray_assn' TYPE(size_t) (sint_assn' TYPE(elem_t)))$^k$
+        $$* (sint_assn' TYPE(elem_t))$^k$
+       -> snat_assn' TYPE(size_t)"
+    unfolding bin_search_def
+    apply (rule hfref_with_rdomI, annot_snat_const "TYPE(size_t)")
+    by sepref
+  \end{lstlisting}
+
+  \only<2> {
+    \is{sint_assn' sz} --- (mathematical) integers by $sz$ bit integers
+
+    \is{snat_assn' sz} --- natural numbers by $sz$ bit integers
+
+    \is{larray_assn' sz e} --- lists by arrays + $sz$-bit length, elements refined by $e$
+  }
+
+  \onslide<3->
+
+  \begin{lstlisting}
+  export_llvm bin_search_impl is int64_t bin_search(larray_t, elem_t)
+  defines
+    typedef uint64_t elem_t;
+    typedef struct { int64_t len; elem_t *data; } larray_t;
+  file "code/bin_search.ll"
+  \end{lstlisting}
+
+\end{frame}
+\begin{frame}[fragile]{Example: Binary Search --- Generated Code}
+  Produces LLVM code and header file:
+  \begin{lstlisting}[language=C]
+    typedef uint64_t elem_t;
+    typedef struct {
+      int64_t len;
+      elem_t*data;
+    } larray_t;
+
+    int64_t bin_search(larray_t,elem_t);
+  \end{lstlisting}
+
+\end{frame}
+\renewcommand{\insertsectitle}{}
+
+\begin{frame}{Conclusions}
+  \begin{itemize}
+   \item Fast and verified algorithms
+    \begin{itemize}
+     \item LLVM code generator
+     \item using Refinement Framework
+     \item manageable proof overhead
+    \end{itemize}
+   \item Case studies
+    \begin{itemize}
+     \item generate really fast, verified code
+     \item re-use existing proofs
+    \end{itemize}
+   \item Current/future work
+    \begin{itemize}
+     \item more complex algorithms
+      \begin{itemize}
+       \item promising (preliminary) results for SAT-solver, Prim's algorithm
+      \end{itemize}
+     \item deeply embedded semantics
+     \item unify NRES and HEAP monads
+     \item generic Sepref (Imp-HOL, LLVM) $\times$ (nres, nres+time)
+
+    \end{itemize}
+  \end{itemize}
+  \vfill
+
+  \url{https://github.com/lammich/isabelle_llvm}
+
+
+
+
+
+
+
+
+%
+% xxx, ctd here: Formal model for algorithms required!
+%   that supports refinement, nondeterminism, imperative data structures (arrays)
+%
+%   ... not yet (completely) there
+%   instead, using two-step process:
+%     1. purely functional representation that supports nondeterminism and refinement
+%     2. deterministic representation with imperative features (heap, pointers)
+%
+%   highly automated transition from 1 to 2:
+%     automatically implement abstract concepts (e.g. matrix) by concrete ones (e.g. 2dim array)
+%       or: BigInt by int64
+%     automatically place linearly used data on heap, destructive update
+%     sometimes, needs hints from user to discharge additional proof obligations (e.g. indexes in bounds, no overflows)
+%
+%
+%   Finally: translate 2 to actual runnable program
+%     * Isabelle/HOL code generator -> OCaml, SML, Haskell, Scala
+%       * using imperative features of these languages
+%       * -> fast, but cannot compete with optimized C/C++ code!
+%     * NEW! Isabelle-LLVM -> LLVM IR
+%       * -> we're getting there!
+%       * and thinner (unverified) compiler layer
+%
+%   ** show sorting benchmarks **
+%
+%   ** then continue with Isabelle-LLVM talk
+
+
+
+
+%
+% # Overview
+%
+%   \center
+%   \begin{tikzpicture}[
+%       BX/.style={rectangle,draw,align=center,outer sep=0,inner sep=0,minimum height=1cm,node distance=1cm, anchor=south west,transform shape,text=lightgray},
+%       TCB/.style={onslide=<4->{fill=green!30,text=black}},
+%       basic layer/.style={onslide=<3->{fill=blue!30,text=black}},
+%       FE/.style={onslide=<2->{fill=red!30,text=black}},
+% %       APP/.style={onslide=<2->{text=black}},
+%       scale=.8
+%     ]
+%
+%     \node [BX,text width=10cm,text=black] at (0,0) {LLVM Code};
+%     \node [BX,text width=10cm, TCB] at (0,1) {Code Generator};
+%     \node [BX,text width=10cm, TCB] at (0,2) {Semantics};
+%     \node [BX,text width=5cm, minimum height=3cm, basic layer] at (0,3) {Preprocessor};
+%     \node [BX,text width=5cm, basic layer] at (5,3) {Separation Logic};
+%     \node [BX,text width=5cm, minimum height=2cm, basic layer] at (5,4) {\\[1cm]VCG};
+%     \node [BX,text width=5cm,fill=white, basic layer] at (2.5,5) {Basic Data Structures};
+%     \node [BX,text width=10cm, FE] at (0,6) {Sepref Tool};
+%     \node [BX,text width=5cm,FE] at (0,7) {Refinement Framework};
+%     \node [BX,text width=5cm,FE] at (5,7) {Collection Framework};
+%     \node [BX,text width=10cm,,text=black] at (0,8) {Verified Algorithms};
+%
+%     \node [label=left:{\color{white}\color<4->{green}Kernel (TCB)}] at (0,2) {};
+%     \node [label=left:{\color{white}\color<3->{blue}Basic Layer}] at (0,4.5) {};
+%     \node [label=left:{\color{white}\color<2->{red}Frontend}] at (0,7) {};
+% %     \node [label=left:{\color{white}\color<2->{black}Applications}] at (0,8.5) {};
+%
+%
+% %     \node [text width=5cm,thispaper] at (0,2) {Separation Logic};
+% %     \node [text width=5cm, minimum height=2cm] at (5,1) {Refinement Framework};
+% %     \node [text width=2.5cm,thispaper] at (0,3) {Imperative Collections};
+% %     \node [text width=3.5cm,thispaper] at (2.5,3) {Refinement to Imp/HOL};
+% %     \node [text width=2.5cm] at (6,3) {Functional Collections};
+% %     \node [text width=1.5cm, minimum height=2cm] at (8.5,3) {Abstract Algorithms};
+% %     \node [text width=8.5cm,thispaper] at (0,4) {Automatic Refinement};
+% %     \node [text width=10cm,thispaper] at (0,5) {Efficient Imperative Algorithms};
+%   \end{tikzpicture}
+%
+% %   \uncover<2->{\color{green}TCB}~~\uncover<3->{\color{blue}Basic Layer}~~\uncover<4->{\color{red}Frontend}
+%
+%
+% %
+% %   Diagram!
+% %   * Trusted Code Base
+% %     * Code generator (Pretty-printing + ctrl flow compiler)
+% %     * LLVM semantics (based on state/error monad, memory model, shallow embedding)
+% %
+% %   * Tools
+% %     * Preprocessor
+% %     * VCG
+% %     * Sepref (Link to Refinement Framework)
+%
+%
+% \renewcommand{\insertsectitle}{\color{green}{Kernel}}
+%
+%
+% # LLVM Semantics
+%   *<+-> We don't need to formalize all of LLVM!
+%     * just enough to express meaningful programs
+%     * abstract away certain details (e.g. in memory model)
+%   *<+-> Trade-off
+%     * complexity of semantics vs. trusted steps in code generator
+%   *<+-> Our choice:
+%     * rather simple semantics
+%     * code generator does some translations
+%
+% #! Basics
+%   * LLVM operations described in state/error monad
+%     \begin{lstlisting}
+%     \<alpha> llM = llM (run: "memory => \<alpha> mres")
+%     \<alpha> mres = NTERM | FAIL | SUCC \<alpha> memory
+%     \end{lstlisting}
+%
+%     \pause
+%
+%       \begin{lstlisting}
+%         ll_udiv :: "n word => n word => n word llM"
+%         ll_udiv a b = do { assert (b ~= 0); return (a div b) }
+%       \end{lstlisting}
+%
+%     \pause
+%
+%       \begin{lstlisting}
+%         llc_if b t e = if b~=0 then t else e
+%       \end{lstlisting}
+%
+%     \pause
+%
+%   * Recursion via fixed-point
+%     \begin{lstlisting}
+%       llc_while b f s_0 = fixp (%W s.
+%           do {
+%             ctd <- b s;
+%             if ctd~=0 then do {s <- f s; W s} else return s
+%           }
+%         ) s_0
+%     \end{lstlisting}
+% %     \pause
+% %     * partial-function: convenient definition via recursive equations
+%
+%
+%
+% %
+% %   * Standard operations: \is{return, bind, fail, get, set, rec}
+% %     * from HOL: \is{if, let}
+% %     * derived: \is{assert, while}, ...
+%
+%
+%
+% % # Shallow Embedding
+% %   *<+-> LLVM-program: set of function definition theorems
+% %     * arbitrary recursive functions definable (fixed-points in monad)
+% %   *<+-> Argument and return types
+% %     * pointers, pairs, \is{n}-bit words
+% %     * monomorphic
+% %   *<+-> Only contains instructions and other defined functions
+% %     * only variable and constant parameters (flattened expressions)
+% %   *<+-> Code generator
+% %     * Pretty-print and compile control flow
+% %
+%
+%
+% %     \begin{lstlisting}
+% %     program = (thm: proc_name args = block)^*
+% %     block = do { var <- cmd; block } | return var
+% %     cmd = ll_<opcode> arg^* | proc_name arg^* | llc_if arg block block
+% %     \end{lstlisting}
+% %
+% %     * arguments must be variables or constants
+% %     * definitions must be monomorphic
+% %     * variable and return types of shape
+% %       * \is{V = V ptr | V\<times>V | n word}
+% %       * pointers, pairs, integers of width \is{n}
+% %
+% %   \pause
+% %
+% %
+% %   * Semantics provides definitions for \is{ll_<opcode>} constants
+% %     \begin{lstlisting}
+% %       ll_udiv :: "n word => n word => n word llM"
+% %       ll_udiv a b = do { assert (b ~= 0); return (a div b) }
+% %     \end{lstlisting}
+%
+% #! Shallow Embedding
+%   \newcommand{\mknd}[1]{\makebox[0pt]{\tikz[remember picture]{\node (#1) {};}}}
+%   {\small\centering
+%   \begin{minipage}[t]{.35\textwidth}
+%     \begin{lstlisting}[escapechar=!]
+%       fib:: 64 word !\mknd{ndparams}!=> 64 word ll!\mknd{ndrettype}!M
+%       fib n = do {
+%         t <- ll_icmp_ule n 1;
+%         llc_if!\mknd{stmtif}! t
+%           (return n)
+%           (do {
+%             n_1 <- ll_sub!\mknd{stmtsub}! n 1;
+%             a   <- fib!\mknd{stmtrec}! n_1;
+%             n_2 <- ll_sub n!\mknd{ndargs}! 2;
+%             b   <-!\mknd{ndbind}! fib n_2;
+%             c   <- ll_add a b;
+%             return!\mknd{ndreturn}! c
+%           }) }
+%     \end{lstlisting}
+% %     \begin{tikzpicture}[remember picture,overlay,ND/.style={rectangle callout, anchor=west,draw , fill=red!50, callout absolute pointer={#1}}]
+% %       \node[ND=(ndrettype.east),anchor=south] at ($(ndrettype.north) + (0,.5cm)$) {\footnotesize state/error monad};
+% %       \pause
+% %       \node[ND=(ndparams.east)] at ($(ndparams -| 6,0) + (0,.5cm)$) {\footnotesize parameter types: words, pointers, pairs};
+% %       \pause
+% %       \node[ND=(stmtif.east)] at ($(stmtif -| 6,0) + (0,.5cm)$) {\footnotesize control flow (if, [optional: while])};
+% %       \pause
+% %       \node[ND=(stmtsub.east)] at ($(stmtsub -| 6,0)+(0,.5cm)$) {\footnotesize standard instructions};
+% %       \pause
+% %       \node[ND=(stmtrec.east)] at ($(stmtrec -| 6,0)+(0,.5cm)$) {\footnotesize function calls};
+% %       \pause
+% %       \node[ND=(ndargs.east)] at ($(ndargs -| 6,0)+(0,.5cm)$) {\footnotesize arguments: variables and constants};
+% %       \pause
+% %       \node[ND=(ndbind.east)] at ($(ndbind -| 6,0)+(0,.5cm)$) {\footnotesize monad: bind, return};
+% %     \end{tikzpicture}
+%     \begin{tikzpicture}[remember picture,overlay,ND/.style={anchor=west}]
+%       \pause
+%       \node[ND,anchor=south] at ($(ndrettype.north) + (0,.5cm)$) (X) {\footnotesize state/error monad};
+%       \draw (X) -- (ndrettype);
+%
+%       \pause
+%       \node[ND] at ($(ndparams -| 6,0) + (0,.5cm)$) (X) {\footnotesize types: words, pointers, pairs};
+%       \draw (X.west) -- (ndparams);
+%
+%       \pause
+%       \node[ND=(ndbind.east)] at ($(ndbind -| 6,0)+(0,.5cm)$) (X) {\footnotesize monad: bind, return};
+%       \draw (X.west) -- (ndbind);
+%       \draw (X.west) -- (ndreturn);
+%
+%       \pause
+%       \node[ND=(stmtsub.east)] at ($(stmtsub -| 6,0)+(0,.5cm)$) (X) {\footnotesize standard instructions (\is{ll_<opcode>})};
+%       \draw (X.west) -- (stmtsub);
+%
+%       \pause
+%       \node[ND=(ndargs.east)] at ($(ndargs -| 6,0)+(0,.5cm)$) (X) {\footnotesize arguments: variables and constants};
+%       \draw (X.west) -- (ndargs);
+%
+%       \pause
+%       \node[ND=(stmtif.east)] at ($(stmtif -| 6,0) + (0,.5cm)$) (X) {\footnotesize control flow (if, [optional: while])};
+%       \draw (X.west) -- (stmtif);
+%
+%       \pause
+%       \node[ND=(stmtrec.east)] at ($(stmtrec -| 6,0)+(0,.5cm)$) (X) {\footnotesize function calls};
+%       \draw (X.west) -- (stmtrec);
+%
+%     \end{tikzpicture}
+%   \end{minipage}
+%   }
+%
+%
+%
+%
+%
+% #! Code Generation
+%   \uncover<2->{compiling control flow + pretty printing}
+%
+%   {\small\centering
+%   \begin{minipage}[t]{.35\textwidth}
+%     \begin{lstlisting}
+%       fib:: 64 word => 64 word llM
+%       fib n = do {
+%         t <- ll_icmp_ule n 1;
+%         llc_if t
+%
+%           (return n)
+%           (do {
+%             n_1 <- ll_sub n 1;
+%             a   <- fib n_1;
+%             n_2 <- ll_sub n 2;
+%             b   <- fib n_2;
+%             c   <- ll_add a b;
+%             return c
+%           }) }
+%     \end{lstlisting}
+%   \end{minipage}
+%   % \hspace*{.04\textwidth}
+%   \hfill\pause
+%   \begin{minipage}[t]{.57\textwidth}
+%     \begin{lstlisting}[language=LLVM, literate={}]
+%     define i64 @fib(i64 %x) {
+%       start:
+%         %t = icmp ule i64 %x, 1
+%         br i1 %t, label %then, label %else
+%       then:
+%         br label %ctd_if
+%       else:
+%         %n_1 = sub i64 %x, 1
+%         %a    = call i64 @fib (i64 %n_1)
+%         %n_2 = sub i64 %x, 2
+%         %b    = call i64 @fib (i64 %n_2)
+%         %c    = add i64 %a, %b
+%         br label %ctd_if
+%       ctd_if:
+%         %x1a = phi i64 [%x,%then], [%c,%else]
+%         ret i64 %x1a }
+%     \end{lstlisting}
+%   \end{minipage}
+%   }
+%
+% #! Memory Model
+%   * Inspired by CompCert v1. But with structured values.
+%
+%     \begin{lstlisting}
+%       memory = block list      block = val list option
+%       val = n word | ptr | val\<times>val
+%       rptr = NULL | ADDR nat nat (dir list)      dir = FST | SND
+%     \end{lstlisting}
+%
+%     * \is{ADDR i j p} block index, value index, path to value
+%
+%   \pause
+%
+%   * Typeclass \is{llvm_rep}: shallow to deep embedding
+%     \begin{lstlisting}
+%     to_val :: 'a => val
+%     from_val :: val => 'a
+%     init :: 'a  $\text{\color{darkgray} -- Zero initializer}$
+%     \end{lstlisting}
+%
+%   \pause
+%
+%   * Shallow pointers carry phantom type
+%     \begin{lstlisting}
+%       'a ptr = PTR rptr
+%     \end{lstlisting}
+%
+%
+% #! Example: malloc
+%   \begin{lstlisting}
+%     allocn (v::val) (s::nat) = do {
+%       bs <- get;
+%       set (bs@[Some (replicate s v)]);
+%       return (ADDR |bs| 0 []) }
+%   \end{lstlisting}
+%   \pause
+%
+%   \begin{lstlisting}
+%     ll_malloc (s::n word) :: 'a ptr = do {
+%       assert (unat n > 0); $\text{\color{darkgray}-- Disallow empty malloc}$
+%       r <- allocn (to_val (init::'a)) (unat n);
+%       return (PTR r) }
+%   \end{lstlisting}
+%   \pause
+%
+%   * Code generator maps \is{ll_malloc} to libc's \is{calloc}.
+%     * out-of-memory: terminate in defined way \is{exit(1)}
+%
+% \renewcommand{\insertsectitle}{\color{blue}{Basic Layer}}
+%
+% #! Preprocessor
+%   * Restricted terms accepted by code generator
+%     * good to keep code generation simple
+%     * tedious to write manually
+%   \pause
+%   * Preprocessor transforms terms into restricted format
+%       \pause
+%     * proves equality (via Isabelle kernel)
+%       \pause
+%     * monomorphization (instantiate polymorphic definitions)
+%       \pause
+%     * flattening of expressions
+%       \begin{lstlisting}
+%         return ((a+b)+c) |-> do {t<-ll_add a b; ll_add t c}
+%       \end{lstlisting}
+%       \pause
+%     * tuples
+%       \begin{lstlisting}
+%         return (a,b) |-> do { t<-ll_insert_1 init a; ll_insert_2 t b }
+%       \end{lstlisting}
+%       \pause
+%     * Define recursive functions for fixed points
+% %     * fixed-points: For \is"f" with \is"f = F f", \is"mono F"
+% %       * Definition containing \is"f": define new recursive function
+%
+% #! Example: Preprocessing Euclid's Algorithm
+%   \small
+%   \begin{lstlisting}
+%   euclid :: 64 word => 64 word => 64 word
+%   euclid a b = do {
+%     (a,b) <- llc_while
+%       (%(a,b) => ll_cmp (a ~= b))
+%       (%(a,b) => if (a<=b) then return (a,b-a) else return (a-b,b))
+%       (a,b);
+%     return a }
+%   \end{lstlisting}
+%   \pause
+%   preprocessor defines function \is{euclid_0} and proves
+%   \begin{lstlisting}
+%   euclid a b = do {
+%       ab <- ll_insert_1 init a; ab <- ll_insert_2 ab b;
+%       ab <- euclid_0 ab;
+%       ll_extract_1 ab  }
+%   euclid_0 s = do {
+%     a <- ll_extract_1 s;
+%     b <- ll_extract_2 s;
+%     ctd <- ll_icmp_ne a b;
+%     llc_if ctd do {...; euclid_0 ...} }
+%   \end{lstlisting}
+%
+% #! Reasoning about LLVM Programs
+%   * Separation Logic
+%     * Hoare-triples
+%       \begin{lstlisting}
+%         \<alpha> :: memory -> amemory :: sep_algebra
+%         wp c Q s = \<exists>r s'. run c s = SUCC r s' \and Q r (\<alpha> s')
+%         |= {P} c {Q} = \<forall>F s. (P*F) (\<alpha> s) --> wp c (\<lambda>r s'. (Q r * F) s') s
+%       \end{lstlisting}
+%
+%     \pause
+%     * memory primitives\\
+%       \is"p|->x" -- \is"p" points to value \is"x"\\
+%       \is"m_tag n p" -- ownership of block (not its contents)\\[1em]
+%       \is"range {i_1,...,i_n} f p = (p+i_1)|->(f i_1) * ... * (p+i_n)|->(f i_n)"
+%
+%     \pause
+%     * rules for commands
+%       \begin{lstlisting}
+%         b ~= 0 ==> |= {\<box>} ll_udiv a b {%r. r = a div b}
+%         |= {n~=0} ll_malloc n {%p. range {0..<n} (%_. init) p * m_tag n p}
+%         |= {p|->x} ll_load p {%r. r=x * p|->x}
+%       \end{lstlisting}
+%
+%   \pause
+%   * Automation: VCG, frame inference, heuristics to discharge VCs
+%
+%   \pause
+%   * Basic Data Structures: signed/unsigned integers, Booleans, arrays
+%
+% #! Example: Proving Euclid's Algorithm
+%   \small
+%   \begin{lstlisting}[escapechar=!]
+%     lemma
+%     |= {uint$_{64}$ a a\impl * uint$_{64}$ b b\impl * 0<a * 0<b} euclid a\impl b\impl {%r\impl. uint$_{64}$ (gcd a b) r\impl}
+%     !\pause!
+%     unfolding euclid_def
+%     apply (rewrite annotate_llc_while[where I = ... and R = measure nat])
+%     !\pause!
+%     apply (vcg; clarsimp?)
+%   \end{lstlisting}
+%   \pause
+%
+%   {\everymath{\color{darkgray}}
+%   \begin{lstlisting}[basicstyle=\color{darkgray}]
+%     Subgoals:
+%       1. !!x y. [| gcd x y = gcd a b; x ~= y; x <= y; ... |] ==> gcd x (y - x) = gcd a b
+%       2. !!x y. [| gcd x y = gcd a b; \<not> x <= y; ... |] ==> gcd (x - y) y = gcd a b
+%   \end{lstlisting}
+%   }
+%   \pause
+%
+%   \begin{lstlisting}
+%     by ( simp_all add: gcd_diff1 gcd_diff1' )
+%   \end{lstlisting}
+%
+% % # Basic Data Structure Library
+% %   *<+-> Use VCG to provide basic data structures
+% %     * signed/unsigned integers
+% %     * Booleans
+% %     * arrays (fixed-size, dynamic)
+% %
+% %   *<+-> Used as building-blocks for advanced DS
+% %     * formalized using Sepref
+%
+% \renewcommand{\insertsectitle}{\color{red}{Frontend}}
+%
+% # Automatic Refinement
+%   *<+-> Isabelle Refinement Framework
+%     * supports verification by stepwise refinement
+%     * many verified algorithms already exists
+%
+%   *<+-> Sepref tool
+%     * refinement from Refinement Framework to imperative program
+%       * already existed for Imperative/HOL
+%       * we adapted it for LLVM
+%     * existing proofs can be re-used
+%       * need to be amended if they use arbitrary-precision integers
+%
+%   *<+-> Collections Framework
+%     * provides data structures
+%     * we ported some to LLVM (work in progress)
+%       * dense sets/maps of integers (by array)
+%       * heaps, indexed heaps
+%       * two-watched-literals for BCP
+%       * graphs (by adjacency lists)
+%       * ...
+%
+% %   *<+-> Sepref tool
+% %     * automatic translation from Refinement Framework to LLVM
+% %     * tools for data structure development
+% %     * existing proofs can be re-used
+% %       * need to be amended if they use arbitrary-precision integers
+%
+% %   *<+-> Advanced Data Structures
+% %     * dense sets/maps of integers (by array)
+% %     * heaps, indexed heaps
+% %     * two-watched-literals for BCP
+% %     * graphs (by adjacency lists)
+% %     * ...
+% %
+% %   * TODO: Example: Synthesis process?
+% %
+% %   * TODO: Example: binsearch
+%
+% #! Example: Binary Search
+%   \begin{lstlisting}
+%     definition "bin_search xs x = do {
+%       (l,h) <- WHILEIT (bin_search_invar xs x)
+%         (%(l,h). l<h)
+%         (%(l,h). do {
+%           ASSERT (l<length xs \<and> h<=length xs \<and> l<=h);
+%           let m = l + (h-l) div 2;
+%           if xs!m < x then RETURN (m+1,h) else RETURN (l,m)
+%         })
+%         (0,length xs);
+%       RETURN l
+%     }"
+%   \end{lstlisting}
+%   \pause
+%
+%   \begin{lstlisting}
+%   lemma bin_search_correct:
+%     sorted xs ==> bin_search xs x <= SPEC (%i. i=find_index (%y. x<=y) xs)"
+%   \end{lstlisting}
+%
+% #! Example: Binary Search --- Refinement
+%
+%   \begin{lstlisting}
+%   sepref_def bin_search_impl is "uncurry bin_search"
+%     :: "(larray_assn' TYPE(size_t) (sint_assn' TYPE(elem_t)))$^k$
+%         $$* (sint_assn' TYPE(elem_t))$^k$
+%        -> snat_assn' TYPE(size_t)"
+%     unfolding bin_search_def
+%     apply (rule hfref_with_rdomI, annot_snat_const "TYPE(size_t)")
+%     by sepref
+%   \end{lstlisting}
+%   \pause
+%
+%   \begin{lstlisting}
+%   export_llvm bin_search_impl is int64_t bin_search(larray_t, elem_t)
+%   defines
+%     typedef uint64_t elem_t;
+%     typedef struct { int64_t len; elem_t *data; } larray_t;
+%   file "code/bin_search.ll"
+%   \end{lstlisting}
+%
+% #! Example: Binary Search --- Generated Code
+%   Produces LLVM code and header file:
+%   \begin{lstlisting}[language=C]
+%     typedef uint64_t elem_t;
+%     typedef struct {
+%       int64_t len;
+%       elem_t*data;
+%     } larray_t;
+%
+%     int64_t bin_search(larray_t,elem_t);
+%   \end{lstlisting}
+%
+%
+% \renewcommand{\insertsectitle}{{Benchmarks}}
+%
+%
+% # Case Studies
+%   *<+-> Binary Search and Knuth-Morris-Pratt
+%     * manageable amount of changes to original formalization
+%
+%   *<+-> Efficiency
+%     * on par with unverified C/C++
+%     * one order of magnitude faster than original
+% %     * still 1.5 times faster than SML with fixed-size integers
+%
+% % \renewcommand{\insertsectitle}{}
+%
+% # Binary Search
+%
+%   \begin{tikzpicture}
+%     \begin{loglogaxis}[
+%       xlabel={Array Size ($n$)},
+%       ylabel={Time/ms},
+%       legend style = {
+%         legend pos=outer north east,
+%         cells={anchor=west}
+%       }
+%     ]
+%
+%
+%       \addplot[color=blue,mark=*] coordinates {
+%         (1e6, 1999 )
+%         (2e6, 4209 )
+%         (3e6, 6516 )
+%         (4e6, 8843 )
+%         (5e6, 11494)
+%         (6e6, 13646)
+%         (7e6, 16032)
+%         (8e6, 18421)
+%         (9e6, 20957)
+%         (10e6,23409)
+%       };
+%       \addlegendentry{Imperative HOL};
+%
+%
+%       \addplot[color=red,mark=square*] coordinates {
+%         (1e6,  121 )
+%         (2e6,  251 )
+%         (3e6,  379 )
+%         (4e6,  513 )
+%         (5e6,  635 )
+%         (6e6,  767 )
+%         (7e6,  908 )
+%         (8e6,  1038)
+%         (9e6,  1162)
+%         (10e6, 1293)
+%       };
+%       \addlegendentry{C (unverified)};
+%
+%       \addplot[color=green,mark=diamond*] coordinates {
+%         (1e6, 100 )
+%         (2e6, 204 )
+%         (3e6, 304 )
+%         (4e6, 412 )
+%         (5e6, 514 )
+%         (6e6, 617 )
+%         (7e6, 726 )
+%         (8e6, 854 )
+%         (9e6, 945 )
+%         (10e6,1045)
+%       };
+%       \addlegendentry{LLVM};
+%
+%
+%     \end{loglogaxis}
+%   \end{tikzpicture}
+%
+%   Search for the values $0,2,\ldots<5n$ in an array $[0,5,\ldots<5n]$
+%
+% %     $1$      & 121  & 100  & 1999   & 139      \\
+% %     $2$      & 251  & 204  & 4209   & 289      \\
+% %     $3$      & 379  & 304  & 6516   & 440      \\
+% %     $4$      & 513  & 412  & 8843   & 600      \\
+% %     $5$      & 635  & 514  & 11494  & 756      \\
+% %     $6$      & 767  & 617  & 13646  & 917      \\
+% %     $7$      & 908  & 726  & 16032  & 1076     \\
+% %     $8$      & 1038 & 854  & 18421  & 1250     \\
+% %     $9$      & 1162 & 945  & 20957  & 1409     \\
+% %     $10$     & 1293 & 1045 & 23409  & 1564     \\
+%
+% # Knuth Morris Pratt
+%   \begin{tikzpicture}
+%     \begin{semilogyaxis}[
+%       xlabel={Benchmark Set},
+%       xlabel near ticks,
+%       ylabel={Time/ms},
+%       legend style = {
+%         legend pos=outer north east,
+%         cells={anchor=west}
+%       },
+%       ybar=0pt,
+%       ymin=0, ymax=1e4,
+%       bar width=4pt,
+%       symbolic x coords={16-8,16-64,16-512,32-8,32-64,32-512,64-8,64-64,64-512},
+%       xtick=data,
+% %       nodes near coords,
+% %       nodes near coords align={vertical},
+%       x tick label style={rotate=45,anchor=east},
+%     ]
+%
+%       \addplot[color=blue,fill=blue] coordinates {
+%         (16-8,   4616)
+%         (16-64,  4621)
+%         (16-512, 4573)
+%         (32-8,   4471)
+%         (32-64,  4523)
+%         (32-512, 4456)
+%         (64-8,   4433)
+%         (64-64,  4514)
+%         (64-512, 4411)
+%       };
+%       \addlegendentry{Imperative HOL};
+%
+%       \addplot[color=red,fill=red] coordinates {
+%         (16-8,   499)
+%         (16-64,  511)
+%         (16-512, 513)
+%         (32-8,   453)
+%         (32-64,  465)
+%         (32-512, 463)
+%         (64-8,   418)
+%         (64-64,  420)
+%         (64-512, 416)
+%       };
+%       \addlegendentry{C++ (unverified)};
+%
+%       \addplot[color=green,fill=green] coordinates {
+%         (16-8,   597)
+%         (16-64,  598)
+%         (16-512, 590)
+%         (32-8,   551)
+%         (32-64,  552)
+%         (32-512, 544)
+%         (64-8,   530)
+%         (64-64,  531)
+%         (64-512, 523)
+%       };
+%       \addlegendentry{LLVM};
+%
+%
+%     \end{semilogyaxis}
+%   \end{tikzpicture}
+%
+%   Execute $a$-$l$ benchmark set from StringBench. Stop at first match.
+%
+%
+% %     16-8     & 499 & 597  & 4616 & 918 \\
+% %     16-64    & 511 & 598  & 4621 & 926 \\
+% %     16-512   & 513 & 590  & 4573 & 909 \\
+% %     32-8     & 453 & 551  & 4471 & 850 \\
+% %     32-64    & 465 & 552  & 4523 & 857 \\
+% %     32-512   & 463 & 544  & 4456 & 840 \\
+% %     64-8     & 418 & 530  & 4433 & 803 \\
+% %     64-64    & 420 & 531  & 4514 & 809 \\
+% %     64-512   & 416 & 523  & 4411 & 799 \\
+%
+% \renewcommand{\insertsectitle}{}
+%
+% # Conclusions
+%   * Fast and verified algorithms
+%     * LLVM code generator
+%     * using Refinement Framework
+%     * manageable proof overhead
+%   * Case studies
+%     * generate really fast, verified code
+%     * re-use existing proofs
+%   * Current/future work
+%     * more complex algorithms
+%       * promising (preliminary) results for SAT-solver, Prim's algorithm
+%     * deeply embedded semantics
+%     * generic Sepref (Imp-HOL, LLVM) $\times$ (nres, nres+time)
+%
+%   \vfill
+%
+%   \url{https://github.com/lammich/isabelle_llvm}
+%
+%
+% % #! Malloc
+% %   {\small
+% %   \begin{minipage}[t]{.46\textwidth}
+% % %    \begin{lstlisting}
+% % %      allocn (v::val) (s::nat) = do {
+% % %        bs <- get;
+% % %        set (bs@[Some (replicate s v)]);
+% % %        return (ADDR |bs| 0 []) }
+% % %    \end{lstlisting}
+% %   \end{minipage}
+% %   \hfill
+% %   \begin{minipage}[t]{.52\textwidth}
+% %   \begin{lstlisting}
+% %     ll_malloc (s::n word) :: 'a ptr =
+% %       assert (n~=0)
+% %       allocn (zero_init TYPE('a))
+% %   \end{lstlisting}
+% %   \end{minipage}
+% %   }
+%
+%
+%
+%
+%
+% % # Motivation
+% %   *<+-> SAT solvers
+% %     * Elaborate optimizations + heuristics
+% %     * Highly complex $\implies$ error prone
+% %     * Used in safety critical applications
+% %   *<+-> Certification
+% %     * SAT: Solution. Easy!
+% %     * UNSAT: De-facto standard: DRAT
+% %   *<+-> DRAT certificate
+% %     * Still requires highly optimized checker
+% %     * Main work spent on unit propagation (BCP)
+% %     * drat-trim is optimized C program
+% %       * We found several bugs (now fixed)
+% %
+% % # DRAT
+% %   * Certificate is list of clause additions and deletions
+% %   * Added clauses proved redundant
+% %     * Must have RUP or RAT property
+% %     * Proof based on BCP
+% %   * Last clause: Empty clause
+% %
+% % # Enriched Certificates
+% %   Crucial idea
+% %     * Unverified \emph{generator} records unit/conflict clauses
+% %     * Verified \emph{checker} replays BCP
+% %     * \emph{Finding} unit clause replaced by \emph{checking} unit clause
+% %   \pause
+% %
+% %   History
+% %     * Cruz-Filipe et al.~[TACAS 2017] for DRUP
+% %     * P.~L. [CADE 2017] extended to DRAT
+% %     * independently: Cruz-Filipe et al.~[CADE 2017] extended to DRAT
+% %
+% %
+% % # Workflow
+% %   \begin{tikzpicture}[node distance = 1.5cm, auto]
+% %     \tikzstyle{tool}=[shape=rectangle,draw, minimum size = 5mm]
+% %     \tikzstyle{artf}=[minimum size = 5mm]
+% %
+% %     \node[tool] (sats) {SAT Solver};
+% %     \uncover<2->{\node[artf] (drat) [below of = sats] {DRAT certificate};}
+% %     \uncover<3->{\node[tool] (gratgen) [below of = drat] {gratgen};}
+% %     \uncover<1->{\node[artf] (cnf) [left of = gratgen, anchor=east] {CNF formula};}
+% %     \uncover<4->{\node[artf] (grat) [below of = gratgen] {GRAT certificate};}
+% %     \uncover<5->{\node[tool] (gratchk) [below of = grat] {gratchk};}
+% %     \uncover<6->{\node[artf] (res) [right of = gratchk, anchor=west] {s UNSAT / s ERROR};}
+% %
+% %
+% %     \draw[->] (cnf) |- (sats);
+% %     \uncover<2->{\draw[->] (sats) to (drat);}
+% %     \uncover<3->{\draw[->] (cnf) to (gratgen);}
+% %     \uncover<3->{\draw[->] (drat) to (gratgen);}
+% %     \uncover<4->{\draw[->] (gratgen) to (grat);}
+% %     \uncover<5->{\draw[->] (grat) to (gratchk);}
+% %     \uncover<6->{\draw[->] (gratchk) to (res);}
+% %     \uncover<5->{\draw[->] (cnf) |- (gratchk);}
+% %
+% %
+% %     \node<7->[rectangle callout, draw, callout absolute pointer=(gratgen.east), above right = of gratgen, align=left] {Expensive \\ Complex \\ Highly optimized};
+% %     \node<8->[rectangle callout, draw, callout absolute pointer=(gratchk.east), above right = of gratchk, align=left] {Cheap \\ Simple \\ Formally verified};
+% %
+% %   \end{tikzpicture}
+% %
+% % # Backwards Checking
+% %   * Forward phase: Add lemmas, but do no proofs
+% %   * Backwards phase: Remove lemma and prove it
+% %     * Mark lemmas required for proof
+% %     * Skip unmarked lemmas
+% %   * Core first heuristics
+% %     * Prefer marked lemmas when searching for proof
+% %     * Goal: Reduce newly marked lemmas
+% %
+% % # Novel Optimizations (Compared to drat-trim)
+% %   * Multithreaded proving
+% %     * Multiple threads in backwards phase
+% %     * Synchronize on proved/marked lemmas
+% %     * Significantly decreases wall-clock time
+% %     * Significantly increases memory usage
+% %   * Separate watchlists
+% %     * Maintain separate watchlists for marked/unmarked clauses
+% %     * Less work in (hot) unit propagation loop
+% %     * More work in (cool) analyzer that marks clauses
+% %   * RAT-run heuristics
+% %     * Re-use gathered RAT candidates for next lemma's proof
+% %     * RAT candidates are particular expensive to gather
+% %     * Reuse possible in many cases
+% %
+% % % # Perhaps animation:
+% % %   * One thread: Goto next marked lemma, unit-propagation, analyze conflict, mark lemmas
+% % %
+% % %   * Multiple threads: Goto next marked lemma, try to acquire, up, ana-conf, mark
+% %
+% %
+% % \newcommand{\annot}[1]{{\footnotesize\color{red}{#1}}}
+% %
+% % \newcommand{\uc}[2]{\uncover<#1->{#2}}
+% % # Benchmark Results
+% %   \begin{uncoverenv}<1->
+% %   Using 2016 SAT competition main track:
+% %     * cmsat: 110 UNSAT, 64 SAT  (many RAT lemmas)
+% %     * riss6: 128 UNSAT          (Silver medalist, but only RUP)
+% %   \end{uncoverenv}
+% %
+% %   \vfill
+% %
+% %
+% %   \begin{uncoverenv}<2->
+% %   \begin{tabular}{c|c|c|c|c|}
+% %             & lrat*                             & drat-trim                         & grat/1          & grat/8                    \\\hline
+% %       cmsat & \uc{3}{51h \annot{2xT/O, 1xSEGF}} & \uc{4}{42h \annot{2xT/O, 1xSEGF}} & \uc{5}{17h}     & \uc{6}{7h               } \\\hline
+% %       riss6 & \uc{3}{42h}                       & \uc{4}{30h                      } & \uc{5}{26h}     & \uc{6}{14h \annot{1xOOM}} \\\hline\hline
+% %     $\Sigma$& \uc{3}{93h}                       & \uc{4}{72h                      } & \uc{5}{44h}     & \uc{6}{21h              } \\\hline
+% %   \end{tabular}
+% %   {\tiny\vspace*{1em}}
+% %
+% %   {\tiny Wall-clock times, excluded the 3 certificates that drat-trim failed on\\
+% %   \begin{tabular}{ll}
+% %   {\color{red} T/O} &--- Timeout after 20.000s \\
+% %   {\color{red} SEGF} &--- crashed with SIGSEGV \\
+% %   {\color{red} OOM} &--- out of memory (128GiB) \\
+% %    {*} &--- Incremental version, [Heule et al., ITP'17] \\
+% %   \end{tabular}
+% %   }
+% %   \end{uncoverenv}
+% %
+% %   \vfill
+% %   \begin{uncoverenv}<7->
+% %   gratchk time: 12\% (cmsat: 6\%, riss6: 16\%)
+% %   \end{uncoverenv}
+% %
+% %   \vfill
+% %
+% %   \begin{uncoverenv}<8->
+% %   SAT mode: gratchk verified all 64 certificates in 40s
+% %   \end{uncoverenv}
+% %
+% %
+% % #![t] Demo
+% % %   * Gratgen, gratchk, gratgen/8
+% % %   * If possible, on lxcisa0!
+% % %
+% % %   * Perhaps gratgen no-core-first?
+% % %
+% % %   * Use rotmul.miter.shuffled-as.sat03-356 ... good to demonstrate RAT-run heuristics, multithreading speedup
+% %   \scriptsize
+% %   \begin{onlyenv}<1>
+% %   \begin{verbatim}
+% %   ls -1hs rotmul.miter.shuffled-as.sat03-356.{cnf,drat}
+% %   688K rotmul.miter.shuffled-as.sat03-356.cnf
+% %    30M rotmul.miter.shuffled-as.sat03-356.drat
+% %   \end{verbatim}
+% %   \end{onlyenv}
+% %
+% %   \begin{onlyenv}<2>
+% %   \begin{verbatim}
+% %   $ drat-trim rotmul.miter.shuffled-as.sat03-356.{cnf,drat}
+% %   c parsing input formula with 5980 variables and 35229 clauses
+% %   c finished parsing
+% %   c detected empty clause; start verification via backward checking
+% %   c 30476 of 35229 clauses in core
+% %   c 84401 of 219768 lemmas in core using 3834963 resolution steps
+% %   c 2162 RAT lemmas in core; 37038 redundant literals in core lemmas
+% %   s VERIFIED
+% %   c verification time: 13.773 seconds
+% %   \end{verbatim}
+% %   \end{onlyenv}
+% %
+% %   \begin{onlyenv}<3>
+% %   \begin{verbatim}
+% %   $ time ./grat.sh rotmul.miter.shuffled-as.sat03-356
+% %   [... output shortened ...]
+% %   c Timing statistics (ms)
+% %   c Overall:  7246
+% %
+% %   c Lemma statistics
+% %   c RUP lemmas:  79298
+% %   c RAT lemmas:  2183
+% %   c   RAT run heuristics:   1292
+% %
+% %   c Reading cnf
+% %   c Reading lemmas
+% %   c Done
+% %   c Verifying unsat (split certificate)
+% %   s VERIFIED UNSAT
+% %
+% %   real    0m1.012s
+% %   user    0m0.984s
+% %   sys     0m0.028s
+% %
+% %   real    0m8.268s
+% %   user    0m8.168s
+% %   sys     0m0.100s
+% %
+% %   \end{verbatim}
+% %   \end{onlyenv}
+% %
+% %   \begin{onlyenv}<4>
+% %   \begin{verbatim}
+% %   $ time ./grat.sh rotmul.miter.shuffled-as.sat03-356 -j 3
+% %   [... output shortened ...]
+% %   c Timing statistics (ms)
+% %   c Overall:  4386
+% %
+% %   c Lemma statistics
+% %   c RUP lemmas:  79529
+% %   c RAT lemmas:  2169
+% %   c   RAT run heuristics:   1269
+% %
+% %   c Reading cnf
+% %   c Reading lemmas
+% %   c Done
+% %   c Verifying unsat (split certificate)
+% %   s VERIFIED UNSAT
+% %
+% %   real    0m1.011s
+% %   user    0m0.988s
+% %   sys     0m0.020s
+% %
+% %   real    0m5.407s
+% %   user    0m12.120s
+% %   sys     0m0.124s
+% %
+% %   \end{verbatim}
+% %   \end{onlyenv}
+% %
+% %   \begin{onlyenv}<5>
+% %   \begin{verbatim}
+% %   $ ls -1hs rotmul.miter.shuffled-as.sat03-356.grat?
+% %   5,5M rotmul.miter.shuffled-as.sat03-356.gratl
+% %    17M rotmul.miter.shuffled-as.sat03-356.gratp
+% %   \end{verbatim}
+% %   \end{onlyenv}
+% %
+% %
+% %   \begin{onlyenv}<6>
+% %   \begin{verbatim}
+% %   $ ls -1hs unif-c500-v250-s1228594393.{cnf,sat}
+% %   8,0K unif-c500-v250-s1228594393.cnf
+% %   4,0K unif-c500-v250-s1228594393.sat
+% %
+% %   $ time gratchk sat unif-c500-v250-s1228594393.{cnf,sat}
+% %   c Reading cnf
+% %   c Reading proof
+% %   c Done
+% %   c Verifying sat
+% %   s VERIFIED SAT
+% %
+% %   real    0m0.001s
+% %   user    0m0.000s
+% %   sys     0m0.000s
+% %   \end{verbatim}
+% %   \end{onlyenv}
+% %
+% %
+% % # Conclusions
+% %   Fast SAT solver certification tool
+% %   * SAT and UNSAT certificates
+% %   * Strong formal correctness guarantees
+% %     * formally verified down to int array representing formula
+% %   * Available under BSD-style license
+% %
+% %   \vfill
+% %   \center \url{http://www21.in.tum.de/~lammich/grat/}
+%
+%
+% %   Plot:
+% %     *# Use rotmul.miter.shuffled-as.sat03-356
+% %     * run drat-trim
+% %     * run grat toolchain
+% %     * run grat toolchain with multiple threads (laptop 3, lxcisa0 8)
+% %     * Show sizes of certificates - effective trimming!
+%
+%
+%
+%
+%
+%
+%
+%
+% % % ORIGINAL CADE TALK
+% %
+% % # SAT
+% % %   *<+-> Find solution to cnf formula
+% % %     * Widely used, e.g. in hardware verification
+% % %     * NP-complete (intractable)
+% %   *<+-> SAT solvers
+% %     * Elaborate optimizations + heuristics
+% %     * Highly complex $\implies$ error prone
+% %     * Safety critical
+% %   *<+-> Certification
+% %     * SAT solver produces certificate
+% %     * Checked by simpler program
+% %   *<+-> SAT certificate
+% %     * Valuation, almost trivial to check
+% %   *<+-> UNSAT certificate
+% %     * De-facto standard: DRAT
+% %     * Demanded by SAT competitions
+% %     * Supported by most modern SAT solvers
+% %
+% % # DRAT-Certificate
+% %   *<+-> List of clause additions (lemmas) and deletions
+% %   *<+-> Each lemma is \emph{redundant} wrt. current clauses
+% %     *<+-> Must have RAT property
+% %   *<+-> Last lemma is empty clause
+% %
+% %   \uncover<+->{
+% %   \begin{definition}
+% %     Clause $C$ has RAT wrt.\ formula $F$ iff
+% %       *{}: $(F \wedge \neg C)^{\textrm u} = \{\square\}$
+% %       *or: $\exists l\in C.~\forall D\in F.~\neg l\in D \implies ((F\wedge \neg C)^{\textrm u}\wedge\neg D)^{\textrm u} = \{\square\}$
+% %     where $F^{\textrm u}$ means \emph{unit propagation}.
+% %   \end{definition}
+% %   }
+% %
+% %
+% % # DRAT in Practice
+% %   *<+-> Unit propagation and finding RAT candidates
+% %     * Computationally expensive
+% %   *<+-> Requires highly optimized code and data structures
+% %     * Error prone + hard to (formally) verify
+% %   *<+-> drat-trim (Heule et al.)
+% %     * Standard tool used in SAT competitions
+% %     * Written in C, highly optimized, and many features
+% %     * Two-watched-literals, backwards checking, core-first, ...
+% %     * Sat/Unsat, trimming, unsat core, resolution graph, ...
+% % %     * Optimizations: 2wl, bwd checking, core-first, ...
+% % %     * Features: Sat/Unsat, trimming, unsat core, resolution graph, ...
+% %     *<+-> We found a few bugs (now mostly fixed)
+% %       * Erroneous pivot literal check
+% %       * Numeric overflows in parser
+% %       * Buffer overflows
+% %
+% %
+% % # Story of GRAT
+% %   *<+-> I was verifying fast DRAT-checker (in Isabelle)
+% %   *<+-> Heard about GRIT [Cruz-Filipe et al., TACAS'17]
+% %     * Two-phase checker, but only for DRUP
+% %     * First phase: adapted drat-trim tool
+% %     * Second phase: verified in Coq
+% %     * Both phases: Approx. 2x slower than drat-trim
+% %   *<+-> Re-targeted my work to extend this to full DRAT
+% %     * Adding multi-threading to first phase
+% %     * Using my powerful refinement tools for fast second phase
+% %     * My tool was on par with drat-trim, albeit formally verified
+% %   *<+-> After CADE-deadline
+% %     * Added novel optimizations
+% %     * Now significantly faster than drat-trim
+% %     * New results included in this talk + proceedings paper
+% %   *<+-> Independently: LRAT was developed
+% %     * Cruz-Filipe, Heule, et al.
+% %
+% %
+% % # Enriched Certificates
+% %   \begin{onlyenv}<1>
+% %   \begin{tikzpicture}[node distance = 1.5cm, auto]
+% %     \tikzstyle{tool}=[shape=rectangle,draw, minimum size = 5mm]
+% %     \tikzstyle{artf}=[minimum size = 5mm]
+% %
+% %     \node[artf] (drat) {DRAT certificate};
+% %     \node[tool] (drat-trim) [below of = drat] {drat-trim};
+% %     \node[artf] (cnf) [left of = drat-trim, anchor=east] {CNF formula};
+% %     \node[artf] (res) [right of = drat-trim, anchor=west] {s UNSAT / s ERROR};
+% %
+% %     \draw[->] (cnf) to (drat-trim);
+% %     \draw[->] (drat) to (drat-trim);
+% %     \draw[->] (drat-trim) to (res);
+% %   \end{tikzpicture}
+% %   \end{onlyenv}
+% %
+% %   \begin{onlyenv}<2->
+% %   \begin{tikzpicture}[node distance = 1.5cm, auto]
+% %     \tikzstyle{tool}=[shape=rectangle,draw, minimum size = 5mm]
+% %     \tikzstyle{artf}=[minimum size = 5mm]
+% %
+% %     \node[artf] (drat) {DRAT certificate};
+% %     \node[tool] (gratgen) [below of = drat] {gratgen};
+% %     \node[artf] (cnf) [left of = gratgen, anchor=east] {CNF formula};
+% %     \node[artf] (grat) [below of = gratgen] {GRAT certificate};
+% %     \node[tool] (gratchk) [below of = grat] {gratchk};
+% %     \node[artf] (res) [right of = gratchk, anchor=west] {s UNSAT / s ERROR};
+% %
+% %
+% %     \draw[->] (cnf) to (gratgen);
+% %     \draw[->] (drat) to (gratgen);
+% %     \draw[->] (gratgen) to (grat);
+% %     \draw[->] (grat) to (gratchk);
+% %     \draw[->] (gratchk) to (res);
+% %     \draw[->] (cnf) |- (gratchk);
+% %
+% %     \begin{uncoverenv}<3->
+% %     \node[rectangle callout, draw, callout absolute pointer=(gratgen.east), above right = of gratgen, align=left] {Expensive \\ Complex \\ Highly optimized};
+% %     \end{uncoverenv}
+% %     \node<4->[rectangle callout, draw, callout absolute pointer=(gratchk.east), above right = of gratchk, align=left] {Cheap \\ Simple \\ Formally verified};
+% %
+% %   \end{tikzpicture}
+% %   \end{onlyenv}
+% %
+% % # Moving Complexity to gratgen
+% %   *<+-> Checking direction
+% %     * gratgen works in backwards mode, trims certificate
+% %     * gratchk works in forward mode
+% %   *<+-> Unit propagation
+% %     * gratgen outputs unit/conflict clauses
+% %     * gratchk only checks that clauses are unit/conflict
+% %     * Cruz-Filipe et al. [TACAS'17]
+% %   *<+-> RAT candidate counts
+% %     * gratgen gathers RAT candidates, and outputs RAT counts
+% %     * gratchk only checks that candidates are exhaustive
+% %       * maintaining candidate lists based on RAT counts
+% %
+% % # gratgen
+% %   *<+-> Initially: Clone of drat-trim's backwards mode
+% %     * Uses two-watched literals, core-first unit propagation
+% %     * Implemented in \CC11
+% %   *<+->+: Separate watchlists: Faster core-first propagation
+% %   *<+->+: RAT-run heuristics: Faster RAT-candidate finding
+% %   *<+->+: Optional multithreading: Parallel checking of lemmas
+% %
+% % # gratchk
+% %   *<+-> Streaming for lower memory footprint
+% %     * Unit/conflict clauses and deletion information not kept in memory
+% %   *<+-> Formally verified with Isabelle/HOL
+% % %     * LCF-style prover, reducing trust to small logical inference kernel
+% % %   * Uses imperative data structures
+% % %     * quite fast for verified program!
+% %   *<+-> Verification uses stepwise refinement approach
+% %
+% % # Stepwise Refinement
+% %   *<+-> Abstract description of algorithm
+% %     * Easy to verify
+% %   *<+-> Refine towards implementation
+% %     * Small, independent, correctness preserving steps
+% %   *<+-> Goal: Modularization of proofs
+% %     * Efficient implementation does not affect abstract correctness proof
+% %     * Making big proofs manageable in first place
+% %   *<+-> Isabelle Refinement Framework
+% %     * Powerful tool support for refinement proofs
+% %     * Library of verified (imperative) data structures
+% %
+% % #! Refinement of gratchk --- Checker State
+% %   \begin{uncoverenv}<1->
+% %   Abstract: Using Sets and Functions
+% %   \begin{lstlisting}
+% %     literal = Pos var | Neg var
+% %     clause = literal set
+% %     clausemap = (id => clause option) \<times> (literal => id set option)
+% %     state = id \<times> clausemap \<times> (var => bool option)
+% %   \end{lstlisting}
+% %   \end{uncoverenv}
+% %
+% %   \begin{uncoverenv}<2->
+% %   Refinement \#1: Using iterators for clauses, lists for RAT candidates
+% %   \begin{lstlisting}
+% %     clausemap1 = (id => $\color{red}\textsf{it}$) \<times> (literal => id $\color{red}\textsf{list}$ option)
+% %     state1 = id \<times> clausemap1 \<times> (var => bool option)
+% %   \end{lstlisting}
+% %   \end{uncoverenv}
+% %
+% %   \begin{uncoverenv}<3->
+% %   Refinement \#2: Iterators as indexes into array, literals as integers, functions as arrays
+% %   \begin{lstlisting}
+% %     clausedb2 = $\color{red}\textsf{int array}$
+% %     clausemap2 = $\color{red}\textsf{nat array}$ \<times> id list option $\color{red}\textsf{array}$
+% %     state2 = id \<times> clausemap2 \<times> $\color{red}\textsf{nat array}$
+% %   \end{lstlisting}
+% %   \end{uncoverenv}
+% %
+% % #! Final Correctness Statement
+% %   \begin{uncoverenv}<+->
+% %   \begin{lstlisting}
+% %       <DBi |->$_a$ DB>
+% %         verify_unsat_impl DBi F_end it prf
+% %       <\<lambda>r. DBi |->$_a$ DB * \<up>(r ==> /@formula_unsat_spec@/ DB F_end)>
+% %   \end{lstlisting}
+% %   \end{uncoverenv}
+% %
+% %   \begin{uncoverenv}<+->
+% %   where
+% %   \begin{lstlisting}
+% %     /@formula_unsat_spec@/ :: "int list => nat => bool"
+% %     /@formula_unsat_spec@/ DB F_end == (
+% %       let lst = tl (take F_end DB) in
+% %         1 < F_end \<and> F_end \<le> length DB \<and> last lst = 0
+% %         \<and> (\<nexists>\<sigma>. /@assn_consistent@/ \<sigma> \<and> (\<forall>C\<in>set (tokenize 0 lst). \<exists>l\<in>set C. \<sigma> l)))
+% %   \end{lstlisting}
+% %   \end{uncoverenv}
+% %
+% %   \begin{uncoverenv}<+->
+% %   where
+% %   \begin{lstlisting}
+% %     /@assn_consistent@/ :: "(int => bool) => bool"
+% %     "/@assn_consistent@/ \<sigma> = (\<forall>x. x\<noteq>0 ==> \<not> \<sigma> (-x) = \<sigma> x)"
+% %   \end{lstlisting}
+% %   \end{uncoverenv}
+% %
+% %   \begin{uncoverenv}<+->
+% %   Trusted base: Hoare triples + standard list functions
+% %   \end{uncoverenv}
+% %
+% % #! Generating gratchk
+% %   *<+-> Export from Isabelle to Standard/ML
+% %     * Trusted: Isabelle code generator (extended pretty printing)
+% %   *<+-> Add parser and command line interface
+% %     * Trusted: Parsing DIMACS to int array (<100 LOC, simple)
+% %       * Standard ML detects overflows by design
+% %     * Trusted: CLI (straightforward)
+% %   *<+-> Compile with MLton
+% %     * Trusted: Compiler
+% %
+% % \newcommand{\annot}[1]{{\footnotesize\color{red}{#1}}}
+% %
+% % \newcommand{\uc}[2]{\uncover<#1->{#2}}
+% %
+% %
+% % # Benchmark Results
+% %   \begin{uncoverenv}<1->
+% %   Using 2016 SAT competition main track:
+% %     * cmsat: 110 UNSAT, 64 SAT  (many RAT lemmas)
+% %     * riss6: 128 UNSAT          (Silver medalist, but only RUP)
+% %   \end{uncoverenv}
+% %
+% %   \vfill
+% %
+% %
+% %   \begin{uncoverenv}<2->
+% %   \begin{tabular}{c|c|c|c|c|}
+% %             & lrat*                             & drat-trim                         & grat/1          & grat/8                    \\\hline
+% %       cmsat & \uc{3}{51h \annot{2xT/O, 1xSEGF}} & \uc{4}{42h \annot{2xT/O, 1xSEGF}} & \uc{5}{17h}     & \uc{6}{7h               } \\\hline
+% %       riss6 & \uc{3}{42h}                       & \uc{4}{30h                      } & \uc{5}{26h}     & \uc{6}{14h \annot{1xOOM}} \\\hline\hline
+% %     $\Sigma$& \uc{3}{93h}                       & \uc{4}{72h                      } & \uc{5}{44h}     & \uc{6}{21h              } \\\hline
+% %   \end{tabular}
+% %   {\tiny\vspace*{1em}}
+% %
+% %   {\tiny Wall-clock times, excluded the 3 certificates that drat-trim failed on\\
+% %   \begin{tabular}{ll}
+% %   {\color{red} T/O} &--- Timeout after 20.000s \\
+% %   {\color{red} SEGF} &--- crashed with SIGSEGV \\
+% %   {\color{red} OOM} &--- out of memory (128GiB) \\
+% %    {*} &--- Incremental version, [Heule et al., ITP'17] \\
+% %   \end{tabular}
+% %   }
+% %   \end{uncoverenv}
+% %
+% %   \vfill
+% %   \begin{uncoverenv}<7->
+% %   gratchk time: 12\% (cmsat: 6\%, riss6: 16\%)
+% %   \end{uncoverenv}
+% %
+% %   \vfill
+% %
+% %   \begin{uncoverenv}<8->
+% %   SAT mode: cmsat: 40s
+% %   \end{uncoverenv}
+% %
+% % # Conclusions
+% %   Fast SAT solver certification tool
+% %   * SAT and UNSAT certificates
+% %   * Strong formal correctness guarantees
+% %     * formally verified down to int array representing formula
+% %   * Available under BSD-style license
+% %
+% %   \vfill
+% %   \center \url{http://www21.in.tum.de/~lammich/grat/}
+% %
+% %   \vfill
+% %   Tool Paper on SAT'2017
+% %
+% %
+% %
+% % %
+% % % # Enriched Certificates
+% % %   * Idea: Replace unit-propagation by unit checking
+% % %     * Cruz-Filipe et al. [TACAS'17]: For (weaker) DRUP certificates
+% % %   * During certificate checking: $(F \wedge \neg C)^{\textrm u} = \lightning$
+% % %     * Output list of clauses in order they become unit
+% % %     * Output conflict clause
+% % %     * Trim certificate
+% % %   * Then run 2nd checker
+% % %     * Against original formula, using enriched certificate
+% % %     * Only check that clauses are actually unit/conflict
+% % %     * Simple + cheap $\implies$ amenable to formal verification
+% % %
+% %
+    
+\end{frame}
+\end{document}
+
+
+
+

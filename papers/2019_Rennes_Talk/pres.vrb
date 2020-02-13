@@ -1,0 +1,12 @@
+\frametitle{Example: Binary Search --- Generated Code}
+Produces LLVM code and header file:
+  \begin{lstlisting}[language=C]
+    typedef uint64_t elem_t;
+    typedef struct {
+      int64_t len;
+      elem_t*data;
+    } larray_t;
+
+    int64_t bin_search(larray_t,elem_t);
+  \end{lstlisting}
+
