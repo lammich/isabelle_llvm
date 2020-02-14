@@ -2,7 +2,7 @@
    Minor additions by Peter Lammich
 *)
 theory Bits_Natural
-  imports "HOL-Word.Word"
+  imports "HOL-Word.Word" Word_Lib.Aligned
 begin
 
 (* TODO: Move *)
@@ -304,14 +304,29 @@ lemmas AND_upper_nat1'' [simp] = order_le_less_trans [OF AND_upper_nat1]
   
 lemmas AND_upper_nat2' [simp] = order_trans [OF AND_upper_nat2]
 lemmas AND_upper_nat2'' [simp] = order_le_less_trans [OF AND_upper_nat2]
-  
 
-  
-  
-  
-  
-  
-  
-  
-  
+
+lemma msb_shiftr_nat [simp]: "msb ((x :: nat) >> r) \<longleftrightarrow> msb x"
+  by (auto simp: msb_nat_def shiftr_nat_def simp flip: shiftr_int_def)
+
+lemma bintrunc_le: \<open>a \<ge> 0 \<Longrightarrow> a < b \<Longrightarrow> bintrunc n a < b\<close>
+  by (smt bintr_lt2p bintrunc_mod2p mod_pos_pos_trivial)
+
+
+lemma msb_shiftr_word [simp]: "r < LENGTH('a) \<Longrightarrow> msb ((x :: 'a :: {len} word) >> r) \<longleftrightarrow> ((r = 0 \<and> msb x))"
+  apply (cases r)
+  apply (auto simp: shiftr_nat_def simp flip: shiftr_int_def sint_uint)
+  apply (auto simp: bl_shiftr word_size msb_word_def 
+    simp flip: sint_uint[unfolded One_nat_def] hd_bl_sign_sint)
+  done
+
+lemma msb_shiftl_word [simp]: "r < LENGTH('a)  \<Longrightarrow> x << r < 2 ^ (LENGTH('a) - Suc 0) \<Longrightarrow>
+     msb ((x :: 'a :: {len} word) << r) = (r = 0 \<and> msb x)"
+  using less_is_drop_replicate[of \<open>x << r\<close> \<open>(LENGTH('a) - Suc 0)\<close>]
+  apply (cases r)
+  apply (auto simp: shiftl_nat_def simp flip: shiftl_int_def sint_uint)
+  apply (auto simp: bl_shiftl word_size msb_word_def 
+    simp flip: sint_uint[unfolded One_nat_def] hd_bl_sign_sint)
+  done
+
 end
