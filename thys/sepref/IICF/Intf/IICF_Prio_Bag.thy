@@ -15,14 +15,14 @@ subsection \<open>Operations\<close>
   context
     fixes prio:: "'a \<Rightarrow> 'b::linorder"
   begin  
-    definition "mop_prio_pop_min b = ASSERT (b\<noteq>{#}) \<then> SPEC (\<lambda>(v,b'). 
+    definition "mop_prio_pop_min b = doN {ASSERT (b\<noteq>{#}); SPEC (\<lambda>(v,b'). 
         v \<in># b
       \<and> b'=b - {#v#} 
-      \<and> (\<forall>v'\<in>set_mset b. prio v \<le> prio v'))"
+      \<and> (\<forall>v'\<in>set_mset b. prio v \<le> prio v'))}"
 
-    definition "mop_prio_peek_min b \<equiv> ASSERT (b\<noteq>{#}) \<then> SPEC (\<lambda>v. 
+    definition "mop_prio_peek_min b \<equiv> doN {ASSERT (b\<noteq>{#}); SPEC (\<lambda>v. 
           v \<in># b
-        \<and> (\<forall>v'\<in>set_mset b. prio v \<le> prio v'))"
+        \<and> (\<forall>v'\<in>set_mset b. prio v \<le> prio v'))}"
 
   end
 

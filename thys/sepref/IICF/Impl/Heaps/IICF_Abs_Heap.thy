@@ -170,7 +170,7 @@ text \<open>
     subsubsection \<open>Val-Of\<close>
     abbreviation (input) "val_of_pre l i \<equiv> valid l i"
     definition val_of_op :: "'a heap \<Rightarrow> nat \<Rightarrow> 'a nres" 
-      where "val_of_op l i \<equiv> ASSERT (i>0) \<then> mop_list_get l (i-1)"
+      where "val_of_op l i \<equiv> doN {ASSERT (i>0); mop_list_get l (i-1)}"
     lemma val_of_correct[refine_vcg]: 
       "val_of_pre l i \<Longrightarrow> val_of_op l i \<le> SPEC (\<lambda>r. r = val_of l i)"
       unfolding val_of_op_def val_of_def valid_def
@@ -188,7 +188,7 @@ text \<open>
     definition update :: "'a heap \<Rightarrow> nat \<Rightarrow> 'a \<Rightarrow> 'a heap" 
       where "update h i v \<equiv> h[i - 1 := v]"
     definition update_op :: "'a heap \<Rightarrow> nat \<Rightarrow> 'a \<Rightarrow> 'a heap nres" 
-      where "update_op h i v \<equiv> ASSERT (i>0) \<then> mop_list_set h (i-1) v"
+      where "update_op h i v \<equiv> doN {ASSERT (i>0); mop_list_set h (i-1) v}"
     lemma update_correct[refine_vcg]:
       "update_pre h i v \<Longrightarrow> update_op h i v \<le> SPEC(\<lambda>r. r = update h i v)"
       unfolding update_op_def update_def valid_def by refine_vcg auto

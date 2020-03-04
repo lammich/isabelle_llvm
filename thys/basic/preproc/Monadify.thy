@@ -213,7 +213,7 @@ begin
       val get_const_decls = Context.Proof #> Consts.get #> Item_Net.content
       
       fun prepare_const_decl t ctxt = let
-        val t = singleton (Variable.export_terms (Variable.auto_fixes t ctxt) ctxt) t
+        val t = singleton (Variable.export_terms (Proof_Context.augment t ctxt) ctxt) t
         
         val _ = is_Var (head_of t) andalso 
           (Pretty.block [

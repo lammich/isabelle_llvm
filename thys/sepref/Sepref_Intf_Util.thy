@@ -35,7 +35,7 @@ subsection \<open>Relation Interface Binding\<close>
 subsection \<open>Operations with Precondition\<close>
   definition mop :: "('a\<Rightarrow>bool) \<Rightarrow> ('a\<Rightarrow>'b nres) \<Rightarrow> 'a \<Rightarrow> 'b nres"
     \<comment> \<open>Package operation with precondition\<close>
-    where [simp]: "mop P f \<equiv> \<lambda>x. ASSERT (P x) \<then> f x"
+    where [simp]: "mop P f \<equiv> \<lambda>x. doN {ASSERT (P x); f x}"
   
   lemma param_op_mop_iff:
     assumes "(Q,P)\<in>R\<rightarrow>bool_rel"
@@ -72,7 +72,7 @@ subsection \<open>Operations with Precondition\<close>
     by (simp add: pw_leof_iff refine_pw_simps)
 
 
-  lemma assert_true_bind_conv: "ASSERT True \<then> m = m" by simp 
+  lemma assert_true_bind_conv: "doN {ASSERT True; m} = m" by simp 
 
   lemmas mop_alt_unfolds = curry_def curry0_def mop_def uncurry_apply uncurry0_apply o_apply assert_true_bind_conv
 
@@ -869,7 +869,7 @@ subsection \<open>ML-Level Declarations\<close>
                   |> HOLogic.mk_Trueprop
                   |> curry Logic.list_implies relconds
   
-                val ctxt = Variable.auto_fixes param_mop_t lthy 
+                val ctxt = Proof_Context.augment param_mop_t lthy 
                 
                 val tac = let
                   val p_thm = Local_Defs.unfold0 ctxt @{thms PR_CONST_def} p_thm
@@ -1331,19 +1331,19 @@ subsection \<open>Obsolete Manual Specification Helpers\<close>
     plain operations to monadic ones. Use with FCOMP.
   *)  
   lemma mk_mop_rl1:
-    assumes "\<And>x. mf x \<equiv> ASSERT (P x) \<then> RETURN (f x)"
+    assumes "\<And>x. mf x \<equiv> doN {ASSERT (P x); RETURN (f x)}"
     shows "(RETURN o f, mf) \<in> Id \<rightarrow> \<langle>Id\<rangle>nres_rel"
     unfolding assms[abs_def]
     by (auto intro!: nres_relI simp: pw_le_iff refine_pw_simps)
 
   lemma mk_mop_rl2:
-    assumes "\<And>x y. mf x y \<equiv> ASSERT (P x y) \<then> RETURN (f x y)"
+    assumes "\<And>x y. mf x y \<equiv> doN {ASSERT (P x y); RETURN (f x y)}"
     shows "(RETURN oo f, mf) \<in> Id \<rightarrow> Id \<rightarrow> \<langle>Id\<rangle>nres_rel"
     unfolding assms[abs_def]
     by (auto intro!: nres_relI simp: pw_le_iff refine_pw_simps)
 
   lemma mk_mop_rl3:
-    assumes "\<And>x y z. mf x y z \<equiv> ASSERT (P x y z) \<then> RETURN (f x y z)"
+    assumes "\<And>x y z. mf x y z \<equiv> doN {ASSERT (P x y z); RETURN (f x y z)}"
     shows "(RETURN ooo f, mf) \<in> Id \<rightarrow> Id \<rightarrow> Id \<rightarrow> \<langle>Id\<rangle>nres_rel"
     unfolding assms[abs_def]
     by (auto intro!: nres_relI simp: pw_le_iff refine_pw_simps)
@@ -1382,7 +1382,7 @@ subsection \<open>Obsolete Manual Specification Helpers\<close>
     done
 
   lemma mk_op_rl1:
-    assumes "\<And>x. mf x \<equiv> ASSERT (P x) \<then> RETURN (f x)"
+    assumes "\<And>x. mf x \<equiv> doN {ASSERT (P x); RETURN (f x)}"
     shows "(mf, RETURN o f) \<in> [P]\<^sub>f Id \<rightarrow> \<langle>Id\<rangle>nres_rel"
     apply (intro frefI nres_relI)
     apply (auto simp: assms)
@@ -1396,7 +1396,7 @@ subsection \<open>Obsolete Manual Specification Helpers\<close>
     done
 
   lemma mk_op_rl2:
-    assumes "\<And>x y. mf x y \<equiv> ASSERT (P x y) \<then> RETURN (f x y)"
+    assumes "\<And>x y. mf x y \<equiv> doN {ASSERT (P x y); RETURN (f x y)}"
     shows "(uncurry mf, uncurry (RETURN oo f)) \<in> [uncurry P]\<^sub>f Id\<times>\<^sub>rId \<rightarrow> \<langle>Id\<rangle>nres_rel"
     apply (intro frefI nres_relI)
     apply (auto simp: assms)
@@ -1410,7 +1410,7 @@ subsection \<open>Obsolete Manual Specification Helpers\<close>
     done
 
   lemma mk_op_rl3:
-    assumes "\<And>x y z. mf x y z \<equiv> ASSERT (P x y z) \<then> RETURN (f x y z)"
+    assumes "\<And>x y z. mf x y z \<equiv> doN {ASSERT (P x y z); RETURN (f x y z)}"
     shows "(uncurry2 mf, uncurry2 (RETURN ooo f)) \<in> [uncurry2 P]\<^sub>f (Id\<times>\<^sub>rId)\<times>\<^sub>rId \<rightarrow> \<langle>Id\<rangle>nres_rel"
     apply (intro frefI nres_relI)
     apply (auto simp: assms)

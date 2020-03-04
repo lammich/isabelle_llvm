@@ -93,11 +93,11 @@ define void @qs_quicksort(i64* %A, i64 %lo, i64 %hi) {
   start:
     %x = insertvalue { i64, i64 } zeroinitializer, i64 %lo, 0
     %xa = insertvalue { i64, i64 } %x, i64 %hi, 1
-    call void @LLVM_Examples_qs_quicksort_f_04246870 (i64* %A, { i64, i64 } %xa)
+    call void @LLVM_Examples_qs_quicksort_f_05774432 (i64* %A, { i64, i64 } %xa)
     ret void
 }
 
-define void @LLVM_Examples_qs_quicksort_f_04246870(i64* %A, { i64, i64 } %x) {
+define void @LLVM_Examples_qs_quicksort_f_05774432(i64* %A, { i64, i64 } %x) {
 
   start:
     %lo = extractvalue { i64, i64 } %x, 0
@@ -110,11 +110,11 @@ define void @LLVM_Examples_qs_quicksort_f_04246870(i64* %A, { i64, i64 } %x) {
     %tmpa = sub i64 %p, 1
     %xd = insertvalue { i64, i64 } zeroinitializer, i64 %lo, 0
     %xe = insertvalue { i64, i64 } %xd, i64 %tmpa, 1
-    call void @LLVM_Examples_qs_quicksort_f_04246870 (i64* %A, { i64, i64 } %xe)
+    call void @LLVM_Examples_qs_quicksort_f_05774432 (i64* %A, { i64, i64 } %xe)
     %tmpaa = add i64 %p, 1
     %xg = insertvalue { i64, i64 } zeroinitializer, i64 %tmpaa, 0
     %x1 = insertvalue { i64, i64 } %xg, i64 %hi, 1
-    call void @LLVM_Examples_qs_quicksort_f_04246870 (i64* %A, { i64, i64 } %x1)
+    call void @LLVM_Examples_qs_quicksort_f_05774432 (i64* %A, { i64, i64 } %x1)
     br label %ctd_if
 
   else:

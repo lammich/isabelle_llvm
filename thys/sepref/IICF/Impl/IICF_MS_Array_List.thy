@@ -8,11 +8,11 @@ begin
   definition "ms_empty N \<equiv> RETURN (0::nat,replicate N init)"
   definition "ms_is_empty \<equiv> \<lambda>(l,_). RETURN (l=0)"
   definition "ms_length \<equiv> \<lambda>(l,_). RETURN l"
-  definition "ms_push_back \<equiv> \<lambda>(l,xs) x. ASSERT (l < length xs) \<then> RETURN (l+1,xs[l:=x])"
-  definition "ms_last \<equiv> \<lambda>(l,xs). ASSERT (0<l \<and> l\<le>length xs) \<then> RETURN (xs!(l-1))"
-  definition "ms_butlast \<equiv> \<lambda>(l,xs). ASSERT (l>0) \<then> RETURN (l-1,xs)"
-  definition "ms_get \<equiv> \<lambda>(l,xs) i. ASSERT (i<length xs) \<then> RETURN (xs!i)"
-  definition "ms_set \<equiv> \<lambda>(l,xs) i x. ASSERT (i<length xs) \<then> RETURN (l,xs[i:=x])"
+  definition "ms_push_back \<equiv> \<lambda>(l,xs) x. doN {ASSERT (l < length xs); RETURN (l+1,xs[l:=x])}"
+  definition "ms_last \<equiv> \<lambda>(l,xs). doN {ASSERT (0<l \<and> l\<le>length xs); RETURN (xs!(l-1))}"
+  definition "ms_butlast \<equiv> \<lambda>(l,xs). doN {ASSERT (l>0); RETURN (l-1,xs)}"
+  definition "ms_get \<equiv> \<lambda>(l,xs) i. doN {ASSERT (i<length xs); RETURN (xs!i)}"
+  definition "ms_set \<equiv> \<lambda>(l,xs) i x. doN {ASSERT (i<length xs); RETURN (l,xs[i:=x])}"
 
   context begin
   

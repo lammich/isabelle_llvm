@@ -1936,24 +1936,24 @@ declare snat_sub_ovf_impl.refine[sepref_fr_rules]
 
 subsection \<open>Ad-Hoc Regression Tests\<close>  
   
-sepref_definition example1 is "\<lambda>x. ASSERT (x\<in>{-10..10}) \<then> 
-    RETURN (x<5 \<and> x\<noteq>2 \<longrightarrow> x-2 \<noteq> 0)" :: "(sint_assn' TYPE(7))\<^sup>k \<rightarrow>\<^sub>a (bool1_assn)" 
+sepref_definition example1 is "\<lambda>x. doN {ASSERT (x\<in>{-10..10});
+    RETURN (x<5 \<and> x\<noteq>2 \<longrightarrow> x-2 \<noteq> 0)}" :: "(sint_assn' TYPE(7))\<^sup>k \<rightarrow>\<^sub>a (bool1_assn)" 
   apply (annot_sint_const "TYPE(7)")
   apply sepref
   done
 
-sepref_definition example2 is "\<lambda>x. ASSERT (x\<in>{-10..10}) \<then> RETURN (x+(-1) * (7 smod 15) - 3 sdiv 2)" :: "(sint_assn' TYPE(7))\<^sup>k \<rightarrow>\<^sub>a (sint_assn' TYPE(7))" 
+sepref_definition example2 is "\<lambda>x. doN {ASSERT (x\<in>{-10..10}); RETURN (x+(-1) * (7 smod 15) - 3 sdiv 2)}" :: "(sint_assn' TYPE(7))\<^sup>k \<rightarrow>\<^sub>a (sint_assn' TYPE(7))" 
   apply (annot_sint_const "TYPE(7)")
   apply sepref
   done
 
-sepref_definition example1n is "\<lambda>x. ASSERT (x\<in>{2..10}) \<then> 
-    RETURN (x<5 \<and> x\<noteq>2 \<longrightarrow> x-2 \<noteq> 0)" :: "(snat_assn' TYPE(7))\<^sup>k \<rightarrow>\<^sub>a (bool1_assn)" 
+sepref_definition example1n is "\<lambda>x. doN {ASSERT (x\<in>{2..10});
+    RETURN (x<5 \<and> x\<noteq>2 \<longrightarrow> x-2 \<noteq> 0)}" :: "(snat_assn' TYPE(7))\<^sup>k \<rightarrow>\<^sub>a (bool1_assn)" 
   apply (annot_snat_const "TYPE(7)")
   apply sepref
   done
 
-sepref_definition example2n is "\<lambda>x. ASSERT (x\<in>{5..10}) \<then> RETURN ((x-1) * (7 mod 15) - 3 div 2)" 
+sepref_definition example2n is "\<lambda>x. doN {ASSERT (x\<in>{5..10}); RETURN ((x-1) * (7 mod 15) - 3 div 2)}" 
   :: "(snat_assn' TYPE(7))\<^sup>k \<rightarrow>\<^sub>a (snat_assn' TYPE(7))" 
   apply (annot_snat_const "TYPE(7)")
   apply sepref

@@ -80,7 +80,7 @@ definition [llvm_code]: "euclid (a::'a::len word) b \<equiv> doM {
   return a
 }"
   
-export_llvm (debug) (no_while) 
+export_llvm (debug) (*no_while*) 
   "euclid :: 64 word \<Rightarrow> 64 word \<Rightarrow> 64 word llM" is "uint64_t euclid (uint64_t, uint64_t)"
   file "code/euclid.ll"
 

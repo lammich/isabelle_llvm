@@ -123,7 +123,7 @@ translations
   "_doN_cons (_doN_let p t) (_doN_final s)"
     \<rightleftharpoons> "_doN_final (let p = t in s)"
   "_doN_block (_doN_final e)" \<rightharpoonup> "e"
-  "(m \<then> n)" \<rightharpoonup> "(m \<bind> (\<lambda>_. n))"
+(*  "(m \<then> n)" \<rightharpoonup> "(m \<bind> (\<lambda>_. n))"*)
 
 
 

@@ -188,7 +188,7 @@ begin
     using assms unfolding hfref_def by blast
 
   lemma hfref_to_ASSERT_conv: 
-    "NO_MATCH (\<lambda>_. True) P \<Longrightarrow> (a,b)\<in>[P]\<^sub>a\<^sub>d R \<rightarrow> S \<longleftrightarrow> (a,\<lambda>x. ASSERT (P x) \<then> b x) \<in> R \<rightarrow>\<^sub>a\<^sub>d S"  
+    "NO_MATCH (\<lambda>_. True) P \<Longrightarrow> (a,b)\<in>[P]\<^sub>a\<^sub>d R \<rightarrow> S \<longleftrightarrow> (a,\<lambda>x. doN {ASSERT (P x); b x}) \<in> R \<rightarrow>\<^sub>a\<^sub>d S"  
     unfolding hfref_def
     apply (clarsimp; safe; clarsimp?)
     apply (rule hn_refine_nofailI)

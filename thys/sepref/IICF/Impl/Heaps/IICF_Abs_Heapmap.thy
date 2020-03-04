@@ -100,10 +100,10 @@ begin
       "hm_key_of \<equiv> \<lambda>(pq,m) i. pq!(i - 1)"
 
     definition hm_key_of_op :: "('k,'v) ahm \<Rightarrow> nat \<Rightarrow> 'k nres" where
-      "hm_key_of_op \<equiv> \<lambda>(pq,m) i. ASSERT (i>0) \<then> mop_list_get pq (i - 1)"
+      "hm_key_of_op \<equiv> \<lambda>(pq,m) i. doN {ASSERT (i>0); mop_list_get pq (i - 1)}"
 
     lemma hm_key_of_op_unfold:
-      shows "hm_key_of_op hm i = ASSERT (hm_valid hm i) \<then> RETURN (hm_key_of hm i)"
+      shows "hm_key_of_op hm i = doN {ASSERT (hm_valid hm i); RETURN (hm_key_of hm i)}"
       unfolding hm_valid_def hm_length_def hm_key_of_op_def hm_key_of_def
       by (auto split: prod.splits simp: pw_eq_iff refine_pw_simps)
 
@@ -123,9 +123,9 @@ begin
     subsubsection \<open>Lookup\<close>
     abbreviation (input) hm_lookup where "hm_lookup \<equiv> heapmap_\<alpha>"
 
-    definition "hm_the_lookup_op k hm \<equiv> 
-      ASSERT (heapmap_\<alpha> hm k \<noteq> None \<and> hmr_invar hm) 
-      \<then> RETURN (the (heapmap_\<alpha> hm k))"
+    definition "hm_the_lookup_op k hm \<equiv> doN {
+      ASSERT (heapmap_\<alpha> hm k \<noteq> None \<and> hmr_invar hm);
+      RETURN (the (heapmap_\<alpha> hm k))}"
 
     (*definition "hm_the_lookup_op' hm k \<equiv> do {
       let (pq,ml) = hm;
@@ -659,7 +659,7 @@ begin
     subsubsection \<open>Lookup\<close>  
 
     definition hm_lookup_op :: "'k \<Rightarrow> ('k,'v) ahm \<Rightarrow> 'v option nres"
-      where "hm_lookup_op \<equiv> \<lambda>k hm. ASSERT (heapmap_invar hm) \<then> RETURN (hm_lookup hm k)"
+      where "hm_lookup_op \<equiv> \<lambda>k hm. doN {ASSERT (heapmap_invar hm); RETURN (hm_lookup hm k)}"
 
     lemma hm_lookup_op_aref: "(hm_lookup_op,RETURN oo op_map_lookup) \<in> Id \<rightarrow> heapmap_rel \<rightarrow> \<langle>\<langle>Id\<rangle>option_rel\<rangle>nres_rel"  
       apply (intro fun_relI nres_relI)
@@ -674,7 +674,7 @@ begin
       
     subsubsection \<open>Contains-Key\<close>  
 
-    definition "hm_contains_key_op \<equiv> \<lambda>k (pq,m). ASSERT (heapmap_invar (pq,m)) \<then> mop_list_contains k pq"
+    definition "hm_contains_key_op \<equiv> \<lambda>k (pq,m). doN {ASSERT (heapmap_invar (pq,m)); mop_list_contains k pq}"
     lemma hm_contains_key_op_aref: "(hm_contains_key_op,mop_map_contains_key) \<in> Id \<rightarrow> heapmap_rel \<rightarrow> \<langle>bool_rel\<rangle>nres_rel"  
       apply (intro fun_relI nres_relI)
       unfolding hm_contains_key_op_def heapmap_rel_defs
