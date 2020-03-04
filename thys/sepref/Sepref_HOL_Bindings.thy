@@ -819,9 +819,11 @@ sepref_register
 sepref_register    
   and_int: "(AND):: int \<Rightarrow> _"  
   or_int: "(OR):: int \<Rightarrow> _"  
-  xor_int: "(XOR):: int \<Rightarrow> _"  
+  xor_int: "(XOR):: int \<Rightarrow> _"
+  shiftr_int: "(<<) :: int \<Rightarrow> nat \<Rightarrow> int"
+  shiftl_int: "(>>) :: int \<Rightarrow> nat \<Rightarrow> int"
 
-    
+
 thm sint_cmp_ops[THEN sint.hn_cmp_op, folded sint_rel_def, unfolded to_hfref_post]  
 thm sint_bin_ops[THEN sint.hn_bin_op, folded sint_rel_def, unfolded to_hfref_post]  
   
@@ -846,6 +848,7 @@ lemma hn_sint_ops[sepref_fr_rules]:
     and sint_cmp_ops[THEN sint.hn_cmp_op, folded sint_rel_def bool1_rel_def, unfolded to_hfref_post]
   apply simp_all
   done
+
 
       
 definition [simp]: "sint_init TYPE('a::len) \<equiv> 0::int"
@@ -882,7 +885,8 @@ sepref_register
   and_nat: "(AND):: nat \<Rightarrow> _"  
   or_nat: "(OR):: nat \<Rightarrow> _"  
   xor_nat: "(XOR):: nat \<Rightarrow> _"  
-  
+  shiftr_nat: "(<<) :: nat \<Rightarrow> _ \<Rightarrow> _"
+  shiftl_nat: "(>>) :: nat \<Rightarrow> _ \<Rightarrow> _"
 
 
 definition unat_rel :: "('a::len word \<times> nat) set" where "unat_rel \<equiv> unat.rel"
@@ -963,8 +967,47 @@ lemma is_init_unat0[sepref_gen_algo_rules]:
   "GEN_ALGO (unat_const TYPE('a::len2) 0) (is_init (unat_assn' TYPE('a)))"
   using is_init_unat[where 'a='a]
   by simp
-  
-      
+
+lemma exists_pure_conv:
+  \<open>(\<exists>x. (\<up>(x = a)) s) = \<box>s\<close>
+  by (auto intro!: exI[of _ a] simp: pure_true_conv pred_lift_def)
+
+lemma bit_lshift_unat_assn[sepref_fr_rules]:
+  \<open>(uncurry ll_lshr, uncurry (RETURN oo (>>))) \<in> [\<lambda>(a,b). b < LENGTH('a)]\<^sub>a
+    (unat_assn' TYPE('a::len2))\<^sup>k *\<^sub>a (unat_assn)\<^sup>k \<rightarrow> (unat_assn)\<close>
+  apply sepref_to_hoare
+  apply (vcg)
+  apply (auto simp: unat_rel_def unat.rel_def br_def unat_def ll_lshr_def wp_return
+     op_lift_arith2_def Let_def fcheck_def shift_ovf_def word_to_lint_to_uint_conv bitLSHR'_def
+     nat_div_distrib nat_power_eq pred_lift_merge_simps
+     cnv_snat_to_uint(1) in_br_conv snat.rel_def snat_invar_def
+   simp flip: word_to_lint_lshr)
+  apply (simp_all add: POSTCOND_def STATE_extract(2) shiftr_div_2n shiftr_nat_def exists_pure_conv)
+  done
+
+
+lemma bit_shiftl_unat_assn[sepref_fr_rules]:
+  \<open>(uncurry ll_shl, uncurry (RETURN oo (<<))) \<in> [\<lambda>(a,b). b < LENGTH('a) \<and> (a << b) < max_unat LENGTH('a)]\<^sub>a
+    (unat_assn' TYPE('a::len2))\<^sup>k *\<^sub>a (unat_assn)\<^sup>k \<rightarrow> (unat_assn)\<close>
+proof -
+  have [simp]: \<open>nat (bi) < LENGTH('a :: len2) \<Longrightarrow>
+       nat (uint (ai :: 'a word) * 2 ^ nat (bi)) < max_unat LENGTH('a) \<Longrightarrow>
+       nat (bintrunc (size ai) (uint ai << nat (bi))) = nat (uint ai * 2 ^ nat (bi))\<close> for bi ai
+    by (metis (full_types) max_unat_def nat_less_numeral_power_cancel_iff shiftl_int_def uint_mult_lem
+      uint_power_lower uint_word_arith_bintrs(3) word_size)
+  show ?thesis
+    apply sepref_to_hoare
+    apply (vcg)
+    apply (auto simp: unat_rel_def unat.rel_def br_def unat_def ll_shl_def wp_return
+       op_lift_arith2_def Let_def fcheck_def shift_ovf_def word_to_lint_to_uint_conv bitSHL'_def
+       nat_div_distrib nat_power_eq pred_lift_merge_simps
+       cnv_snat_to_uint(1) in_br_conv snat.rel_def snat_invar_def
+     simp flip: word_to_lint_shl)
+    apply (simp_all add: POSTCOND_def STATE_extract(2) shiftr_div_2n shiftl_nat_def
+      uint_shiftl exists_pure_conv)
+    done
+qed
+
 subsubsection \<open>Natural Numbers by Signed Word\<close>
 
 definition snat_rel :: "('a::len2 word \<times> nat) set" where "snat_rel \<equiv> snat.rel"
@@ -1056,6 +1099,120 @@ lemma hn_snat_ops[sepref_fr_rules]:
   by simp_all
   
 
+lemma bit_lshift_snat_assn[sepref_fr_rules]:
+  \<open>(uncurry ll_lshr, uncurry (RETURN oo (>>))) \<in> [\<lambda>(a,b). b < LENGTH('a)]\<^sub>a
+    (snat_assn' TYPE('a::len2))\<^sup>k *\<^sub>a (snat_assn)\<^sup>k \<rightarrow> (snat_assn)\<close>
+  apply sepref_to_hoare
+  apply (vcg)
+  apply (auto simp: unat_rel_def unat.rel_def br_def unat_def ll_lshr_def wp_return
+     op_lift_arith2_def Let_def fcheck_def shift_ovf_def word_to_lint_to_uint_conv bitLSHR'_def
+     nat_div_distrib nat_power_eq pred_lift_merge_simps snat_rel_def
+     cnv_snat_to_uint(1) in_br_conv snat.rel_def snat_invar_def
+   simp flip: word_to_lint_lshr)
+  apply (simp_all add: POSTCOND_def STATE_extract(2) shiftr_div_2n shiftr_nat_def exists_pure_conv)
+  done
+
+lemma bit_shiftl_snat_assn[sepref_fr_rules]:
+  \<open>(uncurry ll_shl, uncurry (RETURN oo (<<))) \<in> [\<lambda>(a,b). b < LENGTH('a) \<and> (a << b) < max_snat LENGTH('a)]\<^sub>a
+    (snat_assn' TYPE('a::len2))\<^sup>k *\<^sub>a (snat_assn)\<^sup>k \<rightarrow> (snat_assn)\<close>
+proof -
+  have H: \<open>nat (bi) < LENGTH('a :: len2) \<Longrightarrow>
+       nat (uint (ai :: 'a word) * 2 ^ nat (bi)) < max_unat LENGTH('a) \<Longrightarrow>
+       nat (bintrunc (size ai) (uint ai << nat (bi))) = nat (uint ai * 2 ^ nat (bi))\<close> for bi ai
+    by (metis max_unat_def nat_less_numeral_power_cancel_iff shiftl_int_def uint_mult_lem
+      uint_power_lower uint_word_arith_bintrs(3) word_size)
+  have H': \<open>nat (bi) < LENGTH('a :: len2) \<Longrightarrow>
+       nat (uint (ai :: 'a word) * 2 ^ nat (bi)) < max_snat LENGTH('a) \<Longrightarrow>
+       nat (bintrunc (size ai) (uint ai << nat (bi))) = nat (uint ai * 2 ^ nat (bi))\<close> for bi ai
+    using H[of bi ai] apply (auto simp: max_snat_def max_unat_def)
+    using nat_less_numeral_power_cancel_iff snat_in_bounds_aux by blast
+
+  show ?thesis
+  proof (sepref_to_hoare, vcg)
+    fix bi ai :: \<open>'a word\<close> and  a b F s
+    assume
+       le: \<open>b < LENGTH('a)\<close>  \<open>a << b < max_snat LENGTH('a)\<close> and
+       a: \<open>(ai, a) \<in> snat_rel\<close> and
+       b: \<open>(bi, b) \<in> snat_rel\<close> and
+       state: \<open>llSTATE F s\<close>
+   have \<open>nat (uint ai) << nat (uint bi) < 2 ^ (LENGTH('a) - Suc 0)\<close>
+     using le a b
+     by (auto simp: sint_uint word_size uint_shiftl br_def nat_shiftr_div
+       shiftl_int_def max_snat_def max_unat_def snat_rel_def snat.rel_def cnv_snat_to_uint
+       nat_mult_distrib nat_power_eq)
+   then have \<open>(uint ai) << nat (uint bi) < 2 ^ (LENGTH('a) - Suc 0)\<close>
+     using le a b unfolding shiftr_int_def
+     by (smt int_nat_eq nat_2 nat_shiftr_div numeral_2_eq_2 of_nat_less_iff of_nat_mult
+       semiring_1_class.of_nat_power shiftl_int_def uint_nonnegative)
+   then have le': \<open>ai << nat (uint bi) < 2 ^ (LENGTH('a) - Suc 0)\<close>
+     using le apply (auto simp: max_snat_def)
+     apply (subst (asm) nat_less_eq_zless[symmetric], simp, subst word_less_alt)
+     apply (subst nat_less_eq_zless[symmetric])
+     using le a b
+     apply (auto simp: sint_uint word_size br_def uint_power_lower
+        max_snat_def max_unat_def snat_rel_def snat.rel_def cnv_snat_to_uint)[]
+     apply (auto simp flip:  numeral_2_eq_2 simp: uint_shiftl word_size nat_power_eq uint_power_lower
+        intro!: bintrunc_le)
+     done
+
+    have [simp]: \<open>nat (bintrunc (size ai) (uint ai << nat (uint bi))) = nat (uint ai * 2 ^ nat (uint bi))\<close>
+      using le a b by (auto simp: max_snat_def max_unat_def snat_rel_def snat.rel_def H'
+       br_def cnv_snat_to_uint(1) nat_mult_distrib nat_power_eq nat_shiftr_div)
+   have \<open>- (3 * 2 ^ (LENGTH('a) - Suc 0)) \<le> uint ai * 2 ^ nat (uint bi)\<close>
+     by (smt int_nat_eq nat_mult_distrib of_nat_mult uint_add_ge0 zero_le_power)
+   moreover have \<open>uint ai * 2 ^ nat (uint bi) < 3 * 2 ^ (LENGTH('a) - Suc 0)\<close>
+     apply (subst nat_less_eq_zless[symmetric], simp, subst nat_mult_distrib)
+     using le a b
+     by (auto simp: sint_uint word_size uint_shiftl br_def nat_shiftr_div
+       shiftl_int_def max_snat_def max_unat_def snat_rel_def snat.rel_def cnv_snat_to_uint
+       nat_mult_distrib nat_power_eq)
+   moreover have \<open>\<not>2 ^ (LENGTH('a) - Suc 0) \<le> uint ai * 2 ^ nat (uint bi)\<close>
+     using le
+     apply (subst nat_le_eq_zle[symmetric], simp, subst nat_mult_distrib)
+     using H'[of \<open>uint bi\<close> ai]  le a b
+     by (auto simp del: H' simp: sint_uint word_size uint_shiftl sbintrunc_If
+      shiftl_int_def max_snat_def max_unat_def snat_rel_def snat.rel_def br_def
+      cnv_snat_to_uint(1) nat_power_eq nat_shiftr_div)
+   moreover have \<open>\<not>uint ai * 2 ^ nat (uint bi) < - (2 ^ (LENGTH('a) - Suc 0))\<close>
+     apply (subst nat_less_eq_zless[symmetric], simp, subst nat_mult_distrib)
+     using le a b
+     by (auto simp: sint_uint word_size uint_shiftl br_def nat_shiftr_div
+       shiftl_int_def max_snat_def max_unat_def snat_rel_def snat.rel_def cnv_snat_to_uint
+       nat_mult_distrib nat_power_eq)
+   ultimately have \<open>nat (sint (ai << nat (uint bi))) = nat (uint ai * 2 ^ nat (uint bi))\<close>
+     using H'[of \<open>uint bi\<close> ai]  le a b
+     by (auto simp: sint_uint word_size uint_shiftl sbintrunc_If
+      shiftl_int_def max_snat_def max_unat_def snat_rel_def snat.rel_def)
+   have [simp]: \<open>\<not> msb (ai << nat (uint bi))\<close>
+     apply (subst msb_shiftl_word[OF _])
+     using le le' a b state
+     unfolding snat_rel_def snat.rel_def br_def
+     by (auto simp: br_def snat_def ll_shl_def wp_return
+        op_lift_arith2_def Let_def fcheck_def shift_ovf_def word_to_lint_to_uint_conv bitSHL'_def
+        nat_div_distrib nat_power_eq pred_lift_merge_simps sint_eq_uint max_snat_def
+          cnv_snat_to_uint(1) in_br_conv snat.rel_def snat_invar_def
+          POSTCOND_def STATE_extract(2) shiftr_div_2n shiftl_nat_def
+       uint_shiftl exists_pure_conv)
+   show \<open>wp (ll_shl ai bi)
+         (\<lambda>r. llPOST
+               ((\<up>((ai, a) \<in> snat_rel) \<and>*
+                 \<up>((bi, b) \<in> snat_rel) \<and>*
+                 (\<lambda>s. \<exists>x. (\<up>((r, x) \<in> snat_rel) \<and>* \<up>(x = a << b)) s)) \<and>*
+                F))
+         s\<close>
+     using le a b state
+     unfolding snat_rel_def snat.rel_def br_def
+     apply (auto simp: br_def snat_def ll_shl_def wp_return
+        op_lift_arith2_def Let_def fcheck_def shift_ovf_def word_to_lint_to_uint_conv bitSHL'_def
+        nat_div_distrib nat_power_eq pred_lift_merge_simps sint_eq_uint max_snat_def
+        cnv_snat_to_uint(1) in_br_conv snat.rel_def snat_invar_def
+      simp flip: word_to_lint_shl)
+     apply (simp_all add: POSTCOND_def STATE_extract(2) shiftr_div_2n shiftl_nat_def
+       uint_shiftl exists_pure_conv)
+    done
+  qed
+qed
+
 definition [simp]: "snat_init TYPE('a::len) \<equiv> 0::nat"
 
 lemma is_init_snat[sepref_gen_algo_rules]:
@@ -1068,8 +1225,7 @@ lemma is_init_snat0[sepref_gen_algo_rules]:
   "GEN_ALGO (snat_const TYPE('a::len2) 0) (is_init (snat_assn' TYPE('a)))"
   using is_init_snat[where 'a='a]
   by simp
-  
-  
+
 subsubsection \<open>Ad-Hoc Method to Annotate Number Constructors\<close>  
 lemma annot_num_const_cong: 
   "\<And>a b. snat_const a b = snat_const a b" 
@@ -1996,6 +2152,21 @@ export_llvm
   "example3n"
 
 
+sepref_definition example4n is "\<lambda>x. do {
+       x \<leftarrow> RETURN (x >> 1);
+       ASSERT ((x << 1) < max_snat 7);
+       RETURN ((x << 1) > x)
+   }" :: "(snat_assn' TYPE(7))\<^sup>k \<rightarrow>\<^sub>a (bool1_assn)" 
+  apply (annot_snat_const "TYPE(7)")
+  apply sepref
+  done
+
+lemmas [llvm_code] = example4n_def
+
+llvm_deps example4n
+
+export_llvm example4n
+ 
 (* TODO: Characters as i8 *)  
   
 end
