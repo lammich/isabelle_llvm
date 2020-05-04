@@ -1,0 +1,37 @@
+\frametitle{Nested Containers}
+\onslide<+->
+  Hoare-Rule for array-index:
+  \begin{lstlisting}
+  {array A l l' * i64 i i' * i<|l|} r'=l'[i'] { array A l l' * i64 i i' * A (l[i]) r' }
+  where
+  array A l p = \<exists> l'. p+0 |-> l'[0] * ... * p+n |-> l'[n]
+                     ${}$* A l[0] l'[0] * ... * A l[n] l'[n]
+  \end{lstlisting}
+
+  \onslide<+->
+  Problem: Does not work for \isai{array (array i64)}! (result is shared)
+  \begin{itemize}
+   \item<+-> current approach: abstract data type: \isai$\<alpha> option list$
+    \begin{itemize}
+     \item None: element not in array
+     \item Manual ownership management
+    \end{itemize}
+   \item<+-> future:
+    \begin{itemize}
+     \item read-only sharing (fractional sep-logic?)
+     \item automation (as far as possible)
+     \item maybe inspiration from Rust.
+
+
+%
+%   * Problem: implement list of lists of ints by array
+%     * \isai{ array_assn (array_assn int_assn) } where
+%       \begin{lstlisting}
+%         array_assn A l p = \<exists> l'. p+0 |-> l'_0 * ... * p+n |-> l'_n
+%                             * A l'_0 l_0 * ... * A l'_n l_n
+%           = A l_0 (p+0) * ... * A l_n (p+n)
+%       \end{lstlisting}
+
+
+    \end{itemize}
+  \end{itemize}
