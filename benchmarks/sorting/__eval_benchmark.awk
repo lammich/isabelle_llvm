@@ -173,6 +173,62 @@ function output_pgf () {
 }
 
 
+function pr_res_pgf_abs(name,color,ty,m,alg) {
+  if (! (m in machines)) return;
+
+  printf "\\addplot[color=%s,fill=%s] coordinates {\n",color,color
+  for (distr in results) {
+    t = results[distr][ty][alg][m]
+
+    printf "(%s,%d)\n",distr,t
+  }
+  printf "};\n\\addlegendentry{%s};\n", name
+}
+
+function output_pgf_abs () {
+  print "@ preamble"
+
+  printf "\n\n"
+  printf("symbolic x coords={")
+  for (distr in results) {
+    printf("%s,",distr)
+  }
+  printf "}\n\n"
+
+  print "@ introsort"
+
+#   pr_res_pgf_abs("isa-uint64 (server)","red","uint64","S","isabelle::sort");
+#   pr_res_pgf_abs("std-uint64 (server)","red","uint64","S","std::sort");
+#
+#   pr_res_pgf_abs("isa-uint64 (laptop)","green","uint64","L","isabelle::sort");
+#   pr_res_pgf_abs("std-uint64 (laptop)","green","uint64","L","std::sort");
+#
+#   pr_res_pgf_abs("isa-string (server)","blue",  "llstring","S","isabelle::sort");
+#   pr_res_pgf_abs("std-string (server)","blue",  "llstring","S","std::sort");
+#
+#   pr_res_pgf_abs("isa-string (laptop)","black","llstring","L","isabelle::sort");
+#   pr_res_pgf_abs("std-string (laptop)","black","llstring","L","std::sort");
+
+
+  print "@ pdqsort"
+
+#   pr_res_pgf_abs("isa-uint64 (server)","red","uint64","S","isabelle::pdqsort");
+#   pr_res_pgf_abs("std-uint64 (server)","red","uint64","S","boost::pdqsort");
+
+  pr_res_pgf_abs("isa-uint64 (laptop)","green","uint64","L","isabelle::pdqsort");
+  pr_res_pgf_abs("std-uint64 (laptop)","green","uint64","L","boost::pdqsort");
+
+#   pr_res_pgf_abs("isa-string (server)","blue",   "llstring","S","isabelle::pdqsort");
+#   pr_res_pgf_abs("std-string (server)","blue",   "llstring","S","boost::pdqsort");
+#
+#   pr_res_pgf_abs("isa-string (laptop)","black",  "llstring","L","isabelle::pdqsort");
+#   pr_res_pgf_abs("std-string (laptop)","black",  "llstring","L","boost::pdqsort");
+
+
+}
+
+
+
 function pr_rpt_cmd(distr,type,m,alg) {
   num = arraysize[distr][type][alg][m]
   rpt = iterations[distr][type][alg][m]
@@ -257,7 +313,8 @@ function check_divergs() {
 END {
  # check_divergs()
 
- output_pgf()
+#  output_pgf()
+ output_pgf_abs()
 
 }
 

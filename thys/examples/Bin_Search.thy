@@ -31,12 +31,13 @@ begin
     unfolding bin_search_def
     apply (refine_vcg WHILEIT_rule[where R="measure (\<lambda>(l,h). h-l)"])
     apply (all \<open>(auto;fail)?\<close>)
-    
+
     apply (clarsimp simp: less_Suc_eq_le)
     subgoal for l h i 
       apply (frule sorted_nth_mono[OF assms, of i "l + (h-l) div 2"])
       by auto
-    subgoal by clarsimp (meson assms leI le_less_trans sorted_iff_nth_mono) 
+    subgoal
+      by clarsimp (meson assms leI le_less_trans sorted_iff_nth_mono)
     
     apply clarsimp
     subgoal for i
@@ -62,7 +63,7 @@ begin
     unfolding bin_search_def
     apply (rule hfref_with_rdomI)
     apply (annot_snat_const "TYPE(size_t)")
-    apply sepref
+    apply sepref    
     done
 
   export_llvm bin_search_impl is \<open>int64_t bin_search(larray_t, elem_t)\<close> 
