@@ -409,7 +409,8 @@ lemma lt_exp2n_nat_estimate[simp]:
   assumes A: "ASSUMPTION (n \<ge> n')" "x<2^n'"
   shows "x < max_unat n"
   using A unfolding ASSUMPTION_def max_unat_def
-  by (meson le_def le_less_trans nat_power_less_imp_less pos2)
+  by (metis leD leI le_less_trans less_nat_zero_code nat_power_less_imp_less
+      nat_zero_less_power_iff pow_mono_leq_imp_lt)
 
     
 end  

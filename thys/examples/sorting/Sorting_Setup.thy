@@ -1,7 +1,7 @@
 theory Sorting_Setup
 imports "../../sepref/IICF/IICF" "../../sepref/IICF/Impl/Proto_IICF_EOArray" Sorting_Misc 
 begin
-  hide_const (open) pi Word.slice array_assn
+  hide_const (open) Word.slice array_assn
 
   
 
