@@ -49,7 +49,7 @@ subsection \<open>Preprocessor\<close>
   attribute_setup llvm_inline = \<open>
     Attrib.add_del 
       (Named_Simpsets.add_attr @{named_simpset llvm_inline}) 
-      (Named_Simpsets.add_attr @{named_simpset llvm_inline})
+      (Named_Simpsets.del_attr @{named_simpset llvm_inline})
   \<close>
     
   
