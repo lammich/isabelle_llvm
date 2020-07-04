@@ -1,0 +1,40 @@
+\frametitle{Some of the Optimizations}
+
+  \begin{itemize}
+   \item<2-> unguarded insertion sort
+    \begin{itemize}
+     \item omit index check in insert, if $\exists$ smaller element
+     \item guard controlled by flag. (\isai{insort G xs l h})
+     \item specialized for \isai$G={true,false}$
+
+    \end{itemize}
+   \item<3-> move instead of swap (insert, sift-down)
+    \begin{itemize}
+     \item element gets overwritten in next loop iteration anyway
+     \item insert: directly implemented
+     \item sift-down: by refinement from version with swap
+
+    \end{itemize}
+  \end{itemize}
+  \only<4->{
+  \begin{itemize}
+   \item manual tail-recursion optimization
+    \begin{itemize}
+     \item replace second \textsc{introsort\_aux} call by loop
+     \item omitted in formalization
+     \item but done by LLVM optimizer!
+    \end{itemize}
+  \end{itemize}
+  }\only<1-3>{
+  \begin{algorithmic}[1]
+    \Procedure{insert}{$G,xs,l,i$}
+      \State{$tmp\gets xs[i]$}
+      \While{$({\only<2>{\color{red}}\neg G \vee l<i}) \wedge tmp < xs[i-1]$}
+        \State{$\only<3>{\color{red}}xs[i]\gets xs[i-1]$}
+        \State{$i\gets i-1$}
+      \EndWhile
+      \State{$xs[i]\gets tmp$}
+    \EndProcedure
+  \end{algorithmic}
+  }
+

@@ -1,0 +1,894 @@
+\documentclass[fleqn]{beamer}
+
+
+\mode<presentation>
+{
+  \usetheme{default}
+%   \useinnertheme[shadow=true]{rounded}
+
+  \useinnertheme{circles}
+  
+%    \useoutertheme{infolines}
+  % or ...
+  \setbeamersize{text margin left=1em,text margin right=1em}
+
+%   \setbeamercovered{transparent}
+  % or whatever (possibly just delete it)
+
+  \beamertemplatenavigationsymbolsempty
+  
+% Display frame numbers in footline
+  \setbeamertemplate{footline}[frame number]
+}
+
+\usepackage{etex}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{amsmath}
+% \usepackage{amsthm}
+% \usepackage{stmaryrd}
+\usepackage{lmodern}
+\usepackage{mathpartir}
+
+\usepackage{centernot}
+
+\usepackage{colortbl}
+\usepackage{multirow}
+
+\usepackage[purexy]{qsymbols}
+\usepackage{graphicx}
+\usepackage[nobeamer]{graphbox}
+
+\usepackage{cprotect}
+\usepackage{listings}
+\usepackage{lstautogobble}
+\usepackage{relsize}
+
+\usepackage[noend]{algpseudocode}
+
+\usepackage{ifthen}
+\usepackage{pgf}
+\usepackage{tikz}
+\usetikzlibrary{scopes}
+\usetikzlibrary{decorations}
+  \usetikzlibrary{decorations.pathmorphing}
+\usetikzlibrary{arrows}
+\usetikzlibrary{automata}
+\usetikzlibrary{positioning}
+\usetikzlibrary{chains}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{shapes.callouts}
+\usetikzlibrary{shapes.misc}
+\usetikzlibrary{shapes.multipart}
+\usetikzlibrary{fit}
+\usetikzlibrary{calc}
+
+\usepackage{pgfplots}
+
+% \tikzstyle{stack}=[inner sep=0pt,minimum size=2mm]
+% \tikzstyle{ssline}=[->,snake=snake,segment amplitude=.2mm,segment length=3mm,line after snake=1mm]
+% \tikzstyle{fgnode}=[circle,draw,inner sep=0pt,minimum size=2mm]
+
+\tikzset{
+  -|-/.style={
+    to path={
+      (\tikztostart) -| ($(\tikztostart)!#1!(\tikztotarget)$) |- (\tikztotarget)
+      \tikztonodes
+    }
+  },
+  -|-/.default=0.5,
+  |-|/.style={
+    to path={
+      (\tikztostart) |- ($(\tikztostart)!#1!(\tikztotarget)$) -| (\tikztotarget)
+      \tikztonodes
+    }
+  },
+  |-|/.default=0.5,
+}
+
+
+\tikzset{
+  invisible/.style={opacity=0},
+  visible on/.style={alt=#1{}{invisible}},
+  alt/.code args={<#1>#2#3}{%
+    \alt<#1>{\pgfkeysalso{#2}}{\pgfkeysalso{#3}} % \pgfkeysalso doesn't change the path
+  },
+}
+
+
+
+% The goal is to translate
+%    \overlaynode<red,blue>{hallo};
+% into
+%    \node[red]{hallo};
+%    \node[blue]{hallo};
+\makeatletter
+\def\overlaynode<#1>#2;{
+        \gdef\stacknodecommonpart{#2}
+        \pgfkeys{/typeset node/.list={#1}}
+        % we are lazy
+        % pgfkeys will translate
+        %    \pgfkeys{/typeset node/.list={red,blue}}
+        % into
+        %    \pgfkeys{/typeset node=red}
+        %    \pgfkeys{/typeset node=blue}
+}
+\pgfkeys{
+    /typeset node/.code={
+        \edef\pgf@marshal{\noexpand\node[#1]\stacknodecommonpart;}
+        \pgf@marshal
+    }
+}
+% \tikz{
+%     \overlaynode<red,{blue,xshift=1}>{{Hello}}; % notice the nested {{}}
+% %   \overlaynode<red,{blue,xshift=1}>[]{Hello}; % workaround
+%     \overlaynode<red,{blue,rotate=5}>at(1,0)[draw]{from};
+%     \overlaynode<red,{blue,scale=1.1}>[circle]at(2,0)[draw]{the};
+%     \overlaynode<red,{blue,opacity=.5}>[fill=yellow!50]at(3,0){other};
+%     \overlaynode<{red,rectangle callout,fill},{blue,ellipse callout,draw}>at(4,0){side};
+% }
+% \tikz{
+%     \overlaynode<
+%             {fill=red,callout absolute pointer=(45:2)},
+%             {fill=yellow,callout absolute pointer=(135:2),callout pointer shorten=1cm},
+%             {fill=green,callout relative pointer=(-135:2),callout pointer width=.5cm},
+%             {fill=blue,callout relative pointer=(-45:2),callout pointer shorten=1cm,callout pointer width=.5cm}
+%         >
+%         [rectangle callout,text=white]
+%         at(0,0){can you}
+%     ;
+% }
+
+\def\overlaynodedrawfill{\pgfutil@ifnextchar[{\overlaynodedrawfill@opt}{\overlaynodedrawfill@opt[]}}
+\def\overlaynodedrawfill@opt[#1]<#2>#3;{
+    \begin{scope}[transparency group,draw=black,fill=white,line cap=round,line join=round,#1]
+        \pgfmathsetmacro\pgflinewidthdouble{2\pgflinewidth}
+        \overlaynode<#2>[draw=pgfstrokecolor,line width=\pgflinewidthdouble]#3;
+        \overlaynode<#2>[fill=pgffillcolor]#3;
+    \end{scope}
+}
+
+\makeatother
+
+
+% \tikz{
+%     \overlaynodedrawfill[draw=magenta,fill=cyan,opacity=.5]<
+%             {callout absolute pointer=(45:2)},
+%             {callout absolute pointer=(135:2),callout pointer shorten=1cm},
+%             {callout relative pointer=(-135:2),callout pointer width=.5cm},
+%             {callout relative pointer=(-45:2),callout pointer shorten=1cm,callout pointer width=.5cm}
+%         >
+%         [rectangle callout]
+%         at(0,0){hear me}
+%     ;
+% }
+%
+% \tikz{
+%     \overlaynodedrawfill<
+%             {cloud callout,callout absolute pointer=(90:2),inner sep=-20},
+%             {rectangle callout,callout absolute pointer=(210:2),minimum height=30},
+%             {ellipse callout,callout absolute  pointer=(-30:2)}
+%         >
+%         at(0,0){nice to meet you}
+%     ;
+% }
+%
+% \tikz{
+%     \overlaynodedrawfill<
+%             {starburst},
+%             {cloud,inner sep=-10}
+%         >
+%         at(0,0){where you been}
+%     ;
+% }
+%
+% \usetikzlibrary{shapes.arrows}
+% \tikz{
+%     \overlaynodedrawfill[arrow box,text opacity=0,minimum height=50,minimum width=50,inner xsep=-10]<
+%             {rotate=22.5},
+%             {rotate=45},
+%             {rotate=67.5},
+%             {text opacity=1}
+%         >
+%         at(0,0){I can}
+%     ;
+% }
+%
+
+
+
+
+
+
+
+
+\usepackage{packages/isabelle}
+\usepackage{packages/isabelletags}
+\usepackage{packages/isabellesym}
+\usepackage{packages/comment}
+
+% \isabellestyle{it}
+
+\def\isachardoublequote{}%
+\def\isachardoublequoteopen{}%
+\def\isachardoublequoteclose{}%
+
+\newcommand{\isainnerkeyword}[1]{{\textbf{#1}}}
+\newcommand{\isasymexistsA}{\isamath{\exists_{\textsc A}\,}}
+
+
+\def\isadelimproof{}
+\def\endisadelimproof{}
+\def\isatagproof{}
+\def\endisatagproof{}
+\def\isafoldproof{}
+\def\isadelimproof{}
+\def\endisadelimproof{}
+
+\def\isastylescript{\sl}%
+
+
+\input{lstisabelle}
+\newcommand{\isai}{\lstinline[language=isabelle,basicstyle=\normalsize\ttfamily\slshape]}
+
+\newcommand\CC{C\nolinebreak[4]\hspace{-.05em}\raisebox{.3ex}{\relsize{-1}{\textbf{++}}}}
+
+\newcommand{\eqdef}{\mathrel{{=}_{def}}}
+\newcommand{\iffdef}{\mathrel{{\mathord{\iff}\!\!}_{def}}}
+
+
+\makeatletter
+\newcommand*{\overlaynumber}{\number\beamer@slideinframe}
+\makeatother
+
+\AtBeginSection[] % Do nothing for \section*
+{
+  \begin{frame}<beamer>
+    \frametitle{Outline}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
+
+\title{Efficient Verified Implementation of Introsort and Pdqsort}
+
+% \subtitle
+% {Subtitle} % (optional)
+
+\author[Peter Lammich]{Peter Lammich}
+% - Use the \inst{?} command only if the authors have different
+%   affiliation.
+
+\institute[UoM] % (optional, but mostly needed)
+{ The University of Manchester}
+% - Use the \inst command only if there are several affiliations.
+% - Keep it simple, no one is interested in your street address.
+
+\date {July 2020}
+% {2008-12-01}
+
+
+% If you have a file called "university-logo-filename.xxx", where xxx
+% is a graphic format that can be processed by latex or pdflatex,
+% resp., then you can add a logo as follows:
+
+% \pgfdeclareimage[height=0.5cm]{university-logo}{university-logo-filename}
+% \logo{\pgfuseimage{university-logo}}
+
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+
+
+% If you wish to uncover everything in a step-wise fashion, uncomment
+% the following command: 
+
+%\beamerdefaultoverlayspecification{<+->}
+
+%\mathchardef\-="2D
+%\renewcommand\-{\text{-}}
+
+\newcommand{\mc}{\color{blue}}
+\newcommand{\term}[1]{{\mc#1}}
+
+\let\olddisplaystyle\displaystyle
+\newcommand{\mydisplaystyle}{\olddisplaystyle\mc}
+\let\displaystyle\mydisplaystyle
+
+\newcommand{\smc}{\everymath{\mc}}
+\smc
+
+\lstset{basicstyle=\color{blue}}
+
+% \newcommand<>{\btikzset}[2]{\alt#3{\tikzset{#1}}{\tikzset{#2}}}
+
+\tikzset{onslide/.code args={<#1>#2}{%
+  \only<#1>{\pgfkeysalso{#2}} % \pgfkeysalso doesn't change the path
+}}
+
+\tikzset{uncover/.code args={<#1>#2}{%
+  \uncover<#1>{\pgfkeysalso{#2}} % \pgfkeysalso doesn't change the path
+}}
+
+
+\tikzset{>=latex}
+
+
+\lstset{autogobble}
+
+\newcommand{\natN}{{\text{nat}_{\mathord{<}N}}}
+
+\newcommand{\high}[1]{{\color{blue}#1}}
+
+
+\newcommand{\false}{\textrm{false}}
+\newcommand{\true}{\textrm{true}}
+
+\let\oldCall\Call
+
+\renewcommand{\Call}[2]{\oldCall{\color{black}#1}{#2}}
+
+
+\begin{document}
+% \input{macros}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+
+\newcommand{\insertsectitle}{}
+
+\setbeamertemplate{frametitle}{\vspace{.7em}\insertframetitle\hfill \small\raisebox{10pt}{\insertsectitle}}
+
+# Motivation + Overview
+  *<+-> Verification of efficient software
+    * stepwise refinement: separation of concerns
+      * algorithmic idea, data structures, optimizations, ...
+    * interactive theorem prover: flexible, mature
+      * easily proves required background theory
+  *<+-> Isabelle Refinement Framework
+    * tools for stepwise refinement in Isabelle/HOL
+    * already used for complex software: Model-Checkers, UNSAT-Certifiers, Graph Algorithms, ...
+  *<+-> Backends (refinement target)
+    * limited by Isabelle's code generator
+    * purely functional code: {\color{red}slow}
+    * functional + imperative (e.g. Standard ML): {\color{orange}faster}
+    *<+-> cannot compete with good C/C++ compiler!
+%     * purely imperative (LLVM): {\color{green}super-fast}
+
+{
+\usebackgroundtemplate{\tikz\node[opacity=0.2] {\includegraphics[height=\paperheight]{isabelle-llvm.png}};}
+
+# Isabelle-LLVM
+%   \center{\includegraphics[width=3cm]{isabelle-llvm.png}}
+  *<+-> Fragment of LLVM semantics formalized in Isabelle/HOL
+    * code generator for LLVM code and C/C++ headers
+    * integration with Isabelle Refinement Framework
+    * slim trusted code base (vs.~functional lang.~compiler)
+  *<+-> {\color{blue}Can now compete with C/C++ implementations}
+    * less features (datatype, poly, ...) require more complex refinement
+    * higher-level refinements can typically be reused
+
+}
+
+
+# This Paper: Overview
+  Case study how fast we can get
+  \onslide<+->
+
+  *<+-> Verify state-of-the-art generic sorting algorithms
+    * Introsort (std::sort in libstdc++)
+    * Pdqsort (from Boost C++ Libraries)
+  *<+-> Using Isabelle Refinement Framework
+    * separate optimizations from algorithmic ideas
+    * usable as building-blocks for other verifications
+  *<+-> As fast as their unverified counterparts
+    * on an extensive set of benchmarks
+
+# The Introsort Algorithm
+  * Combine quicksort, heapsort, and insort to fast $O(n\log n)$ algorithm.
+    *<2-> if quicksort recursion too deep, switch to heapsort
+    *<3-> use insertion sort for small partitions
+      * final insort on array sorted up to threshold
+
+  \newcommand{\HiLi}{\raisebox{.5ex}{\tikz{\draw[<-,thick,red] (0,0) -- (1,0);}}}
+
+  \begin{algorithmic}[1]
+    \Procedure{introsort}{$xs,l,h$}
+      \If{$h-l>1$} \label{l:intrs:trivial}
+        \State{\Call{introsort\_aux}{$xs,l,h,2\lfloor\log_2(h-l)\rfloor$}}
+        \State{\Call{final\_insort}{$xs,l,h$}} \only<3>{\HiLi}
+      \EndIf
+    \EndProcedure
+
+    \Procedure{introsort\_aux}{$xs,l,h,d$}
+      \If{$h-l>\textrm{threshold}$} \only<3>{\HiLi}
+        \If{$d=0$}~\Call{heapsort}{$xs,l,h$} \only<2>{\HiLi}
+        \Else
+          \State{$m\gets\Call{partition\_pivot}{xs,l,h}$}
+          \State{\Call{introsort\_aux}{$xs,l,m,d-1$}}
+          \State{\Call{introsort\_aux}{$xs,m,h,d-1$}}
+        \EndIf
+      \EndIf
+    \EndProcedure
+  \end{algorithmic}
+    
+#! Verification Methodology: Modularity
+  * Specifications for subroutines, e.g. \isai{heapsort <= sort_spec}
+    * proof only uses specification
+    * independant of impl details of subroutines
+
+  \pause
+  \begin{lstlisting}
+    partition_spec xs == $\text{\color{gray} --- any non-trivial partitioning}$
+      assert (length xs >= 4);
+      spec (xs_1,xs_2). mset xs = mset xs_1 + mset xs_2 \<and> xs_1~=[] \<and> xs_2~=[]
+            \<and> (\<forall>x\<in>set xs. \<forall>y\<in>set ys. x <= y)
+
+  \end{lstlisting}
+  \pause
+  \begin{lstlisting}
+    part_sorted_spec xs == $\text{\color{gray} --- sort up to threshold}$
+      spec xs'. mset xs' = mset xs \<and> part_sorted_wrt (<=) threshold xs'
+
+    $\text{\color{gray} where}$
+      part_sorted_wrt n xs == \<exists>ss. is_slicing n xs ss \<and> sorted_wrt slice_lt ss"
+      is_slicing n xs ss == xs = concat ss \<and> (\<forall>s\<in>set ss. s~=[] \<and> length s <= n)"
+      slice_lt xs ys == \<forall>x\<in>set xs. \<forall>y\<in>set ys. x <= y
+
+  \end{lstlisting}
+
+#! Verification Methodology: Refinement
+  *<+-> E.g. lists $\rightarrow$ slices of lists $\rightarrow$ arrays; $\mathbb N$ $\rightarrow$ uint64\_t
+    \onslide<+->
+    \begin{lstlisting}
+      introsort_aux1 d xs <= part_sorted_spec xs $\text{\color{gray} --- sort whole list}$
+
+      (xsi,xs)\<in>slicep_rel l h ==> $\text{\color{gray} --- sort slice}$
+        introsort_aux2 d xsi l h <= \<Down>(slice_rel xsi l h) (introsort_aux1 d xs)
+
+      (introsort_aux_impl, introsort_aux2) $\text{\color{gray} --- sort arrays, indices as uint64}$
+        : nat$_{64}$ -> array^d -> nat$_{64}$ -> nat$_{64}$ -> array
+    \end{lstlisting}
+
+  *<+-> Transitivity yields
+    \begin{lstlisting}
+      (introsort_aux_impl, %d. slice_part_sorted_spec)
+        : nat$_{64}$ -> array^d -> nat$_{64}$ -> nat$_{64}$ -> array
+
+      $\text{\color{gray} where}$
+        slice_part_sorted_spec xs l h == ... $\text{\color{gray} sort xs[l..h] up to threshold}$
+
+    \end{lstlisting}
+
+  *<+-> From here on, impl-details and internal refinement steps are irrelevant
+
+#![t] Some of the Optimizations
+
+  *<2-> unguarded insertion sort
+    * omit index check in insert, if $\exists$ smaller element
+    * guard controlled by flag. (\isai{insort G xs l h})
+    * specialized for \isai$G={true,false}$
+
+  *<3-> move instead of swap (insert, sift-down)
+    * element gets overwritten in next loop iteration anyway
+    * insert: directly implemented
+    * sift-down: by refinement from version with swap
+
+  \only<4->{
+  * manual tail-recursion optimization
+    * replace second \textsc{introsort\_aux} call by loop
+    * omitted in formalization
+    * but done by LLVM optimizer!
+  }\only<1-3>{
+  \begin{algorithmic}[1]
+    \Procedure{insert}{$G,xs,l,i$}
+      \State{$tmp\gets xs[i]$}
+      \While{$({\only<2>{\color{red}}\neg G \vee l<i}) \wedge tmp < xs[i-1]$}
+        \State{$\only<3>{\color{red}}xs[i]\gets xs[i-1]$}
+        \State{$i\gets i-1$}
+      \EndWhile
+      \State{$xs[i]\gets tmp$}
+    \EndProcedure
+  \end{algorithmic}
+  }
+
+# Pdqsort: Algorithm
+  \footnotesize
+  \begin{algorithmic}[1]
+    \Procedure{pdqsort}{$xs,l,h$}
+      \If{$h-l>1$}~\Call{pdqsort\_aux}{$\texttt{true},xs,l,h,\log(h-l)$}\EndIf \label{l:pdq:aux}
+    \EndProcedure
+
+    \Procedure{pdqsort\_aux}{$lm,xs,l,h,d$}
+      \If{$h-l<\textrm{threshold}$}~\Call{insort}{$lm,xs,l,h$} \label{l:pdq:threshold}
+      \Else
+        \State{\Call{pivot\_to\_front}{$xs,l,h$}} \label{l:pdq:pivotfront}
+        \If{$\neg lm \wedge xs[l-1] \not< xs[l]$} \label{l:pdq:eqopt}
+          \State{$m\gets \Call{partition\_left}{xs,l,h}$} \label{l:pdq:partleft}
+          \State{\textbf{assert} $m+1\le h$} \label{l:pdq:assert}
+          \State{\Call{pdqsort\_aux}{$\false,xs,m+1,h,d$}} \label{l:pdq:recright}
+        \Else
+          \State{$(m,ap)\gets\Call{partition\_right}{xs,l,h}$} \label{l:pdq:part}
+          \If{$m-l < \lfloor(h-l)/8\rfloor \vee h-m-1 < \lfloor(h-l)/8\rfloor$} \label{l:pdq:unbal}
+            \If{${-}{-}d = 0$}~\Call{heapsort}{xs,l,h};~\Return\EndIf \label{l:pdq:heapsort}
+            \State{\Call{shuffle}{xs,l,h,m}} \label{l:pdq:shuffle}
+          \ElsIf{$ap \wedge \Call{maybe\_sort}{xs,l,m} \wedge \Call{maybe\_sort}{xs,m+1,h}$}\State{\Return} \label{l:pdq:maybe}
+          \EndIf
+          \State{\Call{pdqsort\_aux}{$lm,xs,l,m,d$}}        \label{l:pdq:rec1}
+          \State{\Call{pdqsort\_aux}{$\false,xs,m+1,h,d$}}  \label{l:pdq:rec2}
+        \EndIf
+      \EndIf
+    \EndProcedure
+  \end{algorithmic}
+
+# Pdqsort: Verification
+  *<+-> Similar to introsort, but
+    * more complex
+    * different depth-limit implementation (max \#unbalanced partitions)
+    * insort inside algorithm (rather than final insort)
+  *<+-> Verification went mostly smoothly
+    * heapsort, and parts of insort could be re-used
+    * had learned our lessons from introsort verification
+      * slightly more coarse-grained refinement steps
+    * in-bound proofs overwhelmed Isabelle's simplifier
+      * solved by 'hiding' arithmetic operations behind custom constants
+
+
+%
+% # xxx
+%   * modular approach
+%   * examples from paper here
+%
+%   * mention pdqsort
+%     * slightly coarser refinements (beware of over-engineering)
+%
+% # Ownership
+%   * Need to sort arrays of strings (array of array of char)
+%   * Challenging for separation logic based approach of Refinement Framework
+%   * E.g., nth: inner array onwed by other array and result
+%   * Solution: borrowing
+
+# Benchmarks: \only<1,3>{Introsort}\only<2,4,5>{Pdqsort} (\only<1,2,5>{64 bit integers}\only<3,4>{strings})\only<1-4>{ (Intel laptop)}\only<5>{ (AMD server)}
+  \begin{tikzpicture}
+    \begin{axis}[
+%       xlabel={Benchmark Set},
+      xlabel near ticks,
+      ylabel={Time/ms},
+      legend style = {
+        legend pos=outer north east,
+        cells={anchor=west},
+        font=\scriptsize
+      },
+      ybar=0pt,
+%      ymin=0,
+%       ymax=1e4,
+      bar width=1.5pt,
+      symbolic x coords={rev-sorted-end-10,rev-sorted-end-1,sorted-end-.1,almost-sorted-50,random-boolean,organ-pipe,sorted-end-10,equal,rev-sorted-middle-.1,rev-sorted,sorted-middle-1,rev-sorted-middle-10,random,almost-sorted-.1,sorted,rev-sorted-middle-1,sorted-middle-.1,almost-sorted-10,almost-sorted-1,sorted-middle-10,rev-sorted-end-.1,sorted-end-1,random-dup-10,},      xtick=data,
+%       nodes near coords,
+%       nodes near coords align={vertical},
+      x tick label style={rotate=45,anchor=east,font=\tiny},
+%       ytick={1e3,1e4},
+      ymin=0,
+      ymax=1.2e4,
+%      restrict y to domain=0:1.1e4,
+%       ytick distance = 10,
+%       ytickten = {1,2,3,4,5},
+    ]
+      \only<1>{
+      \addplot[color=red,fill=red] coordinates {
+      (rev-sorted-end-10,3827)
+      (rev-sorted-end-1,4186)
+      (sorted-end-.1,4781)
+      (almost-sorted-50,6477)
+      (random-boolean,1667)
+      (organ-pipe,8457)
+      (sorted-end-10,6043)
+      (equal,1142)
+      (rev-sorted-middle-.1,3342)
+      (rev-sorted,981)
+      (sorted-middle-1,3799)
+      (rev-sorted-middle-10,5527)
+      (random,7368)
+      (almost-sorted-.1,1419)
+      (sorted,1438)
+      (rev-sorted-middle-1,3302)
+      (sorted-middle-.1,3448)
+      (almost-sorted-10,3107)
+      (almost-sorted-1,1590)
+      (sorted-middle-10,5514)
+      (rev-sorted-end-.1,6211)
+      (sorted-end-1,9103)
+      (random-dup-10,8175)
+      };
+      \addlegendentry{Isabelle-LLVM};
+      \addplot[color=blue,fill=blue] coordinates {
+      (rev-sorted-end-10,3787)
+      (rev-sorted-end-1,3815)
+      (sorted-end-.1,4982)
+      (almost-sorted-50,6480)
+      (random-boolean,1669)
+      (organ-pipe,9203)
+      (sorted-end-10,6312)
+      (equal,1318)
+      (rev-sorted-middle-.1,3544)
+      (rev-sorted,963)
+      (sorted-middle-1,3376)
+      (rev-sorted-middle-10,5460)
+      (random,7405)
+      (almost-sorted-.1,1376)
+      (sorted,1349)
+      (rev-sorted-middle-1,3380)
+      (sorted-middle-.1,3548)
+      (almost-sorted-10,2994)
+      (almost-sorted-1,1740)
+      (sorted-middle-10,5574)
+      (rev-sorted-end-.1,5880)
+      (sorted-end-1,9601)
+      (random-dup-10,8190)
+      };
+      \addlegendentry{libstdc++ (unverified)};
+      }
+      \only<2>{
+        \addplot[color=red,fill=red] coordinates {
+        (rev-sorted-end-10,4278)
+        (rev-sorted-end-1,2245)
+        (sorted-end-.1,1817)
+        (almost-sorted-50,6985)
+        (random-boolean,474)
+        (organ-pipe,3278)
+        (sorted-end-10,4008)
+        (equal,135)
+        (rev-sorted-middle-.1,2012)
+        (rev-sorted,268)
+        (sorted-middle-1,2603)
+        (rev-sorted-middle-10,6006)
+        (random,8066)
+        (almost-sorted-.1,891)
+        (sorted,200)
+        (rev-sorted-middle-1,2613)
+        (sorted-middle-.1,2015)
+        (almost-sorted-10,2982)
+        (almost-sorted-1,1204)
+        (sorted-middle-10,6005)
+        (rev-sorted-end-.1,1795)
+        (sorted-end-1,2278)
+        (random-dup-10,7767)
+        };
+        \addlegendentry{Isabelle-LLVM};
+
+        \addplot[color=blue,fill=blue] coordinates {
+        (rev-sorted-end-10,4072)
+        (rev-sorted-end-1,2215)
+        (sorted-end-.1,1816)
+        (almost-sorted-50,6606)
+        (random-boolean,458)
+        (organ-pipe,3173)
+        (sorted-end-10,3840)
+        (equal,148)
+        (rev-sorted-middle-.1,1992)
+        (rev-sorted,230)
+        (sorted-middle-1,2530)
+        (rev-sorted-middle-10,5673)
+        (random,7505)
+        (almost-sorted-.1,849)
+        (sorted,154)
+        (rev-sorted-middle-1,2529)
+        (sorted-middle-.1,1992)
+        (almost-sorted-10,2844)
+        (almost-sorted-1,1123)
+        (sorted-middle-10,5673)
+        (rev-sorted-end-.1,1761)
+        (sorted-end-1,2260)
+        (random-dup-10,7220)
+        };
+        \addlegendentry{Boost (unverified)};
+      }
+      \only<3>{
+        \addplot[color=red,fill=red] coordinates {
+        (rev-sorted-end-10,2664)
+        (rev-sorted-end-1,2956)
+        (sorted-end-.1,6756)
+        (almost-sorted-50,4324)
+        (random-boolean,5753)
+        (organ-pipe,7127)
+        (sorted-end-10,2632)
+        (equal,2943)
+        (rev-sorted-middle-.1,2249)
+        (rev-sorted,1412)
+        (sorted-middle-1,2468)
+        (rev-sorted-middle-10,3002)
+        (random,5147)
+        (almost-sorted-.1,1687)
+        (sorted,1991)
+        (rev-sorted-middle-1,2264)
+        (sorted-middle-.1,2537)
+        (almost-sorted-10,3200)
+        (almost-sorted-1,1932)
+        (sorted-middle-10,3027)
+        (rev-sorted-end-.1,4665)
+        (sorted-end-1,3425)
+        (random-dup-10,5744)
+        };
+        \addlegendentry{Isabelle-LLVM};
+        \addplot[color=blue,fill=blue] coordinates {
+        (rev-sorted-end-10,2707)
+        (rev-sorted-end-1,3366)
+        (sorted-end-.1,7080)
+        (almost-sorted-50,4923)
+        (random-boolean,5487)
+        (organ-pipe,6658)
+        (sorted-end-10,2655)
+        (equal,2763)
+        (rev-sorted-middle-.1,2171)
+        (rev-sorted,1373)
+        (sorted-middle-1,2336)
+        (rev-sorted-middle-10,3504)
+        (random,6000)
+        (almost-sorted-.1,1649)
+        (sorted,1949)
+        (rev-sorted-middle-1,2572)
+        (sorted-middle-.1,2387)
+        (almost-sorted-10,2742)
+        (almost-sorted-1,2166)
+        (sorted-middle-10,3055)
+        (rev-sorted-end-.1,4627)
+        (sorted-end-1,3099)
+        (random-dup-10,5843)
+        };
+        \addlegendentry{libstdc++ (unverified)};
+      }
+      \only<4>{
+        \addplot[color=red,fill=red] coordinates {
+        (rev-sorted-end-10,2341)
+        (rev-sorted-end-1,1855)
+        (sorted-end-.1,1756)
+        (almost-sorted-50,3790)
+        (random-boolean,609)
+        (organ-pipe,2681)
+        (sorted-end-10,2320)
+        (equal,315)
+        (rev-sorted-middle-.1,1711)
+        (rev-sorted,440)
+        (sorted-middle-1,2073)
+        (rev-sorted-middle-10,2877)
+        (random,4404)
+        (almost-sorted-.1,1193)
+        (sorted,315)
+        (rev-sorted-middle-1,1904)
+        (sorted-middle-.1,1970)
+        (almost-sorted-10,2491)
+        (almost-sorted-1,1507)
+        (sorted-middle-10,2888)
+        (rev-sorted-end-.1,1722)
+        (sorted-end-1,1824)
+        (random-dup-10,4731)
+        };
+        \addlegendentry{Isabelle-LLVM};
+        \addplot[color=blue,fill=blue] coordinates {
+        (rev-sorted-end-10,2359)
+        (rev-sorted-end-1,1869)
+        (sorted-end-.1,1804)
+        (almost-sorted-50,3735)
+        (random-boolean,609)
+        (organ-pipe,2808)
+        (sorted-end-10,2320)
+        (equal,273)
+        (rev-sorted-middle-.1,1694)
+        (rev-sorted,443)
+        (sorted-middle-1,2088)
+        (rev-sorted-middle-10,2834)
+        (random,4414)
+        (almost-sorted-.1,1208)
+        (sorted,319)
+        (rev-sorted-middle-1,1912)
+        (sorted-middle-.1,1995)
+        (almost-sorted-10,2464)
+        (almost-sorted-1,1529)
+        (sorted-middle-10,2879)
+        (rev-sorted-end-.1,1712)
+        (sorted-end-1,1903)
+        (random-dup-10,4749)
+        };
+        \addlegendentry{Boost (unverified)};
+      }
+      \only<5>{
+        \addplot[color=red,fill=red] coordinates {
+        (rev-sorted-end-10,7879)
+        (rev-sorted-end-1,5177)
+        (sorted-end-.1,4861)
+        (almost-sorted-50,10071)
+        (random-boolean,898)
+        (organ-pipe,7513)
+        (sorted-end-10,7611)
+        (equal,408)
+        (rev-sorted-middle-.1,4941)
+        (rev-sorted,713)
+        (sorted-middle-1,5522)
+        (rev-sorted-middle-10,10144)
+        (random,11658)
+        (almost-sorted-.1,2863)
+        (sorted,494)
+        (rev-sorted-middle-1,5644)
+        (sorted-middle-.1,4992)
+        (almost-sorted-10,5512)
+        (almost-sorted-1,3371)
+        (sorted-middle-10,10054)
+        (rev-sorted-end-.1,4765)
+        (sorted-end-1,5293)
+        (random-dup-10,11222)
+        };
+        \addlegendentry{Isabelle-LLVM};
+        \addplot[color=blue,fill=blue] coordinates {
+        (rev-sorted-end-10,8625)
+        (rev-sorted-end-1,5773)
+        (sorted-end-.1,5216)
+        (almost-sorted-50,10583)
+        (random-boolean,944)
+        (organ-pipe,8437)
+        (sorted-end-10,8085)
+        (equal,424)
+        (rev-sorted-middle-.1,5554)
+        (rev-sorted,746)
+        (sorted-middle-1,6296)
+        (rev-sorted-middle-10,11009)
+        (random,12487)
+        (almost-sorted-.1,3165)
+        (sorted,489)
+        (rev-sorted-middle-1,6185)
+        (sorted-middle-.1,5565)
+        (almost-sorted-10,5940)
+        (almost-sorted-1,3726)
+        (sorted-middle-10,11001)
+        (rev-sorted-end-.1,5262)
+        (sorted-end-1,5930)
+        (random-dup-10,11846)
+        };
+        \addlegendentry{Boost (unverified)};
+      }
+    \end{axis}
+  \end{tikzpicture}
+
+  Sorting \only<1-2,5>{$100\cdot10^6$ \texttt{uint64}s}\only<3-4>{$10\cdot10^6$ strings} on
+  \only<1-4>{Intel Core i7-8665U CPU, 32GiB RAM}\only<5>{AMD Opteron 6176, 128GiB RAM}
+
+# In the paper/formalization
+  *<+-> Sorting of strings
+    * requires borrowing to access complex elements of array
+  *<+-> Sorting with parameterized comparison functions
+    * E.g. $i<j$ iff $a[i]<a[j]$, for array $a$
+    * Engineering challenge
+    * Refinement: late introduction of parameter, abstract proofs unchanged
+  *<+-> More benchmarks
+
+
+# Conclusions
+  * Verified state-of-the-art sorting algorithms
+    * using Isabelle Refinement Framework with LLVM backend
+    * as fast as libstdc++/Boost implementations
+    * $\sim9000$ lines of proof text, $\sim130$ person hours
+  * Future work
+    * branch aware optimization of pdqsort
+    * stable sorting (mergesort, timsort, ...)
+    * non-comparative/hybrid sorting (radix-sort, boost::spreadsort, ...)
+      \medskip
+    * Verification Engineering (analogous to software engineering)
+      * {\color{green} correctness} + efficiency, scalability, adaptability, reusability, dev-cost, ...
+
+  \vfill
+
+  \includegraphics[width=3cm,align=c]{isabelle-llvm.png}~~\begin{minipage}{.7\textwidth}
+    \color{black}Formalization, benchmarks \& more\\
+    \url{https://github.com/lammich/isabelle_llvm}
+  \end{minipage}
+
+  \vfill
+  Considering a PhD in formal verification? \url{https://tinyurl.com/PhdIsabelleLLVM}
+
+\end{document}
+
+
+
+

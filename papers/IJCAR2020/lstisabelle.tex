@@ -1,0 +1,182 @@
+% Not really meant for highlighting isabelle source, but for easily writing latex that looks like
+% isabelle
+% 
+% keyword level 1 - isabelle outer syntax 
+% keyword level 2 - isabelle inner syntax programming constructs (if, let, etc)
+% keyword level 3 - standard constants (length, mod, etc)
+% keyword level 4 - isabelle proof methods
+
+
+% \newcommand{\lsem}{\ensuremath{\mathopen{[\![}}}
+% \newcommand{\rsem}{\ensuremath{\mathclose{]\!]}}}
+
+\lstdefinelanguage{isabelle}{
+  morekeywords={theorem,theorems,corollary,lemma,lemmas,locale,begin,end,fixes,assumes,shows,and,class,
+    constrains , definition, defines, where, apply, done,unfolding, primrec, fun, using, by, for, uses, file,
+    schematic_lemma, concrete_definition, prepare_code_thms, export_code, datatype, type_synonym, typedef, value,
+    proof, next, qed, show, have, hence, thus, interpretation, fix, context, sepref_definition,is,export_llvm
+ } ,
+  morekeywords=[2]{rec, return, bind, foreach, if, then, else, do, let, in, res, spec, fail, assert, while, case, of, 
+    check},
+%  morekeywords=[3]{length,mod,insert},
+%   morekeywords=[4]{simp,auto,intro,elim,rprems,refine_mono,refine_rcg},
+  sensitive=True,
+  morecomment=[s]{(\*}{\*)},
+}
+
+
+\DeclareTextCommand{\shortunderscore}{T1}{%
+  \leavevmode \kern.06em\vbox{\hrule width.4em}}
+
+\renewcommand{\textunderscore}{\shortunderscore}  
+  
+\lstset{
+    language=isabelle,
+    mathescape=true,
+    escapeinside={--"}{"},
+    basicstyle={\itshape},
+    keywordstyle=\rm\bfseries,
+    keywordstyle=[2]\rm\tt,
+    keywordstyle=[3]\rm,
+    keywordstyle=[4]\rm,
+    showstringspaces=false,
+    keepspaces=true,
+    columns=[c]fullflexible}
+\lstset{literate=
+  {"}{}0
+  {'}{{${}^\prime\!$}}1
+  {\%}{{$\lambda$}}1
+  {\\\%}{{$\lambda$}}1
+  {\\\$}{{$\mathbin{\,\$\,}$}}1
+  {->}{{$\rightarrow$}}1
+  {<-}{{$\leftarrow$}}1
+%   {<.}{{$\langle$}}1
+%   {.>}{{$\rangle$}}1
+  {<=}{{$\le$}}1
+  {>=}{{$\ge$}}1
+  {<->}{{$\leftrightarrow$}}1
+  {-->}{{$\longrightarrow$}}2
+  {<-->}{{$\longleftrightarrow$}}1
+  {=>}{{$\Rightarrow$}}1
+  {==}{{$\equiv$}}2
+  {==>}{{$\implies$}}2
+  {<=>}{{$\Leftrightarrow$}}1
+  {~=}{{$\ne$}}1
+  {|}{{$\mid$}}1
+  {-`}{{$\rightharpoonup$}}1
+  {|`}{{$\restriction$}}1
+  {!!}{{$\bigwedge$}}1
+  {(}{{$($}}1
+  {)}{{$)$}}1
+  {\{}{{$\{$}}1
+  {\}}{{$\}$}}1
+  {[}{{$[$}}1
+  {]}{{$]$}}1
+  {[|}{{$\llbracket$}}1
+  {|]}{{$\rrbracket$}}1
+  {\\<lbrakk>}{{$\lsem$}}1
+  {\\<rbrakk>}{{$\rsem$}}1
+  {|-}{{$\vdash$}}1
+  {|=}{{$\models$}}1
+  {|->}{{$\mapsto$}}1
+  {|_|}{{$\bigsqcup$}}1
+  {...}{{$\dots$}}1
+  {\\x}{{$\times$}}1
+  {_0}{{${}_0$}}1
+  {_1}{{${}_1$}}1
+  {_2}{{${}_2$}}1
+  {_3}{{${}_3$}}1
+  {_4}{{${}_4$}}1
+  {_5}{{${}_5$}}1
+  {_6}{{${}_6$}}1
+  {_7}{{${}_7$}}1
+  {_8}{{${}_8$}}1
+  {_9}{{${}_9$}}1
+  {_L}{{${}_L$}}1
+  {\\_n}{{${}_n$}}1
+  {\\_i}{{${}_i$}}1
+  {\\_j}{{${}_j$}}1
+  {\\_x}{{${}_x$}}1
+  {\\_y}{{${}_y$}}1
+  {\\impl}{{${}_\dagger$}}1
+  {^*}{{$^*$}}1
+  {^k}{{$^k$}}1
+  {^d}{{$^d$}}1
+  {\\<^sup>*}{{$^*$}}1
+  {\\<^sub>*}{{$_*$}}1
+  {\\<^sub>A}{{$_A$}}1
+  {\\<^sub>r}{{$_r$}}1
+  {\\<^sub>a}{{$_a$}}1
+  {:_i}{{$:_i$}}1
+  {\\<A>}{{$\mathcal{A}$}}1
+  {\\<O>}{{\sf o}}1
+  {\\<Phi>}{{$\Phi$}}1
+  {\\<Psi>}{{$\Psi$}}1
+  {\\<sigma>}{{$\sigma$}}1
+  {\\<cdot>}{{$\cdot$}}1
+  {\\<in>}{{$\in$}}1
+  {\\<le>}{{$\le$}}1
+  {\\<noteq>}{{$\ne$}}1
+  {\\<lambda>}{{$\lambda$}}1
+  {\\<longrightarrow>}{{$\longrightarrow$}}1
+  {\\<longleftrightarrow>}{{$\longleftrightarrow$}}1
+  {\\<Rightarrow>}{{$\Rightarrow$}}1
+  {\\<Longrightarrow>}{{$\Longrightarrow$}}1
+  {\\<rightarrow>}{{$\rightarrow$}}1
+  {\\<leftarrow>}{{$\leftarrow$}}1
+  {\\<mapsto>}{{$\mapsto$}}1
+  {\\<equiv>}{{$\equiv$}}1
+  {\\<and>}{{$\wedge$}}1
+  {\\<or>}{{$\vee$}}1
+  {\\<And>}{{$\bigwedge$}}1
+  {\\<Up>}{{$\Uparrow$}}1
+  {\\<Down>}{{$\Downarrow$}}1
+  {\\<Union>}{{$\bigcup$}}1
+  {\\<up>}{{$\uparrow$}}1
+  {\\<down>}{{$\downarrow$}}1
+  {\\<times>}{{$\times$}}1
+  {\\<forall>}{{$\forall$}}1
+  {\\<exists>}{{$\exists$}}1
+  {\\<nexists>}{{$\nexists$}}1
+  {\\<union>}{{$\cup$}}1
+  {\\<inter>}{{$\cap$}}1
+  {\\<subset>}{{$\subset$}}1
+  {\\<subseteq>}{{$\subseteq$}}1
+  {\\<supset>}{{$\supset$}}1
+  {\\<supseteq>}{{$\supseteq$}}1
+  {\\<alpha>}{{$\alpha$}}1
+  {\\<beta>}{{$\beta$}}1
+  {\\<gamma>}{{$\gamma$}}1
+  {\\alpha}{{$\alpha$}}1
+  {\\beta}{{$\beta$}}1
+  {\\gamma}{{$\gamma$}}1
+  {\\<Gamma>}{{$\Gamma$}}1
+  {\\<langle>}{{$\langle$}}1
+  {\\<rangle>}{{$\rangle$}}1
+  {\\<not>}{{$\neg$}}1
+  {\\<box>}{{$\oblong$}}1
+  {\\<bot>}{{$\bot$}}1
+  {\\<top>}{{$\top$}}1
+  {\\<notin>}{{$\notin$}}1
+  {\\<guillemotright>}{{$\gg$}}1
+  {\\in}{$\in$}1
+  {\\and}{$\wedge$}1
+  {\\or}{$\vee$}1
+  {\\Phi}{{$\Phi$}}1
+  {\\Psi}{{$\Psi$}}1
+  {\\le}{{$\le$}}1
+  {\\Up}{{$\Uparrow$}}1
+  {\\Down}{{$\Down$}}1
+  {>>}{{$\gg$}}1
+  {>>=}{{${\gg}{=}$}}1
+  {<*lex*>}{{$\times_{\sf lex}$}}1
+  {\\<open>}{{\rm\guilsinglleft}}1
+  {\\<close>}{{\rm\guilsinglright}}1
+  {\\<box>}{{$\square$}}1
+}
+
+% \newcommand{\is}{\lstinline[language=isabelle,basicstyle=\normalsize\ttfamily\slshape]}
+\newcommand{\is}{\lstinline[language=isabelle]}
+\newcommand{\q}[1]{\mbox{\guilsinglleft{#1}\hspace{-.0pt}\guilsinglright}}
+% \newcommand{\isai}[1]{\q{\lstinline[language=isabelle,basicstyle=\normalsize\ttfamily\slshape]{#1}}}
+\cMakeRobust\q

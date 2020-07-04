@@ -1,0 +1,33 @@
+@All reviewers
+Thank you for your reviews and suggestions.
+Below, I'll try to answer the questions that I identified in your reviews
+
+
+@Reviewer2
+
+Q p2.  Isn't the pivot generally left out of the recursive call?  In line 11, Algo 1, it seems it is also sorted in the second recursive call.
+Q p3 : ...which leaves the pivot-element as first element of the left partition.  Could you recheck?
+A I did. It is actually implemented like this. If accepted, I'll insert another sentence to link this to the semantics of partition_pivot:
+A "partition_pivot" moves the pivot element to the first element of the left partition, and returns the start index of the right partition.
+
+Q p2. Notation l..<h is maybe unconventional, maybe explain in a few words?
+A If accepted, I'll add a short explanation
+
+
+Q p3, Algo 2.  Maybe the arguments of PDQSORT on line 1 are just a cut and paste of line 3: lm and d are unused in this function.
+Q p4. the the threshold
+Q p8. It seems notation for assert and spec changed.  There might be a good reason, but if not, fix.
+Q p9. The the Sepref
+A thanks for spotting these!
+
+Q p14. The explanation of Fig 2. could probably made simpler to understand
+A If accepted, I'll try to make it more intuitive
+
+Q p13. person hours are interesting, but lines of code would also be of interest
+A If accepted, I will add this information. It's roughly:
+A   Libraries and boilerplate, including advanced ownership: ~2500 lines
+A   Heapsort (used by both, intro and pdq): ~1500 lines
+A   Introsort: ~1600 lines
+A   Pdqsort: ~2200 lines
+
+
