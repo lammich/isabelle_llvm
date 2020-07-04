@@ -33,12 +33,21 @@ if $REBUILD; then
   make
   cd $BASEDIR
 
+  cd papers/IJCAR2020
+  make
+  cd $BASEDIR
+
   cd papers/2019_Rennes_Talk
   make
   cd $BASEDIR
 
+  cd papers/2020_Enschede_Talk
+  make
+  cd $BASEDIR
+
   cd thys
-  isabelle build -v -d '$AFP' -D .
+  isabelle build -v -D .
+#   isabelle build -v -d '$AFP' -D .
   cd $BASEDIR
 
   ./mkdist.sh
@@ -55,9 +64,11 @@ cp index.md html/
 cp dist.tgz html/
 cp LICENSE html/
 cp etc/logo/logo_200.png html/
+cp papers/IJCAR2020/main.pdf html/paper_IJCAR2020.pdf
 cp papers/ITP2019/main.pdf html/paper_ITP2019.pdf
 cp papers/ITP2019/talk/pres.pdf html/slides_ITP2019.pdf
 cp papers/2019_Rennes_Talk/pres.pdf html/rennes2019.pdf
+cp papers/2020_Enschede_Talk/pres.pdf html/enschede2020.pdf
 
 pandoc -V pagetitle="Isabelle LLVM" -s index.md > html/index.html
 

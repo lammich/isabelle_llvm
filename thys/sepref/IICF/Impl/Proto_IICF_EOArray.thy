@@ -85,8 +85,15 @@ begin
     
     
   sepref_decl_impl (no_register) eo_extract_dep: eo_extract_hnr_aux by simp
+  print_theorems
   sepref_decl_impl eo_extract_nondep: eo_extract_hnr_aux_nondep by simp
-
+  print_theorems
+  
+  (*thm eo_extract_dep_hnr_mop[to_hnr]
+  thm eo_extract_dep_hnr_mop[to_hnr, to_hfref]
+  *)
+  
+  
 end  
 
   

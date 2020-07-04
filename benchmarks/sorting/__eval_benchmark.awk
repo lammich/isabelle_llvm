@@ -206,23 +206,23 @@ function output_pgf_abs () {
 #   pr_res_pgf_abs("isa-string (server)","blue",  "llstring","S","isabelle::sort");
 #   pr_res_pgf_abs("std-string (server)","blue",  "llstring","S","std::sort");
 #
-#   pr_res_pgf_abs("isa-string (laptop)","black","llstring","L","isabelle::sort");
-#   pr_res_pgf_abs("std-string (laptop)","black","llstring","L","std::sort");
+#   pr_res_pgf_abs("isa-string (laptop)","red","llstring","L","isabelle::sort");
+#   pr_res_pgf_abs("std-string (laptop)","blue","llstring","L","std::sort");
 
 
   print "@ pdqsort"
 
-#   pr_res_pgf_abs("isa-uint64 (server)","red","uint64","S","isabelle::pdqsort");
-#   pr_res_pgf_abs("std-uint64 (server)","red","uint64","S","boost::pdqsort");
+  pr_res_pgf_abs("isa-uint64 (server)","red","uint64","S","isabelle::pdqsort");
+  pr_res_pgf_abs("std-uint64 (server)","blue","uint64","S","boost::pdqsort");
 
-  pr_res_pgf_abs("isa-uint64 (laptop)","green","uint64","L","isabelle::pdqsort");
-  pr_res_pgf_abs("std-uint64 (laptop)","green","uint64","L","boost::pdqsort");
+#   pr_res_pgf_abs("isa-uint64 (laptop)","green","uint64","L","isabelle::pdqsort");
+#   pr_res_pgf_abs("std-uint64 (laptop)","green","uint64","L","boost::pdqsort");
 
 #   pr_res_pgf_abs("isa-string (server)","blue",   "llstring","S","isabelle::pdqsort");
 #   pr_res_pgf_abs("std-string (server)","blue",   "llstring","S","boost::pdqsort");
 #
-#   pr_res_pgf_abs("isa-string (laptop)","black",  "llstring","L","isabelle::pdqsort");
-#   pr_res_pgf_abs("std-string (laptop)","black",  "llstring","L","boost::pdqsort");
+#   pr_res_pgf_abs("isa-string (laptop)","red",  "llstring","L","isabelle::pdqsort");
+#   pr_res_pgf_abs("std-string (laptop)","blue",  "llstring","L","boost::pdqsort");
 
 
 }

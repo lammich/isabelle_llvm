@@ -7,6 +7,9 @@ Isabelle-LLVM is a verification framework for Isabelle/HOL that targets LLVM as 
 
   Warning: the .thy files in the download are best viewed with the [Isabelle/HOL](https://isabelle.in.tum.de) IDE.
 
+### Git Repository
+  The project is hosted on github [https://github.com/lammich/isabelle_llvm](https://github.com/lammich/isabelle_llvm)
+
 ### Starting Points for Browsing
   Here are some default starting points for browsing the theories
 
@@ -54,7 +57,19 @@ Isabelle-LLVM is a verification framework for Isabelle/HOL that targets LLVM as 
   This will invoke Isabelle to check all proofs and re-generate the exported code.
 
 ## Talks and Publications
+  [IJCAR'2020 Paper](paper_IJCAR2020.pdf)
+
   [ITP'2019 Paper](paper_ITP2019.pdf) [Slides](slides_ITP2019.pdf)
 
+
+  [Mar 2020 Talk in Enschede](enschede2020.pdf)
+
   [Dec 2019 Talk in Rennes](rennes2019.pdf)
+
+# PhD Projects
+  Funded PhD projects on formal verification are available at the University of Manchester.
+  For details see [tinyurl.com/PhdIsabelleLLVM](https://tinyurl.com/PhdIsabelleLLVM).
+
+
+
 
