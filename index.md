@@ -57,7 +57,7 @@ Isabelle-LLVM is a verification framework for Isabelle/HOL that targets LLVM as 
   This will invoke Isabelle to check all proofs and re-generate the exported code.
 
 ## Talks and Publications
-  [IJCAR'2020 Paper](paper_IJCAR2020.pdf)
+  [IJCAR'2020 Paper](paper_IJCAR2020.pdf) [Slides](slides_IJCAR2020.pdf)
 
   [ITP'2019 Paper](paper_ITP2019.pdf) [Slides](slides_ITP2019.pdf)
 

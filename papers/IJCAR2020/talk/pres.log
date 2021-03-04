@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2019.8.9)  3 JUL 2020 22:04
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2019.8.9)  4 JUL 2020 11:29
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1967,6 +1967,11 @@ File: isabelle-llvm.png Graphic file (type png)
 Package pdftex.def Info: isabelle-llvm.png  used on input line 973.
 (pdftex.def)             Requested size: 85.35826pt x 85.3559pt.
 
+Underfull \hbox (badness 10000) in paragraph at lines 973--973
+[]$[]\T1/lmtt/m/n/10.95 https : / / www21 . in . tum . de / ~lammich /
+ []
+
+
 Overfull \vbox (4.80414pt too high) detected at line 973
  []
 
@@ -2014,10 +2019,10 @@ m/lmsy8.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy9.pfb></usr/share/texmf
 /fonts/type1/public/lm/lmtt10.pfb></usr/share/texmf/fonts/type1/public/lm/lmtt9
 .pfb></usr/share/texmf/fonts/type1/public/lm/lmtto10.pfb></usr/share/texlive/te
 xmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on pres.pdf (37 pages, 498547 bytes).
+Output written on pres.pdf (37 pages, 498843 bytes).
 PDF statistics:
- 340 PDF objects out of 1000 (max. 8388607)
- 270 compressed objects within 3 object streams
+ 341 PDF objects out of 1000 (max. 8388607)
+ 271 compressed objects within 3 object streams
  90 named destinations out of 1000 (max. 500000)
  48 words of extra memory for PDF output out of 10000 (max. 10000000)
 
