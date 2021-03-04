@@ -75,7 +75,7 @@ begin
       apply (auto simp: llvm_s_int_def llvm_zero_initializer_def llvm_int_def)
       subgoal for v apply (cases v) 
         apply (auto simp: llvm_int_def llvm_the_int_def llvm_s_ptr_def llvm_s_pair_def)
-        apply (simp add: llvm_vstruct_def int_inv_aux)
+        using int_inv_aux apply (simp add: llvm_vstruct_def) 
       done
       done
       
@@ -211,9 +211,9 @@ begin
   definition "ll_lshr \<equiv> op_lift_arith2 shift_ovf bitLSHR'"  
   definition "ll_ashr \<equiv> op_lift_arith2 shift_ovf bitASHR'"
   
-  definition "ll_and \<equiv> op_lift_arith2' (AND)"
-  definition "ll_or \<equiv> op_lift_arith2' (OR)"
-  definition "ll_xor \<equiv> op_lift_arith2' (XOR)"
+  definition "ll_and \<equiv> op_lift_arith2' (lliAND)"
+  definition "ll_or \<equiv> op_lift_arith2' (lliOR)"
+  definition "ll_xor \<equiv> op_lift_arith2' (lliXOR)"
     
 
   subsubsection \<open>Aggregate Operations\<close>
@@ -337,7 +337,7 @@ begin
     apply (clarsimp simp: ltrue_def lfalse_def lint_to_bool_def)
     apply transfer
     apply auto
-    by (metis bin_rest_BIT bin_rest_x2)
+    done
   
   lemma to_bool_eq[simp]: "to_bool (w::1 word) \<longleftrightarrow> w\<noteq>0"
     by (rule to_bool_neq_0)

@@ -2,6 +2,10 @@
 
 Isabelle-LLVM is a verification framework for Isabelle/HOL that targets LLVM as backend.
 
+
+## News
+  * Updated to work with new Isabelle 2021 version
+
 ## Getting Started
   You can [browse the theories](Isabelle_LLVM/) or [download](dist.tgz) the files.
 
@@ -53,7 +57,7 @@ Isabelle-LLVM is a verification framework for Isabelle/HOL that targets LLVM as 
       cd thys 
       isabelle build -D.
 
-  Here, <code>isabelle</isabelle> must refer to <code>/your/path/to/Isabelle2019/bin/isabelle</code> from your Isabelle installation.
+  Here, <code>isabelle</isabelle> must refer to <code>/your/path/to/Isabelle2021/bin/isabelle</code> from your Isabelle installation.
   This will invoke Isabelle to check all proofs and re-generate the exported code.
 
 ## Talks and Publications
@@ -66,10 +70,7 @@ Isabelle-LLVM is a verification framework for Isabelle/HOL that targets LLVM as 
 
   [Dec 2019 Talk in Rennes](rennes2019.pdf)
 
-# PhD Projects
-  Funded PhD projects on formal verification are available at the University of Manchester.
-  For details see [tinyurl.com/PhdIsabelleLLVM](https://tinyurl.com/PhdIsabelleLLVM).
 
-
-
+## Old Versions
+  [Isabelle-LLVM for Isabelle-2020](dist-2020.tgz)
 

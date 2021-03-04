@@ -1,6 +1,6 @@
 section \<open>LLVM like Integer Types with Flexible Bit-Width\<close>
 theory LLVM_Integer
-imports LLVM_More_Word
+imports LLVM_More_Word "HOL-Library.Signed_Division"
 begin
 
 subsection \<open>Lifting of Operations\<close>  
@@ -136,7 +136,7 @@ lemma signed_unsigned_compat2_mult[simp]: "signed_unsigned_compat2 (*)"
 
 subsection \<open>Bitwise Interpretation of Operations\<close>
 text \<open>Provides an additional sanity check, by equating our definitions with the definitions found in
-  @{theory "HOL-Word.Bits_Int"}. Unfortunately, they do not define minus there.\<close>
+  "OLD:HOL-Word.Bits_Int". Unfortunately, they do not define minus there.\<close>
 
 lemma cnv_plus_rbl_conv: "length a = length b \<Longrightarrow> cnv_uop2 nel (+) a b = rev (rbl_add (rev a) (rev b))"
   apply (rule sym)
@@ -169,10 +169,10 @@ lemma cnv_XOR_bl_conv: "length a = length b \<Longrightarrow> cnv_uop2 nel (XOR)
   apply (subst bl_bin_bl[symmetric, of b])
   by (auto simp: bl_xor_bin[simplified] cnv_uop2_def simp del: bl_bin_bl)
 
-lemma cnv_NOT_bl_conv: "cnv_uop1 (bitNOT) a = map Not a"
+lemma cnv_NOT_bl_conv: "cnv_uop1 (NOT) a = map Not a"
   apply (rule sym)
   apply (subst bl_bin_bl[symmetric, of a])
-  apply (simp only: bl_not_bin)
+  apply (simp only: bl_not_bin) 
   by (auto simp: cnv_uop1_def)
 
 lemma cnv_SHL_bl_conv: "n\<le>length a \<Longrightarrow> cnv_uop1 (\<lambda>x. x * 2^n) a = drop n a @ replicate n False"
@@ -181,11 +181,13 @@ lemma cnv_SHL_bl_conv: "n\<le>length a \<Longrightarrow> cnv_uop1 (\<lambda>x. x
 lemma butlast_bin_to_bl_aux: "acc\<noteq>[] \<Longrightarrow> butlast (bin_to_bl_aux w i acc) = bin_to_bl_aux w i (butlast acc)"
   by (simp add: bin_to_bl_aux_alt butlast_append)
 
-lemma bin_rest_div2[simp]: "bin_rest (n div 2) = bin_rest n div 2"
+(*lemma bin_rest_div2[simp]: "bin_rest (n div 2) = bin_rest n div 2"
   by (auto simp: bin_rest_def)
+*)
 
-lemma bin_last_div2[simp]: "bin_last (n div 2) = bin_last (bin_rest n)"
+(*lemma bin_last_div2[simp]: "bin_last (n div 2) = bin_last (bin_rest n)"
   by (auto simp: bin_rest_def)
+*)
 
 
 find_theorems bin_to_bl_aux "(@)"
@@ -204,7 +206,7 @@ lemma "butlast (bin_to_bl w n) = bin_to_bl (w-1) (bin_rest n)" oops
 lemma bin_to_bl_div2_shift: "\<lbrakk>w\<noteq>0; n\<ge>0; n<2^w\<rbrakk> \<Longrightarrow> bin_to_bl w (n div 2) = False # butlast (bin_to_bl w n)"
   apply (cases w; simp)
   apply (rule nth_equalityI)
-  apply (auto simp: butlast_rest_bin bin_rest_def nth_Cons nth_bin_to_bl bin_nth_eq_mod split: nat.splits)
+  apply (auto simp: butlast_rest_bin nth_Cons nth_bin_to_bl bit_iff_odd split: nat.splits)
   done  
 
 
@@ -215,16 +217,17 @@ lemma div_div_p2_eq_div_p2s:
 
 lemma bin_to_bl_div2p_shift: "\<lbrakk>n\<ge>0; n<2^w; k\<le>w\<rbrakk> \<Longrightarrow> bin_to_bl w (n div 2^k) = replicate k False @ take (w-k) (bin_to_bl w n)"
   apply (rule nth_equalityI)
-  apply (auto simp: butlast_rest_bin bin_rest_def nth_Cons nth_append nth_bin_to_bl bin_nth_eq_mod split: nat.splits)
+  apply simp
+  apply clarsimp
+  apply auto
+   apply (auto simp: butlast_rest_bin nth_Cons nth_append nth_bin_to_bl split: nat.splits if_splits)
+  subgoal apply (auto simp: bit_int_def algebra_simps div_div_p2_eq_div_p2s) 
+    by (metis Nat.add_diff_assoc2 Suc_leI add.commute bits_div_0 div_div_p2_eq_div_p2s(1) div_pos_pos_trivial dvd_0_right)
   subgoal 
-    apply (simp add: div_div_p2_eq_div_p2s)
-    by (smt Nat.le_add_diff Suc_leI div_pos_pos_trivial even_zero not_less power_strict_increasing_iff)
+    by (simp add: add.commute bit_int_def div_exp_eq)
   subgoal 
-    by (smt Nat.add_diff_assoc2 Suc_leI add.commute power_add zdiv_zmult2_eq zero_le_power_eq) 
-  subgoal 
-    by (smt Nat.add_diff_assoc2 Suc_leI add.commute power_add zdiv_zmult2_eq zero_le_power_eq) 
-  done  
-   
+    by (simp add: add.commute bit_iff_odd div_div_p2_eq_div_p2s(1))
+  done
   
 
 lemma cnv_LSHR_bl_conv: "n\<le>length a \<Longrightarrow> cnv_uop1 (\<lambda>x. x div 2^n) a = replicate n False @ take (length a - n) a"
@@ -243,9 +246,11 @@ proof -
 
   then show ?thesis using ran
     apply (rule_tac nth_equalityI)
-    by (auto 
-        simp: butlast_rest_bin bin_rest_def nth_Cons bl_sbin_sign nth_bin_to_bl bin_nth_eq_mod bin_sign_def sbintrunc_mod2p div_div_p2_eq_div_p2s 
-        split: nat.splits)
+    apply (auto 
+        simp: butlast_rest_bin nth_Cons bl_sbin_sign nth_bin_to_bl bin_sign_def sbintrunc_mod2p div_div_p2_eq_div_p2s bit_int_def
+        split: nat.splits)  
+    done
+
 qed  
 
 lemma bin_to_bl_sdiv2p_shift:
@@ -260,10 +265,10 @@ proof -
   with ran K show ?thesis
     apply (rule_tac nth_equalityI)
     apply (auto 
-        simp: butlast_rest_bin bin_rest_def nth_Cons bl_sbin_sign nth_bin_to_bl bin_nth_eq_mod bin_sign_def sbintrunc_mod2p div_div_p2_eq_div_p2s 
+        simp: butlast_rest_bin nth_Cons bl_sbin_sign nth_bin_to_bl bit_int_def bin_sign_def sbintrunc_mod2p div_div_p2_eq_div_p2s 
         simp: nth_append algebra_simps
         split: nat.splits)
-    by (smt Nat.le_add_diff diff_is_0_eq' div_pos_pos_trivial even_zero less_imp_le power_strict_increasing_iff zero_less_diff)
+    by (smt (verit, ccfv_SIG) Nat.add_diff_assoc2 div_pos_pos_trivial even_add le_add2 le_eq_less_or_eq power_increasing_iff)
 qed    
 
 lemma cnv_ASHR_bl_conv: "n<length a \<Longrightarrow> cnv_sop1 (\<lambda>x. x div 2^n) a = replicate n (hd a) @ take (length a - n) a"
@@ -437,7 +442,7 @@ definition "lint_abort_bool (_::unit) \<equiv> undefined::bool"
 (*lemma l_abort_ne[simp]: "lint_abort () \<noteq> []" unfolding lint_abort_def by auto*)
 declare [[ code abort: lint_abort lint_abort_bool]]
 
-instantiation lint :: "{plus,minus,times,divide,modulo,uminus,signed_div}"
+instantiation lint :: "{plus,minus,times,divide,modulo,uminus,signed_division}"
 begin
   lift_definition plus_lint :: "lint \<Rightarrow> lint \<Rightarrow> lint" is "cnv_uop2 (lint_abort) (+)" by simp
   lift_definition minus_lint :: "lint \<Rightarrow> lint \<Rightarrow> lint" is "cnv_uop2 (lint_abort) (-)" by simp
@@ -450,11 +455,11 @@ begin
   definition sdivrem_ovf :: "lint \<Rightarrow> lint \<Rightarrow> bool" where
     "sdivrem_ovf a b \<equiv> lint_to_sint a sdiv lint_to_sint b \<notin> sints (width a)"
   
-  lift_definition sdiv_lint :: "lint \<Rightarrow> lint \<Rightarrow> lint" 
+  lift_definition signed_divide_lint :: "lint \<Rightarrow> lint \<Rightarrow> lint" 
     is "\<lambda>a b. if bl_to_sbin a sdiv bl_to_sbin b \<in> sints (length a) then cnv_sop2 lint_abort (sdiv) a b else lint_abort ()"
     by simp
     
-  lift_definition smod_lint :: "lint \<Rightarrow> lint \<Rightarrow> lint" 
+  lift_definition signed_modulo_lint :: "lint \<Rightarrow> lint \<Rightarrow> lint" 
     is "\<lambda>a b. if bl_to_sbin a sdiv bl_to_sbin b \<in> sints (length a) then cnv_sop2 lint_abort (smod) a b else lint_abort ()" 
     by simp
   
@@ -579,6 +584,7 @@ begin
   instance ..
 end
 
+
 lift_definition sless_lint :: "lint \<Rightarrow> lint \<Rightarrow> bool" (infix "<\<^sub>s" 50) is "cnv_sop2b lint_abort_bool (<)" .
 lift_definition sless_eq_lint :: "lint \<Rightarrow> lint \<Rightarrow> bool" (infix "\<le>\<^sub>s" 50) is "cnv_sop2b lint_abort_bool (\<le>)" .
 
@@ -628,69 +634,74 @@ lemma uint_zext[simp]: "lint_to_uint (zext w a) = lint_to_uint a"
 lemma sint_sext[simp]: "width a \<noteq> 0 \<Longrightarrow> lint_to_sint (sext w a) = lint_to_sint a"
   by transfer auto
 
-
-instantiation lint :: bit_operations
+(*
+instantiation lint :: semiring_bit_operations
 begin
-  lift_definition bitAND_lint :: "lint \<Rightarrow> lint \<Rightarrow> lint" is "cnv_uop2 lint_abort (AND)" by simp
-  lift_definition bitOR_lint :: "lint \<Rightarrow> lint \<Rightarrow> lint" is "cnv_uop2 lint_abort (OR)" by simp
-  lift_definition bitXOR_lint :: "lint \<Rightarrow> lint \<Rightarrow> lint" is "cnv_uop2 lint_abort (XOR)" by simp
-  lift_definition bitNOT_lint :: "lint \<Rightarrow> lint" is "cnv_uop1 (bitNOT)" by simp
+*)
 
+  lift_definition and_lint :: "lint \<Rightarrow> lint \<Rightarrow> lint" (infixr \<open>lliAND\<close> 64) is "cnv_uop2 lint_abort (AND)" by simp
+  lift_definition or_lint :: "lint \<Rightarrow> lint \<Rightarrow> lint" (infixr \<open>lliOR\<close>  59) is "cnv_uop2 lint_abort (OR)" by simp
+  lift_definition xor_lint :: "lint \<Rightarrow> lint \<Rightarrow> lint" (infixr \<open>lliXOR\<close> 59) is "cnv_uop2 lint_abort (XOR)" by simp
+
+  lift_definition not_lint :: "lint \<Rightarrow> lint" (\<open>lliNOT\<close>) is "cnv_uop1 (NOT)" by simp
+
+(*
   instance ..
 end
+*)
 
 lemma width_AND[simp]:
   assumes "width a = width b"
-  shows "width (a AND b) = width b"
+  shows "width (a lliAND b) = width b"
   using assms by transfer auto
 
 lemma uint_AND[simp]:
   assumes "width a = width b"
-  shows "lint_to_uint (a AND b) = lint_to_uint a AND lint_to_uint b"
+  shows "lint_to_uint (a lliAND b) = lint_to_uint a AND lint_to_uint b"
   using assms apply (transfer)
   apply (auto simp: )
   by (metis bin_trunc_ao(1) trunc_bl2bin_len)
 
 lemma width_OR[simp]:
   assumes "width a = width b"
-  shows "width (a OR b) = width b"
+  shows "width (a lliOR b) = width b"
   using assms by transfer auto
 
 lemma uint_OR[simp]:
   assumes "width a = width b"
-  shows "lint_to_uint (a OR b) = lint_to_uint a OR lint_to_uint b"
+  shows "lint_to_uint (a lliOR b) = lint_to_uint a OR lint_to_uint b"
   using assms apply (transfer)
   by (metis bin_trunc_ao(2) cnv_uop2_correct trunc_bl2bin_len)
 
 lemma width_XOR[simp]:
   assumes "width a = width b"
-  shows "width (a XOR b) = width b"
+  shows "width (a lliXOR b) = width b"
   using assms by transfer auto
 
 lemma uint_XOR[simp]:
   assumes "width a = width b"
-  shows "lint_to_uint (a XOR b) = lint_to_uint a XOR lint_to_uint b"
+  shows "lint_to_uint (a lliXOR b) = lint_to_uint a XOR lint_to_uint b"
   using assms apply (transfer)
-  by (metis bin_trunc_xor' cnv_uop2_correct trunc_bl2bin_len)
+  by (metis cnv_uop2_correct take_bit_xor trunc_bl2bin_len)
 
 lemma width_NOT[simp]:
-  "width (NOT a) = width a"
+  "width (lliNOT a) = width a"
   by transfer auto
 
 lemma uint_NOT[simp]:
-  shows "lint_to_uint (NOT a) = bintrunc (width a) (NOT (lint_to_uint a))"
+  shows "lint_to_uint (lliNOT a) = bintrunc (width a) (NOT (lint_to_uint a))"
   by transfer auto
 
-lemma bits_NOT[simp]: "lint_to_bits (NOT a) = map Not (lint_to_bits a)"
+lemma bits_NOT[simp]: "lint_to_bits (lliNOT a) = map Not (lint_to_bits a)"
   by transfer (auto simp: cnv_NOT_bl_conv)
 
-lemma bits_AND[simp]: "width a = width b \<Longrightarrow> lint_to_bits (a AND b) = map2 (\<and>) (lint_to_bits a) (lint_to_bits b)"
+lemma bits_AND[simp]: "width a = width b \<Longrightarrow> lint_to_bits (a lliAND b) = map2 (\<and>) (lint_to_bits a) (lint_to_bits b)"
   by transfer (auto simp: cnv_AND_bl_conv)
 
-lemma bits_OR[simp]: "width a = width b \<Longrightarrow> lint_to_bits (a OR b) = map2 (\<or>) (lint_to_bits a) (lint_to_bits b)"
+lemma bits_OR[simp]: "width a = width b \<Longrightarrow> lint_to_bits (a lliOR b) = map2 (\<or>) (lint_to_bits a) (lint_to_bits b)"
   by transfer (auto simp: cnv_OR_bl_conv)
 
-lemma bits_XOR[simp]: "width a = width b \<Longrightarrow> lint_to_bits (a XOR b) = map2 (\<noteq>) (lint_to_bits a) (lint_to_bits b)"
+lemma bits_XOR[simp]: "width a = width b \<Longrightarrow> lint_to_bits (a lliXOR b) = map2 (\<noteq>) (lint_to_bits a) (lint_to_bits b)"
   by transfer (auto simp: cnv_XOR_bl_conv)
 
 
@@ -757,7 +768,7 @@ lemma lbool_cases: "width a = 1 \<Longrightarrow> a=ltrue \<or> a=lfalse"
   unfolding ltrue_def lfalse_def 
   apply transfer
   apply auto
-  by (metis (full_types) BIT_special_simps(2) bin_bl_bin bin_to_bl_aux.Z bin_to_bl_def bin_to_bl_zero bintrunc.Suc bintrunc_n_0 bl_bin_bl zero_neq_one)
+  by (smt (verit, ccfv_threshold) append.simps(2) bin_to_bl_Suc bin_to_bl_eq_Nil_conv bin_to_bl_zero bl_sbin_bl div_pos_pos_trivial even_add last_snoc rbbl_Cons rev_append rev_bin_to_bl_simps(1) rev_bin_to_bl_simps(4))
 
 lemma lint_bool_simps[simp]:
   "width ltrue = 1" 
@@ -777,13 +788,13 @@ lemma lint_bool_simps[simp]:
 
 section \<open>Connection to Word Datatype\<close>
 
-definition lint_to_word :: "lint \<Rightarrow> 'a::len0 word" where "lint_to_word \<equiv> word_of_int o lint_to_uint"
-definition word_to_lint :: "'a::len0 word \<Rightarrow> lint" where "word_to_lint \<equiv> lconst (len_of TYPE('a)) o uint"
+definition lint_to_word :: "lint \<Rightarrow> 'a::len word" where "lint_to_word \<equiv> word_of_int o lint_to_uint"
+definition word_to_lint :: "'a::len word \<Rightarrow> lint" where "word_to_lint \<equiv> lconst (len_of TYPE('a)) o uint"
 
 lemma lint_word_inv[simp]: "lint_to_word (word_to_lint w) = w"
   by (auto simp: word_to_lint_def lint_to_word_def)
 
-lemma word_lint_inv[simp]: "LENGTH ('a::len0) = width i \<Longrightarrow> word_to_lint (lint_to_word i :: 'a word) = i"
+lemma word_lint_inv[simp]: "LENGTH ('a::len) = width i \<Longrightarrow> word_to_lint (lint_to_word i :: 'a word) = i"
   apply (auto simp: word_to_lint_def lint_to_word_def)
   by (metis uint_const uint_eq uint_lower_bound uint_upper_bound width_lconst word_of_int_inverse word_ubin.norm_Rep)
   
@@ -845,8 +856,7 @@ lemma word_to_lint_sdiv[word_to_lint_convs]:
   using assms
   apply (auto simp: word_to_lint_def lint_to_word_def sints_def)
   apply transfer'
-  by (metis (mono_tags, hide_lams) One_nat_def bl_sbin_bl bl_to_sbin_in_sints cnv_sop2_def 
-      len_gt_0 sbin_bl_bin sdiv_word_def sint_sbintrunc' sint_uint size_bin_to_bl)
+  by (smt (z3) One_nat_def bin_to_bl_trunc bintrunc_sbintruncS0 cnv_sop2_def len_bin_to_bl len_gt_0 order_refl sbin_bl_bin sbintrunc_eq_if_in_range)
 
 lemma word_to_lint_smod[word_to_lint_convs]: 
   fixes a b :: "'a::len word"
@@ -855,7 +865,7 @@ lemma word_to_lint_smod[word_to_lint_convs]:
   using assms
   apply (auto simp: word_to_lint_def lint_to_word_def sints_def)
   apply transfer'
-  by (metis (mono_tags) One_nat_def bl_to_sbin_in_sints cnv_sop2_def len_gt_0 sbin_bl_bin sint_uint size_bin_to_bl smod_word_def to_bl_of_bin word_uint.Rep_inverse)
+  by (smt (z3) One_nat_def bin_to_bl_trunc cnv_sop2_def len_gt_0 order_refl sbin_bl_bin sbintrunc_eq_if_in_range sbintrunc_sbintrunc size_bin_to_bl)
         
   
 lemma word_to_lint_shl[word_to_lint_convs]: "word_to_lint ((a::_::len word) << n) = bitSHL (word_to_lint a) n"
@@ -868,24 +878,27 @@ lemma word_to_lint_lshr[word_to_lint_convs]: "word_to_lint ((a::_::len word) >> 
   apply (auto simp: word_to_lint_def)
   apply transfer'
   apply (auto simp: cnv_uop1_def bin_to_bl_eq_iff bintrunc_mod2p uint_word_ariths shiftr_div_2n algebra_simps)
-  done
+  by (metis drop_bit_eq_div)
 
 lemma word_to_lint_ashr[word_to_lint_convs]: "word_to_lint (a >>> n) = bitASHR (word_to_lint (a::'a::len word)) n"
   unfolding word_to_lint_def
   apply transfer'
-  by (auto simp: cnv_sop1_def uint_sint sshiftr_div_2n)
+  apply (auto simp: cnv_sop1_def uint_sint sshiftr_div_2n drop_bit_eq_div)
+  done
   
 lemma word_to_lint_ucast_down[word_to_lint_convs]: "is_down UCAST('a \<rightarrow> 'b) \<Longrightarrow> word_to_lint (UCAST('a::len\<rightarrow>'b::len) a) = trunc (LENGTH('b)) (word_to_lint a)" 
   unfolding word_to_lint_def
   apply transfer'
-  apply (auto simp: cast_simps to_bl_ucast simp flip: to_bl_bin)
-  by (metis bl_bin_bl bl_trunc_def diff_diff_cancel length_drop word_bl_Rep')
+  apply (auto simp: to_bl_ucast simp flip: to_bl_bin)
+  apply (auto simp: bl_trunc_def)
+  using diff_diff_cancel drop_bin2bl by presburger
   
 lemma word_to_lint_scast_down[word_to_lint_convs]: "is_down SCAST('a \<rightarrow> 'b) \<Longrightarrow> word_to_lint (SCAST('a::len\<rightarrow>'b::len) a) = trunc (LENGTH('b)) (word_to_lint a)" 
   unfolding word_to_lint_def
   apply transfer'
-  apply (auto simp: cast_simps to_bl_scast_down simp flip: to_bl_bin)
-  by (metis bl_bin_bl bl_trunc_def diff_diff_cancel length_drop word_bl_Rep')
+  apply (auto simp: to_bl_scast_down simp flip: to_bl_bin)
+  apply (auto simp: bl_trunc_def)
+  using diff_diff_cancel drop_bin2bl by presburger
   
 (* TODO: Move *)  
 lemma zext_in_range: "\<lbrakk>w'\<noteq>0; w'\<le>w; 0\<le>a; a<2^w'\<rbrakk> \<Longrightarrow> zext w (lconst w' a) = lconst w a"  
@@ -906,17 +919,17 @@ lemma word_to_lint_scast_up[word_to_lint_convs]:
   apply (simp add: is_up sint_eq uint_sint max_def)
   by (simp add: is_up sint_up_scast)
   
-lemma word_to_lint_and_simp[word_to_lint_convs]: "word_to_lint (a AND b) = word_to_lint a AND word_to_lint b"  
+lemma word_to_lint_and_simp[word_to_lint_convs]: "word_to_lint (a AND b) = word_to_lint a lliAND word_to_lint b"  
   apply (auto simp: uint_eq word_to_lint_def)
   apply (simp add: uint_and)
   done
   
-lemma word_to_lint_or_simp[word_to_lint_convs]: "word_to_lint (a OR b) = word_to_lint a OR word_to_lint b"  
+lemma word_to_lint_or_simp[word_to_lint_convs]: "word_to_lint (a OR b) = word_to_lint a lliOR word_to_lint b"  
   apply (auto simp: uint_eq word_to_lint_def)
   apply (simp add: uint_or)
   done
   
-lemma word_to_lint_xor_simp[word_to_lint_convs]: "word_to_lint (a XOR b) = word_to_lint a XOR word_to_lint b"  
+lemma word_to_lint_xor_simp[word_to_lint_convs]: "word_to_lint (a XOR b) = word_to_lint a lliXOR word_to_lint b"  
   apply (auto simp: uint_eq word_to_lint_def)
   apply (simp add: uint_xor)
   done
@@ -944,24 +957,24 @@ lemma word_to_lint_to_sint_0_iff: "(lint_to_sint (word_to_lint (b::_::len word))
   
 
     
-lemma width_word_to_lint[simp]: "width (word_to_lint (w::'a::len0 word)) = LENGTH ('a)"
+lemma width_word_to_lint[simp]: "width (word_to_lint (w::'a::len word)) = LENGTH ('a)"
   by (auto simp: word_to_lint_def)
   
   
   
   
-definition is_up' :: "('a::len0 word \<Rightarrow> 'b::len0 word) \<Rightarrow> bool"
+definition is_up' :: "('a::len word \<Rightarrow> 'b::len word) \<Rightarrow> bool"
   where "is_up' c \<longleftrightarrow> source_size c < target_size c"
 
-definition is_down' :: "('a::len0 word \<Rightarrow> 'b::len0 word) \<Rightarrow> bool"
+definition is_down' :: "('a::len word \<Rightarrow> 'b::len word) \<Rightarrow> bool"
   where "is_down' c \<longleftrightarrow> target_size c < source_size c"
   
 lemma is_down': "is_down' c \<longleftrightarrow> len_of TYPE('b) < len_of TYPE('a)"
-  for c :: "'a::len0 word \<Rightarrow> 'b::len0 word"
+  for c :: "'a::len word \<Rightarrow> 'b::len word"
   by (simp only: is_down'_def source_size target_size)
 
 lemma is_up': "is_up' c \<longleftrightarrow> len_of TYPE('a) < len_of TYPE('b)"
-  for c :: "'a::len0 word \<Rightarrow> 'b::len0 word"
+  for c :: "'a::len word \<Rightarrow> 'b::len word"
   by (simp only: is_up'_def source_size target_size)
 
 lemmas is_down'_imp[simp, intro] = is_down'[THEN iffD1]  

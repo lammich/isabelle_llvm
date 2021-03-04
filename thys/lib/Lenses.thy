@@ -904,9 +904,9 @@ begin
 
         fun define_all_lenses tyname cs qual lthy = let
           val (lis,(lthy,lthy_old)) =
-            Local_Theory.open_target lthy |> snd
+            Local_Theory.begin_nested lthy |> snd
             |> define_all_lenses_aux cs qual
-            ||> `Local_Theory.close_target
+            ||> `Local_Theory.end_nested
           val phi = Proof_Context.export_morphism lthy_old lthy
           val lis = map (map (morph_lens_info phi)) lis
 

@@ -44,7 +44,7 @@ context begin
     by auto
     
 
-  lemma pos_sint_to_uint: "0\<le>sint i \<Longrightarrow> sint i = uint i"  
+  lemma pos_sint_to_uint: "0 \<le> sint i \<Longrightarrow> sint i = uint i"  
     by (smt Suc_n_not_le_n Suc_pred bintrunc_mod2p int_mod_eq' len_gt_0 power_increasing_iff sint_range' uint_sint)
     
   lemma array_new_rule_sint[vcg_rules]: "llvm_htriple 
@@ -67,7 +67,7 @@ context begin
     (array_new TYPE('a::llvm_rep) ni) 
     (\<upharpoonleft>array_assn (replicate n init))"
     unfolding array_new_def array_assn_cnv_range_malloc unat.assn_def
-    apply (simp add: unat_def)
+    apply (simp add: )
     by vcg
 
   lemma array_new_rule_snat[vcg_rules]: "llvm_htriple 
@@ -75,7 +75,7 @@ context begin
     (array_new TYPE('a::llvm_rep) ni) 
     (\<upharpoonleft>array_assn (replicate n init))"
     unfolding array_new_def array_assn_cnv_range_malloc snat.assn_def
-    supply [simp] = cnv_snat_to_uint
+    supply [simp] = cnv_snat_to_uint and [simp del] = nat_uint_eq
     by vcg
     
       
@@ -86,8 +86,9 @@ context begin
   lemma array_cast_index: 
     assumes "uint (ii::'a::len word) < max_sint LENGTH('a)"  
     shows "sint ii = uint ii" "nat (uint ii) < n \<longleftrightarrow> uint ii < int n"
-    using assms
-    by (simp_all add: max_sint_def msb_uint_big sint_eq_uint unat_def nat_less_iff)
+      "unat ii < n \<longleftrightarrow> uint ii < int n"
+    using assms                                                                          
+    by (simp_all add: max_sint_def msb_uint_big sint_eq_uint unat_def nat_less_iff del: nat_uint_eq)
     
   abbreviation (input) "in_range_nat i (ii::'a::len word) xs \<equiv> i<length xs \<and> int i<max_sint LENGTH('a)"  
   abbreviation (input) "in_range_uint i (ii::'a::len word) xs \<equiv> i<int (length xs) \<and> i<max_sint LENGTH('a)"
@@ -120,7 +121,7 @@ context begin
     (array_nth p ii)
     (\<lambda>r. \<up>(r = xs!i) ** \<upharpoonleft>array_assn xs p)"
     unfolding array_nth_def array_assn_def snat.assn_def
-    supply [simp] = cnv_snat_to_uint
+    supply [simp] = cnv_snat_to_uint and [simp del] = nat_uint_eq
     by vcg
     
   lemma array_upd_rule_sint[vcg_rules]: "llvm_htriple
@@ -158,16 +159,10 @@ context begin
     (\<lambda>r. \<up>(r=p) ** \<upharpoonleft>array_assn (xs[i:=x]) p)"
     unfolding array_assn_cnv_range_upd
     unfolding array_upd_def array_assn_def snat.assn_def
-    supply [simp] = cnv_snat_to_uint
+    supply [simp] = cnv_snat_to_uint and [simp del] = nat_uint_eq
     supply [fri_rules] = fri_abs_cong_rl
-    by vcg
-    
-    
-    
-    
-    
-    
-    
+    apply vcg
+    done
     
 end  
 
@@ -195,7 +190,7 @@ export_llvm "arraycpy :: 8 word ptr \<Rightarrow> _ \<Rightarrow> 64 word \<Righ
 
 (* TODO: Move / REMOVE?*)
 lemma unat_not_msb_imp_less_max_sint: "x \<in> unat ` {w::'a::len word. \<not> msb w} \<Longrightarrow> int x < max_sint LENGTH('a)"
-  by (auto simp: unat_def[abs_def] msb_uint_big max_sint_def)
+  by (auto simp: unat_def[abs_def] msb_uint_big max_sint_def simp del: nat_uint_eq)
 
 
 lemma arraycpy_rule_snat[vcg_rules]: 

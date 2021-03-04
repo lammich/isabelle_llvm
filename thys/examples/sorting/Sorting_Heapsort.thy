@@ -988,7 +988,8 @@ context heap_context begin
       apply (intro refine0 bind_refine')
       apply refine_dref_type
       supply [[put_named_ss Main_ss]]
-      apply (use [[put_named_ss Main_ss]] in \<open>auto simp: conc_Id in_sd23_rel_conv woe_eq_except_length woe_eq_except_nth\<close>) [4]
+      apply (auto simp: conc_Id in_sd23_rel_conv woe_eq_except_length woe_eq_except_nth) [4]
+      (*apply (use [[put_named_ss Main_ss]] in \<open>auto simp: conc_Id in_sd23_rel_conv woe_eq_except_length woe_eq_except_nth\<close>) [4]*)
       unfolding mop_seth3_def
       apply refine_vcg
       apply (auto simp: in_sd23_rel_conv woe_eq_except_length woe_eq_except_nth algebra_simps woe_eq_except_ith woe_eq_except_upd)

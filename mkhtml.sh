@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 BASEDIR=$PWD
 
 REBUILD=false

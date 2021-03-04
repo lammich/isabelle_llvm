@@ -352,9 +352,9 @@ subsection \<open>Code Generator Driver\<close>
           File.full_path o Resources.master_directory o Proof_Context.theory_of;
           
         fun prepare_path ctxt (s,pos) = let
-          val _ = Position.report pos Markup.language_path;
+          val _ = Position.report pos (Markup.language_path false);
           val path = Path.explode s;
-          val _ = Position.report pos (Markup.path (Path.smart_implode path));
+          val _ = Position.report pos (Markup.path (Path.implode_symbolic path));
           val path = using_master_directory ctxt path
         in path end
       
@@ -575,8 +575,6 @@ experiment begin
 
   
 definition [llvm_code]: "testx (a::64 word) \<equiv> llc_while (\<lambda>a. ll_icmp_ult 0 a) (\<lambda>a. ll_sub a 1) a"
-    
-declare [[eta_contract = false]]
 export_llvm (debug) testx
 export_llvm (debug) exp_thms1: exp  
 export_llvm (debug) (no_while) exp_thms2: exp  

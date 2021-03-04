@@ -15,7 +15,7 @@ lemma word_clz'_eq: "x\<noteq>0 \<Longrightarrow> word_clz' x = word_clz x"
   by (simp add: word_clz'_def)  
   
 lemma of_bl_eqZ: 
-  "\<lbrakk> length xs = LENGTH ('a::len0) \<rbrakk> \<Longrightarrow> (of_bl xs :: 'a word) = 0 \<longleftrightarrow> (xs = replicate LENGTH('a) False)"  
+  "\<lbrakk> length xs = LENGTH ('a::len) \<rbrakk> \<Longrightarrow> (of_bl xs :: 'a word) = 0 \<longleftrightarrow> (xs = replicate LENGTH('a) False)"  
   apply auto
   by (metis to_bl_0 to_bl_use_of_bl word_bl_Rep')    
 
@@ -104,7 +104,7 @@ sepref_def word_clz_impl
   
 export_llvm "word_clz_impl :: 64 word \<Rightarrow> _"   
 
-lemma word_clz_nonzero_max': "x\<noteq>0 \<Longrightarrow> word_clz (x::'a::len2 word) \<le> LENGTH('a) - Suc 0"
+lemma word_clz_nonzero_max': "x\<noteq>0 \<Longrightarrow> word_clz (x::'a::len2 word) < LENGTH('a)"
   using word_clz_nonzero_max[of x] unfolding word_size
   by simp
 
@@ -113,7 +113,7 @@ sepref_def word_log2_impl is
   unfolding word_log2_def word_size
   apply (annot_snat_const "TYPE('a)")
   supply [simp] = word_clz_nonzero_max'
-  by sepref  
+  by sepref
 
 export_llvm "word_log2_impl :: 64 word \<Rightarrow> _"
 

@@ -252,7 +252,7 @@ fun extract_recursion_eqs [] _ def_thm lthy = ((def_thm,[],[]),lthy)
   val def_thm = Local_Defs.meta_rewrite_rule lthy def_thm
 
   (* Open local target *)
-  val (_,lthy) = Local_Theory.open_target lthy 
+  val (_,lthy) = Local_Theory.begin_nested lthy 
   val lthy = Local_Theory.map_background_naming (Name_Space.mandatory_path basename) lthy
   
   val (def_thm, lthy) = yield_singleton (apfst snd oo Variable.import true) def_thm lthy
@@ -297,7 +297,7 @@ fun extract_recursion_eqs [] _ def_thm lthy = ((def_thm,[],[]),lthy)
     
   (* Close Target *)
   val lthy1 = lthy
-  val lthy = Local_Theory.close_target lthy
+  val lthy = Local_Theory.end_nested lthy
 
   (* Transfer Results *)
   val xfer = Local_Theory.standard_form lthy1 lthy Morphism.thm

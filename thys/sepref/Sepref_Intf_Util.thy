@@ -605,10 +605,10 @@ subsection \<open>ML-Level Declarations\<close>
             |> Drule.dest_term
             |> Thm.term_of*)
   
-          val (_,lthy) = Local_Theory.open_target lthy 
+          val (_,lthy) = Local_Theory.begin_nested lthy 
           val ((dt,(_,thm)),lthy) = Local_Theory.define 
             ((name,Mixfix.NoSyn),((Thm.def_binding name,@{attributes [code]}@attribs),t)) lthy;
-          val (lthy, lthy_old) = `Local_Theory.close_target lthy
+          val (lthy, lthy_old) = `Local_Theory.end_nested lthy
           val phi = Proof_Context.export_morphism lthy_old lthy
           val thm = Morphism.thm phi thm
           val dt = Morphism.term phi dt

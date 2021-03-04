@@ -1,14 +1,16 @@
 section \<open>Entry-Point to Word Library and additional lemmas for Isabelle-LLVM\<close>
 theory LLVM_More_Word
-imports "HOL-Word.Word" Bits_Natural "Word_Lib.Word_Lemmas"
+imports "HOL-Library.Word" (*"HOL-Library.Bit_Operations"*) Bits_Natural "Word_Lib.Word_Lib_Sumo"
 begin
 (* TODO: Fix in Word.thy! 
   Introducing proper infix-syntax for signed comparisons. So, also (<s) and (<=s) get available.
 *)
+(*
 no_notation word_sle ("(_/ <=s _)" [50, 51] 50)
 no_notation word_sless  ("(_/ <s _)" [50, 51] 50)
 notation word_sle (infix "<=s" 50)
 notation word_sless (infix "<s" 50)
+*)
 
 (* Try to remove some useless stuff that Word_Lemmas imported via Complex_Main. *)
 
@@ -77,10 +79,7 @@ lemma word1_NOT_eq: "~~(x::1 word) = x+1"
   by (auto simp: NOT_eq)
 
 lemma upcast_no_msb[simp]: "LENGTH('small::len) < LENGTH('big::len) \<Longrightarrow> \<not>msb (UCAST('small \<rightarrow> 'big) x)" 
-  apply (clarsimp simp: ucast_def msb_word_of_int)
-  apply transfer
-  using nth_bintr by auto
-  
+  by (simp add: bit_word_ucast_iff msb_word_eq)
 
 subsection \<open>Integer Division with Rounding Towards Zero\<close>
 
@@ -114,7 +113,8 @@ lemma abs_rem_rtz_lt: "b\<noteq>0 \<Longrightarrow> \<bar>a smod b\<bar> < \<bar
 text \<open>LLVM documentation: The remainder is either zero, or has the same sign as the dividend\<close>
 lemma rem_rtz_sign: "(a::int) smod b = 0 \<or> sgn ((a::int) smod b) = sgn a"
   apply (clarsimp simp: srem_int_original_def)
-  by (smt Euclidean_Division.pos_mod_sign sgn_pos zmod_trival_iff)
+  by (metis (no_types, hide_lams) Euclidean_Division.pos_mod_sign abs_le_zero_iff abs_of_nonneg add.inverse_neutral mod_0 mod_by_0 neg_le_0_iff_le not_le sgn_pos)
+  (*by (smt Euclidean_Division.pos_mod_sign sgn_pos zmod_trival_iff)*)
   
 
 lemma sdiv_positive[simp]: "(a::int)\<ge>0 \<Longrightarrow> b\<ge>0 \<Longrightarrow> a sdiv b = a div b"
@@ -124,7 +124,7 @@ lemma smod_positive[simp]: "(a::int)\<ge>0 \<Longrightarrow> b\<ge>0 \<Longright
   by (auto simp: srem_int_original_def)
 
 
-subsection \<open>Additions to @{theory "HOL-Word.Bits_Int"}\<close>
+subsection \<open>Additions to Bits-Int\<close>
 declare bin_to_bl_def[simp del]
 
 (* TODO: Move *)
@@ -137,8 +137,21 @@ lemma bin_to_bl_eq_Nil_conv[simp]: "bin_to_bl w i = [] \<longleftrightarrow> w=0
 lemma bin_to_bl_aux_eq_Nil_conv[simp]: "bin_to_bl_aux w i acc = [] \<longleftrightarrow> w=0 \<and> acc=[]"
   by (metis bin_to_bl_aux.Z bin_to_bl_eq_Nil_conv take.simps(1) take_bin2bl_lem1)
 
+lemma "bl_to_bin_aux bl (1+n) = bl_to_bin_aux bl n + 2 ^ length bl"
+  apply (induction bl arbitrary: n)
+  apply (simp_all add: algebra_simps)
+  by smt
+
 lemma bl_to_bin_True [simp]: "bl_to_bin (True # bl) = bl_to_bin bl + 2^length bl"
-  by (metis Bit_B1 add.commute add.right_neutral bin_bl_bin bin_cat_num bl_bin_bl bl_to_bin_aux.simps(2) bl_to_bin_aux_alt mult_1s(1) mult_zero_left numeral_code(1))
+proof -
+  have "bl_to_bin_aux bl (1+n) = bl_to_bin_aux bl n + 2 ^ length bl" for n
+    apply (induction bl arbitrary: n)
+    apply (simp_all add: algebra_simps)
+    by smt
+  from this[of 0] show ?thesis
+    unfolding bl_to_bin_def
+    by simp
+qed
 
 lemma bl_to_bin_append_num: "bl_to_bin (a@b) = 2^length b * bl_to_bin a + bl_to_bin b"
   by (simp add: bin_cat_num bl_to_bin_app_cat)
@@ -153,8 +166,8 @@ lemma bin_to_bl_strunc[simp]:
   "w\<^sub>1 \<le> w\<^sub>2 + 1 \<Longrightarrow> bin_to_bl w\<^sub>1 (sbintrunc w\<^sub>2 i) = bin_to_bl w\<^sub>1 i"
   by (simp add: bintrunc_sbintrunc_le bl_to_bin_inj)
 
-lemma bin_last_x2[simp]: "bin_last (2*n) = False" by (auto simp: bin_last_def)
-lemma bin_rest_x2[simp]: "bin_rest (2*n) = n" by (auto simp: bin_rest_def)
+lemma bin_last_x2[simp]: "bin_last (2*n) = False" by (auto)
+lemma bin_rest_x2[simp]: "bin_rest (2*n) = n" by simp
 
 lemma bin_to_bl_x2[simp]: "w\<noteq>0 \<Longrightarrow> bin_to_bl w (2*n) = bin_to_bl (w-1) n @ [False]"
   by (cases w) (auto simp: bin_to_bl_def bin_to_bl_aux_append)

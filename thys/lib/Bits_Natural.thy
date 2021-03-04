@@ -2,7 +2,7 @@
    Minor additions by Peter Lammich
 *)
 theory Bits_Natural
-  imports "HOL-Word.Word" Word_Lib.Aligned
+  imports "HOL-Library.Word" Word_Lib.Aligned "Word_Lib.Word_Lib_Sumo"
 begin
 
 (* TODO: Move *)
@@ -10,22 +10,35 @@ lemma bin_trunc_xor':
   "bintrunc n x XOR bintrunc n y = bintrunc n (x XOR y)"
   by (auto simp add: bin_eq_iff bin_nth_ops nth_bintr)
 
-lemma uint_xor: "uint (x XOR y) = uint x XOR uint y"
-  by (transfer, simp add: bin_trunc_xor')
+(*lemma uint_xor: "uint (x XOR y) = uint x XOR uint y"
+  by (transfer, simp add: bin_trunc_xor')*)
 
 
 
-instantiation nat :: bit_comprehension
+instance nat :: semiring_bit_syntax ..
+
+instantiation nat :: set_bit begin
+  definition set_bit_nat :: "nat \<Rightarrow> nat \<Rightarrow> bool \<Rightarrow> nat" where
+    "set_bit i n b = nat (bin_sc n b (int i))"
+
+instance 
+  apply standard
+  apply (simp_all add: set_bit_nat_def)
+  by (metis bin_nth_sc_gen bin_sign_sc bit_nat_iff bit_of_nat_iff_bit of_nat_0_le_iff sign_Pls_ge_0)
+end  
+
+instantiation nat :: msb
 begin
+  definition msb_nat :: "nat \<Rightarrow> bool" where
+    "msb i = msb (int i)"
 
-definition test_bit_nat :: \<open>nat \<Rightarrow> nat \<Rightarrow> bool\<close> where
-  "test_bit i j = test_bit (int i) j"
+instance ..
+end
 
-definition lsb_nat :: \<open>nat \<Rightarrow> bool\<close> where
-  "lsb i = (int i :: int) !! 0"
 
-definition set_bit_nat :: "nat \<Rightarrow> nat \<Rightarrow> bool \<Rightarrow> nat" where
-  "set_bit i n b = nat (bin_sc n b (int i))"
+(*
+instantiation nat :: semiring_bit_shifts
+begin
 
 definition set_bits_nat :: "(nat \<Rightarrow> bool) \<Rightarrow> nat" where
   "set_bits f =
@@ -37,6 +50,11 @@ definition set_bits_nat :: "(nat \<Rightarrow> bool) \<Rightarrow> nat" where
      in nat (sbintrunc n (bl_to_bin (True # rev (map f [0..<n]))))
    else 0 :: nat)"
 
+
+definition not_nat :: "nat \<Rightarrow> nat" where
+  "NOT i = nat (NOT (int i))"
+
+(*
 definition shiftl_nat where
   "shiftl x n = nat ((int x) * 2 ^ n)"
 
@@ -57,26 +75,26 @@ definition bitXOR_nat :: "nat \<Rightarrow> nat \<Rightarrow> nat" where
 
 definition msb_nat :: "nat \<Rightarrow> bool" where
   "msb i = msb (int i)"
-
-instance ..
+*)
+instance . .
 
 end
-
+*)
 
 lemma nat_shiftr[simp]:
   "m >> 0 = m"
   \<open>((0::nat) >> m) = 0\<close>
   \<open>(m >> Suc n) = (m div 2 >> n)\<close> for m :: nat
-  by (auto simp: shiftr_nat_def zdiv_int zdiv_zmult2_eq[symmetric])
+  by (simp_all add: shiftr_eq_drop_bit drop_bit_Suc)
 
 lemma nat_shifl_div: \<open>m >> n = m div (2^n)\<close> for m :: nat
   by (induction n arbitrary: m) (auto simp: div_mult2_eq)
 
 lemma nat_shiftl[simp]:
   "m << 0 = m"
-  \<open>((0::nat) << m) = 0\<close>
+  \<open>((0) << m) = 0\<close>
   \<open>(m << Suc n) = ((m * 2) << n)\<close> for m :: nat
-  by (auto simp: shiftl_nat_def zdiv_int zdiv_zmult2_eq[symmetric])
+  by (simp_all add: shiftl_eq_push_bit)
 
 lemma nat_shiftr_div2: \<open>m >> 1 = m div 2\<close> for m :: nat
   by auto
@@ -90,6 +108,7 @@ definition shiftl1 :: \<open>nat \<Rightarrow> nat\<close> where
 definition shiftr1 :: \<open>nat \<Rightarrow> nat\<close> where
   \<open>shiftr1 n = n >> 1\<close>
 
+(*
 instantiation natural :: bit_comprehension
 begin
 
@@ -130,26 +149,21 @@ end
 
 instance ..
 end
+*)
 
-
-lemma bitXOR_1_if_mod_2: \<open>bitXOR L 1 = (if L mod 2 = 0 then L + 1 else L - 1)\<close> for L :: nat
+lemma bitXOR_1_if_mod_2: \<open> L XOR 1 = (if L mod 2 = 0 then L + 1 else L - 1)\<close> for L :: nat
   apply transfer
   apply (subst int_int_eq[symmetric])
   apply (rule bin_rl_eqI)
-   apply (auto simp: bitXOR_nat_def)
-  unfolding bin_rest_def bin_last_def bitXOR_nat_def
+   apply (auto simp: xor_nat_def)
+  unfolding bin_last_def xor_nat_def
        apply presburger+
   done
 
-lemma bitAND_1_mod_2: \<open>bitAND L 1 = L mod 2\<close> for L :: nat
-  apply transfer
-  apply (subst int_int_eq[symmetric])
-  apply (subst bitAND_nat_def)
-  by (auto simp: zmod_int bin_rest_def bin_last_def bitval_bin_last[symmetric])
-
+lemma bitAND_1_mod_2: \<open>L AND 1 = L mod 2\<close> for L :: nat by auto
 
 lemma nat_set_bit_0: \<open>set_bit x 0 b = nat ((bin_rest (int x)) BIT b)\<close> for x :: nat
-  by (auto simp: set_bit_nat_def)
+  by (auto simp: set_bit_nat_def Bit_def) 
 
 lemma nat_test_bit0_iff: \<open>n !! 0 \<longleftrightarrow> n mod 2 = 1\<close> for n :: nat
 proof -
@@ -160,16 +174,18 @@ proof -
     by auto
 
   show ?thesis
-    unfolding test_bit_nat_def
-    by (auto simp: bin_last_def zmod_int)
+    unfolding test_bit_eq_bit
+    by (auto simp: bin_last_def zmod_int bit_nat_def odd_iff_mod_2_eq_one)
+    
 qed
+
 lemma test_bit_2: \<open>m > 0 \<Longrightarrow> (2*n) !! m \<longleftrightarrow> n !! (m - 1)\<close> for n :: nat
   by (cases m)
-    (auto simp: test_bit_nat_def bin_rest_def)
+    (auto simp: test_bit_eq_bit bit_nat_def)
 
 lemma test_bit_Suc_2: \<open>m > 0 \<Longrightarrow> Suc (2 * n) !! m \<longleftrightarrow> (2 * n) !! m\<close> for n :: nat
-  by (cases m)
-    (auto simp: test_bit_nat_def bin_rest_def)
+  apply (cases m)
+  by (auto simp: test_bit_eq_bit bit_nat_def div_mult2_eq)
 
 lemma bin_rest_prev_eq:
   assumes [simp]: \<open>m > 0\<close>
@@ -180,9 +196,9 @@ proof -
     unfolding m'_def
     by auto
   moreover have \<open>bin_nth (int m') (m - Suc 0) = m' !! (m - Suc 0)\<close>
-    unfolding test_bit_nat_def test_bit_int_def ..
+    by (simp add: bit_of_nat_iff_bit test_bit_eq_bit)
   ultimately show ?thesis
-    by (auto simp: bin_rest_def test_bit_2 test_bit_Suc_2)
+    by (auto simp: test_bit_2 test_bit_Suc_2)
 qed
 
 lemma bin_sc_ge0: \<open>w >= 0 ==> (0::int) \<le> bin_sc n b w\<close>
@@ -193,20 +209,7 @@ lemma bin_to_bl_eq_nat:
   by (metis Nat.size_nat_def size_bin_to_bl)
 
 lemma nat_bin_nth_bl: "n < m \<Longrightarrow> w !! n = nth (rev (bin_to_bl m (int w))) n" for w :: nat
-  apply (induct n arbitrary: m w)
-  subgoal for m w
-    apply clarsimp
-    apply (case_tac m, clarsimp)
-    using bin_nth_bl bin_to_bl_def test_bit_int_def test_bit_nat_def apply presburger
-    done
-  subgoal for n m w
-    apply (clarsimp simp: bin_to_bl_def)
-    apply (case_tac m, clarsimp)
-    apply (clarsimp simp: bin_to_bl_def)
-    apply (subst bin_to_bl_aux_alt)
-    apply (simp add: bin_nth_bl test_bit_nat_def)
-    done
-  done
+  by (metis bin_nth_bl bit_of_nat_iff_bit test_bit_eq_bit)
 
 lemma bin_nth_ge_size: \<open>nat na \<le> n \<Longrightarrow> 0 \<le> na \<Longrightarrow> bin_nth na n = False\<close>
 proof (induction \<open>n\<close> arbitrary: na)
@@ -221,17 +224,16 @@ next
     using H by auto
   ultimately show ?case
     using IH[rule_format,  of \<open>bin_rest na\<close>] H
-    by (auto simp: bin_rest_def)
+    by (auto simp: bit_Suc)
 qed
 
 lemma test_bit_nat_outside: "n > size w \<Longrightarrow> \<not>w !! n" for w :: nat
-  unfolding test_bit_nat_def
-  by (auto simp: bin_nth_ge_size)
+  unfolding test_bit_eq_bit bit_nat_def
+  by (metis Nat.size_nat_def div_less even_zero le_eq_less_or_eq le_less_trans n_less_equal_power_2)
 
 lemma nat_bin_nth_bl':
   \<open>a !! n \<longleftrightarrow> (n < size a \<and> (rev (bin_to_bl (size a) (int a)) ! n))\<close>
-  by (metis (full_types) Nat.size_nat_def bin_nth_ge_size leI nat_bin_nth_bl nat_int
-      of_nat_less_0_iff test_bit_int_def test_bit_nat_def)
+  by (metis Nat.size_nat_def bit_nat_def div_less even_zero n_less_equal_power_2 nat_bin_nth_bl not_less_iff_gr_or_eq test_bit_eq_bit test_bit_nat_outside)
 
 lemma nat_set_bit_test_bit: \<open>set_bit w n x !! m = (if m = n then x else w !! m)\<close> for w n :: nat
   unfolding nat_bin_nth_bl'
@@ -240,8 +242,7 @@ lemma nat_set_bit_test_bit: \<open>set_bit w n x !! m = (if m = n then x else w 
        apply (metis bin_nth_ge_size bin_nth_sc bin_sc_ge0 leI of_nat_less_0_iff set_bit_nat_def)
       apply (metis bin_nth_bl bin_nth_ge_size bin_nth_sc bin_sc_ge0 bin_to_bl_def int_nat_eq leI
       of_nat_less_0_iff set_bit_nat_def)
-     apply (metis Nat.size_nat_def bin_nth_sc_gen bin_nth_simps(3) bin_to_bl_def int_nat_eq
-      nat_bin_nth_bl' set_bit_nat_def test_bit_int_def test_bit_nat_def)
+  apply (metis Nat.size_nat_def bin_to_bl_def nat_bin_nth_bl' set_bit_class.bit_set_bit_iff test_bit_eq_bit)
     apply (metis Nat.size_nat_def bin_nth_bl bin_nth_sc_gen bin_to_bl_def int_nat_eq nat_bin_nth_bl
       nat_bin_nth_bl' of_nat_less_0_iff of_nat_less_iff set_bit_nat_def)
    apply (metis (full_types) bin_nth_bl bin_nth_ge_size bin_nth_sc_gen bin_sc_ge0 bin_to_bl_def leI of_nat_less_0_iff set_bit_nat_def)
@@ -249,18 +250,11 @@ lemma nat_set_bit_test_bit: \<open>set_bit w n x !! m = (if m = n then x else w 
 
   
   
-lemma unat_or: "unat (x OR y) = unat x OR unat y"
-  unfolding unat_def
-  by (simp add: uint_or bitOR_nat_def)
+lemma unat_or: "unat (x OR y) = unat x OR unat y" by (rule unsigned_or_eq)
 
-lemma unat_and: "unat (x AND y) = unat x AND unat y"
-  unfolding unat_def
-  by (simp add: uint_and bitAND_nat_def)
+lemma unat_and: "unat (x AND y) = unat x AND unat y" by (rule unsigned_and_eq)
   
-lemma unat_xor: "unat (x XOR y) = unat x XOR unat y"
-  unfolding unat_def
-  by (simp add: uint_xor bitXOR_nat_def)
-  
+lemma unat_xor: "unat (x XOR y) = unat x XOR unat y" by (rule unsigned_xor_eq)
   
   
 (* TODO: Add OR-numerals, XOR-numerals! *)  
@@ -282,18 +276,18 @@ lemma nat_and_numerals [simp]:
   "numeral (Num.Bit1 x) AND (Suc 0::nat) = 1"
   "Suc 0 AND Suc 0 = 1"
   for n::nat
-  by (auto simp: bitAND_nat_def Bit_def nat_add_distrib)
+  by (auto simp: and_nat_def Bit_def nat_add_distrib)
   
   
   
 lemma nat_and_comm: "a AND b = b AND a" for a b :: nat
-  unfolding bitAND_nat_def by (auto simp: int_and_comm)
+  unfolding and_nat_def by (auto simp: int_and_comm)
 
 lemma AND_upper_nat1: "a AND b \<le> a" for a b :: nat
 proof -
   have "int a AND int b \<le> int a"
     by (rule AND_upper1) simp
-  thus ?thesis unfolding bitAND_nat_def by linarith
+  thus ?thesis unfolding and_nat_def by linarith
 qed    
 
 lemma AND_upper_nat2: "a AND b \<le> b" for a b :: nat
@@ -307,7 +301,7 @@ lemmas AND_upper_nat2'' [simp] = order_le_less_trans [OF AND_upper_nat2]
 
 
 lemma msb_shiftr_nat [simp]: "msb ((x :: nat) >> r) \<longleftrightarrow> msb x"
-  by (auto simp: msb_nat_def shiftr_nat_def simp flip: shiftr_int_def)
+  by (simp add: msb_int_def msb_nat_def)
 
 lemma bintrunc_le: \<open>a \<ge> 0 \<Longrightarrow> a < b \<Longrightarrow> bintrunc n a < b\<close>
   by (smt bintr_lt2p bintrunc_mod2p mod_pos_pos_trivial)
@@ -315,7 +309,6 @@ lemma bintrunc_le: \<open>a \<ge> 0 \<Longrightarrow> a < b \<Longrightarrow> bi
 
 lemma msb_shiftr_word [simp]: "r < LENGTH('a) \<Longrightarrow> msb ((x :: 'a :: {len} word) >> r) \<longleftrightarrow> ((r = 0 \<and> msb x))"
   apply (cases r)
-  apply (auto simp: shiftr_nat_def simp flip: shiftr_int_def sint_uint)
   apply (auto simp: bl_shiftr word_size msb_word_def 
     simp flip: sint_uint[unfolded One_nat_def] hd_bl_sign_sint)
   done
@@ -324,7 +317,6 @@ lemma msb_shiftl_word [simp]: "r < LENGTH('a)  \<Longrightarrow> x << r < 2 ^ (L
      msb ((x :: 'a :: {len} word) << r) = (r = 0 \<and> msb x)"
   using less_is_drop_replicate[of \<open>x << r\<close> \<open>(LENGTH('a) - Suc 0)\<close>]
   apply (cases r)
-  apply (auto simp: shiftl_nat_def simp flip: shiftl_int_def sint_uint)
   apply (auto simp: bl_shiftl word_size msb_word_def 
     simp flip: sint_uint[unfolded One_nat_def] hd_bl_sign_sint)
   done

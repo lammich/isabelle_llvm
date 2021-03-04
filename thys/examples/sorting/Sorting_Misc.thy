@@ -488,7 +488,8 @@ context begin
   lemma size_fits_snat_aux2: "LENGTH('a)>2 \<Longrightarrow> snat_invar (of_nat LENGTH('a) :: 'a::len2 word)"
     unfolding snat_invar_alt
     apply (rule exI[where x = "LENGTH('a) - 1"])
-    by (auto simp: unat_of_nat size_fits_snat_aux)
+    apply (auto simp: unat_of_nat size_fits_snat_aux)
+    by (simp add: size_fits_snat_aux take_bit_nat_eq_self)
     
 end    
 
@@ -499,15 +500,14 @@ lemma LENGTH_refine[sepref_fr_rules]:
   unfolding snat_rel_def snat.rel_def 
   supply [simp] = in_br_conv word_size size_fits_snat_aux2
   apply vcg'
-  apply (simp_all add: size_fits_snat_aux snat_eq_unat(1) unat_of_nat_eq)
-  done
+  by (metis n_less_equal_power_2 size_fits_snat_aux2 snat_eq_unat_aux2 unat_of_nat_len)
 
 lemma size_refine[sepref_fr_rules]: "LENGTH('a)>2 \<Longrightarrow> (return o (\<lambda>_. of_nat (LENGTH('a))), RETURN o size) \<in> (word_assn' TYPE('a::len2))\<^sup>k \<rightarrow>\<^sub>a snat_assn' TYPE('a)"
   apply sepref_to_hoare
   unfolding snat_rel_def snat.rel_def 
   supply [simp] = in_br_conv word_size size_fits_snat_aux2
   apply vcg'
-  by (simp add: size_fits_snat_aux snat_eq_unat(1) unat_of_nat_eq)
+  by (metis n_less_equal_power_2 of_nat_inverse size_fits_snat_aux2 snat_eq_unat_aux2)
   
   
 (* TODO: Move *)  

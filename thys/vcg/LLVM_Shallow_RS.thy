@@ -367,6 +367,13 @@ text \<open>Memory allocation tag, which expresses ownership of an allocated blo
 definition ll_malloc_tag :: "int \<Rightarrow> 'a::llvm_rep ptr \<Rightarrow> _" 
   where "ll_malloc_tag n p \<equiv> \<up>(n\<ge>0) ** llvm_malloc_tag n (the_raw_ptr p)"
 
+(* TODO: Move *)
+lemma abase_ptr_iff: "abase (PTR r) \<longleftrightarrow> abase r"
+  by (simp add: abase_ptr_def)
+
+lemma the_raw_PTR_aidx: "the_raw_ptr (PTR r +\<^sub>a x) = r +\<^sub>a x"
+  by (simp add: aidx_ptr_def)
+
 text \<open>Allocation returns an array-base pointer to an initialized range, 
   as well as an allocation tag\<close>
 lemma ll_malloc_rule[vcg_rules]: 
@@ -375,7 +382,7 @@ lemma ll_malloc_rule[vcg_rules]:
     (ll_malloc TYPE('a::llvm_rep) n) 
     (\<lambda>r. \<upharpoonleft>(ll_range {0..< uint n}) (\<lambda>_. init) r ** ll_malloc_tag (uint n) r)"
   unfolding ll_malloc_def ll_pto_def ll_malloc_tag_def ll_range_def 
-  supply [simp] = list_conj_eq_sep_set_img uint_nat abase_ptr_def aidx_ptr_def unat_gt_0
+  supply [simp] = unat_gt_0 abase_ptr_iff the_raw_PTR_aidx
   apply vcg
   done
 
@@ -488,13 +495,13 @@ lemma ll_or_simp[vcg_normalize_simps]: "ll_or a b = return (a OR b)" by (auto si
 lemma ll_xor_simp[vcg_normalize_simps]: "ll_xor a b = return (a XOR b)" by (auto simp: ll_xor_def)
   
 lemma ll_shl_simp[vcg_normalize_simps]: "unat b < LENGTH ('a) \<Longrightarrow> ll_shl (a::'a::len word) b = return (a << unat b)" 
-  by (auto simp: ll_shl_def Let_def shift_ovf_def unat_def bitSHL'_def)
+  by (auto simp: ll_shl_def Let_def shift_ovf_def bitSHL'_def)
   
 lemma ll_lshr_simp[vcg_normalize_simps]: "unat b < LENGTH ('a) \<Longrightarrow> ll_lshr (a::'a::len word) b = return (a >> unat b)" 
-  by (auto simp: ll_lshr_def Let_def shift_ovf_def unat_def bitLSHR'_def)
+  by (auto simp: ll_lshr_def Let_def shift_ovf_def bitLSHR'_def)
 
 lemma ll_ashr_simp[vcg_normalize_simps]: "unat b < LENGTH ('a) \<Longrightarrow> ll_ashr (a::'a::len word) b = return (a >>> unat b)" 
-  by (auto simp: ll_ashr_def Let_def shift_ovf_def unat_def bitASHR'_def)
+  by (auto simp: ll_ashr_def Let_def shift_ovf_def bitASHR'_def)
   
 lemma [vcg_rules]:
   fixes a b :: "'a::len word" 
@@ -704,8 +711,8 @@ lemma (in llvm_prim_arith_setup) llvm_from_bool_inline[llvm_inline]:
   "from_bool (a\<and>b) = (from_bool a AND from_bool b)"  
   "from_bool (a\<or>b) = (from_bool a OR from_bool b)"  
   "(from_bool (\<not>a)::1 word) = (1 - (from_bool a :: 1 word))"  
-  subgoal by (metis (full_types) from_bool_1 from_bool_mask_simp from_bool_to_bool_iff word_bool_alg.conj_zero_left word_bw_comms(1))
-  subgoal by (metis (full_types) from_bool_1 from_bool_neq_0 word_bool_alg.disj_absorb word_bool_alg.disj_zero_left word_log_esimps(3))
+  subgoal by (metis and.idem and_zero_eq bit.conj_zero_left from_bool_eq_if')
+  subgoal by (smt (z3) from_bool_0 or.idem word_bw_comms(2) word_log_esimps(3))
   subgoal by (metis (full_types) cancel_comm_monoid_add_class.diff_cancel diff_zero from_bool_eq_if')
   done
 
@@ -883,7 +890,7 @@ lemma bool_bin_ops:
   done
 
 lemma bool_un_ops:
-  "bool.is_un_op' ll_not1 bitNOT Not" 
+  "bool.is_un_op' ll_not1 (NOT) Not" 
   apply (all \<open>rule\<close>)
   apply (simp_all only: to_bool_logics)
   apply (all \<open>vcg_normalize?\<close>)
