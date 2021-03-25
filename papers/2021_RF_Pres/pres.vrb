@@ -1,0 +1,9 @@
+\frametitle{Synthesis}
+\begin{itemize}
+   \item Given abstract program and concrete data-structures
+    \begin{itemize}
+     \item synthesize concrete program
+     \item using implementations for \is$op$s and \is$spec$s from data-structures
+
+    \end{itemize}
+  \end{itemize}
