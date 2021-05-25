@@ -1,0 +1,17 @@
+\frametitle{IRF Core}
+\begin{itemize}
+   \item<+-> Nondetermistic programs shallowly embedded in HOL
+    \begin{itemize}
+     \item As monad
+      \begin{lstlisting}
+        \alpha M = FAIL | SPEC (\alpha => bool)
+      \end{lstlisting}
+      return, bind
+     \item<+-> + if-then-else, recursion (via flat ccpo)
+     \item<+-> + derived constructs (while, foreach, ...)
+     \item<+-> = usable programming language
+    \end{itemize}
+   \item<+-> Refinement Calculus for Program and Data Refinement
+   \item<+-> Automation: VCG, semi-automatic data refinement
+
+  \end{itemize}
