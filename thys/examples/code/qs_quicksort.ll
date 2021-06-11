@@ -13,12 +13,12 @@ define i64 @LLVM_Examples_qs_partition(i64* %A, i64 %lo, i64 %hi) {
     %hi1 = sub i64 %hi, 1
     %xa = getelementptr i64, i64* %A, i64 %hi1
     %pivot = load i64, i64* %xa
-    %xb = insertvalue { i64, i64 } zeroinitializer, i64 %lo, 0
-    %xc = insertvalue { i64, i64 } %xb, i64 %lo, 1
+    %xba = insertvalue { i64, i64 } zeroinitializer, i64 %lo, 0
+    %xca = insertvalue { i64, i64 } %xba, i64 %lo, 1
     br label %while_start
 
   while_start:
-    %xaa = phi { i64, i64 } [ %x2, %ctd_if ], [ %xc, %start ]
+    %xaa = phi { i64, i64 } [ %x2, %ctd_if ], [ %xca, %start ]
     %i = extractvalue { i64, i64 } %xaa, 0
     %s = extractvalue { i64, i64 } %xaa, 1
     %x = icmp ult i64 %i, %hi1
@@ -27,8 +27,8 @@ define i64 @LLVM_Examples_qs_partition(i64* %A, i64 %lo, i64 %hi) {
   while_body:
     %i1 = extractvalue { i64, i64 } %xaa, 0
     %s1 = extractvalue { i64, i64 } %xaa, 1
-    %xba = getelementptr i64, i64* %A, i64 %i1
-    %Aj = load i64, i64* %xba
+    %xbaa = getelementptr i64, i64* %A, i64 %i1
+    %Aj = load i64, i64* %xbaa
     %tmpa = icmp ult i64 %Aj, %pivot
     br i1 %tmpa, label %then, label %else
 
@@ -37,14 +37,14 @@ define i64 @LLVM_Examples_qs_partition(i64* %A, i64 %lo, i64 %hi) {
     br i1 %tmpaa, label %thena, label %elsea
 
   thena:
-    %xca = getelementptr i64, i64* %A, i64 %s1
-    %xd = load i64, i64* %xca
-    %xe = getelementptr i64, i64* %A, i64 %i1
-    %y = load i64, i64* %xe
+    %xcaa = getelementptr i64, i64* %A, i64 %s1
+    %xda = load i64, i64* %xcaa
+    %xea = getelementptr i64, i64* %A, i64 %i1
+    %y = load i64, i64* %xea
     %p = getelementptr i64, i64* %A, i64 %s1
     store i64 %y, i64* %p
     %pa = getelementptr i64, i64* %A, i64 %i1
-    store i64 %xd, i64* %pa
+    store i64 %xda, i64* %pa
     br label %ctd_ifa
 
   elsea:
@@ -60,8 +60,8 @@ define i64 @LLVM_Examples_qs_partition(i64* %A, i64 %lo, i64 %hi) {
   ctd_if:
     %sa = phi i64 [ %s1, %else ], [ %x1, %ctd_ifa ]
     %ia = add i64 %i1, 1
-    %xca1 = insertvalue { i64, i64 } zeroinitializer, i64 %ia, 0
-    %x2 = insertvalue { i64, i64 } %xca1, i64 %sa, 1
+    %xcaa1 = insertvalue { i64, i64 } zeroinitializer, i64 %ia, 0
+    %x2 = insertvalue { i64, i64 } %xcaa1, i64 %sa, 1
     br label %while_start
 
   while_end:
@@ -71,14 +71,14 @@ define i64 @LLVM_Examples_qs_partition(i64* %A, i64 %lo, i64 %hi) {
     br i1 %tmpa1, label %thenb, label %elseb
 
   thenb:
-    %xba1 = getelementptr i64, i64* %A, i64 %i2
-    %xca2 = load i64, i64* %xba1
-    %xd1 = getelementptr i64, i64* %A, i64 %hi1
-    %y1 = load i64, i64* %xd1
+    %xbaa1 = getelementptr i64, i64* %A, i64 %i2
+    %xcaa2 = load i64, i64* %xbaa1
+    %xda1 = getelementptr i64, i64* %A, i64 %hi1
+    %y1 = load i64, i64* %xda1
     %p1 = getelementptr i64, i64* %A, i64 %i2
     store i64 %y1, i64* %p1
     %pa1 = getelementptr i64, i64* %A, i64 %hi1
-    store i64 %xca2, i64* %pa1
+    store i64 %xcaa2, i64* %pa1
     br label %ctd_ifb
 
   elseb:
@@ -93,11 +93,11 @@ define void @qs_quicksort(i64* %A, i64 %lo, i64 %hi) {
   start:
     %x = insertvalue { i64, i64 } zeroinitializer, i64 %lo, 0
     %xa = insertvalue { i64, i64 } %x, i64 %hi, 1
-    call void @LLVM_Examples_qs_quicksort_f_05610656 (i64* %A, { i64, i64 } %xa)
+    call void @LLVM_Examples_qs_quicksort_f_018574522 (i64* %A, { i64, i64 } %xa)
     ret void
 }
 
-define void @LLVM_Examples_qs_quicksort_f_05610656(i64* %A, { i64, i64 } %x) {
+define void @LLVM_Examples_qs_quicksort_f_018574522(i64* %A, { i64, i64 } %x) {
 
   start:
     %lo = extractvalue { i64, i64 } %x, 0
@@ -108,13 +108,13 @@ define void @LLVM_Examples_qs_quicksort_f_05610656(i64* %A, { i64, i64 } %x) {
   then:
     %p = call i64 @LLVM_Examples_qs_partition (i64* %A, i64 %lo, i64 %hi)
     %tmpa = sub i64 %p, 1
-    %xd = insertvalue { i64, i64 } zeroinitializer, i64 %lo, 0
-    %xe = insertvalue { i64, i64 } %xd, i64 %tmpa, 1
-    call void @LLVM_Examples_qs_quicksort_f_05610656 (i64* %A, { i64, i64 } %xe)
+    %xf = insertvalue { i64, i64 } zeroinitializer, i64 %lo, 0
+    %xg = insertvalue { i64, i64 } %xf, i64 %tmpa, 1
+    call void @LLVM_Examples_qs_quicksort_f_018574522 (i64* %A, { i64, i64 } %xg)
     %tmpaa = add i64 %p, 1
-    %xg = insertvalue { i64, i64 } zeroinitializer, i64 %tmpaa, 0
-    %x1 = insertvalue { i64, i64 } %xg, i64 %hi, 1
-    call void @LLVM_Examples_qs_quicksort_f_05610656 (i64* %A, { i64, i64 } %x1)
+    %xi = insertvalue { i64, i64 } zeroinitializer, i64 %tmpaa, 0
+    %x1 = insertvalue { i64, i64 } %xi, i64 %hi, 1
+    call void @LLVM_Examples_qs_quicksort_f_018574522 (i64* %A, { i64, i64 } %x1)
     br label %ctd_if
 
   else:

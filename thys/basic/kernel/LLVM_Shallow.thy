@@ -48,9 +48,13 @@ begin
       
   end
   
-  text \<open>We use a phantom type to attach the type of the pointed to value to a pointer.\<close>
-  datatype 'a::llvm_rep ptr = PTR (the_raw_ptr: llvm_ptr)
-  definition null :: "'a::llvm_rep ptr" where "null = PTR llvm_null"
+  text \<open>We use a phantom type to attach the type of the pointed to value to a pointer.
+    Note that we define pointers for any datatype. While it will always point to 
+    representable datatypes, this enables easy \<open>llvm_rep\<close> instantiations for recursive structures
+    via pointers, such as linked list cells. 
+  \<close>
+  datatype 'a ptr = PTR (the_raw_ptr: llvm_ptr)
+  definition null :: "'a ptr" where "null = PTR llvm_null"
   
 
   text \<open>We instantiate the type classes for the supported types, 
@@ -74,16 +78,16 @@ begin
       apply (auto simp: from_val_word_def to_val_word_def)
       apply (auto simp: llvm_s_int_def llvm_zero_initializer_def llvm_int_def)
       subgoal for v apply (cases v) 
-        apply (auto simp: llvm_int_def llvm_the_int_def llvm_s_ptr_def llvm_s_pair_def)
+        apply (auto simp: llvm_int_def llvm_the_int_def llvm_s_ptr_def llvm_struct_def llvm_ptr_def llvm_vstruct_def)
         using int_inv_aux apply (simp add: llvm_vstruct_def) 
       done
       done
       
   end
   
-  instantiation ptr :: (llvm_rep) llvm_rep begin
-    definition "to_val \<equiv> llvm_ptr o ptr.the_raw_ptr"
-    definition "from_val v \<equiv> PTR (llvm_the_ptr v)"
+  instantiation ptr :: (type) llvm_rep begin
+    definition "to_val_ptr \<equiv> llvm_ptr o ptr.the_raw_ptr"
+    definition "from_val_ptr v \<equiv> PTR (llvm_the_ptr v)"
     definition [simp]: "struct_of_ptr (_::'a ptr itself) \<equiv> llvm_s_ptr"
     definition [simp]: "init_ptr::'a ptr \<equiv> null"
   
@@ -93,32 +97,32 @@ begin
       apply (auto simp: from_val_ptr_def to_val_ptr_def)
       apply (auto simp: llvm_zero_initializer_def llvm_ptr_def llvm_s_ptr_def null_def llvm_null_def)
       subgoal for v apply (cases v)
-        by (auto simp: llvm_s_int_def llvm_s_pair_def llvm_ptr_def llvm_the_ptr_def)
+        by (auto simp: llvm_s_int_def llvm_s_struct_def llvm_ptr_def llvm_the_ptr_def)
       done
       
   end
   
   instantiation prod :: (llvm_rep, llvm_rep) llvm_rep begin
-    definition "to_val_prod \<equiv> \<lambda>(a,b). llvm_pair (to_val a) (to_val b)"
-    definition "from_val_prod p \<equiv> case llvm_the_pair p of (a,b) \<Rightarrow> (from_val a, from_val b)"
-    definition [simp]: "struct_of_prod (_::('a\<times>'b) itself) \<equiv> llvm_s_pair (struct_of TYPE('a)) (struct_of TYPE('b))"
+    definition "to_val_prod \<equiv> \<lambda>(a,b). llvm_struct [to_val a, to_val b]"
+    definition "from_val_prod p \<equiv> case llvm_the_struct p of [a,b] \<Rightarrow> (from_val a, from_val b)"
+    definition [simp]: "struct_of_prod (_::('a\<times>'b) itself) \<equiv> llvm_s_struct [struct_of TYPE('a), struct_of TYPE('b)]"
     definition [simp]: "init_prod ::'a\<times>'b \<equiv> (init,init)"
     
     instance
       apply standard
       apply (rule ext)
       apply (auto simp: from_val_prod_def to_val_prod_def)
-      apply (auto simp: llvm_pair_def llvm_s_pair_def init_zero llvm_zero_initializer_def)
+      apply (auto simp: llvm_struct_def llvm_s_struct_def init_zero llvm_zero_initializer_def)
       subgoal for v
         apply (cases v)
-        apply (auto simp: llvm_s_int_def llvm_s_ptr_def llvm_pair_def llvm_the_pair_def 
+        apply (auto simp: llvm_s_int_def llvm_s_ptr_def llvm_struct_def llvm_the_struct_def 
           llvm_val.the_val_def llvm_vstruct_def split: prod.splits llvm_val.splits val.split)
         done
       done
       
   end
 
-  lemma to_val_prod_conv[simp]: "to_val (a,b) = llvm_pair (to_val a) (to_val b)"
+  lemma to_val_prod_conv[simp]: "to_val (a,b) = llvm_struct [to_val a, to_val b]"
     unfolding to_val_prod_def by auto
   
   
@@ -173,11 +177,6 @@ begin
     return (lint_to_word (bool_to_lint (f a b)))
   }"
     
-  definition op_lift_ptr_cmp :: "_ \<Rightarrow> 'a::llvm_rep ptr \<Rightarrow> 'a ptr \<Rightarrow> 1 word llM"
-    where "op_lift_ptr_cmp f a b \<equiv> doM {
-    return (lint_to_word (bool_to_lint (f a b)))
-  }"
-  
   definition "ll_icmp_eq \<equiv>  op_lift_cmp (=)"
   definition "ll_icmp_ne \<equiv>  op_lift_cmp (\<noteq>)"
   definition "ll_icmp_sle \<equiv> op_lift_cmp (\<le>\<^sub>s)"
@@ -185,19 +184,6 @@ begin
   definition "ll_icmp_ule \<equiv> op_lift_cmp (\<le>)"
   definition "ll_icmp_ult \<equiv> op_lift_cmp (<)"
 
-  text \<open>Note: There are no pointer compare instructions in LLVM. 
-    To compare pointers in LLVM, they have to be casted to integers first.
-    However, our abstract memory model cannot assign a bit-width to pointers.
-    
-    Thus, we model pointer comparison instructions in our semantics, and let the 
-    code generator translate them to integer comparisons. 
-    
-    Up to now, we only model pointer equality. 
-    For less-than, suitable preconditions are required, which are consistent with the 
-    actual memory layout of LLVM. We could, e.g., adopt the rules from the C standard here.
-  \<close>
-  definition "ll_ptrcmp_eq \<equiv> op_lift_ptr_cmp (=)"
-  definition "ll_ptrcmp_ne \<equiv> op_lift_ptr_cmp (\<noteq>)"
   
 
   
@@ -220,7 +206,25 @@ begin
   text \<open>In LLVM, there is an \<open>extractvalue\<close> and \<open>insertvalue\<close> operation.
     In our shallow embedding, these get instantiated for \<open>fst\<close> and \<open>snd\<close>.\<close>
     
-  
+    
+  definition ll_extract_value :: "'t::llvm_rep \<Rightarrow> nat \<Rightarrow> 't\<^sub>1::llvm_rep llM"
+    where "ll_extract_value p i \<equiv> doM {
+      fcheck (STATIC_ERROR ''Expected struct'') (llvm_is_struct (to_val p));
+      let vs = llvm_the_struct (to_val p);
+      fcheck (STATIC_ERROR ''Field index out of range'') (i<length vs);
+      checked_from_val (vs!i)
+    }"  
+    
+  definition ll_insert_value :: "'t::llvm_rep \<Rightarrow> 't\<^sub>1::llvm_rep \<Rightarrow> nat \<Rightarrow> 't::llvm_rep llM"
+    where "ll_insert_value p x i \<equiv> doM {
+      fcheck (STATIC_ERROR ''Expected struct'') (llvm_is_struct (to_val p));
+      let vs = llvm_the_struct (to_val p);
+      fcheck (STATIC_ERROR ''Field index out of range'') (i<length vs);
+      checked_from_val (llvm_struct (vs[i:=to_val x]))
+    }"
+    
+    
+  (*
   definition "checked_split_pair v \<equiv> doM {
     fcheck (STATIC_ERROR ''Expected pair'') (llvm_is_pair v);
     return (llvm_the_pair v)
@@ -230,7 +234,9 @@ begin
   definition ll_extract_snd :: "'t::llvm_rep \<Rightarrow> 't\<^sub>2::llvm_rep llM" where "ll_extract_snd p = doM { (a,b) \<leftarrow> checked_split_pair (to_val p); checked_from_val b }"
   definition ll_insert_fst :: "'t::llvm_rep \<Rightarrow> 't\<^sub>1::llvm_rep \<Rightarrow> 't llM" where "ll_insert_fst p x = doM { (a,b) \<leftarrow> checked_split_pair (to_val p); checked_from_val (llvm_pair (to_val x) b) }" 
   definition ll_insert_snd :: "'t::llvm_rep \<Rightarrow> 't\<^sub>2::llvm_rep \<Rightarrow> 't llM" where "ll_insert_snd p x = doM { (a,b) \<leftarrow> checked_split_pair (to_val p); checked_from_val (llvm_pair a (to_val x)) }" 
-    
+  *)  
+  
+  
   (*  
   definition ll_extract_fst :: "('a::llvm_rep \<times> 'b::llvm_rep) \<Rightarrow> 'a llM" where "ll_extract_fst ab \<equiv> return (fst ab)"
   definition ll_extract_snd :: "('a::llvm_rep \<times> 'b::llvm_rep) \<Rightarrow> 'b llM" where "ll_extract_snd ab \<equiv> return (snd ab)"
@@ -269,25 +275,49 @@ begin
 
 
   text \<open>As for the aggregate operations, the \<open>getelementptr\<close> instruction is instantiated 
-    for pointer indexing, fst, and snd. \<close>
+    for pointer and structure indexing. \<close>
       
   definition ll_ofs_ptr :: "'a::llvm_rep ptr \<Rightarrow> _::len word \<Rightarrow> 'a ptr llM" where "ll_ofs_ptr p ofs = doM {
     r \<leftarrow> llvm_checked_idx_ptr (the_raw_ptr p) (sint ofs);
     return (PTR r)
   }"  
 
-  definition ll_gep_fst :: "'p::llvm_rep ptr \<Rightarrow> 'a::llvm_rep ptr llM" where "ll_gep_fst p = doM {
-    fcheck (STATIC_ERROR ''gep_fst: Expected pair type'') (llvm_is_s_pair (struct_of TYPE('p)));
-    r \<leftarrow> llvm_checked_gep (the_raw_ptr p) PFST;
+  definition ll_gep_struct :: "'p::llvm_rep ptr \<Rightarrow> nat \<Rightarrow> 'a::llvm_rep ptr llM" where "ll_gep_struct p i = doM {
+    fcheck (STATIC_ERROR ''gep_struct: Expected struct type'') (llvm_is_s_struct (struct_of TYPE('p)));
+    r \<leftarrow> llvm_checked_gep (the_raw_ptr p) (PFLD i);
     return (PTR r)
   }"
 
-  definition ll_gep_snd :: "'p::llvm_rep ptr \<Rightarrow> 'b::llvm_rep ptr llM" where "ll_gep_snd p = doM {
-    fcheck (STATIC_ERROR ''gep_snd: Expected pair type'') (llvm_is_s_pair (struct_of TYPE('p)));
-    r \<leftarrow> llvm_checked_gep (the_raw_ptr p) PSND;
-    return (PTR r)
+  subsubsection \<open>Pointer Comparison\<close>  
+  text \<open>Note: There are no pointer comparison instructions in LLVM. 
+    To compare pointers in LLVM, they have to be casted to integers first.
+    However, our abstract memory model cannot assign a bit-width to pointers.
+    
+    Thus, we model pointer comparison instructions in our semantics, and let the 
+    code generator translate them to integer comparisons. 
+    
+    Up to now, we only model pointer equality. 
+    
+    Note that the operand pointers must be null, or point to currently allocated memory.
+    
+    For less-than, more preconditions are required, which are consistent with the 
+    actual memory layout of LLVM. We could, e.g., adopt the rules from the C standard here.
+  \<close>
+  
+  text \<open>Check if a pair of pointers is valid for comparison operation, i.e., one is null or both are currently allocated\<close>
+  definition check_ptrs_cmp :: "'a::llvm_rep ptr \<Rightarrow> 'a ptr \<Rightarrow> unit llM" where
+    "check_ptrs_cmp p\<^sub>1 p\<^sub>2 \<equiv> if p\<^sub>1=null \<or> p\<^sub>2=null then return () else doM { ll_load p\<^sub>1; ll_load p\<^sub>2; return ()}"
+  
+  definition op_lift_ptr_cmp :: "_ \<Rightarrow> 'a::llvm_rep ptr \<Rightarrow> 'a ptr \<Rightarrow> 1 word llM"
+    where "op_lift_ptr_cmp f a b \<equiv> doM {
+    check_ptrs_cmp a b;  
+    return (lint_to_word (bool_to_lint (f a b)))
   }"
-
+  
+  definition "ll_ptrcmp_eq \<equiv> op_lift_ptr_cmp (=)"
+  definition "ll_ptrcmp_ne \<equiv> op_lift_ptr_cmp (\<noteq>)"
+  
+  
   subsubsection \<open>Conversion Operations\<close>
   definition "llb_trunc i w \<equiv> doM {
     fcheck (STATIC_ERROR ''Trunc must go to smaller type'') (width i > w);

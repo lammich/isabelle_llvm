@@ -707,6 +707,8 @@ void test_uint(string name, size_t NITER, vector<uint64_t> B) {
 #endif
   if (name=="std::sort") sort_test(A,B,NITER,comp,[&]{ std::sort(A.begin (), A.end (), comp);});
   else if (name=="boost::pdqsort") sort_test(A,B,NITER,comp,[&]{ boost_pdqsort(A.begin (), A.end (), comp);});
+  else if (name=="boost::pdqsort_bp") sort_test(A,B,NITER,comp,[&]{ boost::sort::pdqsort(A.begin (), A.end ());});
+  else if (name=="boost::sample_sort") sort_test(A,B,NITER,comp,[&]{ boost::sort::sample_sort(A.begin (), A.end (), comp, 12);});
   else {
     cout<<"No such sorting algorithm "<<name<<endl;
     exit(1);
@@ -723,6 +725,7 @@ void test_llstring(string name, size_t NITER, vector<llstring> &B) {
   else if (name=="isabelle::pdqsort") sort_test(A,B,NITER,comp,[&]{ str_pdqsort(A.data (), 0, A.size());});
   else if (name=="boost::pdqsort") sort_test(A,B,NITER,comp,[&]{ boost_pdqsort(A.begin (), A.end (), comp);});
   else if (name=="std::sort") sort_test(A,B,NITER,comp,[&]{ std::sort(A.begin (), A.end (), comp);});
+  else if (name=="boost::sample_sort") sort_test(A,B,NITER,comp,[&]{ boost::sort::sample_sort(A.begin (), A.end (), comp, 12);});
   else {
     cout<<"No such sorting algorithm "<<name<<endl;
     exit(1);

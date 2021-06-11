@@ -13,34 +13,34 @@ define i64 @kmp({ i64, i8* } %x, { i64, i8* } %x1) {
   start:
     %a1 = extractvalue { i64, i8* } %x, 0
     %a2 = extractvalue { i64, i8* } %x, 1
-    %xa = icmp eq i64 %a1, 0
-    br i1 %xa, label %then, label %else
+    %xc = icmp eq i64 %a1, 0
+    br i1 %xc, label %then, label %else
 
   then:
     br label %ctd_if
 
   else:
     %xaa = call { i64, i64* } @KMP_compute_butlast_ff_s_impl ({ i64, i8* } %x)
-    %xb = insertvalue { i64, i64 } zeroinitializer, i64 0, 0
-    %tmpaa = insertvalue { i64, i64 } %xb, i64 -1, 1
-    %xc = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 0, 0
-    %xd = insertvalue { i64, { i64, i64 } } %xc, { i64, i64 } %tmpaa, 1
+    %xd = insertvalue { i64, i64 } zeroinitializer, i64 0, 0
+    %tmpaa = insertvalue { i64, i64 } %xd, i64 -1, 1
+    %xe = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 0, 0
+    %xf = insertvalue { i64, { i64, i64 } } %xe, { i64, i64 } %tmpaa, 1
     br label %while_start
 
   while_start:
-    %xba = phi { i64, { i64, i64 } } [ %r1, %ctd_iff ], [ %xd, %else ]
+    %xba = phi { i64, { i64, i64 } } [ %r1, %ctd_iff ], [ %xf, %else ]
     %a1a = extractvalue { i64, { i64, i64 } } %xba, 0
     %xca = extractvalue { i64, { i64, i64 } } %xba, 1
     %a1aa = extractvalue { i64, i64 } %xca, 0
     %a2a = extractvalue { i64, i64 } %xca, 1
     %a1b = extractvalue { i64, i8* } %x, 0
     %a2b = extractvalue { i64, i8* } %x, 1
-    %xe = add i64 %a1a, %a1b
+    %xea = add i64 %a1a, %a1b
     %a1c = extractvalue { i64, i8* } %x1, 0
     %a2c = extractvalue { i64, i8* } %x1, 1
-    %xg = icmp sle i64 %xe, %a1c
+    %xga = icmp sle i64 %xea, %a1c
     %x2 = icmp eq i64 -1, %a2a
-    %x3 = and i1 %xg, %x2
+    %x3 = and i1 %xga, %x2
     br i1 %x3, label %while_body, label %while_end
 
   while_body:
@@ -48,28 +48,28 @@ define i64 @kmp({ i64, i8* } %x, { i64, i8* } %x1) {
     %xca1 = extractvalue { i64, { i64, i64 } } %xba, 1
     %a1aa1 = extractvalue { i64, i64 } %xca1, 0
     %a2a1 = extractvalue { i64, i64 } %xca1, 1
-    %xe1 = insertvalue { i64, i64 } zeroinitializer, i64 %a1aa1, 0
-    %xf = insertvalue { i64, i64 } %xe1, i64 %a2a1, 1
+    %xk = insertvalue { i64, i64 } zeroinitializer, i64 %a1aa1, 0
+    %xl = insertvalue { i64, i64 } %xk, i64 %a2a1, 1
     br label %while_starta
 
   while_starta:
-    %s = phi { i64, i64 } [ %r, %ctd_ifc ], [ %xf, %while_body ]
+    %s = phi { i64, i64 } [ %r, %ctd_ifc ], [ %xl, %while_body ]
     %a1b1 = extractvalue { i64, i64 } %s, 0
     %a2b1 = extractvalue { i64, i64 } %s, 1
-    %xea = icmp eq i64 -1, %a2b1
-    br i1 %xea, label %thena, label %elsea
+    %xea1 = icmp eq i64 -1, %a2b1
+    br i1 %xea1, label %thena, label %elsea
 
   thena:
     %xfa = add i64 %a1a1, %a1b1
     %a1c1 = extractvalue { i64, i8* } %x1, 0
     %a2c1 = extractvalue { i64, i8* } %x1, 1
-    %xg1 = getelementptr i8, i8* %a2c1, i64 %xfa
-    %xh = load i8, i8* %xg1
+    %xga1 = getelementptr i8, i8* %a2c1, i64 %xfa
+    %xha = load i8, i8* %xga1
     %a1d = extractvalue { i64, i8* } %x, 0
     %a2d = extractvalue { i64, i8* } %x, 1
-    %xi = getelementptr i8, i8* %a2d, i64 %a1b1
-    %x4 = load i8, i8* %xi
-    %x5 = icmp eq i8 %xh, %x4
+    %xia = getelementptr i8, i8* %a2d, i64 %a1b1
+    %x4 = load i8, i8* %xia
+    %x5 = icmp eq i8 %xha, %x4
     br label %ctd_ifa
 
   elsea:
@@ -89,13 +89,13 @@ define i64 @kmp({ i64, i8* } %x, { i64, i8* } %x1) {
     br i1 %xfa1, label %thenb, label %elseb
 
   thenb:
-    %xga = insertvalue { i64, i64 } zeroinitializer, i64 %xda, 0
-    %x7 = insertvalue { i64, i64 } %xga, i64 %a1a1, 1
+    %xga2 = insertvalue { i64, i64 } zeroinitializer, i64 %xda, 0
+    %x7 = insertvalue { i64, i64 } %xga2, i64 %a1a1, 1
     br label %ctd_ifb
 
   elseb:
-    %xga1 = insertvalue { i64, i64 } zeroinitializer, i64 %xda, 0
-    %x8 = insertvalue { i64, i64 } %xga1, i64 -1, 1
+    %xga3 = insertvalue { i64, i64 } zeroinitializer, i64 %xda, 0
+    %x8 = insertvalue { i64, i64 } %xga3, i64 -1, 1
     br label %ctd_ifb
 
   ctd_ifb:
@@ -117,48 +117,48 @@ define i64 @kmp({ i64, i8* } %x, { i64, i8* } %x1) {
   while_enda:
     %a1b3 = extractvalue { i64, i64 } %s, 0
     %a2b3 = extractvalue { i64, i64 } %s, 1
-    %xea1 = icmp eq i64 -1, %a2b3
-    br i1 %xea1, label %thend, label %elsed
+    %xea2 = icmp eq i64 -1, %a2b3
+    br i1 %xea2, label %thend, label %elsed
 
   thend:
     %a1c3 = extractvalue { i64, i64* } %xaa, 0
     %a2c3 = extractvalue { i64, i64* } %xaa, 1
     %xfa2 = getelementptr i64, i64* %a2c3, i64 %a1b3
-    %xg2 = load i64, i64* %xfa2
-    %xh1 = sub i64 %a1b3, %xg2
-    %xia = add i64 %xh1, 1
-    %xj = add i64 %a1a1, %xia
+    %xga4 = load i64, i64* %xfa2
+    %xha1 = sub i64 %a1b3, %xga4
+    %xia1 = add i64 %xha1, 1
+    %xja = add i64 %a1a1, %xia1
     %a1d1 = extractvalue { i64, i64* } %xaa, 0
     %a2d1 = extractvalue { i64, i64* } %xaa, 1
-    %xk = getelementptr i64, i64* %a2d1, i64 %a1b3
-    %xl = load i64, i64* %xk
-    %xma = icmp sle i64 %xl, 1
+    %xka = getelementptr i64, i64* %a2d1, i64 %a1b3
+    %xla = load i64, i64* %xka
+    %xma = icmp sle i64 %xla, 1
     br i1 %xma, label %thene, label %elsee
 
   thene:
     br label %ctd_ife
 
   elsee:
-    %x9 = sub i64 %xl, 1
+    %x9 = sub i64 %xla, 1
     br label %ctd_ife
 
   ctd_ife:
-    %xn = phi i64 [ %x9, %elsee ], [ 0, %thene ]
-    %xo = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %xj, 0
-    %xp = insertvalue { i64, i64 } zeroinitializer, i64 %xn, 0
-    %x10 = insertvalue { i64, i64 } %xp, i64 -1, 1
-    %x11 = insertvalue { i64, { i64, i64 } } %xo, { i64, i64 } %x10, 1
+    %xna = phi i64 [ %x9, %elsee ], [ 0, %thene ]
+    %xoa = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %xja, 0
+    %xv = insertvalue { i64, i64 } zeroinitializer, i64 %xna, 0
+    %tmph = insertvalue { i64, i64 } %xv, i64 -1, 1
+    %x10 = insertvalue { i64, { i64, i64 } } %xoa, { i64, i64 } %tmph, 1
     br label %ctd_ifd
 
   elsed:
     %xfa3 = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %a1a1, 0
-    %xg3 = insertvalue { i64, i64 } zeroinitializer, i64 %a1b3, 0
-    %x12 = insertvalue { i64, i64 } %xg3, i64 %a1a1, 1
-    %x13 = insertvalue { i64, { i64, i64 } } %xfa3, { i64, i64 } %x12, 1
+    %xp = insertvalue { i64, i64 } zeroinitializer, i64 %a1b3, 0
+    %tmpf = insertvalue { i64, i64 } %xp, i64 %a1a1, 1
+    %x11 = insertvalue { i64, { i64, i64 } } %xfa3, { i64, i64 } %tmpf, 1
     br label %ctd_ifd
 
   ctd_ifd:
-    %r1 = phi { i64, { i64, i64 } } [ %x13, %elsed ], [ %x11, %ctd_ife ]
+    %r1 = phi { i64, { i64, i64 } } [ %x11, %elsed ], [ %x10, %ctd_ife ]
     %c_11 = extractvalue { i64, i64 } %s, 0
     %b1 = extractvalue { i64, i64 } %s, 1
     %d1 = icmp eq i64 -1, %b1
@@ -180,12 +180,12 @@ define i64 @kmp({ i64, i8* } %x, { i64, i8* } %x1) {
     %a1b4 = extractvalue { i64, { i64, i64 } } %xba, 0
     %b2 = extractvalue { i64, { i64, i64 } } %xba, 1
     %a1aa2 = extractvalue { i64, i64 } %b2, 0
-    %x14 = extractvalue { i64, i64 } %b2, 1
+    %x12 = extractvalue { i64, i64 } %b2, 1
     br label %ctd_if
 
   ctd_if:
-    %x15 = phi i64 [ %x14, %while_end ], [ 0, %then ]
-    ret i64 %x15
+    %x13 = phi i64 [ %x12, %while_end ], [ 0, %then ]
+    ret i64 %x13
 }
 
 define void @LLVM_DS_NArray_narray_free(i64* %p) {
@@ -228,16 +228,16 @@ define { i64, i64* } @KMP_compute_butlast_ff_s_impl({ i64, i8* } %x) {
 
   ctd_if:
     %xaa = phi i64* [ %x1, %else ], [ null, %then ]
-    %xb = insertvalue { i64, i64* } zeroinitializer, i64 %a1, 0
-    %xc = insertvalue { i64, i64* } %xb, i64* %xaa, 1
-    %xd = insertvalue { i64, i64 } zeroinitializer, i64 0, 0
-    %tmpca = insertvalue { i64, i64 } %xd, i64 1, 1
-    %xe = insertvalue { { i64, i64* }, { i64, i64 } } zeroinitializer, { i64, i64* } %xc, 0
-    %xf = insertvalue { { i64, i64* }, { i64, i64 } } %xe, { i64, i64 } %tmpca, 1
+    %xba = insertvalue { i64, i64* } zeroinitializer, i64 %a1, 0
+    %xca = insertvalue { i64, i64* } %xba, i64* %xaa, 1
+    %xfa = insertvalue { i64, i64 } zeroinitializer, i64 0, 0
+    %tmpca = insertvalue { i64, i64 } %xfa, i64 1, 1
+    %xga = insertvalue { { i64, i64* }, { i64, i64 } } zeroinitializer, { i64, i64* } %xca, 0
+    %xha = insertvalue { { i64, i64* }, { i64, i64 } } %xga, { i64, i64 } %tmpca, 1
     br label %while_start
 
   while_start:
-    %xda = phi { { i64, i64* }, { i64, i64 } } [ %x9, %while_enda ], [ %xf, %ctd_if ]
+    %xda = phi { { i64, i64* }, { i64, i64 } } [ %x8, %while_enda ], [ %xha, %ctd_if ]
     %a1a = extractvalue { { i64, i64* }, { i64, i64 } } %xda, 0
     %xea = extractvalue { { i64, i64* }, { i64, i64 } } %xda, 1
     %a1aa = extractvalue { i64, i64 } %xea, 0
@@ -256,21 +256,21 @@ define { i64, i64* } @KMP_compute_butlast_ff_s_impl({ i64, i8* } %x) {
 
   while_starta:
     %s = phi i64 [ %x7, %while_bodya ], [ %a1aa1, %while_body ]
-    %xfa = icmp slt i64 0, %s
-    br i1 %xfa, label %thena, label %elsea
+    %xfaa = icmp slt i64 0, %s
+    br i1 %xfaa, label %thena, label %elsea
 
   thena:
-    %xga = sub i64 %s, 1
+    %xgaa = sub i64 %s, 1
     %a1b1 = extractvalue { i64, i8* } %x, 0
     %a2b1 = extractvalue { i64, i8* } %x, 1
-    %xh = getelementptr i8, i8* %a2b1, i64 %xga
-    %xj = load i8, i8* %xh
+    %xhaa = getelementptr i8, i8* %a2b1, i64 %xgaa
+    %xjaa = load i8, i8* %xhaa
     %xka = sub i64 %a2a1, 1
     %a1c = extractvalue { i64, i8* } %x, 0
     %a2c = extractvalue { i64, i8* } %x, 1
-    %xl = getelementptr i8, i8* %a2c, i64 %xka
-    %x3 = load i8, i8* %xl
-    %x4 = icmp ne i8 %xj, %x3
+    %xla = getelementptr i8, i8* %a2c, i64 %xka
+    %x3 = load i8, i8* %xla
+    %x4 = icmp ne i8 %xjaa, %x3
     br label %ctd_ifa
 
   elsea:
@@ -289,18 +289,18 @@ define { i64, i64* } @KMP_compute_butlast_ff_s_impl({ i64, i8* } %x) {
     br label %while_starta
 
   while_enda:
-    %xga1 = add i64 %s, 1
+    %xgaa1 = add i64 %s, 1
     %a1b3 = extractvalue { i64, i64* } %a1a1, 0
     %a2b3 = extractvalue { i64, i64* } %a1a1, 1
     %p = getelementptr i64, i64* %a2b3, i64 %a2a1
-    store i64 %xga1, i64* %p
-    %xj1 = insertvalue { i64, i64* } zeroinitializer, i64 %a1b3, 0
-    %xk = insertvalue { i64, i64* } %xj1, i64* %a2b3, 1
-    %xla = add i64 %a2a1, 1
-    %xm = insertvalue { { i64, i64* }, { i64, i64 } } zeroinitializer, { i64, i64* } %xk, 0
-    %xn = insertvalue { i64, i64 } zeroinitializer, i64 %xga1, 0
-    %x8 = insertvalue { i64, i64 } %xn, i64 %xla, 1
-    %x9 = insertvalue { { i64, i64* }, { i64, i64 } } %xm, { i64, i64 } %x8, 1
+    store i64 %xgaa1, i64* %p
+    %xjaa1 = insertvalue { i64, i64* } zeroinitializer, i64 %a1b3, 0
+    %xka1 = insertvalue { i64, i64* } %xjaa1, i64* %a2b3, 1
+    %xla1 = add i64 %a2a1, 1
+    %xma = insertvalue { { i64, i64* }, { i64, i64 } } zeroinitializer, { i64, i64* } %xka1, 0
+    %xua = insertvalue { i64, i64 } zeroinitializer, i64 %xgaa1, 0
+    %tmpfa = insertvalue { i64, i64 } %xua, i64 %xla1, 1
+    %x8 = insertvalue { { i64, i64* }, { i64, i64 } } %xma, { i64, i64 } %tmpfa, 1
     br label %while_start
 
   while_end:

@@ -10,41 +10,41 @@ target triple = "x86_64-pc-linux-gnu"
 define i64 @euclid(i64 %a, i64 %b) {
 
   start:
-    %x = insertvalue { i64, i64 } zeroinitializer, i64 %a, 0
-    %xa = insertvalue { i64, i64 } %x, i64 %b, 1
+    %xa = insertvalue { i64, i64 } zeroinitializer, i64 %a, 0
+    %xaa = insertvalue { i64, i64 } %xa, i64 %b, 1
     br label %while_start
 
   while_start:
-    %xb = phi { i64, i64 } [ %x6, %ctd_if ], [ %xa, %start ]
-    %a1 = extractvalue { i64, i64 } %xb, 0
-    %x1 = extractvalue { i64, i64 } %xb, 1
-    %x2 = icmp ne i64 %a1, %x1
-    br i1 %x2, label %while_body, label %while_end
+    %xba = phi { i64, i64 } [ %x4, %ctd_if ], [ %xaa, %start ]
+    %a1 = extractvalue { i64, i64 } %xba, 0
+    %x = extractvalue { i64, i64 } %xba, 1
+    %x1 = icmp ne i64 %a1, %x
+    br i1 %x1, label %while_body, label %while_end
 
   while_body:
-    %a2 = extractvalue { i64, i64 } %xb, 0
-    %b1 = extractvalue { i64, i64 } %xb, 1
+    %a2 = extractvalue { i64, i64 } %xba, 0
+    %b1 = extractvalue { i64, i64 } %xba, 1
     %tmpa = icmp ule i64 %a2, %b1
     br i1 %tmpa, label %then, label %else
 
   then:
-    %xaa = insertvalue { i64, i64 } zeroinitializer, i64 %a2, 0
-    %x3 = sub i64 %b1, %a2
-    %x4 = insertvalue { i64, i64 } %xaa, i64 %x3, 1
+    %xaaa = insertvalue { i64, i64 } zeroinitializer, i64 %a2, 0
+    %tmpaaa = sub i64 %b1, %a2
+    %x2 = insertvalue { i64, i64 } %xaaa, i64 %tmpaaa, 1
     br label %ctd_if
 
   else:
-    %xc = sub i64 %a2, %b1
-    %xaa1 = insertvalue { i64, i64 } zeroinitializer, i64 %xc, 0
-    %x5 = insertvalue { i64, i64 } %xaa1, i64 %b1, 1
+    %tmpb = sub i64 %a2, %b1
+    %xaaa1 = insertvalue { i64, i64 } zeroinitializer, i64 %tmpb, 0
+    %x3 = insertvalue { i64, i64 } %xaaa1, i64 %b1, 1
     br label %ctd_if
 
   ctd_if:
-    %x6 = phi { i64, i64 } [ %x5, %else ], [ %x4, %then ]
+    %x4 = phi { i64, i64 } [ %x3, %else ], [ %x2, %then ]
     br label %while_start
 
   while_end:
-    %a3 = extractvalue { i64, i64 } %xb, 0
-    %b2 = extractvalue { i64, i64 } %xb, 1
+    %a3 = extractvalue { i64, i64 } %xba, 0
+    %b2 = extractvalue { i64, i64 } %xba, 1
     ret i64 %a3
 }

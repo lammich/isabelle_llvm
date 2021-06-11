@@ -102,8 +102,11 @@ text \<open>
   This command will generate \<open>introsort.ll\<close> and \<open>introsort.h\<close>.
   Despite the name, we export both, Introsort and Pdqsort to this file!
 \<close>  
-   
-export_llvm 
+
+
+(*declare [[llvm_preproc_timing]]*)
+
+export_llvm (timing)
   "unat_sort_introsort_impl :: 64 word ptr \<Rightarrow> _" is "uint64_t* introsort(uint64_t*, int64_t, int64_t)" 
   "unat_sort_introsort_aux_impl :: 64 word ptr \<Rightarrow> _" is "uint64_t* introsort_aux(uint64_t*, int64_t, int64_t, int64_t)" 
   "unat_sort_heapsort_impl :: 64 word ptr \<Rightarrow> _" is "uint64_t* heapsort(uint64_t*, int64_t, int64_t)" 

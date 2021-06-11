@@ -12,12 +12,12 @@ define i64 @bin_search({ i64, i64* } %x, i64 %x1) {
   start:
     %a1 = extractvalue { i64, i64* } %x, 0
     %a2 = extractvalue { i64, i64* } %x, 1
-    %xa = insertvalue { i64, i64 } zeroinitializer, i64 0, 0
-    %xb = insertvalue { i64, i64 } %xa, i64 %a1, 1
+    %xca = insertvalue { i64, i64 } zeroinitializer, i64 0, 0
+    %xda = insertvalue { i64, i64 } %xca, i64 %a1, 1
     br label %while_start
 
   while_start:
-    %xaa = phi { i64, i64 } [ %x6, %ctd_if ], [ %xb, %start ]
+    %xaa = phi { i64, i64 } [ %x6, %ctd_if ], [ %xda, %start ]
     %a = extractvalue { i64, i64 } %xaa, 0
     %x2 = extractvalue { i64, i64 } %xaa, 1
     %x3 = icmp slt i64 %a, %x2
@@ -27,24 +27,24 @@ define i64 @bin_search({ i64, i64* } %x, i64 %x1) {
     %a1a = extractvalue { i64, i64 } %xaa, 0
     %a2a = extractvalue { i64, i64 } %xaa, 1
     %xba = sub i64 %a2a, %a1a
-    %xca = udiv i64 %xba, 2
-    %xd = add i64 %a1a, %xca
+    %xcaa = udiv i64 %xba, 2
+    %xdaa = add i64 %a1a, %xcaa
     %a1b = extractvalue { i64, i64* } %x, 0
     %a2b = extractvalue { i64, i64* } %x, 1
-    %xe = getelementptr i64, i64* %a2b, i64 %xd
-    %xf = load i64, i64* %xe
-    %xg = icmp slt i64 %xf, %x1
-    br i1 %xg, label %then, label %else
+    %xea = getelementptr i64, i64* %a2b, i64 %xdaa
+    %xfa = load i64, i64* %xea
+    %xga = icmp slt i64 %xfa, %x1
+    br i1 %xga, label %then, label %else
 
   then:
-    %xha = add i64 %xd, 1
-    %xi = insertvalue { i64, i64 } zeroinitializer, i64 %xha, 0
-    %x4 = insertvalue { i64, i64 } %xi, i64 %a2a, 1
+    %xha = add i64 %xdaa, 1
+    %xia = insertvalue { i64, i64 } zeroinitializer, i64 %xha, 0
+    %x4 = insertvalue { i64, i64 } %xia, i64 %a2a, 1
     br label %ctd_if
 
   else:
-    %xh = insertvalue { i64, i64 } zeroinitializer, i64 %a1a, 0
-    %x5 = insertvalue { i64, i64 } %xh, i64 %xd, 1
+    %xha1 = insertvalue { i64, i64 } zeroinitializer, i64 %a1a, 0
+    %x5 = insertvalue { i64, i64 } %xha1, i64 %xdaa, 1
     br label %ctd_if
 
   ctd_if:

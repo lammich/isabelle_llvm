@@ -5,14 +5,17 @@ imports
   Sep_Array_Block_RS
 begin
   
+  definition "vpto_assn x p \<equiv> VAL.pto p (VAL.val x)"
+
   interpretation ab: array_block2 "STATIC_ERROR ''''" MEM_ERROR "vload MEM_ERROR::_ \<Rightarrow> (llvm_primval val,_,_,_) M" "vstore MEM_ERROR" "checked_gep MEM_ERROR" val_\<alpha> vpto_assn "\<lambda>v. v\<in>range val_\<alpha>"
     apply unfold_locales
+    unfolding vpto_assn_def
     apply (rule vload_rule)
     apply (rule vstore_rule)
-    apply (rule vpto_assn_notZ)
-    apply auto []
-    apply (simp; rule vpto_assn_this)
-    apply auto []
+    subgoal by simp
+    subgoal by auto
+    subgoal by (auto simp: VAL.val_def)
+    subgoal by auto []
     done
   
   
@@ -50,7 +53,7 @@ begin
       unfolding abase_llvm_ptr_def acompat_llvm_ptr_def adiff_llvm_ptr_def aidx_llvm_ptr_def
       apply (intro part_equivpI sympI transpI)
       apply (metis ab.block_ptr_imp_abase ab.is_block_ptr_simps(2) acompat_refl llvm_ptr.sel)
-      apply (auto intro: acompat_sym acompat_trans simp: acompat_dom)
+      apply (auto intro: acompat_trans simp: acompat_dom)
       done
   end
   
@@ -65,7 +68,9 @@ begin
   lemma llvm_is_arr_ptr_idx[simp]: "llvm_is_arr_ptr (llvm_idx_ptr p i) \<longleftrightarrow> llvm_is_arr_ptr p"
     by (cases p) (auto simp: llvm_idx_ptr_def llvm_is_arr_ptr_def)
   *)  
-    
+  
+  lemma llvm_pto_null_eq[simp]: "llvm_pto x llvm_null = sep_false"
+    by (auto simp: llvm_pto_def llvm_null_def)
   
   lemma xfer_htriple: 
     assumes "htriple ab.ba.\<alpha> P c Q"
@@ -142,7 +147,7 @@ begin
   lemma xfer_sep_list_conj1: "(\<And>*map (\<lambda>x. f x o the_amemory) l) = (\<And>*map f l) o the_amemory"  
     apply (induction l)
     apply auto
-    by (auto intro!: ext simp: sep_algebra_simps xfer_sep_conj)
+    by (auto simp: sep_algebra_simps xfer_sep_conj)
 
   lemma xfer_sep_list_conj2: "(\<And>*map (\<lambda>x s. f x (the_amemory s)) l) = (\<And>*map f l) o the_amemory"  
     using xfer_sep_list_conj1 unfolding comp_def .

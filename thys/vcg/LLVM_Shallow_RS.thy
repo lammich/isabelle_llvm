@@ -219,11 +219,14 @@ instantiation ptr :: (llvm_rep) addr_algebra begin
     apply (intro part_equivpI sympI transpI)
     unfolding abase_ptr_def acompat_ptr_def adiff_ptr_def aidx_ptr_def
     apply (metis acompat_equiv part_equivp_def ptr.sel)
-    apply (auto intro: acompat_sym acompat_trans simp: acompat_dom)
+    apply (auto intro: acompat_trans simp: acompat_dom)
     done
 
 end
   
+lemma ll_pto_null[simp]: "\<upharpoonleft>ll_pto x null = sep_false"
+  by (simp add: ll_pto_def null_def)
+
   
 text \<open>Assertion to range of array\<close>  
 definition "ll_range I \<equiv> mk_assn (\<lambda>f p. \<up>(abase p) ** (\<Union>*i\<in>I. \<upharpoonleft>ll_pto (f i) (p +\<^sub>a i)))"
@@ -251,9 +254,8 @@ lemma ll_pto_not_same: "(\<upharpoonleft>ll_pto x p ** \<upharpoonleft>ll_pto y 
   apply (auto simp: ll_pto_def llvm_pto_def ab.ba.pto_def split: rptr.splits addr.splits)
   apply (auto simp: sep_algebra_simps sep_conj_def)
   apply (auto simp: sep_disj_llvm_amemory_def sep_algebra_simps ab.pto_def split: baddr.splits)
-  apply (auto simp: vpto_assn_def)
+  apply (auto simp: vpto_assn_def VAL.pto_not_same_aux)
   done
-
 
 lemma ll_range_merge: "I\<^sub>1\<inter>I\<^sub>2={} \<Longrightarrow> (\<upharpoonleft>(ll_range I\<^sub>1) f p ** \<upharpoonleft>(ll_range I\<^sub>2) f p) = \<upharpoonleft>(ll_range (I\<^sub>1\<union>I\<^sub>2)) f p"
   unfolding ll_range_def
@@ -482,9 +484,13 @@ lemma ll_icmp_simps[vcg_normalize_simps]:
   unfolding ll_icmp_eq_def ll_icmp_ne_def ll_icmp_sle_def ll_icmp_slt_def ll_icmp_ule_def ll_icmp_ult_def
   by auto
 
+lemma check_ptr_simp[vcg_normalize_simps]: "check_ptrs_cmp p\<^sub>1 p\<^sub>2 = (
+  if p\<^sub>1=null \<or> p\<^sub>2=null then return () else doM { ll_load p\<^sub>1; ll_load p\<^sub>2; return ()})"
+  unfolding check_ptrs_cmp_def by simp
+
 lemma ll_ptrcmp_simps[vcg_normalize_simps]: 
-  "ll_ptrcmp_eq a b = return (from_bool (a = b))" 
-  "ll_ptrcmp_ne a b = return (from_bool (a \<noteq> b))" 
+  "ll_ptrcmp_eq a b = doM { check_ptrs_cmp a b; return (from_bool (a = b))}" 
+  "ll_ptrcmp_ne a b = doM { check_ptrs_cmp a b; return (from_bool (a \<noteq> b))}" 
   unfolding ll_ptrcmp_eq_def ll_ptrcmp_ne_def 
   by auto
   
@@ -530,6 +536,21 @@ lemmas ll_sext_rule[vcg_rules] = cond_llvm_htripleI[OF ll_sext_simp, OF WBOUNDSD
     
 end
 end
+
+context
+begin
+  interpretation llvm_prim_arith_setup .
+
+  text \<open>Comparison with null are always simplified\<close>  
+  lemma ll_ptrcmp_null_simps[vcg_normalize_simps]: 
+    "ll_ptrcmp_eq a null = doM { return (from_bool (a = null))}" 
+    "ll_ptrcmp_eq null b = doM { return (from_bool (b = null))}" 
+    "ll_ptrcmp_ne a null = doM { return (from_bool (a \<noteq> null))}" 
+    "ll_ptrcmp_ne null b = doM { return (from_bool (b \<noteq> null))}" 
+    by (vcg_normalize; simp add: eq_commute[of null]; fail)+
+  
+end
+
 
 subsection \<open>Control Flow\<close>
 
@@ -694,18 +715,31 @@ context begin
     unfolding ll_cmp_def ll_cmp'_defs
     by (all vcg_normalize)
 
-  lemma ll_ptrcmp'_xforms[vcg_monadify_xforms,llvm_inline]:
-    "return (ll_cmp'_eq  a b) = ll_ptrcmp_eq a b" 
-    "return (ll_cmp'_ne  a b) = ll_ptrcmp_ne a b" 
-    unfolding ll_cmp_def ll_cmp'_defs
-    by (all vcg_normalize)
     
+  text \<open>Comparison with null pointers can be transformed automatically.
+    Any other pointer comparisons carry additional precondition, and cannot
+    be generated from pure statements.\<close>  
+  definition "ll_eq_null a \<equiv> ll_cmp'_eq a null"  
+  definition "ll_ne_null a \<equiv> ll_cmp'_ne a null"  
+    
+  lemma ll_ptrcmp'_xforms[vcg_monadify_xforms,llvm_inline]:
+    "return (ll_eq_null a) = ll_ptrcmp_eq a null" 
+    "return (ll_ne_null a) = ll_ptrcmp_ne a null" 
+    "ll_cmp'_eq a null = ll_eq_null a" 
+    "ll_cmp'_eq null b = ll_eq_null b" 
+    "ll_cmp'_ne a null = ll_ne_null a" 
+    "ll_cmp'_ne null b = ll_ne_null b" 
+    unfolding ll_cmp_def ll_cmp'_defs ll_eq_null_def ll_ne_null_def
+    by (all \<open>vcg_normalize; simp add: eq_commute[of null]\<close>)
     
 end    
 
 subsubsection \<open>Boolean Operations\<close>
 lemma llvm_if_inline[llvm_inline,vcg_monadify_xforms]: "If b t e = llc_if (from_bool b) t e"  
   by (auto simp: llc_if_def)
+  
+lemma from_bool_to_bool1[llvm_inline]: "from_bool (to_bool (x::1 word)) = x"
+  by (metis from_bool_1 to_bool_eq word1_cases)
   
 lemma (in llvm_prim_arith_setup) llvm_from_bool_inline[llvm_inline]: 
   "from_bool (a\<and>b) = (from_bool a AND from_bool b)"  
@@ -729,11 +763,22 @@ lemma inline_return_prod[llvm_inline]: "return (a,b) = doM { x \<leftarrow> prod
   by (auto simp: prod_ops_simp)
   
 lemma ll_extract_pair_pair:
-  "ll_extract_fst (a,b) = return a" 
-  "ll_extract_snd (a,b) = return b" 
-  unfolding ll_extract_fst_def ll_extract_snd_def checked_split_pair_def checked_from_val_def
-  by auto 
-
+  "ll_extract_value (a,b) 0 = return a"
+  "ll_extract_value (a,b) 1 = return b" 
+  unfolding ll_extract_value_def checked_from_val_def
+  by auto
+  
+txt \<open>This lemma removes insert-extracts artifacts. 
+  This makes code lemmas smaller, and can speed up preprocessing significantly.\<close>
+lemma ins_extr_prod_simp[llvm_inline]: "doM {
+    (x::'a::llvm_rep \<times> 'b::llvm_rep) \<leftarrow> ll_insert_value init a 0;
+    x \<leftarrow> ll_insert_value x b Numeral1;
+    a::'a \<leftarrow> ll_extract_value x 0;
+    b::'b \<leftarrow> ll_extract_value x Numeral1;
+    f a b
+  } = f a b"
+  apply (simp add: ll_insert_value_def ll_extract_value_def checked_from_val_def)
+  done
   
   
 subsubsection \<open>Marking of constants\<close>    

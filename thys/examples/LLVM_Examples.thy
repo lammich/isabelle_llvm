@@ -183,32 +183,39 @@ export_llvm test
 text \<open>Example and Regression Tests using LLVM-VCG directly, 
 i.e., without Refinement Framework\<close>
 
-subsection \<open>Regression Tests\<close>
-typedef my_pair = "UNIV :: (64 word \<times> 32 word) set" by simp
+subsection \<open>Custom and Named Structures\<close>
+typedef ('a,'b) my_pair = "UNIV :: ('a::llvm_rep \<times> 'b::llvm_rep) set" by simp
 
 lemmas my_pair_bij[simp] = Abs_my_pair_inverse[simplified] Rep_my_pair_inverse
 
-instantiation my_pair :: llvm_rep
+instantiation my_pair :: (llvm_rep,llvm_rep)llvm_rep
 begin
   definition "from_val_my_pair \<equiv> Abs_my_pair o from_val"
   definition "to_val_my_pair \<equiv> to_val o Rep_my_pair"
-  definition [simp]: "struct_of_my_pair (_:: my_pair itself) \<equiv> struct_of TYPE(64 word \<times> 32 word)"
+  definition [simp]: "struct_of_my_pair (_:: ('a,'b)my_pair itself) \<equiv> struct_of TYPE('a \<times> 'b)"
   definition "init_my_pair \<equiv> Abs_my_pair init"
 
   instance
     apply standard
     unfolding from_val_my_pair_def to_val_my_pair_def struct_of_my_pair_def init_my_pair_def
-    apply (auto simp: to_val_word_def)
+    apply (auto simp: to_val_word_def init_zero)
     done
 
 end
 
-definition my_fst :: "my_pair \<Rightarrow> 64 word llM" where [llvm_inline]: "my_fst \<equiv> ll_extract_fst"
-definition my_snd :: "my_pair \<Rightarrow> 32 word llM" where [llvm_inline]: "my_snd \<equiv> ll_extract_snd"
-definition my_ins_fst :: "my_pair \<Rightarrow> 64 word \<Rightarrow> my_pair llM" where [llvm_inline]: "my_ins_fst \<equiv> ll_insert_fst"
-definition my_ins_snd :: "my_pair \<Rightarrow> 32 word \<Rightarrow> my_pair llM" where [llvm_inline]: "my_ins_snd \<equiv> ll_insert_snd"
-definition my_gep_fst :: "my_pair ptr \<Rightarrow> 64 word ptr llM" where [llvm_inline]: "my_gep_fst \<equiv> ll_gep_fst"
-definition my_gep_snd :: "my_pair ptr \<Rightarrow> 32 word ptr llM" where [llvm_inline]: "my_gep_snd \<equiv> ll_gep_snd"
+definition "my_sel_fst \<equiv> fst o Rep_my_pair"
+definition "my_sel_snd \<equiv> snd o Rep_my_pair"
+
+lemma my_pair_to_val[ll_to_val]: "to_val x = llvm_struct [to_val (my_sel_fst x), to_val (my_sel_snd x)]"
+  by (auto simp: my_sel_fst_def my_sel_snd_def to_val_my_pair_def to_val_prod)
+
+
+definition my_fst :: "('a::llvm_rep,'b::llvm_rep)my_pair \<Rightarrow> 'a llM" where [llvm_inline]: "my_fst x \<equiv> ll_extract_value x 0"
+definition my_snd :: "('a::llvm_rep,'b::llvm_rep)my_pair \<Rightarrow> 'b llM" where [llvm_inline]: "my_snd x \<equiv> ll_extract_value x 1"
+definition my_ins_fst :: "('a::llvm_rep,'b::llvm_rep)my_pair \<Rightarrow> 'a \<Rightarrow> ('a,'b)my_pair llM" where [llvm_inline]: "my_ins_fst x a \<equiv> ll_insert_value x a 0"
+definition my_ins_snd :: "('a::llvm_rep,'b::llvm_rep)my_pair \<Rightarrow> 'b \<Rightarrow> ('a,'b)my_pair llM" where [llvm_inline]: "my_ins_snd x a \<equiv> ll_insert_value x a 1"
+definition my_gep_fst :: "('a::llvm_rep,'b::llvm_rep)my_pair ptr \<Rightarrow> 'a ptr llM" where [llvm_inline]: "my_gep_fst x \<equiv> ll_gep_struct x 0"
+definition my_gep_snd :: "('a::llvm_rep,'b::llvm_rep)my_pair ptr \<Rightarrow> 'b ptr llM" where [llvm_inline]: "my_gep_snd x \<equiv> ll_gep_struct x 1"
 
 
 definition [llvm_code]: "add_add (a::_ word) \<equiv> doM {
@@ -220,30 +227,121 @@ definition [llvm_code]: "add_add (a::_ word) \<equiv> doM {
 definition [llvm_code]: "test_named (a::32 word) (b::64 word) \<equiv> doM {
   a \<leftarrow> add_add a;
   b \<leftarrow> add_add b;
-  let n = (init::my_pair);
+  let n = (init::(32 word,64 word)my_pair);
   a \<leftarrow> my_fst n;
   b \<leftarrow> my_snd n;
   n \<leftarrow> my_ins_fst n init;
   n \<leftarrow> my_ins_snd n init;
   
-  p \<leftarrow> ll_malloc TYPE(my_pair) (1::64 word);
+  p \<leftarrow> ll_malloc TYPE((1 word,16 word)my_pair) (1::64 word);
   p1 \<leftarrow> my_gep_fst p;
   p2 \<leftarrow> my_gep_snd p;
   
   return b
 }"
 
+lemma my_pair_id_struct[ll_identified_structures]: "ll_is_identified_structure ''my_pair'' TYPE((_,_)my_pair)"
+  unfolding ll_is_identified_structure_def
+  apply (simp add: llvm_s_struct_def)
+  done
+
+thm ll_identified_structures
 
 
-lemma [ll_is_pair_type_thms]: "ll_is_pair_type False TYPE(my_pair) TYPE(64 word) TYPE(32 word)"
+
+(*lemma [ll_is_pair_type_thms]: "ll_is_pair_type False TYPE(my_pair) TYPE(64 word) TYPE(32 word)"
   unfolding ll_is_pair_type_def
   by auto
+*)  
 
 export_llvm (debug) test_named file "code/test_named.ll"
 
 
+subsubsection \<open>Linked List\<close>
 
+datatype 'a list_cell = CELL (data: 'a) ("next": "'a list_cell ptr")
 
+instantiation list_cell :: (llvm_rep)llvm_rep
+begin
+  definition "to_val_list_cell \<equiv> \<lambda>CELL a b \<Rightarrow> llvm_struct [to_val a, to_val b]"
+  definition "from_val_list_cell p \<equiv> case llvm_the_struct p of [a,b] \<Rightarrow> CELL (from_val a) (from_val b)"
+  definition [simp]: "struct_of_list_cell (_::(('a) list_cell) itself) \<equiv> llvm_s_struct [struct_of TYPE('a), struct_of TYPE('a list_cell ptr)]"
+  definition [simp]: "init_list_cell ::('a) list_cell \<equiv> CELL init init"
+  
+  instance
+    apply standard
+    unfolding from_val_list_cell_def to_val_list_cell_def struct_of_list_cell_def init_list_cell_def
+    (* TODO: Clean proof here, not breaking abstraction barriers! *)
+    apply (auto simp: to_val_word_def init_zero fun_eq_iff split: list_cell.splits)
+    apply (smt (z3) from_to_id' list.case(1) list.case(2) list_cell.sel(1) list_cell.sel(2) llvm_the_struct_inv struct_of_prod_def struct_of_ptr_def to_from_id to_val_prod)
+    by (metis init_ptr_def init_zero llvm_zero_initializer_simps(2) struct_of_ptr_def)
+    
+
+end
+
+lemma to_val_list_cell[ll_to_val]: "to_val x = llvm_struct [to_val (data x), to_val (next x)]"
+  apply (cases x)
+  apply (auto simp: to_val_list_cell_def)
+  done
+
+lemma [ll_identified_structures]: "ll_is_identified_structure ''list_cell'' TYPE(_ list_cell)"  
+  unfolding ll_is_identified_structure_def
+  by (simp add: llvm_s_struct_def)
+
+  
+find_theorems "prod_insert_fst"
+
+lemma cell_insert_value:
+  "ll_insert_value (CELL x n) x' 0 = return (CELL x' n)"
+  "ll_insert_value (CELL x n) n' (Suc 0) = return (CELL x n')"
+
+  apply (simp_all add: ll_insert_value_def Let_def checked_from_val_def 
+                to_val_list_cell_def from_val_list_cell_def)
+  done
+
+lemma cell_extract_value:
+  "ll_extract_value (CELL x n) 0 = return x"  
+  "ll_extract_value (CELL x n) (Suc 0) = return n"  
+  apply (simp_all add: ll_extract_value_def Let_def checked_from_val_def 
+                to_val_list_cell_def from_val_list_cell_def)
+  done
+  
+find_theorems "ll_insert_value"
+
+lemma inline_return_cell[llvm_inline]: "return (CELL a x) = doM {
+    r \<leftarrow> ll_insert_value init a 0;
+    r \<leftarrow> ll_insert_value r x 1;
+    return r
+  }"
+  apply (auto simp: cell_insert_value)
+  done
+
+lemma inline_cell_case[llvm_inline]: "(case x of (CELL a n) \<Rightarrow> f a n) = doM {
+  a \<leftarrow> ll_extract_value x 0;
+  n \<leftarrow> ll_extract_value x 1;
+  f a n
+}"  
+  apply (cases x)
+  apply (auto simp: cell_extract_value)
+  done
+  
+lemma inline_return_cell_case[llvm_inline]: "doM {return (case x of (CELL a n) \<Rightarrow> f a n)} = doM {
+  a \<leftarrow> ll_extract_value x 0;
+  n \<leftarrow> ll_extract_value x 1;
+  return (f a n)
+}"  
+  apply (cases x)
+  apply (auto simp: cell_extract_value)
+  done
+
+definition [llvm_code]: "llist_append x l \<equiv> return (CELL x l)"
+definition [llvm_code]: "llist_split l \<equiv> doM {
+  c \<leftarrow> ll_load l;
+  return (case c of CELL x n \<Rightarrow> (x,n))
+}"  
+
+export_llvm "llist_append::1 word \<Rightarrow>1 word list_cell ptr \<Rightarrow> _ llM" 
+  file "code/list_cell.ll"
 
   
 subsection \<open>Array List Examples\<close>

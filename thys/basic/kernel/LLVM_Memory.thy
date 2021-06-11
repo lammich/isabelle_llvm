@@ -98,18 +98,20 @@ begin
     "llvm_is_ptr (LLVM_VAL (PRIMITIVE (PV_PTR _))) = True"
   | "llvm_is_ptr _ = False"  
   
-  fun llvm_is_pair where
-    "llvm_is_pair (LLVM_VAL (PAIR _ _)) = True"
-  | "llvm_is_pair _ = False"  
+  fun llvm_is_struct where
+    "llvm_is_struct (LLVM_VAL (STRUCT _)) = True"
+  | "llvm_is_struct _ = False"  
     
   definition "llvm_int i \<equiv> LLVM_VAL (PRIMITIVE (PV_INT i))"
   definition "llvm_null \<equiv> LLVM_PTR RP_NULL"
   definition "llvm_ptr p \<equiv> LLVM_VAL (PRIMITIVE (PV_PTR (llvm_ptr.the_ptr p)))"
-  definition "llvm_pair a b \<equiv> LLVM_VAL (PAIR (llvm_val.the_val a) (llvm_val.the_val b))"
+  
+  
+  definition "llvm_struct fs \<equiv> LLVM_VAL (STRUCT (map llvm_val.the_val fs))"
 
   definition "llvm_the_int v \<equiv> case v of LLVM_VAL (PRIMITIVE (PV_INT i)) \<Rightarrow> i"
   definition "llvm_the_ptr p \<equiv> case p of LLVM_VAL (PRIMITIVE (PV_PTR p)) \<Rightarrow> LLVM_PTR p"
-  definition "llvm_the_pair p \<equiv> case p of LLVM_VAL (PAIR a b) \<Rightarrow> (LLVM_VAL a, LLVM_VAL b)"
+  definition "llvm_the_struct p \<equiv> case p of LLVM_VAL (STRUCT fs) \<Rightarrow> map LLVM_VAL fs"
     
   fun llvm_is_s_int where
     "llvm_is_s_int w (LLVM_VSTRUCT (VS_PRIMITIVE (PVS_INT w'))) \<longleftrightarrow> w'=w"
@@ -119,19 +121,18 @@ begin
     "llvm_is_s_ptr (LLVM_VSTRUCT (VS_PRIMITIVE (PVS_PTR))) \<longleftrightarrow> True"
   | "llvm_is_s_ptr _ \<longleftrightarrow> False"  
 
-  fun llvm_is_s_pair where
-    "llvm_is_s_pair (LLVM_VSTRUCT (VS_PAIR _ _)) \<longleftrightarrow> True"
-  | "llvm_is_s_pair _ \<longleftrightarrow> False"  
+  fun llvm_is_s_struct where
+    "llvm_is_s_struct (LLVM_VSTRUCT (VS_STRUCT _)) \<longleftrightarrow> True"
+  | "llvm_is_s_struct _ \<longleftrightarrow> False"  
   
         
   definition "llvm_s_int w \<equiv> LLVM_VSTRUCT (VS_PRIMITIVE (PVS_INT w))"
   definition "llvm_s_ptr \<equiv> LLVM_VSTRUCT (VS_PRIMITIVE (PVS_PTR))"
-  definition "llvm_s_pair a b \<equiv> LLVM_VSTRUCT (VS_PAIR (llvm_vstruct.the_vstruct a) (llvm_vstruct.the_vstruct b))"
-
+  definition "llvm_s_struct fs \<equiv> LLVM_VSTRUCT (VS_STRUCT (map llvm_vstruct.the_vstruct fs))"
   
   (* TODO: Cleanly spread zero-initializer over memory model levels! *)
   fun zero_initializer where
-    "zero_initializer (VS_PAIR a b) = PAIR (zero_initializer a) (zero_initializer b)"
+    "zero_initializer (VS_STRUCT fs) = STRUCT (map zero_initializer fs)"
   | "zero_initializer (VS_PRIMITIVE PVS_PTR) = PRIMITIVE (PV_PTR RP_NULL)"
   | "zero_initializer (VS_PRIMITIVE (PVS_INT n)) = PRIMITIVE (PV_INT (lconst n 0))"
 
@@ -140,16 +141,16 @@ begin
   lemma llvm_is_simps[simp]:
     " llvm_is_int (llvm_int i)"
     "\<not>llvm_is_int (llvm_ptr p)"
-    "\<not>llvm_is_int (llvm_pair v\<^sub>1 v\<^sub>2)"
+    "\<not>llvm_is_int (llvm_struct fs)"
     
     "\<not>llvm_is_ptr (llvm_int i)"
     " llvm_is_ptr (llvm_ptr p)"
-    "\<not>llvm_is_ptr (llvm_pair v\<^sub>1 v\<^sub>2)"
+    "\<not>llvm_is_ptr (llvm_struct fs)"
   
-    "\<not>llvm_is_pair (llvm_int i)"
-    "\<not>llvm_is_pair (llvm_ptr p)"
-    " llvm_is_pair (llvm_pair v\<^sub>1 v\<^sub>2)"
-    unfolding llvm_int_def llvm_ptr_def llvm_pair_def 
+    "\<not>llvm_is_struct (llvm_int i)"
+    "\<not>llvm_is_struct (llvm_ptr p)"
+    " llvm_is_struct (llvm_struct fs)"
+    unfolding llvm_int_def llvm_ptr_def llvm_struct_def 
     by auto
     
   
@@ -159,22 +160,22 @@ begin
   lemma llvm_the_ptr_inv[simp]: "llvm_the_ptr (llvm_ptr p) = p"
     by (auto simp: llvm_the_ptr_def llvm_ptr_def)
     
-  lemma llvm_the_pair_inv[simp]: "llvm_the_pair (llvm_pair a b) = (a,b)"
-    by (auto simp: llvm_the_pair_def llvm_pair_def)
+  lemma llvm_the_struct_inv[simp]: "llvm_the_struct (llvm_struct fs) = fs"
+    by (auto simp: llvm_the_struct_def llvm_struct_def comp_def)
     
   lemma llvm_int_inj[simp]: "llvm_int a = llvm_int b \<longleftrightarrow> a=b" by (auto simp: llvm_int_def)
   lemma llvm_ptr_inj[simp]: "llvm_ptr a = llvm_ptr b \<longleftrightarrow> a=b" by (cases a; cases b) (auto simp: llvm_ptr_def)
-  lemma llvm_pair_inj[simp]: "llvm_pair a b = llvm_pair a' b' \<longleftrightarrow> a=a' \<and> b=b'" 
-    by (auto simp: llvm_pair_def llvm_val.the_val_def split: llvm_val.splits)  
+  lemma llvm_struct_inj[simp]: "llvm_struct fs = llvm_struct fs' \<longleftrightarrow> fs=fs'" 
+    by (metis llvm_the_struct_inv)
       
   lemma llvm_v_disj[simp]:  
     "llvm_int i \<noteq> llvm_ptr p"
-    "llvm_int i \<noteq> llvm_pair a b"
+    "llvm_int i \<noteq> llvm_struct fs"
     "llvm_ptr p \<noteq> llvm_int i"
-    "llvm_ptr p \<noteq> llvm_pair a b"
-    "llvm_pair a b \<noteq> llvm_int i"
-    "llvm_pair a b \<noteq> llvm_ptr p"
-    unfolding llvm_int_def llvm_ptr_def llvm_pair_def by auto 
+    "llvm_ptr p \<noteq> llvm_struct fs"
+    "llvm_struct fs \<noteq> llvm_int i"
+    "llvm_struct fs \<noteq> llvm_ptr p"
+    unfolding llvm_int_def llvm_ptr_def llvm_struct_def by auto 
             
   lemma llvm_s_int[simp]: "llvm_vstruct (llvm_int i) = llvm_s_int (width i)"
     by (auto simp: llvm_vstruct_def llvm_s_int_def llvm_int_def)
@@ -182,50 +183,37 @@ begin
   lemma llvm_s_ptr[simp]: "llvm_vstruct (llvm_ptr p) = llvm_s_ptr"
     by (auto simp: llvm_vstruct_def llvm_s_ptr_def llvm_ptr_def)
       
-  lemma llvm_s_pair[simp]: "llvm_vstruct (llvm_pair a b) = llvm_s_pair (llvm_vstruct a) (llvm_vstruct b)"
-    by (auto simp: llvm_vstruct_def llvm_s_pair_def llvm_pair_def)
+  lemma llvm_s_pair[simp]: "llvm_vstruct (llvm_struct fs) = llvm_s_struct (map llvm_vstruct fs)"
+    by (auto simp: llvm_vstruct_def llvm_s_struct_def llvm_struct_def)
 
-  lemma llvm_s_pair_inj[simp]: "llvm_s_pair a b = llvm_s_pair c d \<longleftrightarrow> a=c \<and> b=d"
-    unfolding llvm_s_pair_def by (cases a; cases b) auto
+  lemma llvm_s_struct_inj[simp]: "llvm_s_struct fs = llvm_s_struct fs' \<longleftrightarrow> fs=fs'"
+    unfolding llvm_s_struct_def apply simp
+    by (metis list.inj_map_strong llvm_vstruct.expand)
   
   lemma llvm_s_disj[simp]:
     "llvm_s_int w \<noteq> llvm_s_ptr"
-    "llvm_s_int w \<noteq> llvm_s_pair t1 t2"
+    "llvm_s_int w \<noteq> llvm_s_struct ts"
     "llvm_s_ptr \<noteq> llvm_s_int w"
-    "llvm_s_ptr \<noteq> llvm_s_pair t1 t2"
-    "llvm_s_pair t1 t2 \<noteq> llvm_s_int w"
-    "llvm_s_pair t1 t2 \<noteq> llvm_s_ptr"
-    unfolding llvm_s_int_def llvm_s_ptr_def llvm_s_pair_def 
+    "llvm_s_ptr \<noteq> llvm_s_struct ts"
+    "llvm_s_struct ts \<noteq> llvm_s_int w"
+    "llvm_s_struct ts \<noteq> llvm_s_ptr"
+    unfolding llvm_s_int_def llvm_s_ptr_def llvm_s_struct_def 
     by auto
     
   lemma llvm_vstruct_cases[cases type]:
-    obtains w where "s = llvm_s_int w" | "s = llvm_s_ptr" | s\<^sub>1 s\<^sub>2 where "s = llvm_s_pair s\<^sub>1 s\<^sub>2"
-  proof (cases s)
-    case [simp]: (LLVM_VSTRUCT x)
-    show ?thesis proof (cases x)
-      case [simp]: (VS_PAIR x11 x12)
-      show ?thesis using that
-        by (clarsimp simp: llvm_s_pair_def) (metis llvm_vstruct.sel)
-      
-    next
-      case (VS_PRIMITIVE x2)
-      then show ?thesis apply (cases x2)
-        using that by (auto simp: llvm_s_ptr_def llvm_s_int_def)
-    qed
-  qed
+    obtains w where "s = llvm_s_int w" | "s = llvm_s_ptr" | fs where "s = llvm_s_struct fs"
+    apply (cases s; simp)
+    by (metis ex_map_conv llvm_is_s_ptr.cases llvm_s_int_def llvm_s_ptr_def llvm_s_struct_def llvm_vstruct.sel)
   
   lemma llvm_v_cases[cases type]:
-    obtains i where "v = llvm_int i" | p where "v = llvm_ptr p" | v1 v2 where "v = llvm_pair v1 v2"
-    apply (cases v) subgoal for x apply (cases x)
-    subgoal apply (auto simp: llvm_pair_def) by (metis llvm_val.sel)
-    subgoal for xx apply (cases xx)
-      apply (auto simp: llvm_int_def llvm_ptr_def)
-      by (metis llvm_ptr.sel)
-      done
-    done
+    obtains i where "v = llvm_int i" | p where "v = llvm_ptr p" | fs where "v = llvm_struct fs"
+    apply (cases v; simp)
+    by (metis ex_map_conv llvm_int_def llvm_is_ptr.elims(1) llvm_ptr.sel llvm_ptr_def llvm_struct_def llvm_val.sel)
   
   lemma struct_of_zero_initializer[simp]: "struct_of_val (zero_initializer s) = s"  
-    by (induction s rule: zero_initializer.induct) auto
+    apply (induction s rule: zero_initializer.induct)
+    apply (auto simp: comp_def map_idI)
+    done
     
   lemma llvm_vstruct_of_zero_initializer[simp]: "llvm_vstruct (llvm_zero_initializer s) = s"
     unfolding llvm_zero_initializer_def llvm_vstruct_def by simp
@@ -233,9 +221,9 @@ begin
   lemma llvm_zero_initializer_simps[simp]:
     "llvm_zero_initializer (llvm_s_int w) = llvm_int (lconst w 0)"
     "llvm_zero_initializer llvm_s_ptr = llvm_ptr llvm_null"
-    "llvm_zero_initializer (llvm_s_pair s1 s2) = llvm_pair (llvm_zero_initializer s1) (llvm_zero_initializer s2)"
-    unfolding llvm_zero_initializer_def llvm_s_int_def llvm_s_ptr_def llvm_s_pair_def
-      llvm_int_def llvm_ptr_def llvm_null_def llvm_pair_def
+    "llvm_zero_initializer (llvm_s_struct fs) = llvm_struct (map llvm_zero_initializer fs)"
+    unfolding llvm_zero_initializer_def llvm_s_int_def llvm_s_ptr_def llvm_s_struct_def
+      llvm_int_def llvm_ptr_def llvm_null_def llvm_struct_def
     by auto
   
   

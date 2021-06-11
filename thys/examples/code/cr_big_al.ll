@@ -49,15 +49,15 @@ define i64 @cr_big_al(i64 %n) {
   ctd_if:
     %aa = phi i64* [ %x, %else ], [ null, %then ]
     %xb = insertvalue { i64, { i64, i64* } } zeroinitializer, i64 0, 0
-    %xc = insertvalue { i64, i64* } zeroinitializer, i64 8, 0
-    %xd = insertvalue { i64, i64* } %xc, i64* %aa, 1
-    %aaa = insertvalue { i64, { i64, i64* } } %xb, { i64, i64* } %xd, 1
-    %xe = insertvalue { i64, { i64, { i64, i64* } } } zeroinitializer, i64 %n, 0
-    %xf = insertvalue { i64, { i64, { i64, i64* } } } %xe, { i64, { i64, i64* } } %aaa, 1
+    %xca = insertvalue { i64, i64* } zeroinitializer, i64 8, 0
+    %tmpba = insertvalue { i64, i64* } %xca, i64* %aa, 1
+    %aaa = insertvalue { i64, { i64, i64* } } %xb, { i64, i64* } %tmpba, 1
+    %xea = insertvalue { i64, { i64, { i64, i64* } } } zeroinitializer, i64 %n, 0
+    %xfa = insertvalue { i64, { i64, { i64, i64* } } } %xea, { i64, { i64, i64* } } %aaa, 1
     br label %while_start
 
   while_start:
-    %xaa = phi { i64, { i64, { i64, i64* } } } [ %x6, %ctd_ifa ], [ %xf, %ctd_if ]
+    %xaa = phi { i64, { i64, { i64, i64* } } } [ %x5, %ctd_ifa ], [ %xfa, %ctd_if ]
     %n1 = extractvalue { i64, { i64, { i64, i64* } } } %xaa, 0
     %ab = extractvalue { i64, { i64, { i64, i64* } } } %xaa, 1
     %x1 = icmp ult i64 0, %n1
@@ -72,78 +72,78 @@ define i64 @cr_big_al(i64 %n) {
     %ac = extractvalue { i64, i64* } %xba, 1
     %lb = add i64 %l, 1
     %lc = extractvalue { i64, { i64, i64* } } %ab1, 0
-    %xca = extractvalue { i64, { i64, i64* } } %ab1, 1
-    %cb = extractvalue { i64, i64* } %xca, 0
-    %ad = extractvalue { i64, i64* } %xca, 1
+    %xcaa = extractvalue { i64, { i64, i64* } } %ab1, 1
+    %cb = extractvalue { i64, i64* } %xcaa, 0
+    %ad = extractvalue { i64, i64* } %xcaa, 1
     %cok = icmp sle i64 %lb, %cb
     br i1 %cok, label %thena, label %elsea
 
   thena:
-    %xda = insertvalue { i64, { i64, i64* } } zeroinitializer, i64 %lc, 0
-    %xh = insertvalue { i64, i64* } zeroinitializer, i64 %cb, 0
-    %x2 = insertvalue { i64, i64* } %xh, i64* %ad, 1
-    %x3 = insertvalue { i64, { i64, i64* } } %xda, { i64, i64* } %x2, 1
+    %xdaa = insertvalue { i64, { i64, i64* } } zeroinitializer, i64 %lc, 0
+    %xsa = insertvalue { i64, i64* } zeroinitializer, i64 %cb, 0
+    %tmpda = insertvalue { i64, i64* } %xsa, i64* %ad, 1
+    %x2 = insertvalue { i64, { i64, i64* } } %xdaa, { i64, i64* } %tmpda, 1
     br label %ctd_ifa
 
   elsea:
-    %xh1 = insertvalue { i64, i64* } zeroinitializer, i64 %cb, 0
-    %tmpbc = insertvalue { i64, i64* } %xh1, i64* %ad, 1
-    %xi = insertvalue { i64, { i64, i64* } } zeroinitializer, i64 %lc, 0
-    %x4 = insertvalue { i64, { i64, i64* } } %xi, { i64, i64* } %tmpbc, 1
-    %x5 = call { i64, { i64, i64* } } @LLVM_DS_Array_List_arl_resize (i64 %lb, { i64, { i64, i64* } } %x4)
+    %xra = insertvalue { i64, i64* } zeroinitializer, i64 %cb, 0
+    %tmpcb = insertvalue { i64, i64* } %xra, i64* %ad, 1
+    %xsa1 = insertvalue { i64, { i64, i64* } } zeroinitializer, i64 %lc, 0
+    %x3 = insertvalue { i64, { i64, i64* } } %xsa1, { i64, i64* } %tmpcb, 1
+    %x4 = call { i64, { i64, i64* } } @LLVM_DS_Array_List_arl_resize (i64 %lb, { i64, { i64, i64* } } %x3)
     br label %ctd_ifa
 
   ctd_ifa:
-    %al = phi { i64, { i64, i64* } } [ %x5, %elsea ], [ %x3, %thena ]
+    %al = phi { i64, { i64, i64* } } [ %x4, %elsea ], [ %x2, %thena ]
     %ld = extractvalue { i64, { i64, i64* } } %al, 0
-    %xda1 = extractvalue { i64, { i64, i64* } } %al, 1
-    %cc = extractvalue { i64, i64* } %xda1, 0
-    %ae = extractvalue { i64, i64* } %xda1, 1
+    %xdaa1 = extractvalue { i64, { i64, i64* } } %al, 1
+    %cc = extractvalue { i64, i64* } %xdaa1, 0
+    %ae = extractvalue { i64, i64* } %xdaa1, 1
     %p = getelementptr i64, i64* %ae, i64 %ld
     store i64 %n2, i64* %p
     %le = add i64 %ld, 1
-    %xea = insertvalue { i64, { i64, i64* } } zeroinitializer, i64 %le, 0
-    %xi1 = insertvalue { i64, i64* } zeroinitializer, i64 %cc, 0
-    %xj = insertvalue { i64, i64* } %xi1, i64* %ae, 1
-    %af = insertvalue { i64, { i64, i64* } } %xea, { i64, i64* } %xj, 1
+    %xeaa = insertvalue { i64, { i64, i64* } } zeroinitializer, i64 %le, 0
+    %xxa = insertvalue { i64, i64* } zeroinitializer, i64 %cc, 0
+    %tmpda1 = insertvalue { i64, i64* } %xxa, i64* %ae, 1
+    %af = insertvalue { i64, { i64, i64* } } %xeaa, { i64, i64* } %tmpda1, 1
     %na = sub i64 %n2, 1
-    %xfa = insertvalue { i64, { i64, { i64, i64* } } } zeroinitializer, i64 %na, 0
-    %x6 = insertvalue { i64, { i64, { i64, i64* } } } %xfa, { i64, { i64, i64* } } %af, 1
+    %xfaa = insertvalue { i64, { i64, { i64, i64* } } } zeroinitializer, i64 %na, 0
+    %x5 = insertvalue { i64, { i64, { i64, i64* } } } %xfaa, { i64, { i64, i64* } } %af, 1
     br label %while_start
 
   while_end:
     %uu = extractvalue { i64, { i64, { i64, i64* } } } %xaa, 0
     %ab2 = extractvalue { i64, { i64, { i64, i64* } } } %xaa, 1
-    %xg = insertvalue { i64, i64 } zeroinitializer, i64 %n, 0
-    %xh2 = insertvalue { i64, i64 } %xg, i64 0, 1
+    %xia = insertvalue { i64, i64 } zeroinitializer, i64 %n, 0
+    %xja = insertvalue { i64, i64 } %xia, i64 0, 1
     br label %while_starta
 
   while_starta:
-    %xba1 = phi { i64, i64 } [ %x8, %while_bodya ], [ %xh2, %while_end ]
+    %xba1 = phi { i64, i64 } [ %x7, %while_bodya ], [ %xja, %while_end ]
     %n3 = extractvalue { i64, i64 } %xba1, 0
     %s = extractvalue { i64, i64 } %xba1, 1
-    %x7 = icmp ult i64 0, %n3
-    br i1 %x7, label %while_bodya, label %while_enda
+    %x6 = icmp ult i64 0, %n3
+    br i1 %x6, label %while_bodya, label %while_enda
 
   while_bodya:
     %n4 = extractvalue { i64, i64 } %xba1, 0
     %s1 = extractvalue { i64, i64 } %xba1, 1
     %na1 = sub i64 %n4, 1
     %l1 = extractvalue { i64, { i64, i64* } } %ab2, 0
-    %xca1 = extractvalue { i64, { i64, i64* } } %ab2, 1
-    %ca1 = extractvalue { i64, i64* } %xca1, 0
-    %ac1 = extractvalue { i64, i64* } %xca1, 1
-    %xda2 = getelementptr i64, i64* %ac1, i64 %na1
-    %xea1 = load i64, i64* %xda2
-    %sa = add i64 %xea1, %s1
-    %xfa1 = insertvalue { i64, i64 } zeroinitializer, i64 %na1, 0
-    %x8 = insertvalue { i64, i64 } %xfa1, i64 %sa, 1
+    %xcaa1 = extractvalue { i64, { i64, i64* } } %ab2, 1
+    %ca1 = extractvalue { i64, i64* } %xcaa1, 0
+    %ac1 = extractvalue { i64, i64* } %xcaa1, 1
+    %xdaa2 = getelementptr i64, i64* %ac1, i64 %na1
+    %xeaa1 = load i64, i64* %xdaa2
+    %sa = add i64 %xeaa1, %s1
+    %xfaa1 = insertvalue { i64, i64 } zeroinitializer, i64 %na1, 0
+    %x7 = insertvalue { i64, i64 } %xfaa1, i64 %sa, 1
     br label %while_starta
 
   while_enda:
     %uua = extractvalue { i64, i64 } %xba1, 0
-    %x9 = extractvalue { i64, i64 } %xba1, 1
-    ret i64 %x9
+    %x8 = extractvalue { i64, i64 } %xba1, 1
+    ret i64 %x8
 }
 
 define void @LLVM_DS_NArray_narray_free(i64* %p) {
@@ -170,9 +170,9 @@ define { i64, { i64, i64* } } @LLVM_DS_Array_List_arl_resize(i64 %c, { i64, { i6
 
   start:
     %l = extractvalue { i64, { i64, i64* } } %al, 0
-    %x = extractvalue { i64, { i64, i64* } } %al, 1
-    %c1 = extractvalue { i64, i64* } %x, 0
-    %a = extractvalue { i64, i64* } %x, 1
+    %xb = extractvalue { i64, { i64, i64* } } %al, 1
+    %c1 = extractvalue { i64, i64* } %xb, 0
+    %a = extractvalue { i64, i64* } %xb, 1
     %r = sub i64 0, 1
     %max = lshr i64 %r, 1
     %maxa = udiv i64 %max, 2
@@ -191,14 +191,14 @@ define { i64, { i64, i64* } } @LLVM_DS_Array_List_arl_resize(i64 %c, { i64, { i6
     br label %ctd_ifa
 
   ctd_ifa:
-    %x1 = phi i64 [ %c, %elsea ], [ %ca, %thena ]
+    %x = phi i64 [ %c, %elsea ], [ %ca, %thena ]
     br label %ctd_if
 
   else:
     br label %ctd_if
 
   ctd_if:
-    %ca1 = phi i64 [ %c, %else ], [ %x1, %ctd_ifa ]
+    %ca1 = phi i64 [ %c, %else ], [ %x, %ctd_ifa ]
     %tmpa = icmp eq i64 %ca1, 0
     br i1 %tmpa, label %thenb, label %elseb
 
@@ -209,16 +209,16 @@ define { i64, { i64, i64* } } @LLVM_DS_Array_List_arl_resize(i64 %c, { i64, { i6
     %t = getelementptr i64, i64* null, i64 1
     %d = ptrtoint i64* %t to i64
     %e = call i8* @isabelle_llvm_calloc (i64 %ca1, i64 %d)
-    %x2 = bitcast i8* %e to i64*
+    %x1 = bitcast i8* %e to i64*
     br label %ctd_ifb
 
   ctd_ifb:
-    %a1 = phi i64* [ %x2, %elseb ], [ null, %thenb ]
+    %a1 = phi i64* [ %x1, %elseb ], [ null, %thenb ]
     call void @LLVM_DS_Array_arraycpy (i64* %a1, i64* %a, i64 %l)
     call void @LLVM_DS_NArray_narray_free (i64* %a)
     %xaa = insertvalue { i64, { i64, i64* } } zeroinitializer, i64 %l, 0
-    %xe = insertvalue { i64, i64* } zeroinitializer, i64 %ca1, 0
-    %x3 = insertvalue { i64, i64* } %xe, i64* %a1, 1
-    %x4 = insertvalue { i64, { i64, i64* } } %xaa, { i64, i64* } %x3, 1
-    ret { i64, { i64, i64* } } %x4
+    %xja = insertvalue { i64, i64* } zeroinitializer, i64 %ca1, 0
+    %tmpca = insertvalue { i64, i64* } %xja, i64* %a1, 1
+    %x2 = insertvalue { i64, { i64, i64* } } %xaa, { i64, i64* } %tmpca, 1
+    ret { i64, { i64, i64* } } %x2
 }

@@ -10,8 +10,10 @@ export NITER=10   # Number of iterations
 export NIELEM=100000000 # Number of integer elements
 export NSELEM=10000000 # Number of string elements
 
-# export NIELEM=10000000 # Number of integer elements
-# export NSELEM=1000000 # Number of string elements
+# Quick benchmark run
+# export NITER=3   # Number of iterations
+# export NIELEM=1000000 # Number of integer elements
+# export NSELEM=100000 # Number of string elements
 
 export INT_DATA="random random-dup-10 random-boolean organ-pipe sorted equal almost-sorted-.1 almost-sorted-1 almost-sorted-10 almost-sorted-50 sorted-end-.1 sorted-end-1 sorted-end-10 sorted-middle-.1 sorted-middle-1 sorted-middle-10 rev-sorted rev-sorted-end-.1 rev-sorted-end-1 rev-sorted-end-10 rev-sorted-middle-.1 rev-sorted-middle-1 rev-sorted-middle-10"
 

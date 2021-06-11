@@ -64,6 +64,7 @@ ISABELLE_BROWSER_INFO=$(isabelle getenv ISABELLE_BROWSER_INFO | sed -re 's/.*=//
 cp -a $ISABELLE_BROWSER_INFO/Unsorted/Isabelle_LLVM html/
 cp index.md html/
 cp dist.tgz html/
+cp dist-2020.tgz html/
 cp LICENSE html/
 cp etc/logo/logo_200.png html/
 

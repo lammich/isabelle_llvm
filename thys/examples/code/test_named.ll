@@ -2,7 +2,8 @@
 target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-pc-linux-gnu"
 
-%LLVM_Examples_my_pair = type { i64, i32 }
+%my_pair_i1_i16 = type { i1, i16 }
+%my_pair_i32_i64 = type { i32, i64 }
 
 declare i8* @isabelle_llvm_calloc(i64, i64)
 
@@ -23,20 +24,20 @@ define i32 @LLVM_Examples_add_add1(i32 %a) {
     ret i32 %x1
 }
 
-define i32 @LLVM_Examples_test_named(i32 %a, i64 %b) {
+define i64 @LLVM_Examples_test_named(i32 %a, i64 %b) {
 
   start:
     %a1 = call i32 @LLVM_Examples_add_add1 (i32 %a)
     %b1 = call i64 @LLVM_Examples_add_add (i64 %b)
-    %aa = extractvalue %LLVM_Examples_my_pair zeroinitializer, 0
-    %ba = extractvalue %LLVM_Examples_my_pair zeroinitializer, 1
-    %n = insertvalue %LLVM_Examples_my_pair zeroinitializer, i64 zeroinitializer, 0
-    %na = insertvalue %LLVM_Examples_my_pair %n, i32 zeroinitializer, 1
-    %t = getelementptr %LLVM_Examples_my_pair, %LLVM_Examples_my_pair* null, i64 1
-    %c = ptrtoint %LLVM_Examples_my_pair* %t to i64
+    %aa = extractvalue %my_pair_i32_i64 zeroinitializer, 0
+    %ba = extractvalue %my_pair_i32_i64 zeroinitializer, 1
+    %n = insertvalue %my_pair_i32_i64 zeroinitializer, i32 zeroinitializer, 0
+    %na = insertvalue %my_pair_i32_i64 %n, i64 zeroinitializer, 1
+    %t = getelementptr %my_pair_i1_i16, %my_pair_i1_i16* null, i64 1
+    %c = ptrtoint %my_pair_i1_i16* %t to i64
     %d = call i8* @isabelle_llvm_calloc (i64 1, i64 %c)
-    %p = bitcast i8* %d to %LLVM_Examples_my_pair*
-    %p1 = getelementptr %LLVM_Examples_my_pair, %LLVM_Examples_my_pair* %p, i32 0, i32 0
-    %p2 = getelementptr %LLVM_Examples_my_pair, %LLVM_Examples_my_pair* %p, i32 0, i32 1
-    ret i32 %ba
+    %p = bitcast i8* %d to %my_pair_i1_i16*
+    %p1 = getelementptr %my_pair_i1_i16, %my_pair_i1_i16* %p, i32 0, i32 0
+    %p2 = getelementptr %my_pair_i1_i16, %my_pair_i1_i16* %p, i32 0, i32 1
+    ret i64 %ba
 }

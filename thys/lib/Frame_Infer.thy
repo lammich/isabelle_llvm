@@ -96,6 +96,7 @@ subsection \<open>Configurable Rule Sets\<close>
 (*named_theorems fri_prepare_simps*)
 
 named_simpset fri_prepare_simps = HOL_basic_ss_nomatch
+named_simpset fri_prepare_precond_simps = HOL_basic_ss_nomatch
 
 named_theorems fri_rules
 named_theorems fri_red_rules
@@ -123,8 +124,12 @@ lemma fri_trueI: "FRAME_INFER Ps Qs sep_true \<Longrightarrow> FRAME_INFER (sep_
   apply (simp add: FRAME_INFER_def sep_algebra_simps)
   by (smt entails_mp entails_refl fri_move_sep_true_forward(2) sep.mult_commute)
   
+lemma fri_pureI: "\<lbrakk>P \<Longrightarrow> FRAME_INFER A Q F\<rbrakk> \<Longrightarrow> FRAME_INFER (\<up>P ** A) Q F"  
+  by (cases P) (auto simp: FRAME_INFER_def sep_algebra_simps)
   
-  
+lemmas [named_ss fri_prepare_precond_simps] = pred_lift_extract_simps
+lemmas [named_ss fri_prepare_precond_simps cong] = fri_prems_cong
+
 
 subsection \<open>ML Code\<close>
 
@@ -207,7 +212,8 @@ ML \<open>
     (**** Frame Inference Tactic *)
     fun start_tac ctxt = 
             asm_simp_named_tac ctxt @{named_simpset fri_prepare_simps}
-      THEN' REPEAT' (resolve_tac ctxt @{thms fri_exI fri_trueI})
+      THEN' asm_simp_named_tac ctxt @{named_simpset fri_prepare_precond_simps}
+      THEN' REPEAT' (resolve_tac ctxt @{thms fri_exI fri_trueI fri_pureI})
       THEN' resolve_tac ctxt @{thms fri_prepare}
       THEN' simp_only_tac @{thms sep_conj_assoc fri_empty_concl_simp} ctxt
   
@@ -278,6 +284,14 @@ lemma fri_startI:
   unfolding FRAME_INFER_def FRAME_def ENTAILS_def
   by (auto intro: entails_pureI)
 
+lemma fri_startI_extended: 
+  "\<lbrakk>pure_part P \<Longrightarrow> FRAME_INFER P Q F\<rbrakk> \<Longrightarrow> FRAME P Q F" 
+  "\<lbrakk>pure_part P \<Longrightarrow> FRAME_INFER P Q \<box>\<rbrakk> \<Longrightarrow> ENTAILS P Q"
+  "\<lbrakk>pure_part P \<Longrightarrow> FRAME_INFER P Q \<box>\<rbrakk> \<Longrightarrow> P \<turnstile> Q"
+  unfolding FRAME_INFER_def FRAME_def ENTAILS_def
+  by (auto intro: entails_pureI)
+  
+  
 method_setup fri_rotations = 
   \<open>(Attrib.thms >> (fn cong_rls => fn ctxt => SIMPLE_METHOD' (Frame_Infer.rotations_tac cong_rls ctxt )))\<close>
   \<open>Generate sequence of rotations wrt. specified congruence rule\<close>
@@ -292,7 +306,7 @@ method_setup fri_keep_aux =
   \<open>(Scan.succeed (fn ctxt => SIMPLE_METHOD' (Frame_Infer.infer_tac ctxt)))\<close>
   \<open>Frame Inference, solve from left to right, as far as possible\<close>
 
-method fri_keep = (rule fri_startI)?; fri_keep_aux  
+method fri_keep = (rule fri_startI_extended)?; fri_keep_aux  
   
 method fri = fri_keep;fail  
 
@@ -313,7 +327,7 @@ declaration \<open>
 \<close>
 
 method_setup fri_dbg_start = 
-  \<open>(Scan.succeed (fn ctxt => SIMPLE_METHOD' (TRY o resolve_tac ctxt @{thms fri_startI} THEN' Frame_Infer.start_tac ctxt)))\<close>
+  \<open>(Scan.succeed (fn ctxt => SIMPLE_METHOD' (TRY o resolve_tac ctxt @{thms fri_startI_extended} THEN' Frame_Infer.start_tac ctxt)))\<close>
   \<open>Frame Inference, start\<close>
   
 subsection \<open>Solving Pure Assertions\<close>
@@ -437,8 +451,37 @@ lemma sep_rule:
   apply (rule entails_trans; assumption)
   using entails_mp entails_trans by blast
   
+(* TODO/FIXME: Frame inference does not work the right way round for backwards reasoning *)  
+lemma sep_rule':
+  assumes "Q\<^sub>1 \<turnstile> Q\<^sub>1'"
+  assumes "FRAME_INFER Q Q\<^sub>1' F" (* ? *)
+  assumes "P \<turnstile> Q\<^sub>1 ** F"
+  shows "P \<turnstile> Q"  
+  oops
+
+    
+  
+lemma sep_drule':
+  assumes "P\<^sub>1 \<turnstile> P\<^sub>1'"
+  assumes "FRAME_INFER P P\<^sub>1 F"
+  assumes "P\<^sub>1' ** F \<turnstile> Q"
+  shows "P \<turnstile> Q"  
+  using assms
+  apply (auto simp: FRAME_INFER_def entails_def)
+  using sep_conj_impl by blast
+  
   
 method_setup sep_drule = \<open>Attrib.thms >> (fn thms => fn ctxt => SIMPLE_METHOD' (let
+  val thms = map_product (fn a => try (fn b => a OF [b])) @{thms sep_drule'} thms
+    |> map_filter I
+ in 
+  resolve_tac ctxt thms 
+  THEN' SOLVED' (Frame_Infer.infer_tac ctxt)
+ end))\<close>  
+  
+  
+  
+method_setup sep_drule_simple = \<open>Attrib.thms >> (fn thms => fn ctxt => SIMPLE_METHOD' (let
   val thms = map_product (fn a => try (fn b => a OF [b])) @{thms sep_drule} thms
     |> map_filter I
  in 

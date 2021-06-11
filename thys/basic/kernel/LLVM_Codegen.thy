@@ -14,25 +14,19 @@ begin
     @{file "../preproc/LLVM_Codegen_Preproc.thy"}
   \<close>
 
-  subsection \<open>Pair Types\<close>
-  text \<open>The code generator will translate pair instructions if such a predicate is registered.
-    here, @{typ 't} must be of form \<open>(...)type\<close>, and \<open>tfrees 't\<^sub>1,'t\<^sub>2 \<subseteq> tfrees 't\<close>, 
-    and there can only be one such predicate per type.
+  subsection \<open>Named Structures\<close>
+  text \<open>
+    The code generator will create identified types in LLVM for types registered here
   \<close>
-  definition 
-    ll_is_pair_type :: "bool \<Rightarrow> 't::llvm_rep itself \<Rightarrow> 't\<^sub>1::llvm_rep itself \<Rightarrow> 't\<^sub>2::llvm_rep itself \<Rightarrow> bool"
-  where "ll_is_pair_type anonymous _ _ _ \<equiv> struct_of TYPE('t) = llvm_s_pair (struct_of TYPE('t\<^sub>1)) (struct_of TYPE('t\<^sub>2))"
+  
+  definition "ll_is_identified_structure (name::string) TYPE('t::llvm_rep) \<equiv> llvm_is_s_struct (struct_of TYPE('t))"
+  named_theorems ll_identified_structures \<open>LLVM: Identified Structures\<close>
 
-  named_theorems ll_is_pair_type_thms \<open>Isabelle-LLVM: Theorems for user-defined tuple types\<close>
   
-  lemma TERM_TYPE_I: "TERM (TYPE ('a))" .
+  named_theorems ll_to_val \<open>LLVM: Equations to compute \<open>to_val\<close> shape\<close>
   
-  lemma ll_dest_pair_type:
-    assumes "ll_is_pair_type anon TYPE('t::llvm_rep) TYPE('t\<^sub>1::llvm_rep) TYPE('t\<^sub>2::llvm_rep)"
-    assumes "TERM (TYPE('t))"
-    shows "TERM (TYPE('t\<^sub>1))" "TERM (TYPE('t\<^sub>2))"
-    .
-  
+    
+  (*lemma TERM_TYPE_I: "TERM (TYPE ('a))" .*)
   
   
   subsection \<open>General Functions\<close>
@@ -117,17 +111,11 @@ begin
          | the_assert _ (SOME x) = x 
       
       
-      fun dest_is_pair_type_thm thm = case Thm.prop_of thm of 
-        @{mpat (typs) "Trueprop (ll_is_pair_type 
-            ?anon 
-            TYPE(?'v_t::llvm_rep) 
-            TYPE(?'v_ta::llvm_rep) 
-            TYPE(?'v_tb::llvm_rep))"} => let 
-              val anon = case anon of @{mpat "True"} => true | @{mpat "False"} => false | _ => raise THM("dest_is_pair_type_thm: Not a literal Boolean",~1,[thm])
-            in
-              (anon,t,ta,tb)
-            end
-      | _ => raise THM("dest_is_pair_type_thm",~1,[thm])
+      fun dest_identified_structure_thm thm = case Thm.prop_of thm of 
+        @{mpat (typs) "Trueprop (ll_is_identified_structure ?name TYPE(?'v_t::llvm_rep))"} => let 
+          val name = HOLogic.dest_string name
+        in (name,t) end
+      | _ => raise THM("dest_identified_structure_thm",~1,[thm])
          
       
       fun expand_eta_all t = let
@@ -189,11 +177,11 @@ begin
     
       (* LLC intermediate representation. Somewhere in between Isabelle and LLVM-IR *)    
       
-      datatype llc_type = TInt of int | TPtr of llc_type | TPair of llc_type*llc_type | TNamed of string
+      datatype llc_type = TInt of int | TPtr of llc_type | TStruct of llc_type list | TNamed of string
       datatype llc_const = CInit | CInt of int | CNull
       datatype llc_opr = OVar of string | OConst of llc_const
       type llc_topr = llc_type * llc_opr
-      datatype llc_topr' = OOOp of llc_topr | OOType of llc_type
+      datatype llc_topr' = OOOp of llc_topr | OOType of llc_type | OOCIdx of int
 
       datatype llc_cmd = 
                  CmIf of llc_topr * llc_block * llc_block
@@ -214,7 +202,7 @@ begin
       
       fun pretty_type (TInt w) = pretty_mstr Markup.keyword1 ("i" ^ Int.toString w)
         | pretty_type (TPtr T) = Pretty.block [pretty_type T, Pretty.str "*"]
-        | pretty_type (TPair (T1,T2)) = Pretty.list "{" "}" (map pretty_type [T1,T2])
+        | pretty_type (TStruct Ts) = Pretty.list "{" "}" (map pretty_type Ts)
         | pretty_type (TNamed name) = Pretty.str name
       
       fun pretty_const CInit = pretty_mstr Markup.keyword1 "zeroinitializer"
@@ -228,6 +216,7 @@ begin
       
       fun pretty_topr' (OOOp x) = pretty_topr x 
         | pretty_topr' (OOType T) = pretty_type T
+        | pretty_topr' (OOCIdx idx) = pretty_mstr Markup.numeral (Int.toString idx)
       
       fun pretty_tname (T,v) = Pretty.block [pretty_type T, Pretty.brk 1, Pretty.str v]  
         
@@ -276,7 +265,10 @@ begin
 
     end
   \<close>
-        
+   
+  lemma llc_to_val_eq_triv: "to_val x = a \<Longrightarrow> to_val x = a" by simp
+  
+       
   subsection \<open>Isabelle Term Parser\<close>
   text \<open>Parser from Isabelle terms to intermediate representation\<close>
   ML \<open> structure LLC_Compiler = 
@@ -285,45 +277,159 @@ begin
     
       (* Maps Isabelle type names to named type theorems *)
       structure Named_Type_Tab = Proof_Data (
-        type T = thm Symtab.table
+        type T = (Proof.context -> typ -> string) Symtab.table
         val init = K Symtab.empty
       )
 
-      (* Record type instance: LLVM name and field types *)
-      type named_type_inst = string * llc_type list
-      
-      (* Maps instantiated (monomorphic) Isabelle types to instances *)
-      structure NTInst_Tab = Proof_Data (
-        type T = named_type_inst Typtab.table
+      (* Cache of already created llc-types *)
+      structure Type_Cache = Proof_Data (
+        type T = (llc_type * llc_type list) option Typtab.table
         val init = K Typtab.empty
       )
 
-      fun build_named_type_tables ctxt = let
-        fun check_pt thm = let
-          val (_, typ, typa, typb) = dest_is_pair_type_thm thm
-          val _ = is_Type typ orelse raise TYPE("check_pt: Expected type",[typ],[])
-          val (tname,args) = dest_Type typ
+      (* Identified Structures: Maps names to field types *)
+      structure Identified_Structures = Proof_Data (
+        type T = llc_type list Symtab.table
+        val init = K Symtab.empty
+      )
+      
+      
+      
+      
+      local
+        (* Concatenate type name with argument names, and desymbolize type name.
+           assumes argument names already desymbolized.
+        *)
+        fun mangle_typename name args = name ^ implode (map (fn s => "_" ^ s) args)
+        
+      in
+        (* Get default name for type *)
+        fun dflt_type_name _ (Type (@{type_name word},[T])) = let
+              val n = dest_numeralT T
+            in
+              "i" ^ Int.toString n
+            end
+          | dflt_type_name ctxt (Type (name,args)) = let
+              val argnames = map (get_type_name_dflt ctxt) args
+            in 
+              mangle_typename (Name.desymbolize NONE name) argnames
+            end
+          | dflt_type_name _ T = raise TYPE("dflt_type_name: expected type",[T],[])
+        
+        (* Get name for type, using named type info. *)
+        and get_type_name ctxt (T as (Type (name,_))) = (case Symtab.lookup (Named_Type_Tab.get ctxt) name of
+              SOME cr_name => SOME (cr_name ctxt T)
+            | NONE => NONE)
+          | get_type_name _ T = raise TYPE("get_type_name: expected type",[T],[])
+        and get_type_name_dflt ctxt T = case get_type_name ctxt T of 
+              SOME n => n 
+            | NONE => dflt_type_name ctxt T
+        
+        (* Create named type table. *)
+        fun build_named_type_tables ctxt = let
+          fun check_pt thm = let
+            val (name,typ) = dest_identified_structure_thm thm
+            val name = Name.desymbolize NONE name
+            val _ = is_Type typ orelse raise TYPE("check_pt: Expected type",[typ],[])
+            val (tname,args) = dest_Type typ
+            
+            val _ = forall is_TVar args orelse raise TYPE("check_pt: Expected simple type",[typ],[])
+            
+            fun cr_tyname ctxt (Type (_,args)) = map (get_type_name_dflt ctxt) args |> mangle_typename name
+              | cr_tyname _ _ = raise Match
+          in
+            (tname,cr_tyname)
+          end
           
-          val _ = forall is_TVar args orelse raise TYPE("check_pt: Expected simple type",[typ],[])
-          
-          val tvars = Term.add_tvarsT typ []
-          val tvarsa = Term.add_tvarsT typa []
-          val tvarsb = Term.add_tvarsT typb []
-          
-          val _ = subset op= (tvarsa, tvars) andalso subset op= (tvarsb, tvars)
-            orelse raise TYPE("check_pt: additional type vars in element types",[typ,typa,typb],[])
-          
+          val typtab = Named_Theorems.get ctxt @{named_theorems ll_identified_structures} |> map check_pt |> Symtab.make
         in
-          (tname,thm)
+          ctxt
+          |> Named_Type_Tab.put typtab
+        
         end
         
-        val typtab = Named_Theorems.get ctxt @{named_theorems ll_is_pair_type_thms} |> map check_pt |> Symtab.make
-      in
-        ctxt
-        |> Named_Type_Tab.put typtab
       
       end
       
+      fun mk_undefined_ct ctxt T = Const (@{const_name undefined}, T) |> Thm.cterm_of ctxt
+      
+      fun try_first _ [] = NONE
+        | try_first f (x::xs) = case try f x of NONE => try_first f xs | y => y
+
+      fun dest_to_val @{mpat "to_val ?x"} = x 
+        | dest_to_val t = raise TERM("dest_to_val",[t])
+              
+      fun dest_to_val_thm thm = case Thm.prop_of thm of 
+        @{mpat "Trueprop (to_val _ = llvm_struct ?fs)"} => 
+            HOLogic.dest_list fs 
+            |> map (fastype_of o dest_to_val)
+      | _ => raise THM("Invalid to_val theorem: ",~1,[thm])
+        
+      fun llc_get_type_struct ctxt T = let
+        val ts_thms = Named_Theorems.get ctxt @{named_theorems ll_to_val}
+        
+        val thm = Drule.infer_instantiate' ctxt [SOME (mk_undefined_ct ctxt T)] @{thm llc_to_val_eq_triv}
+        val thm = try_first (fn thm2 => thm OF [thm2]) ts_thms
+                
+        val thm = case thm of 
+          NONE => raise TYPE ("Cannot find to_val theorem for type: ",[T],[])
+        | SOME thm => thm
+      
+      in
+        dest_to_val_thm thm
+      end
+      
+      (* Lookup already cached type *)
+      fun llc_lookup_type _ (Type (@{type_name word},[T])) = SOME (dest_numeralT T |> TInt, [])
+        | llc_lookup_type ctxt (Type (@{type_name ptr},[T])) = (case llc_lookup_type ctxt T of
+            NONE => NONE
+          | SOME (lT,_) => SOME (TPtr lT, []))
+        | llc_lookup_type ctxt T = (case Typtab.lookup (Type_Cache.get ctxt) T of
+            NONE => NONE | SOME NONE => NONE | SOME x => x)
+      
+      
+      fun llc_parse_type (Type (@{type_name word},[T])) ctxt = (dest_numeralT T |> TInt, ctxt)
+        | llc_parse_type (Type (@{type_name ptr},[T])) ctxt = llc_parse_type T ctxt |>> TPtr
+        | llc_parse_type (T as Type _) ctxt = llc_make_type_inst T ctxt
+        | llc_parse_type T _ = raise TYPE ("llc_parse_type: ",[T],[])
+      and llc_make_type_inst T ctxt = case Typtab.lookup (Type_Cache.get ctxt) T of
+        SOME (SOME (llT,_)) => (llT, ctxt)
+      | SOME NONE => raise TYPE ("llc_parse_type: circular type",[T],[])
+      | NONE => let
+          (* Get structure of type: list of field types *)
+          val fTs = llc_get_type_struct ctxt T
+          
+          (* Get naming of type *)
+          val name = get_type_name ctxt T
+          
+          (* Register type: as anonymous, or with llc_named *)
+          fun mk_tycache_entry name = Type_Cache.map (Typtab.update_new (T,map_option (fn x => (TNamed x, [])) name))
+
+          val ctxt = mk_tycache_entry name ctxt
+                    
+          (* Parse field types *)
+          val (llc_fs,ctxt) = fold_map llc_parse_type fTs ctxt
+          
+          (* Update registry: anonymous: to llc_struct. Named: create Identified_Structures entry *)
+          fun register_identified_structure name fs ctxt = let
+            val _ = Symtab.defined (Identified_Structures.get ctxt) name andalso error ("Duplicate identified structure name: " ^ name)
+          in
+            Identified_Structures.map (Symtab.update_new (name,fs)) ctxt
+          end
+          
+          val (res_T,ctxt) = (case name of
+              NONE => (TStruct llc_fs, ctxt)
+            | SOME name => (TNamed name, register_identified_structure name llc_fs ctxt)
+          )
+
+          val ctxt = Type_Cache.map (Typtab.update (T,SOME (res_T, llc_fs))) ctxt
+      
+        in
+          (res_T,ctxt)
+        end
+      
+      
+      (*
       fun mk_type_thm ctxt T = Thm.instantiate' [SOME (Thm.ctyp_of ctxt T)] [] @{thm TERM_TYPE_I}
       val dest_type_thm = Thm.prop_of #> Logic.dest_term #> Logic.dest_type
 
@@ -349,6 +455,7 @@ begin
         SOME (name,_) => (TNamed name, ctxt)
       | NONE => let
           val (tname,_) = dest_Type T
+          
           
           (* Get anonymity and instantiated field types *)
           val (anon,field_types) = inst_pair_type ctxt T
@@ -381,6 +488,7 @@ begin
             (TNamed lname, ctxt)
           end
         end
+      *)  
     
       fun compute_fun_names fixes thms = let
         val _ = map (assert_monomorphic_const o fst) fixes
@@ -418,8 +526,14 @@ begin
         | llc_parse_const @{mpat (typs) \<open>null::?'v_T::llvm_rep ptr\<close>} ctxt = llc_parse_type T ctxt |>> (fn T => (TPtr T, CNull))
         | llc_parse_const t ctxt = case try dest_word_const t of
             SOME (w,v) => ((TInt w, CInt v), ctxt)
-          | NONE => raise TERM ("llc_parse_const: ",[t])
+          | NONE => raise TERM ("llc_parse_const",[t])
       
+      fun dest_cidx t = let
+        val (T,idx) = HOLogic.dest_number t
+      in  
+        if T = @{typ nat} orelse T = @{typ int} then idx else raise TERM("dest_cidx",[t])
+      end    
+          
       local    
 
         type Tstored = (llc_type * string) option list
@@ -516,7 +630,9 @@ begin
           | llc_parse_op t ctxt = llc_parse_const t ctxt |>> apsnd OConst
       
         fun llc_parse_op' (t as @{mpat \<open>TYPE (_)\<close>}) ctxt = llc_parse_type (Logic.dest_type t) ctxt |>> OOType
-          | llc_parse_op' t ctxt = llc_parse_op t ctxt |>> OOOp
+          | llc_parse_op' t ctxt = (case try dest_cidx t of 
+              SOME idx => (OOCIdx idx, ctxt)
+            | NONE => llc_parse_op t ctxt |>> OOOp)
           
         fun llc_parse_op_opt @{mpat "()"} ctxt = (NONE, ctxt)  
           | llc_parse_op_opt t ctxt = llc_parse_op t ctxt |>> SOME
@@ -540,11 +656,22 @@ begin
           val fname = the fname
         in fname end  
 
+        fun get_llc_type ctxt T = case llc_lookup_type ctxt T of
+          SOME (lT,fsT) => (lT,fsT)
+        | NONE => raise TYPE("get_llc_type: internal, unregistered type: ",[T],[])  
         
-        fun check_valid_pair_inst ctxt t pT i fT = let
-          val (_,fTs') = inst_pair_type ctxt pT
-          val _ = i < length fTs' andalso fT = nth fTs' i
-            orelse raise TYPE("Invalid pair instruction instance",[fastype_of (head_of t)],[t])
+        fun get_field_types ctxt T = get_llc_type ctxt T |> snd
+        
+        fun check_valid_struct_inst ctxt t pT i fT = let
+        
+          val i = case try HOLogic.dest_number i of 
+              SOME (_,i) => i 
+            | NONE => raise TERM("Invalid structure instruction instance, index must be constant",[t])
+        
+          val fT = get_llc_type ctxt fT |> fst  
+          val fTs = get_field_types ctxt pT
+          val _ = i < length fTs andalso fT = nth fTs i
+            orelse raise TYPE("Invalid structure instruction instance",[fastype_of (head_of t)],[t])
           
           (*val _ = Pretty.block [Pretty.str "Type instance OK ", Syntax.pretty_term ctxt t, Pretty.str " :: ", Syntax.pretty_typ ctxt (fastype_of t) ]
             |> Pretty.string_of |> writeln
@@ -553,22 +680,13 @@ begin
           ()
         end
         
-        
-        fun check_llvm_struct_cmd ctxt (t as @{mpat (typs) \<open>ll_extract_fst :: ?'v_pT::llvm_rep \<Rightarrow> ?'v_aT::llvm_rep llM\<close>}) = 
-              check_valid_pair_inst ctxt t pT 0 aT
-          | check_llvm_struct_cmd ctxt (t as @{mpat (typs) \<open>ll_extract_snd :: ?'v_pT::llvm_rep \<Rightarrow> ?'v_bT::llvm_rep llM\<close>}) = 
-              check_valid_pair_inst ctxt t pT 1 bT
-          | check_llvm_struct_cmd ctxt (t as @{mpat (typs) \<open>ll_insert_fst :: ?'v_pT::llvm_rep \<Rightarrow> ?'v_aT::llvm_rep \<Rightarrow> _\<close>}) = 
-              check_valid_pair_inst ctxt t pT 0 aT
-          | check_llvm_struct_cmd ctxt (t as @{mpat (typs) \<open>ll_insert_snd :: ?'v_pT::llvm_rep \<Rightarrow> ?'v_bT::llvm_rep \<Rightarrow> _\<close>}) = 
-              check_valid_pair_inst ctxt t pT 1 bT
-          | check_llvm_struct_cmd ctxt (t as @{mpat (typs) \<open>ll_gep_fst :: ?'v_pT::llvm_rep ptr \<Rightarrow> ?'v_aT::llvm_rep ptr llM\<close>}) = 
-              check_valid_pair_inst ctxt t pT 0 aT
-          | check_llvm_struct_cmd ctxt (t as @{mpat (typs) \<open>ll_gep_snd :: ?'v_pT::llvm_rep ptr \<Rightarrow> ?'v_bT::llvm_rep ptr llM\<close>}) = 
-              check_valid_pair_inst ctxt t pT 1 bT
-          | check_llvm_struct_cmd _ _ = ()
-
-        
+        fun check_llvm_struct_cmd ctxt (t as @{mpat (typs) \<open>ll_extract_value (_::?'v_pT::llvm_rep) ?i :: ?'v_aT::llvm_rep llM\<close>}) 
+            = check_valid_struct_inst ctxt t pT i aT        
+        | check_llvm_struct_cmd ctxt (t as @{mpat (typs) \<open>ll_insert_value (_::?'v_pT::llvm_rep) (_ :: ?'v_aT::llvm_rep) ?i\<close>})
+            = check_valid_struct_inst ctxt t pT i aT
+        | check_llvm_struct_cmd ctxt (t as @{mpat (typs) \<open>ll_gep_struct (_::?'v_pT::llvm_rep ptr) ?i :: ?'v_aT::llvm_rep ptr llM\<close>})
+            = check_valid_struct_inst ctxt t pT i aT
+        | check_llvm_struct_cmd _ _ = ()    
                         
         fun llc_parse_cmd rty t ctxt = 
           let
@@ -610,8 +728,8 @@ begin
               )
             | _ => 
                 if is_llvm_instr cname then let 
-                    val _ = check_llvm_struct_cmd ctxt f
                     val (ops,ctxt) = fold_map llc_parse_op' args ctxt
+                    val _ = check_llvm_struct_cmd ctxt t
                   in (CmInstr (cname,ops), ctxt) end
                 else let 
                     val (ops,ctxt) = fold_map llc_parse_op args ctxt
@@ -666,11 +784,12 @@ begin
         val ctxt = Fun_Tab.put ftab ctxt
         val (eqns,ctxt) = parse_cthms_aux thms (build_named_type_tables ctxt)
         
-        val named_tys = NTInst_Tab.get ctxt |> Typtab.dest |> map (Named_Type o snd)
+        val named_tys = Identified_Structures.get ctxt |> Symtab.dest |> map Named_Type
       in 
         (named_tys,eqns)
       end
           
+      
     end
     
   \<close>  
@@ -690,7 +809,7 @@ begin
     
       fun llc_ty _ (TInt w) = LLVM_Builder.mkty_i w
         | llc_ty b (TPtr ty) = LLVM_Builder.mkty_ptr (llc_ty b ty)
-        | llc_ty b (TPair (ty1, ty2)) = LLVM_Builder.mkty_struct [llc_ty b ty1, llc_ty b ty2]
+        | llc_ty b (TStruct tys) = LLVM_Builder.mkty_struct (map (llc_ty b) tys)
         | llc_ty b (TNamed name) = LLVM_Builder.mkty_named b name
       
       
@@ -721,13 +840,14 @@ begin
         LLVM_Builder.mk_conv_instr cmpcode b dst (llc_op_to_val b vtab x1) (llc_ty b ty) |> SOME
       ) | conv_instr_builder _ _ _ _ _ = raise Fail "conv_instr_builder: invalid arguments"
 
-      fun extract_value_builder idx vtab dst [OOOp x1] b = (
+      
+      fun extract_value_builder vtab dst [OOOp x1, OOCIdx idx] b = (
         LLVM_Builder.mk_extractvalue b dst (llc_op_to_val b vtab x1) idx |> SOME
-      ) | extract_value_builder _ _ _ _ _ = raise Fail "extract_value_builder: invalid arguments"
+      ) | extract_value_builder _ _ _ _ = raise Fail "extract_value_builder: invalid arguments"
 
-      fun insert_value_builder idx vtab dst [OOOp x1, OOOp x2] b = (
+      fun insert_value_builder vtab dst [OOOp x1, OOOp x2, OOCIdx idx] b = (
         LLVM_Builder.mk_insertvalue b dst (llc_op_to_val b vtab x1) (llc_op_to_val b vtab x2) idx |> SOME
-      ) | insert_value_builder _ _ _ _ _ = raise Fail "insert_value_builder: invalid arguments"
+      ) | insert_value_builder _ _ _ _ = raise Fail "insert_value_builder: invalid arguments"
       
       fun malloc_builder vtab dst [OOType ty, OOOp x] b = (
         LLVM_Builder.mk_malloc b dst (llc_ty b ty) (llc_op_to_val b vtab x) |> SOME
@@ -749,9 +869,9 @@ begin
         LLVM_Builder.mk_ofs_ptr b dst (llc_op_to_val b vtab x1) (llc_op_to_val b vtab x2) |> SOME
       ) | ofs_ptr_builder _ _ _ _ = raise Fail "ofs_ptr_builder: invalid arguments"
       
-      fun gep_idx_builder idx vtab dst [OOOp x1] b = (
+      fun gep_idx_builder vtab dst [OOOp x1, OOCIdx idx] b = (
         LLVM_Builder.mk_gep_idx b dst (llc_op_to_val b vtab x1) (LLVM_Builder.mkc_iw 32 idx) |> SOME
-      ) | gep_idx_builder _ _ _ _ _ = raise Fail "gep_idx_builder: invalid arguments"
+      ) | gep_idx_builder _ _ _ _ = raise Fail "gep_idx_builder: invalid arguments"
       
       fun register_builder (b:builder) (n:string) = Symtab.update_new (n,b)
       
@@ -779,10 +899,8 @@ begin
         |> fold (register_prfx_builder "ll_ptrcmp_" ptrcmp_instr_builder) [
              @{const_name ll_ptrcmp_eq}, @{const_name ll_ptrcmp_ne}
           ]  
-        |> register_builder (extract_value_builder 0) @{const_name ll_extract_fst}          
-        |> register_builder (extract_value_builder 1) @{const_name ll_extract_snd}          
-        |> register_builder (insert_value_builder 0) @{const_name ll_insert_fst}          
-        |> register_builder (insert_value_builder 1) @{const_name ll_insert_snd}          
+        |> register_builder (extract_value_builder) @{const_name ll_extract_value}          
+        |> register_builder (insert_value_builder) @{const_name ll_insert_value}          
 
         |> register_builder (malloc_builder) @{const_name ll_malloc}          
         |> register_builder (free_builder) @{const_name ll_free}          
@@ -790,8 +908,7 @@ begin
         |> register_builder (store_builder) @{const_name ll_store}          
       
         |> register_builder (ofs_ptr_builder) @{const_name ll_ofs_ptr}          
-        |> register_builder (gep_idx_builder 0) @{const_name ll_gep_fst}          
-        |> register_builder (gep_idx_builder 1) @{const_name ll_gep_snd}          
+        |> register_builder (gep_idx_builder) @{const_name ll_gep_struct}          
             
 
       fun vtab_bind (SOME dst) (SOME v) vtab = Symtab.update_new (dst,v) vtab  
@@ -1095,8 +1212,8 @@ begin
       | PRIM_SI32 | PRIM_UI32
       | PRIM_SI64 | PRIM_UI64
       | PRIM_NAMED of string
-    datatype cfield = FLD_NAMED of ctype * string | FLD_ANON of cfield * cfield
-         and ctype = CTY_PRIM of cprim | CTY_PTR of ctype | CTY_PAIR of cfield * cfield
+    datatype cfield = FLD_NAMED of ctype * string | FLD_ANON of cfield list
+         and ctype = CTY_PRIM of cprim | CTY_PTR of ctype | CTY_STRUCT of cfield list
   
          
     datatype typedef = TYPEDEF of string * ctype
@@ -1131,12 +1248,12 @@ begin
       
       fun parse_cfield s = (
            parse_ctype -- parse_id --| Parse.$$$ ";" >> FLD_NAMED
-        || parse_fld_pair --| Parse.$$$ ";" >> FLD_ANON
+        || parse_fld_struct --| Parse.$$$ ";" >> FLD_ANON
       ) s
-      and parse_fld_pair s = (pkw "struct" |-- Parse.$$$ "{" |-- parse_cfield -- parse_cfield --| Parse.$$$ "}") s
+      and parse_fld_struct s = (pkw "struct" |-- Parse.$$$ "{" |-- Scan.repeat1 parse_cfield --| Parse.$$$ "}") s
       and parse_ctype1 s = (
            parse_cprim >> CTY_PRIM
-        || parse_fld_pair >> CTY_PAIR
+        || parse_fld_struct >> CTY_STRUCT
       ) s
       and parse_ctype s = (
         parse_ctype1 -- Scan.repeat (Parse.$$$ "*") >> (fn (ty,ptrs) => mk_ptr ty ptrs)
@@ -1225,15 +1342,15 @@ begin
       | check_type _ (CTY_PRIM _) = ()
       | check_type dd (CTY_PTR (CTY_PRIM (PRIM_NAMED name))) = check_decl dd name
       | check_type dd (CTY_PTR t) = check_type dd t
-      | check_type dd (CTY_PAIR (f1,f2)) = (check_field dd f1; check_field dd f2)
+      | check_type dd (CTY_STRUCT fs) = (map (check_field dd) fs; ())
     and check_field dd (FLD_NAMED (ty,name)) = (check_type dd ty; check_identifier name)
-      | check_field dd (FLD_ANON (f1,f2)) = (check_field dd f1; check_field dd f2)
+      | check_field dd (FLD_ANON fs) = (map (check_field dd) fs; ())
       
     fun is_valid_rty (dd as (_,def)) (CTY_PRIM (PRIM_NAMED name)) = 
           (case Symtab.lookup def name of NONE => false | SOME t => is_valid_rty dd t)
       | is_valid_rty _ (CTY_PRIM _) = true
       | is_valid_rty _ (CTY_PTR _) = true
-      | is_valid_rty _ (CTY_PAIR _) = false
+      | is_valid_rty _ (CTY_STRUCT _) = false
     
     fun check_valid_rty dd t = (is_valid_rty dd t orelse error "Aggregate return type not supported by C"; ())  
       
@@ -1283,11 +1400,11 @@ begin
         | cprim_to_Cs (PRIM_NAMED name) = word name
                                                   
       fun cfield_to_Cs (FLD_NAMED (ty,name)) = block [ctype_to_Cs ty, word name, nword ";"]  
-        | cfield_to_Cs (FLD_ANON fs) = block [fldpair_to_Cs fs, nword ";"]
-      and fldpair_to_Cs (f1,f2) = block [word "struct", sep, big_braces [line [cfield_to_Cs f1], line [cfield_to_Cs f2]]]
+        | cfield_to_Cs (FLD_ANON fs) = block [fldstruct_to_Cs fs, nword ";"]
+      and fldstruct_to_Cs fs = block [word "struct", sep, big_braces (map (line o single o cfield_to_Cs) fs) ]
       and ctype_to_Cs (CTY_PRIM t) = cprim_to_Cs t
         | ctype_to_Cs (CTY_PTR t) = block [ctype_to_Cs t, nword "*"]
-        | ctype_to_Cs (CTY_PAIR fs) = fldpair_to_Cs fs
+        | ctype_to_Cs (CTY_STRUCT fs) = fldstruct_to_Cs fs
         
       fun tydef_to_Cs (TYPEDEF (name,ty)) = block [word "typedef", ctype_to_Cs ty, sep, word name, nword ";"]
       
@@ -1319,10 +1436,10 @@ begin
               NONE => error ("Undefined named type " ^ name)
             | SOME ty => lty_of_ctype ntab ty  
       and lty_of_cfield ntab (FLD_NAMED (ty,_)) = lty_of_ctype ntab ty
-        | lty_of_cfield ntab (FLD_ANON (f1,f2)) = TPair (lty_of_cfield ntab f1, lty_of_cfield ntab f2)
+        | lty_of_cfield ntab (FLD_ANON fs) = TStruct (map (lty_of_cfield ntab) fs)
       and lty_of_ctype ntab (CTY_PRIM t) = lty_of_prim ntab t               
         | lty_of_ctype ntab (CTY_PTR t) = TPtr (lty_of_ctype ntab t)
-        | lty_of_ctype ntab (CTY_PAIR (f1,f2)) = TPair (lty_of_cfield ntab f1, lty_of_cfield ntab f2)
+        | lty_of_ctype ntab (CTY_STRUCT fs) = TStruct (map (lty_of_cfield ntab) fs)
     
         
       fun cty_of_lty (TInt 8) = CTY_PRIM PRIM_SI8
@@ -1331,14 +1448,15 @@ begin
         | cty_of_lty (TInt 64) = CTY_PRIM PRIM_SI64
         | cty_of_lty (TInt w) = error ("cty_of_lty: Unsupported integer width " ^ Int.toString w)
         | cty_of_lty (TPtr ty) = CTY_PTR (cty_of_lty ty)
-        | cty_of_lty (TPair (ty1,ty2)) = CTY_PAIR (FLD_NAMED (cty_of_lty ty1,"fst"), FLD_NAMED (cty_of_lty ty2,"snd"))
+        | cty_of_lty (TStruct tys) = CTY_STRUCT (map_index cfld_of_lty tys)
         | cty_of_lty (TNamed name) = error ("cty_of_lty: Named ltys not supported: " ^ name)
-        
+      and cfld_of_lty (i,ty) = FLD_NAMED (cty_of_lty ty,"field" ^ Int.toString i)        
         
       val cty_of_rlty = map_option cty_of_lty  
         
     end
   end\<close>
+  
   
   
   ML \<open>structure LLC_HeaderGen = struct
