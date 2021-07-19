@@ -5,6 +5,8 @@
 
 
 
+
+
 uint64_t euclid(uint64_t, uint64_t);
 
 #endif

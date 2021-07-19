@@ -404,7 +404,7 @@ define { i64, { i64, i8* } }* @str_pdqsort({ i64, { i64, i8* } }* %x, i64 %x1, i
     %tmpac = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %xf, { i64, { i64, i64 } } %tmpab, 1
     %xg = insertvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } zeroinitializer, i1 1, 0
     %x4 = insertvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %xg, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %tmpac, 1
-    %x5 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_pdqsort_impl_f_018458326 ({ i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %x4)
+    %x5 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_pdqsort_impl_f_08031364 ({ i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %x4)
     br label %ctd_if
 
   else:
@@ -480,7 +480,7 @@ define i64* @pdqsort(i64* %x, i64 %x1, i64 %x2) {
     %tmpac = insertvalue { i64*, { i64, { i64, i64 } } } %xf, { i64, { i64, i64 } } %tmpab, 1
     %xg = insertvalue { i1, { i64*, { i64, { i64, i64 } } } } zeroinitializer, i1 1, 0
     %x4 = insertvalue { i1, { i64*, { i64, { i64, i64 } } } } %xg, { i64*, { i64, { i64, i64 } } } %tmpac, 1
-    %x5 = call i64* @Sorting_Export_Code_unat_sort_pdqsort_impl_f_018416752 ({ i1, { i64*, { i64, { i64, i64 } } } } %x4)
+    %x5 = call i64* @Sorting_Export_Code_unat_sort_pdqsort_impl_f_07989790 ({ i1, { i64*, { i64, { i64, i64 } } } } %x4)
     br label %ctd_if
 
   else:
@@ -1284,7 +1284,7 @@ define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_introsort_aux_impl({
     %tmpab = insertvalue { i64, { i64, i64 } } %xaa, { i64, i64 } %tmpa, 1
     %xba = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } zeroinitializer, { i64, { i64, i8* } }* %x, 0
     %x4 = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %xba, { i64, { i64, i64 } } %tmpab, 1
-    %x5 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_introsort_aux_impl_f_018442012 ({ { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %x4)
+    %x5 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_introsort_aux_impl_f_08015050 ({ { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %x4)
     ret { i64, { i64, i8* } }* %x5
 }
 
@@ -1756,7 +1756,7 @@ define i64* @introsort_aux(i64* %x, i64 %x1, i64 %x2, i64 %x3) {
     %tmpab = insertvalue { i64, { i64, i64 } } %xaa, { i64, i64 } %tmpa, 1
     %xba = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %x, 0
     %x4 = insertvalue { i64*, { i64, { i64, i64 } } } %xba, { i64, { i64, i64 } } %tmpab, 1
-    %x5 = call i64* @Sorting_Export_Code_unat_sort_introsort_aux_impl_f_018399702 ({ i64*, { i64, { i64, i64 } } } %x4)
+    %x5 = call i64* @Sorting_Export_Code_unat_sort_introsort_aux_impl_f_07972740 ({ i64*, { i64, { i64, i64 } } } %x4)
     ret i64* %x5
 }
 
@@ -2112,102 +2112,7 @@ define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_pdq_guarded_insort_i
     ret { i64, { i64, i8* } }* %x9
 }
 
-define i64* @Sorting_Export_Code_unat_sort_is_guarded_insert_impl(i64* %x, i64 %x1, i64 %x2) {
-
-  start:
-    %x3 = getelementptr i64, i64* %x, i64 %x2
-    %r = load i64, i64* %x3
-    %xaa = insertvalue { i64*, i64 } zeroinitializer, i64* %x, 0
-    %xba = insertvalue { i64*, i64 } %xaa, i64 %x2, 1
-    br label %while_start
-
-  while_start:
-    %xaaa = phi { i64*, i64 } [ %x5, %while_body ], [ %xba, %start ]
-    %a1a = extractvalue { i64*, i64 } %xaaa, 0
-    %a2a = extractvalue { i64*, i64 } %xaaa, 1
-    %xbaa = icmp slt i64 %x1, %a2a
-    br i1 %xbaa, label %then, label %else
-
-  then:
-    %bib = sub i64 %a2a, 1
-    %xca = getelementptr i64, i64* %a1a, i64 %bib
-    %ra = load i64, i64* %xca
-    %xda = icmp ult i64 %r, %ra
-    %p = getelementptr i64, i64* %a1a, i64 %bib
-    store i64 %ra, i64* %p
-    br label %ctd_if
-
-  else:
-    br label %ctd_if
-
-  ctd_if:
-    %x4 = phi i1 [ 0, %else ], [ %xda, %then ]
-    br i1 %x4, label %while_body, label %while_end
-
-  while_body:
-    %a1a1 = extractvalue { i64*, i64 } %xaaa, 0
-    %a2a1 = extractvalue { i64*, i64 } %xaaa, 1
-    %xbaa1 = sub i64 %a2a1, 1
-    %xca1 = getelementptr i64, i64* %a1a1, i64 %xbaa1
-    %ra1 = load i64, i64* %xca1
-    %p1 = getelementptr i64, i64* %a1a1, i64 %a2a1
-    store i64 %ra1, i64* %p1
-    %xea = sub i64 %a2a1, 1
-    %xfa = insertvalue { i64*, i64 } zeroinitializer, i64* %a1a1, 0
-    %x5 = insertvalue { i64*, i64 } %xfa, i64 %xea, 1
-    br label %while_start
-
-  while_end:
-    %a1a2 = extractvalue { i64*, i64 } %xaaa, 0
-    %a2a2 = extractvalue { i64*, i64 } %xaaa, 1
-    %p2 = getelementptr i64, i64* %a1a2, i64 %a2a2
-    store i64 %r, i64* %p2
-    ret i64* %a1a2
-}
-
-define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_is_unguarded_insert_impl({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2) {
-
-  start:
-    %x3 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x, i64 %x2
-    %r = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x3
-    %xaa = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %x, 0
-    %xba = insertvalue { { i64, { i64, i8* } }*, i64 } %xaa, i64 %x2, 1
-    br label %while_start
-
-  while_start:
-    %xaaa = phi { { i64, { i64, i8* } }*, i64 } [ %x4, %while_body ], [ %xba, %start ]
-    %a1a = extractvalue { { i64, { i64, i8* } }*, i64 } %xaaa, 0
-    %a2a = extractvalue { { i64, { i64, i8* } }*, i64 } %xaaa, 1
-    %bib = sub i64 %a2a, 1
-    %xbaa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a, i64 %bib
-    %ra = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xbaa
-    %xca = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r, { i64, { i64, i8* } } %ra)
-    %p = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a, i64 %bib
-    store { i64, { i64, i8* } } %ra, { i64, { i64, i8* } }* %p
-    br i1 %xca, label %while_body, label %while_end
-
-  while_body:
-    %a1a1 = extractvalue { { i64, { i64, i8* } }*, i64 } %xaaa, 0
-    %a2a1 = extractvalue { { i64, { i64, i8* } }*, i64 } %xaaa, 1
-    %xbaa1 = sub i64 %a2a1, 1
-    %xca1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a1, i64 %xbaa1
-    %ra1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xca1
-    %p1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a1, i64 %a2a1
-    store { i64, { i64, i8* } } %ra1, { i64, { i64, i8* } }* %p1
-    %xea = sub i64 %a2a1, 1
-    %xfa = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %a1a1, 0
-    %x4 = insertvalue { { i64, { i64, i8* } }*, i64 } %xfa, i64 %xea, 1
-    br label %while_start
-
-  while_end:
-    %a1a2 = extractvalue { { i64, { i64, i8* } }*, i64 } %xaaa, 0
-    %a2a2 = extractvalue { { i64, { i64, i8* } }*, i64 } %xaaa, 1
-    %p2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a2, i64 %a2a2
-    store { i64, { i64, i8* } } %r, { i64, { i64, i8* } }* %p2
-    ret { i64, { i64, i8* } }* %a1a2
-}
-
-define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_pdqsort_impl_f_018458326({ i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %x) {
+define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_pdqsort_impl_f_08031364({ i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %x) {
 
   start:
     %a1 = extractvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %x, 0
@@ -2608,7 +2513,7 @@ define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_pdqsort_impl_f_01845
     %tmpaf = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %xy, { i64, { i64, i64 } } %tmpae, 1
     %xz = insertvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } zeroinitializer, i1 0, 0
     %x23 = insertvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %xz, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %tmpaf, 1
-    %x24 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_pdqsort_impl_f_018458326 ({ i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %x23)
+    %x24 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_pdqsort_impl_f_08031364 ({ i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %x23)
     br label %ctd_ifs
 
   elses:
@@ -2975,7 +2880,7 @@ define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_pdqsort_impl_f_01845
     %tmpi = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %yq1, { i64, { i64, i64 } } %tmph, 1
     %yr1 = insertvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } zeroinitializer, i1 %a1, 0
     %ys1 = insertvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %yr1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %tmpi, 1
-    %yma5 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_pdqsort_impl_f_018458326 ({ i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %ys1)
+    %yma5 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_pdqsort_impl_f_08031364 ({ i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %ys1)
     %yna2 = add i64 %a1e1, 1
     %yu1 = insertvalue { i64, i64 } zeroinitializer, i64 %a1c, 0
     %tmpad1 = insertvalue { i64, i64 } %yu1, i64 %yja2, 1
@@ -2985,7 +2890,7 @@ define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_pdqsort_impl_f_01845
     %tmpaf1 = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %yw1, { i64, { i64, i64 } } %tmpae1, 1
     %yx = insertvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } zeroinitializer, i1 0, 0
     %x56 = insertvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %yx, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %tmpaf1, 1
-    %x57 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_pdqsort_impl_f_018458326 ({ i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %x56)
+    %x57 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_pdqsort_impl_f_08031364 ({ i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %x56)
     br label %ctd_igf
 
   ctd_igf:
@@ -2999,6 +2904,101 @@ define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_pdqsort_impl_f_01845
   ctd_if:
     %x60 = phi { i64, { i64, i8* } }* [ %x59, %ctd_ifs ], [ %x3, %ctd_ifa ]
     ret { i64, { i64, i8* } }* %x60
+}
+
+define i64* @Sorting_Export_Code_unat_sort_is_guarded_insert_impl(i64* %x, i64 %x1, i64 %x2) {
+
+  start:
+    %x3 = getelementptr i64, i64* %x, i64 %x2
+    %r = load i64, i64* %x3
+    %xaa = insertvalue { i64*, i64 } zeroinitializer, i64* %x, 0
+    %xba = insertvalue { i64*, i64 } %xaa, i64 %x2, 1
+    br label %while_start
+
+  while_start:
+    %xaaa = phi { i64*, i64 } [ %x5, %while_body ], [ %xba, %start ]
+    %a1a = extractvalue { i64*, i64 } %xaaa, 0
+    %a2a = extractvalue { i64*, i64 } %xaaa, 1
+    %xbaa = icmp slt i64 %x1, %a2a
+    br i1 %xbaa, label %then, label %else
+
+  then:
+    %bib = sub i64 %a2a, 1
+    %xca = getelementptr i64, i64* %a1a, i64 %bib
+    %ra = load i64, i64* %xca
+    %xda = icmp ult i64 %r, %ra
+    %p = getelementptr i64, i64* %a1a, i64 %bib
+    store i64 %ra, i64* %p
+    br label %ctd_if
+
+  else:
+    br label %ctd_if
+
+  ctd_if:
+    %x4 = phi i1 [ 0, %else ], [ %xda, %then ]
+    br i1 %x4, label %while_body, label %while_end
+
+  while_body:
+    %a1a1 = extractvalue { i64*, i64 } %xaaa, 0
+    %a2a1 = extractvalue { i64*, i64 } %xaaa, 1
+    %xbaa1 = sub i64 %a2a1, 1
+    %xca1 = getelementptr i64, i64* %a1a1, i64 %xbaa1
+    %ra1 = load i64, i64* %xca1
+    %p1 = getelementptr i64, i64* %a1a1, i64 %a2a1
+    store i64 %ra1, i64* %p1
+    %xea = sub i64 %a2a1, 1
+    %xfa = insertvalue { i64*, i64 } zeroinitializer, i64* %a1a1, 0
+    %x5 = insertvalue { i64*, i64 } %xfa, i64 %xea, 1
+    br label %while_start
+
+  while_end:
+    %a1a2 = extractvalue { i64*, i64 } %xaaa, 0
+    %a2a2 = extractvalue { i64*, i64 } %xaaa, 1
+    %p2 = getelementptr i64, i64* %a1a2, i64 %a2a2
+    store i64 %r, i64* %p2
+    ret i64* %a1a2
+}
+
+define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_is_unguarded_insert_impl({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2) {
+
+  start:
+    %x3 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x, i64 %x2
+    %r = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x3
+    %xaa = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %x, 0
+    %xba = insertvalue { { i64, { i64, i8* } }*, i64 } %xaa, i64 %x2, 1
+    br label %while_start
+
+  while_start:
+    %xaaa = phi { { i64, { i64, i8* } }*, i64 } [ %x4, %while_body ], [ %xba, %start ]
+    %a1a = extractvalue { { i64, { i64, i8* } }*, i64 } %xaaa, 0
+    %a2a = extractvalue { { i64, { i64, i8* } }*, i64 } %xaaa, 1
+    %bib = sub i64 %a2a, 1
+    %xbaa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a, i64 %bib
+    %ra = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xbaa
+    %xca = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r, { i64, { i64, i8* } } %ra)
+    %p = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a, i64 %bib
+    store { i64, { i64, i8* } } %ra, { i64, { i64, i8* } }* %p
+    br i1 %xca, label %while_body, label %while_end
+
+  while_body:
+    %a1a1 = extractvalue { { i64, { i64, i8* } }*, i64 } %xaaa, 0
+    %a2a1 = extractvalue { { i64, { i64, i8* } }*, i64 } %xaaa, 1
+    %xbaa1 = sub i64 %a2a1, 1
+    %xca1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a1, i64 %xbaa1
+    %ra1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xca1
+    %p1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a1, i64 %a2a1
+    store { i64, { i64, i8* } } %ra1, { i64, { i64, i8* } }* %p1
+    %xea = sub i64 %a2a1, 1
+    %xfa = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %a1a1, 0
+    %x4 = insertvalue { { i64, { i64, i8* } }*, i64 } %xfa, i64 %xea, 1
+    br label %while_start
+
+  while_end:
+    %a1a2 = extractvalue { { i64, { i64, i8* } }*, i64 } %xaaa, 0
+    %a2a2 = extractvalue { { i64, { i64, i8* } }*, i64 } %xaaa, 1
+    %p2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a2, i64 %a2a2
+    store { i64, { i64, i8* } } %r, { i64, { i64, i8* } }* %p2
+    ret { i64, { i64, i8* } }* %a1a2
 }
 
 define i64* @Sorting_Export_Code_unat_sort_pdq_guarded_insort_impl(i64* %x, i64 %x1, i64 %x2) {
@@ -3125,176 +3125,7 @@ define i64* @Sorting_Export_Code_unat_sort_pdq_guarded_insort_impl(i64* %x, i64 
     ret i64* %x9
 }
 
-define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_final_insertion_sort_impl({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2) {
-
-  start:
-    %x3 = sub i64 %x2, %x1
-    %xa = icmp sle i64 %x3, 16
-    br i1 %xa, label %then, label %else
-
-  then:
-    %xb = add i64 %x1, 1
-    %x4 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_guarded_insertion_sort_impl (i64 %x1, i64 %xb, i64 %x2, { i64, { i64, i8* } }* %x)
-    br label %ctd_if
-
-  else:
-    %xb1 = add i64 %x1, 1
-    %xc = add i64 %x1, 16
-    %xd = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_guarded_insertion_sort_impl (i64 %x1, i64 %xb1, i64 %xc, { i64, { i64, i8* } }* %x)
-    %xe = add i64 %x1, 16
-    %x5 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_unguarded_insertion_sort_impl (i64 %x1, i64 %xe, i64 %x2, { i64, { i64, i8* } }* %xd)
-    br label %ctd_if
-
-  ctd_if:
-    %x6 = phi { i64, { i64, i8* } }* [ %x5, %else ], [ %x4, %then ]
-    ret { i64, { i64, i8* } }* %x6
-}
-
-define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_pdq_unguarded_insort_impl({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2) {
-
-  start:
-    %x3 = icmp ne i64 %x1, %x2
-    br i1 %x3, label %then, label %else
-
-  then:
-    %xaa = add i64 %x1, 1
-    %xb = insertvalue { i64, { i64, { i64, i8* } }* } zeroinitializer, i64 %xaa, 0
-    %xc = insertvalue { i64, { i64, { i64, i8* } }* } %xb, { i64, { i64, i8* } }* %x, 1
-    br label %while_start
-
-  while_start:
-    %xba = phi { i64, { i64, { i64, i8* } }* } [ %x6, %ctd_ifa ], [ %xc, %then ]
-    %a1 = extractvalue { i64, { i64, { i64, i8* } }* } %xba, 0
-    %a2 = extractvalue { i64, { i64, { i64, i8* } }* } %xba, 1
-    %x4 = icmp slt i64 %a1, %x2
-    br i1 %x4, label %while_body, label %while_end
-
-  while_body:
-    %a11 = extractvalue { i64, { i64, { i64, i8* } }* } %xba, 0
-    %a21 = extractvalue { i64, { i64, { i64, i8* } }* } %xba, 1
-    %xca = sub i64 %a11, 1
-    %xda = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %a11
-    %r = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xda
-    %xea = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %xca
-    %ra = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xea
-    %xfa = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r, { i64, { i64, i8* } } %ra)
-    %p = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %a11
-    store { i64, { i64, i8* } } %r, { i64, { i64, i8* } }* %p
-    %pa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %xca
-    store { i64, { i64, i8* } } %ra, { i64, { i64, i8* } }* %pa
-    br i1 %xfa, label %thena, label %elsea
-
-  thena:
-    %xj = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %a11
-    %rb = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xj
-    %xka = sub i64 %a11, 1
-    %xl = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %xka
-    %rc = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xl
-    %pb = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %a11
-    store { i64, { i64, i8* } } %rc, { i64, { i64, i8* } }* %pb
-    %xna = sub i64 %a11, 1
-    %xo = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %a21, 0
-    %xp = insertvalue { { i64, { i64, i8* } }*, i64 } %xo, i64 %xna, 1
-    br label %while_starta
-
-  while_starta:
-    %xoa = phi { { i64, { i64, i8* } }*, i64 } [ %x5, %while_bodya ], [ %xp, %thena ]
-    %a1b = extractvalue { { i64, { i64, i8* } }*, i64 } %xoa, 0
-    %a2b = extractvalue { { i64, { i64, i8* } }*, i64 } %xoa, 1
-    %bib = sub i64 %a2b, 1
-    %xpa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b, i64 %bib
-    %rd = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xpa
-    %xqa = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %rb, { i64, { i64, i8* } } %rd)
-    %pc = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b, i64 %bib
-    store { i64, { i64, i8* } } %rd, { i64, { i64, i8* } }* %pc
-    br i1 %xqa, label %while_bodya, label %while_enda
-
-  while_bodya:
-    %a1b1 = extractvalue { { i64, { i64, i8* } }*, i64 } %xoa, 0
-    %a2b1 = extractvalue { { i64, { i64, i8* } }*, i64 } %xoa, 1
-    %xpa1 = sub i64 %a2b1, 1
-    %xqa1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b1, i64 %xpa1
-    %rd1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xqa1
-    %pc1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b1, i64 %a2b1
-    store { i64, { i64, i8* } } %rd1, { i64, { i64, i8* } }* %pc1
-    %xsa = sub i64 %a2b1, 1
-    %xta = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %a1b1, 0
-    %x5 = insertvalue { { i64, { i64, i8* } }*, i64 } %xta, i64 %xsa, 1
-    br label %while_starta
-
-  while_enda:
-    %a1b2 = extractvalue { { i64, { i64, i8* } }*, i64 } %xoa, 0
-    %a2b2 = extractvalue { { i64, { i64, i8* } }*, i64 } %xoa, 1
-    %pc2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b2, i64 %a2b2
-    store { i64, { i64, i8* } } %rb, { i64, { i64, i8* } }* %pc2
-    br label %ctd_ifa
-
-  elsea:
-    br label %ctd_ifa
-
-  ctd_ifa:
-    %xj1 = phi { i64, { i64, i8* } }* [ %a21, %elsea ], [ %a1b2, %while_enda ]
-    %xka1 = add i64 %a11, 1
-    %xla = insertvalue { i64, { i64, { i64, i8* } }* } zeroinitializer, i64 %xka1, 0
-    %x6 = insertvalue { i64, { i64, { i64, i8* } }* } %xla, { i64, { i64, i8* } }* %xj1, 1
-    br label %while_start
-
-  while_end:
-    %a12 = extractvalue { i64, { i64, { i64, i8* } }* } %xba, 0
-    %x7 = extractvalue { i64, { i64, { i64, i8* } }* } %xba, 1
-    br label %ctd_if
-
-  else:
-    br label %ctd_if
-
-  ctd_if:
-    %x8 = phi { i64, { i64, i8* } }* [ %x, %else ], [ %x7, %while_end ]
-    ret { i64, { i64, i8* } }* %x8
-}
-
-define i64* @Sorting_Export_Code_unat_sort_is_unguarded_insert_impl(i64* %x, i64 %x1, i64 %x2) {
-
-  start:
-    %x3 = getelementptr i64, i64* %x, i64 %x2
-    %r = load i64, i64* %x3
-    %xaa = insertvalue { i64*, i64 } zeroinitializer, i64* %x, 0
-    %xba = insertvalue { i64*, i64 } %xaa, i64 %x2, 1
-    br label %while_start
-
-  while_start:
-    %xaaa = phi { i64*, i64 } [ %x4, %while_body ], [ %xba, %start ]
-    %a1a = extractvalue { i64*, i64 } %xaaa, 0
-    %a2a = extractvalue { i64*, i64 } %xaaa, 1
-    %bib = sub i64 %a2a, 1
-    %xbaa = getelementptr i64, i64* %a1a, i64 %bib
-    %ra = load i64, i64* %xbaa
-    %xca = icmp ult i64 %r, %ra
-    %p = getelementptr i64, i64* %a1a, i64 %bib
-    store i64 %ra, i64* %p
-    br i1 %xca, label %while_body, label %while_end
-
-  while_body:
-    %a1a1 = extractvalue { i64*, i64 } %xaaa, 0
-    %a2a1 = extractvalue { i64*, i64 } %xaaa, 1
-    %xbaa1 = sub i64 %a2a1, 1
-    %xca1 = getelementptr i64, i64* %a1a1, i64 %xbaa1
-    %ra1 = load i64, i64* %xca1
-    %p1 = getelementptr i64, i64* %a1a1, i64 %a2a1
-    store i64 %ra1, i64* %p1
-    %xea = sub i64 %a2a1, 1
-    %xfa = insertvalue { i64*, i64 } zeroinitializer, i64* %a1a1, 0
-    %x4 = insertvalue { i64*, i64 } %xfa, i64 %xea, 1
-    br label %while_start
-
-  while_end:
-    %a1a2 = extractvalue { i64*, i64 } %xaaa, 0
-    %a2a2 = extractvalue { i64*, i64 } %xaaa, 1
-    %p2 = getelementptr i64, i64* %a1a2, i64 %a2a2
-    store i64 %r, i64* %p2
-    ret i64* %a1a2
-}
-
-define i64* @Sorting_Export_Code_unat_sort_pdqsort_impl_f_018416752({ i1, { i64*, { i64, { i64, i64 } } } } %x) {
+define i64* @Sorting_Export_Code_unat_sort_pdqsort_impl_f_07989790({ i1, { i64*, { i64, { i64, i64 } } } } %x) {
 
   start:
     %a1 = extractvalue { i1, { i64*, { i64, { i64, i64 } } } } %x, 0
@@ -3695,7 +3526,7 @@ define i64* @Sorting_Export_Code_unat_sort_pdqsort_impl_f_018416752({ i1, { i64*
     %tmpaf = insertvalue { i64*, { i64, { i64, i64 } } } %xy, { i64, { i64, i64 } } %tmpae, 1
     %xz = insertvalue { i1, { i64*, { i64, { i64, i64 } } } } zeroinitializer, i1 0, 0
     %x23 = insertvalue { i1, { i64*, { i64, { i64, i64 } } } } %xz, { i64*, { i64, { i64, i64 } } } %tmpaf, 1
-    %x24 = call i64* @Sorting_Export_Code_unat_sort_pdqsort_impl_f_018416752 ({ i1, { i64*, { i64, { i64, i64 } } } } %x23)
+    %x24 = call i64* @Sorting_Export_Code_unat_sort_pdqsort_impl_f_07989790 ({ i1, { i64*, { i64, { i64, i64 } } } } %x23)
     br label %ctd_ifs
 
   elses:
@@ -4062,7 +3893,7 @@ define i64* @Sorting_Export_Code_unat_sort_pdqsort_impl_f_018416752({ i1, { i64*
     %tmpi = insertvalue { i64*, { i64, { i64, i64 } } } %yq1, { i64, { i64, i64 } } %tmph, 1
     %yr1 = insertvalue { i1, { i64*, { i64, { i64, i64 } } } } zeroinitializer, i1 %a1, 0
     %ys1 = insertvalue { i1, { i64*, { i64, { i64, i64 } } } } %yr1, { i64*, { i64, { i64, i64 } } } %tmpi, 1
-    %yma5 = call i64* @Sorting_Export_Code_unat_sort_pdqsort_impl_f_018416752 ({ i1, { i64*, { i64, { i64, i64 } } } } %ys1)
+    %yma5 = call i64* @Sorting_Export_Code_unat_sort_pdqsort_impl_f_07989790 ({ i1, { i64*, { i64, { i64, i64 } } } } %ys1)
     %yna2 = add i64 %a1e1, 1
     %yu1 = insertvalue { i64, i64 } zeroinitializer, i64 %a1c, 0
     %tmpad1 = insertvalue { i64, i64 } %yu1, i64 %yja2, 1
@@ -4072,7 +3903,7 @@ define i64* @Sorting_Export_Code_unat_sort_pdqsort_impl_f_018416752({ i1, { i64*
     %tmpaf1 = insertvalue { i64*, { i64, { i64, i64 } } } %yw1, { i64, { i64, i64 } } %tmpae1, 1
     %yx = insertvalue { i1, { i64*, { i64, { i64, i64 } } } } zeroinitializer, i1 0, 0
     %x56 = insertvalue { i1, { i64*, { i64, { i64, i64 } } } } %yx, { i64*, { i64, { i64, i64 } } } %tmpaf1, 1
-    %x57 = call i64* @Sorting_Export_Code_unat_sort_pdqsort_impl_f_018416752 ({ i1, { i64*, { i64, { i64, i64 } } } } %x56)
+    %x57 = call i64* @Sorting_Export_Code_unat_sort_pdqsort_impl_f_07989790 ({ i1, { i64*, { i64, { i64, i64 } } } } %x56)
     br label %ctd_igf
 
   ctd_igf:
@@ -4086,6 +3917,175 @@ define i64* @Sorting_Export_Code_unat_sort_pdqsort_impl_f_018416752({ i1, { i64*
   ctd_if:
     %x60 = phi i64* [ %x59, %ctd_ifs ], [ %x3, %ctd_ifa ]
     ret i64* %x60
+}
+
+define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_final_insertion_sort_impl({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2) {
+
+  start:
+    %x3 = sub i64 %x2, %x1
+    %xa = icmp sle i64 %x3, 16
+    br i1 %xa, label %then, label %else
+
+  then:
+    %xb = add i64 %x1, 1
+    %x4 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_guarded_insertion_sort_impl (i64 %x1, i64 %xb, i64 %x2, { i64, { i64, i8* } }* %x)
+    br label %ctd_if
+
+  else:
+    %xb1 = add i64 %x1, 1
+    %xc = add i64 %x1, 16
+    %xd = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_guarded_insertion_sort_impl (i64 %x1, i64 %xb1, i64 %xc, { i64, { i64, i8* } }* %x)
+    %xe = add i64 %x1, 16
+    %x5 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_unguarded_insertion_sort_impl (i64 %x1, i64 %xe, i64 %x2, { i64, { i64, i8* } }* %xd)
+    br label %ctd_if
+
+  ctd_if:
+    %x6 = phi { i64, { i64, i8* } }* [ %x5, %else ], [ %x4, %then ]
+    ret { i64, { i64, i8* } }* %x6
+}
+
+define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_pdq_unguarded_insort_impl({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2) {
+
+  start:
+    %x3 = icmp ne i64 %x1, %x2
+    br i1 %x3, label %then, label %else
+
+  then:
+    %xaa = add i64 %x1, 1
+    %xb = insertvalue { i64, { i64, { i64, i8* } }* } zeroinitializer, i64 %xaa, 0
+    %xc = insertvalue { i64, { i64, { i64, i8* } }* } %xb, { i64, { i64, i8* } }* %x, 1
+    br label %while_start
+
+  while_start:
+    %xba = phi { i64, { i64, { i64, i8* } }* } [ %x6, %ctd_ifa ], [ %xc, %then ]
+    %a1 = extractvalue { i64, { i64, { i64, i8* } }* } %xba, 0
+    %a2 = extractvalue { i64, { i64, { i64, i8* } }* } %xba, 1
+    %x4 = icmp slt i64 %a1, %x2
+    br i1 %x4, label %while_body, label %while_end
+
+  while_body:
+    %a11 = extractvalue { i64, { i64, { i64, i8* } }* } %xba, 0
+    %a21 = extractvalue { i64, { i64, { i64, i8* } }* } %xba, 1
+    %xca = sub i64 %a11, 1
+    %xda = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %a11
+    %r = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xda
+    %xea = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %xca
+    %ra = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xea
+    %xfa = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r, { i64, { i64, i8* } } %ra)
+    %p = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %a11
+    store { i64, { i64, i8* } } %r, { i64, { i64, i8* } }* %p
+    %pa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %xca
+    store { i64, { i64, i8* } } %ra, { i64, { i64, i8* } }* %pa
+    br i1 %xfa, label %thena, label %elsea
+
+  thena:
+    %xj = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %a11
+    %rb = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xj
+    %xka = sub i64 %a11, 1
+    %xl = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %xka
+    %rc = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xl
+    %pb = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %a11
+    store { i64, { i64, i8* } } %rc, { i64, { i64, i8* } }* %pb
+    %xna = sub i64 %a11, 1
+    %xo = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %a21, 0
+    %xp = insertvalue { { i64, { i64, i8* } }*, i64 } %xo, i64 %xna, 1
+    br label %while_starta
+
+  while_starta:
+    %xoa = phi { { i64, { i64, i8* } }*, i64 } [ %x5, %while_bodya ], [ %xp, %thena ]
+    %a1b = extractvalue { { i64, { i64, i8* } }*, i64 } %xoa, 0
+    %a2b = extractvalue { { i64, { i64, i8* } }*, i64 } %xoa, 1
+    %bib = sub i64 %a2b, 1
+    %xpa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b, i64 %bib
+    %rd = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xpa
+    %xqa = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %rb, { i64, { i64, i8* } } %rd)
+    %pc = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b, i64 %bib
+    store { i64, { i64, i8* } } %rd, { i64, { i64, i8* } }* %pc
+    br i1 %xqa, label %while_bodya, label %while_enda
+
+  while_bodya:
+    %a1b1 = extractvalue { { i64, { i64, i8* } }*, i64 } %xoa, 0
+    %a2b1 = extractvalue { { i64, { i64, i8* } }*, i64 } %xoa, 1
+    %xpa1 = sub i64 %a2b1, 1
+    %xqa1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b1, i64 %xpa1
+    %rd1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xqa1
+    %pc1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b1, i64 %a2b1
+    store { i64, { i64, i8* } } %rd1, { i64, { i64, i8* } }* %pc1
+    %xsa = sub i64 %a2b1, 1
+    %xta = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %a1b1, 0
+    %x5 = insertvalue { { i64, { i64, i8* } }*, i64 } %xta, i64 %xsa, 1
+    br label %while_starta
+
+  while_enda:
+    %a1b2 = extractvalue { { i64, { i64, i8* } }*, i64 } %xoa, 0
+    %a2b2 = extractvalue { { i64, { i64, i8* } }*, i64 } %xoa, 1
+    %pc2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b2, i64 %a2b2
+    store { i64, { i64, i8* } } %rb, { i64, { i64, i8* } }* %pc2
+    br label %ctd_ifa
+
+  elsea:
+    br label %ctd_ifa
+
+  ctd_ifa:
+    %xj1 = phi { i64, { i64, i8* } }* [ %a21, %elsea ], [ %a1b2, %while_enda ]
+    %xka1 = add i64 %a11, 1
+    %xla = insertvalue { i64, { i64, { i64, i8* } }* } zeroinitializer, i64 %xka1, 0
+    %x6 = insertvalue { i64, { i64, { i64, i8* } }* } %xla, { i64, { i64, i8* } }* %xj1, 1
+    br label %while_start
+
+  while_end:
+    %a12 = extractvalue { i64, { i64, { i64, i8* } }* } %xba, 0
+    %x7 = extractvalue { i64, { i64, { i64, i8* } }* } %xba, 1
+    br label %ctd_if
+
+  else:
+    br label %ctd_if
+
+  ctd_if:
+    %x8 = phi { i64, { i64, i8* } }* [ %x, %else ], [ %x7, %while_end ]
+    ret { i64, { i64, i8* } }* %x8
+}
+
+define i64* @Sorting_Export_Code_unat_sort_is_unguarded_insert_impl(i64* %x, i64 %x1, i64 %x2) {
+
+  start:
+    %x3 = getelementptr i64, i64* %x, i64 %x2
+    %r = load i64, i64* %x3
+    %xaa = insertvalue { i64*, i64 } zeroinitializer, i64* %x, 0
+    %xba = insertvalue { i64*, i64 } %xaa, i64 %x2, 1
+    br label %while_start
+
+  while_start:
+    %xaaa = phi { i64*, i64 } [ %x4, %while_body ], [ %xba, %start ]
+    %a1a = extractvalue { i64*, i64 } %xaaa, 0
+    %a2a = extractvalue { i64*, i64 } %xaaa, 1
+    %bib = sub i64 %a2a, 1
+    %xbaa = getelementptr i64, i64* %a1a, i64 %bib
+    %ra = load i64, i64* %xbaa
+    %xca = icmp ult i64 %r, %ra
+    %p = getelementptr i64, i64* %a1a, i64 %bib
+    store i64 %ra, i64* %p
+    br i1 %xca, label %while_body, label %while_end
+
+  while_body:
+    %a1a1 = extractvalue { i64*, i64 } %xaaa, 0
+    %a2a1 = extractvalue { i64*, i64 } %xaaa, 1
+    %xbaa1 = sub i64 %a2a1, 1
+    %xca1 = getelementptr i64, i64* %a1a1, i64 %xbaa1
+    %ra1 = load i64, i64* %xca1
+    %p1 = getelementptr i64, i64* %a1a1, i64 %a2a1
+    store i64 %ra1, i64* %p1
+    %xea = sub i64 %a2a1, 1
+    %xfa = insertvalue { i64*, i64 } zeroinitializer, i64* %a1a1, 0
+    %x4 = insertvalue { i64*, i64 } %xfa, i64 %xea, 1
+    br label %while_start
+
+  while_end:
+    %a1a2 = extractvalue { i64*, i64 } %xaaa, 0
+    %a2a2 = extractvalue { i64*, i64 } %xaaa, 1
+    %p2 = getelementptr i64, i64* %a1a2, i64 %a2a2
+    store i64 %r, i64* %p2
+    ret i64* %a1a2
 }
 
 define i64* @insertion_sort(i64* %x, i64 %x1, i64 %x2) {
@@ -4273,36 +4273,7 @@ define i64* @Sorting_Export_Code_unat_sort_guarded_insertion_sort_impl(i64 %x, i
     ret i64* %a12
 }
 
-define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_unguarded_insertion_sort_impl(i64 %x, i64 %x1, i64 %x2, { i64, { i64, i8* } }* %x3) {
-
-  start:
-    %xa = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %x3, 0
-    %xaa = insertvalue { { i64, { i64, i8* } }*, i64 } %xa, i64 %x1, 1
-    br label %while_start
-
-  while_start:
-    %xba = phi { { i64, { i64, i8* } }*, i64 } [ %x5, %while_body ], [ %xaa, %start ]
-    %a1 = extractvalue { { i64, { i64, i8* } }*, i64 } %xba, 0
-    %a2 = extractvalue { { i64, { i64, i8* } }*, i64 } %xba, 1
-    %x4 = icmp slt i64 %a2, %x2
-    br i1 %x4, label %while_body, label %while_end
-
-  while_body:
-    %a11 = extractvalue { { i64, { i64, i8* } }*, i64 } %xba, 0
-    %a21 = extractvalue { { i64, { i64, i8* } }*, i64 } %xba, 1
-    %xaaa = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_is_unguarded_insert_impl ({ i64, { i64, i8* } }* %a11, i64 %x, i64 %a21)
-    %xbaa = add i64 %a21, 1
-    %xca = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %xaaa, 0
-    %x5 = insertvalue { { i64, { i64, i8* } }*, i64 } %xca, i64 %xbaa, 1
-    br label %while_start
-
-  while_end:
-    %a12 = extractvalue { { i64, { i64, i8* } }*, i64 } %xba, 0
-    %a22 = extractvalue { { i64, { i64, i8* } }*, i64 } %xba, 1
-    ret { i64, { i64, i8* } }* %a12
-}
-
-define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_introsort_aux_impl_f_018442012({ { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %x) {
+define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_introsort_aux_impl_f_08015050({ { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %x) {
 
   start:
     %a1 = extractvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %x, 0
@@ -4441,7 +4412,7 @@ define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_introsort_aux_impl_f
     %tmpda = insertvalue { i64, { i64, i64 } } %xxa, { i64, i64 } %tmpca, 1
     %xya = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } zeroinitializer, { i64, { i64, i8* } }* %a, 0
     %xza = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %xya, { i64, { i64, i64 } } %tmpda, 1
-    %xua = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_introsort_aux_impl_f_018442012 ({ { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %xza)
+    %xua = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_introsort_aux_impl_f_08015050 ({ { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %xza)
     %xva = sub i64 %a2b, 1
     %yba = insertvalue { i64, i64 } zeroinitializer, i64 %a1b, 0
     %tmpeb = insertvalue { i64, i64 } %yba, i64 %xva, 1
@@ -4449,7 +4420,7 @@ define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_introsort_aux_impl_f
     %tmpfa = insertvalue { i64, { i64, i64 } } %yca, { i64, i64 } %tmpeb, 1
     %yda = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } zeroinitializer, { i64, { i64, i8* } }* %xua, 0
     %x12 = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %yda, { i64, { i64, i64 } } %tmpfa, 1
-    %x13 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_introsort_aux_impl_f_018442012 ({ { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %x12)
+    %x13 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_introsort_aux_impl_f_08015050 ({ { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %x12)
     br label %ctd_ifa
 
   ctd_ifa:
@@ -4464,36 +4435,36 @@ define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_introsort_aux_impl_f
     ret { i64, { i64, i8* } }* %x15
 }
 
-define i64* @Sorting_Export_Code_unat_sort_unguarded_insertion_sort_impl(i64 %x, i64 %x1, i64 %x2, i64* %x3) {
+define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_unguarded_insertion_sort_impl(i64 %x, i64 %x1, i64 %x2, { i64, { i64, i8* } }* %x3) {
 
   start:
-    %xa = insertvalue { i64*, i64 } zeroinitializer, i64* %x3, 0
-    %xaa = insertvalue { i64*, i64 } %xa, i64 %x1, 1
+    %xa = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %x3, 0
+    %xaa = insertvalue { { i64, { i64, i8* } }*, i64 } %xa, i64 %x1, 1
     br label %while_start
 
   while_start:
-    %xba = phi { i64*, i64 } [ %x5, %while_body ], [ %xaa, %start ]
-    %a1 = extractvalue { i64*, i64 } %xba, 0
-    %a2 = extractvalue { i64*, i64 } %xba, 1
+    %xba = phi { { i64, { i64, i8* } }*, i64 } [ %x5, %while_body ], [ %xaa, %start ]
+    %a1 = extractvalue { { i64, { i64, i8* } }*, i64 } %xba, 0
+    %a2 = extractvalue { { i64, { i64, i8* } }*, i64 } %xba, 1
     %x4 = icmp slt i64 %a2, %x2
     br i1 %x4, label %while_body, label %while_end
 
   while_body:
-    %a11 = extractvalue { i64*, i64 } %xba, 0
-    %a21 = extractvalue { i64*, i64 } %xba, 1
-    %xaaa = call i64* @Sorting_Export_Code_unat_sort_is_unguarded_insert_impl (i64* %a11, i64 %x, i64 %a21)
+    %a11 = extractvalue { { i64, { i64, i8* } }*, i64 } %xba, 0
+    %a21 = extractvalue { { i64, { i64, i8* } }*, i64 } %xba, 1
+    %xaaa = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_is_unguarded_insert_impl ({ i64, { i64, i8* } }* %a11, i64 %x, i64 %a21)
     %xbaa = add i64 %a21, 1
-    %xca = insertvalue { i64*, i64 } zeroinitializer, i64* %xaaa, 0
-    %x5 = insertvalue { i64*, i64 } %xca, i64 %xbaa, 1
+    %xca = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %xaaa, 0
+    %x5 = insertvalue { { i64, { i64, i8* } }*, i64 } %xca, i64 %xbaa, 1
     br label %while_start
 
   while_end:
-    %a12 = extractvalue { i64*, i64 } %xba, 0
-    %a22 = extractvalue { i64*, i64 } %xba, 1
-    ret i64* %a12
+    %a12 = extractvalue { { i64, { i64, i8* } }*, i64 } %xba, 0
+    %a22 = extractvalue { { i64, { i64, i8* } }*, i64 } %xba, 1
+    ret { i64, { i64, i8* } }* %a12
 }
 
-define i64* @Sorting_Export_Code_unat_sort_introsort_aux_impl_f_018399702({ i64*, { i64, { i64, i64 } } } %x) {
+define i64* @Sorting_Export_Code_unat_sort_introsort_aux_impl_f_07972740({ i64*, { i64, { i64, i64 } } } %x) {
 
   start:
     %a1 = extractvalue { i64*, { i64, { i64, i64 } } } %x, 0
@@ -4632,7 +4603,7 @@ define i64* @Sorting_Export_Code_unat_sort_introsort_aux_impl_f_018399702({ i64*
     %tmpda = insertvalue { i64, { i64, i64 } } %xxa, { i64, i64 } %tmpca, 1
     %xya = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %a, 0
     %xza = insertvalue { i64*, { i64, { i64, i64 } } } %xya, { i64, { i64, i64 } } %tmpda, 1
-    %xua = call i64* @Sorting_Export_Code_unat_sort_introsort_aux_impl_f_018399702 ({ i64*, { i64, { i64, i64 } } } %xza)
+    %xua = call i64* @Sorting_Export_Code_unat_sort_introsort_aux_impl_f_07972740 ({ i64*, { i64, { i64, i64 } } } %xza)
     %xva = sub i64 %a2b, 1
     %yba = insertvalue { i64, i64 } zeroinitializer, i64 %a1b, 0
     %tmpeb = insertvalue { i64, i64 } %yba, i64 %xva, 1
@@ -4640,7 +4611,7 @@ define i64* @Sorting_Export_Code_unat_sort_introsort_aux_impl_f_018399702({ i64*
     %tmpfa = insertvalue { i64, { i64, i64 } } %yca, { i64, i64 } %tmpeb, 1
     %yda = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %xua, 0
     %x12 = insertvalue { i64*, { i64, { i64, i64 } } } %yda, { i64, { i64, i64 } } %tmpfa, 1
-    %x13 = call i64* @Sorting_Export_Code_unat_sort_introsort_aux_impl_f_018399702 ({ i64*, { i64, { i64, i64 } } } %x12)
+    %x13 = call i64* @Sorting_Export_Code_unat_sort_introsort_aux_impl_f_07972740 ({ i64*, { i64, { i64, i64 } } } %x12)
     br label %ctd_ifa
 
   ctd_ifa:
@@ -4653,4 +4624,33 @@ define i64* @Sorting_Export_Code_unat_sort_introsort_aux_impl_f_018399702({ i64*
   ctd_if:
     %x15 = phi i64* [ %a1, %else ], [ %x14, %ctd_ifa ]
     ret i64* %x15
+}
+
+define i64* @Sorting_Export_Code_unat_sort_unguarded_insertion_sort_impl(i64 %x, i64 %x1, i64 %x2, i64* %x3) {
+
+  start:
+    %xa = insertvalue { i64*, i64 } zeroinitializer, i64* %x3, 0
+    %xaa = insertvalue { i64*, i64 } %xa, i64 %x1, 1
+    br label %while_start
+
+  while_start:
+    %xba = phi { i64*, i64 } [ %x5, %while_body ], [ %xaa, %start ]
+    %a1 = extractvalue { i64*, i64 } %xba, 0
+    %a2 = extractvalue { i64*, i64 } %xba, 1
+    %x4 = icmp slt i64 %a2, %x2
+    br i1 %x4, label %while_body, label %while_end
+
+  while_body:
+    %a11 = extractvalue { i64*, i64 } %xba, 0
+    %a21 = extractvalue { i64*, i64 } %xba, 1
+    %xaaa = call i64* @Sorting_Export_Code_unat_sort_is_unguarded_insert_impl (i64* %a11, i64 %x, i64 %a21)
+    %xbaa = add i64 %a21, 1
+    %xca = insertvalue { i64*, i64 } zeroinitializer, i64* %xaaa, 0
+    %x5 = insertvalue { i64*, i64 } %xca, i64 %xbaa, 1
+    br label %while_start
+
+  while_end:
+    %a12 = extractvalue { i64*, i64 } %xba, 0
+    %a22 = extractvalue { i64*, i64 } %xba, 1
+    ret i64* %a12
 }

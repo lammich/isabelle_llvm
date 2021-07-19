@@ -7,7 +7,7 @@ target triple = "x86_64-pc-linux-gnu"
 
 
 
-define i64 @bin_search({ i64, i64* } %x, i64 %x1) {
+define i64 @Bin_Search_bin_search_impl({ i64, i64* } %x, i64 %x1) {
 
   start:
     %a1 = extractvalue { i64, i64* } %x, 0
@@ -55,4 +55,12 @@ define i64 @bin_search({ i64, i64* } %x, i64 %x1) {
     %a1a1 = extractvalue { i64, i64 } %xaa, 0
     %a2a1 = extractvalue { i64, i64 } %xaa, 1
     ret i64 %a1a1
+}
+
+define i64 @bin_search({ i64, i64* }* %a, i64 %x) {
+
+  start:
+    %a1 = load { i64, i64* }, { i64, i64* }* %a
+    %x1 = call i64 @Bin_Search_bin_search_impl ({ i64, i64* } %a1, i64 %x)
+    ret i64 %x1
 }

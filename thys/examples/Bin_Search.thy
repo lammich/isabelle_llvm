@@ -66,7 +66,23 @@ begin
     apply sepref    
     done
 
-  export_llvm bin_search_impl is \<open>int64_t bin_search(larray_t, elem_t)\<close> 
+  definition [llvm_code, llvm_inline]: "bin_search_impl' a x \<equiv> doM {
+    a \<leftarrow> ll_load a;
+    bin_search_impl a x
+  }"  
+    
+    
+  export_llvm bin_search_impl' is \<open>int64_t bin_search(larray_t*, elem_t)\<close> 
+  defines \<open>
+    typedef uint64_t elem_t;
+    typedef struct {
+      int64_t len;
+      elem_t *data;
+    } larray_t;
+  \<close>
+  file "../../regression/gencode/bin_search.ll"
+    
+  export_llvm bin_search_impl' is \<open>int64_t bin_search(larray_t*, elem_t)\<close> 
   defines \<open>
     typedef uint64_t elem_t;
     typedef struct {
@@ -104,4 +120,18 @@ begin
     show ?thesis by vcg'
   qed
 
+  theorem bin_search_impl'_correct:
+    "llvm_htriple 
+      (\<upharpoonleft>ll_pto xsi xsip ** larray_assn sint_assn xs xsi ** sint_assn x xi ** \<up>(sorted xs)) 
+      (bin_search_impl' xsip xi)
+      (\<lambda>ii. EXS i. \<upharpoonleft>ll_pto xsi xsip ** larray_assn sint_assn xs xsi ** sint_assn x xi ** snat_assn i ii 
+                  ** \<up>(i=find_index (\<lambda>y. x\<le>y) xs))"
+  proof -
+    interpret llvm_prim_setup .
+    show ?thesis
+      unfolding bin_search_impl'_def
+      supply [vcg_rules] = bin_search_impl_correct
+      by vcg
+  qed
+  
 end

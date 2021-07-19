@@ -954,16 +954,27 @@ sepref_def kmp_impl is "uncurry kmp3"
   apply sepref_dbg_keep
   done
   
+definition [llvm_code,llvm_inline]: "kmp_impl' ap bp \<equiv> doM {
+  a \<leftarrow> ll_load ap;
+  b \<leftarrow> ll_load bp;
+  kmp_impl a b
+}"
 
 
 export_llvm 
   compute_butlast_\<ff>s_impl
-  kmp_impl is "_ kmp(string,string)"
+  kmp_impl' is "_ kmp(string*,string*)"
   defines \<open>
     typedef struct {int64_t len; char *str;} string;
   \<close>
   file "code/kmp.ll"
   
+export_llvm 
+  kmp_impl' is "_ kmp(string*,string*)"
+  defines \<open>
+    typedef struct {int64_t len; char *str;} string;
+  \<close>
+  file "../../regression/gencode/kmp.ll"
 
 section \<open>Overall Correctness Theorem\<close>
     
@@ -1006,6 +1017,22 @@ proof -
    
 qed
    
+theorem kmp_impl'_correct:
+  "llvm_htriple 
+    (\<upharpoonleft>ll_pto si sip ** \<upharpoonleft>ll_pto ti tip ** larray_assn id_assn s si ** larray_assn id_assn t ti ** \<up>(length s + length t < max_snat 64))
+    (kmp_impl' sip tip)
+    (\<lambda>i. \<upharpoonleft>ll_pto si sip ** \<upharpoonleft>ll_pto ti tip ** larray_assn id_assn s si ** larray_assn id_assn t ti 
+      ** \<up>(if i=-1 then \<nexists>i. sublist_at s t i 
+          else i\<ge>0 \<and> sublist_at s t (unat i) \<and> (\<forall>ii<unat i. \<not> sublist_at s t ii)))
+    "
+proof -
+  interpret llvm_prim_setup .
+    
+  show ?thesis
+    unfolding kmp_impl'_def
+    supply [vcg_rules] = kmp_impl_correct
+    by (vcg )
+qed    
 
 thm hnr_bind[of \<Gamma> m\<^sub>i \<Gamma>\<^sub>1 R\<^sub>1 m f\<^sub>i \<Gamma>\<^sub>2 R\<^sub>2 f R\<^sub>x \<Gamma>' free]
 

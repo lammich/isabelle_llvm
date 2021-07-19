@@ -245,7 +245,7 @@ begin
     assumes "R i = None"
     assumes "x = xs!i" "y=ys!i"
     shows "\<upharpoonleft>(list_assn A (R(i\<mapsto>ys!i))) xs ys ** \<upharpoonleft>A x y \<turnstile> \<upharpoonleft>(list_assn A R) xs ys"
-    apply (sep_drule list_assn_join[where i=i])
+    apply (sep_drule_simple list_assn_join[where i=i])
     using assms by (auto simp: fun_upd_idem)
 
   subsubsection \<open>Push and Pop\<close>    
@@ -280,10 +280,10 @@ begin
     shows "(\<upharpoonleft>(list_assn A R) xs ys) \<turnstile> (\<upharpoonleft>(list_assn A R) (butlast xs) (butlast ys) ** \<upharpoonleft>A (last xs) (last ys))"  
     apply (rule entails_pureI) using assms
     apply vcg_prepare_external
-    apply (sep_drule list_assn_extract[where i="length xs - 1"])
+    apply (sep_drule_simple list_assn_extract[where i="length xs - 1"])
     subgoal by (cases ys; simp)
     subgoal by simp
-    apply (sep_drule list_assn_pop_back1)
+    apply (sep_drule_simple list_assn_pop_back1)
     subgoal by auto
     by (cases ys rule: rev_cases; simp add: last_conv_nth fun_upd_idem)
     
@@ -294,7 +294,7 @@ begin
       \<Longrightarrow> is_sep_red (\<upharpoonleft>(list_assn A (R(i\<mapsto>ys!i))) xs ys) \<box> (\<upharpoonleft>(list_assn A R) xs ys) (\<upharpoonleft>A (xs!i) (ys!i))"
     apply (clarsimp simp: vcg_tag_defs)
     apply (rule is_sep_redI)
-    apply (sep_drule list_assn_extract, assumption+)
+    apply (sep_drule_simple list_assn_extract, assumption+)
     apply (erule gen_drule, fri)
     apply (rule ENTAILSD, fri)
     done
@@ -398,7 +398,7 @@ begin
     apply vcg_try_solve
     subgoal (* TODO: Dirty hack! *)
       unfolding FRAME_INFER_def FRI_END_def
-      apply (sep_drule bury_pure_assn')
+      apply (sep_drule_simple bury_pure_assn')
       by simp
     done
 

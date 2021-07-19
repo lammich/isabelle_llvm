@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
   int64_t i = 0;
   
   for (elem_t x=0;x<5*len;x+=2)
-    i += bin_search(arr,x);
+    i += bin_search(&arr,x);
   
   time = clock() - time;  
     

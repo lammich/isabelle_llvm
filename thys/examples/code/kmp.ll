@@ -8,7 +8,7 @@ declare void @isabelle_llvm_free(i8*)
 declare i8* @isabelle_llvm_calloc(i64, i64)
 
 
-define i64 @kmp({ i64, i8* } %x, { i64, i8* } %x1) {
+define i64 @KMP_kmp_impl({ i64, i8* } %x, { i64, i8* } %x1) {
 
   start:
     %a1 = extractvalue { i64, i8* } %x, 0
@@ -186,6 +186,15 @@ define i64 @kmp({ i64, i8* } %x, { i64, i8* } %x1) {
   ctd_if:
     %x13 = phi i64 [ %x12, %while_end ], [ 0, %then ]
     ret i64 %x13
+}
+
+define i64 @kmp({ i64, i8* }* %ap, { i64, i8* }* %bp) {
+
+  start:
+    %a = load { i64, i8* }, { i64, i8* }* %ap
+    %x = load { i64, i8* }, { i64, i8* }* %bp
+    %x1 = call i64 @KMP_kmp_impl ({ i64, i8* } %a, { i64, i8* } %x)
+    ret i64 %x1
 }
 
 define void @LLVM_DS_NArray_narray_free(i64* %p) {

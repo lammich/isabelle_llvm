@@ -470,13 +470,17 @@ lemma sep_drule':
   apply (auto simp: FRAME_INFER_def entails_def)
   using sep_conj_impl by blast
   
+thm entails_trans  
   
 method_setup sep_drule = \<open>Attrib.thms >> (fn thms => fn ctxt => SIMPLE_METHOD' (let
+  val thms0 = map_filter (try (fn thm => @{thm entails_trans} OF [thm])) thms
   val thms = map_product (fn a => try (fn b => a OF [b])) @{thms sep_drule'} thms
     |> map_filter I
  in 
-  resolve_tac ctxt thms 
-  THEN' SOLVED' (Frame_Infer.infer_tac ctxt)
+    resolve_tac ctxt thms0
+  ORELSE'
+    resolve_tac ctxt thms 
+    THEN' SOLVED' (Frame_Infer.infer_tac ctxt)
  end))\<close>  
   
   

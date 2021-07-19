@@ -88,6 +88,12 @@ definition str_append :: "(8 word,size_t)array_list ptr \<Rightarrow> 8 word \<R
     ll_store s sp
   }"
 
+definition str_free :: "(8 word,size_t)array_list ptr \<Rightarrow> unit llM" where [llvm_code]:
+  "str_free ap \<equiv> doM {
+    a \<leftarrow> ll_load ap;
+    arl_free a
+  }"
+  
   
 definition llstrcmp :: "(8 word,size_t)array_list ptr \<Rightarrow> _ \<Rightarrow> 8 word llM" where [llvm_code]:
   "llstrcmp ap bp \<equiv> doM {
@@ -123,6 +129,21 @@ export_llvm (timing)
   defines \<open>typedef struct {int64_t size; struct {int64_t capacity; char *data;};} llstring;\<close>
   file "../code/introsort.ll"
 
-
+  
+export_llvm (timing)
+  "unat_sort_introsort_impl :: 64 word ptr \<Rightarrow> _" is "uint64_t* introsort(uint64_t*, int64_t, int64_t)" 
+  "unat_sort_pdqsort_impl :: 64 word ptr \<Rightarrow> _" is "uint64_t* pdqsort(uint64_t*, int64_t, int64_t)"
+  
+  "str_init" is "void str_init(llstring *)"
+  "str_append" is "void str_append(llstring *, char)"
+  "str_free" is "void str_free(llstring*)"
+  "llstrcmp" is "char llstrcmp(llstring*,llstring*)"
+  "str_sort_introsort_impl" is "llstring* str_introsort(llstring*, int64_t, int64_t)" 
+  "str_sort_pdqsort_impl" is "llstring* str_pdqsort(llstring*, int64_t, int64_t)" 
+  
+  defines \<open>typedef struct {int64_t size; struct {int64_t capacity; char *data;};} llstring;\<close>
+  file "../../../regression/gencode/sorting.ll"
+   
+  
 
 end

@@ -86,6 +86,22 @@ lemma os_is_empty_rule[vcg_rules]:
   apply vcg
   done
   
+definition os_is_empty' :: "'a os_list \<Rightarrow> 8 word llM"
+where [llvm_code, llvm_inline]: "os_is_empty' xsi \<equiv> doM {
+  b \<leftarrow> os_is_empty xsi;
+  if to_bool b then return 1 else return 0
+}"
+
+lemma os_is_empty'_rule[vcg_rules]: 
+  "llvm_htriple (\<upharpoonleft>os_list_assn xs b) (os_is_empty' b) (\<lambda>r. \<upharpoonleft>os_list_assn xs b ** \<up>(r = (if xs = [] then 1 else 0)))"
+proof -
+  interpret llvm_prim_ctrl_setup .
+  show ?thesis  
+    unfolding os_is_empty'_def
+    by vcg
+    
+qed    
+  
 subsubsection \<open>Prepend\<close>
 
 text \<open>To push an element to the front of a list we allocate a new node which
@@ -119,6 +135,27 @@ lemma os_pop_rule[vcg_rules]:
   unfolding os_pop_def os_list_assn_def
   by vcg
 
+definition os_pop' :: "'a::llvm_rep os_list \<Rightarrow> ('a \<times> 'a os_list) ptr \<Rightarrow> unit llM" 
+where [llvm_code, llvm_inline]:
+"os_pop' xsi resultp \<equiv> doM {
+  r \<leftarrow> os_pop xsi;
+  ll_store r resultp
+}"  
+  
+lemma os_pop'_rule[vcg_rules]:
+  "xs \<noteq> [] \<Longrightarrow> llvm_htriple 
+    (\<upharpoonleft>os_list_assn xs r ** \<upharpoonleft>ll_pto XX resultp) 
+    (os_pop' r resultp) 
+    (\<lambda>_. EXS x r'. \<upharpoonleft>ll_pto (x,r') resultp ** \<up>(x=hd xs) ** \<upharpoonleft>os_list_assn (tl xs) r')
+  "
+proof -
+  interpret llvm_prim_setup .
+  assume "xs\<noteq>[]"
+  then show ?thesis
+    unfolding os_pop'_def
+    by vcg
+qed    
+  
 subsubsection \<open>Reverse\<close>
 
 text \<open>The following reversal function is equivalent to the one from 
@@ -251,13 +288,19 @@ next
 qed
 
 export_llvm 
-  "os_empty :: 64 word node ptr llM"
-  "os_is_empty :: 64 word node ptr \<Rightarrow> _"
-  "os_prepend :: 64 word \<Rightarrow> _"
-  "os_pop :: 64 word node ptr \<Rightarrow> _"
-  "os_reverse:: 64 word node ptr \<Rightarrow> _"
-  "os_rem :: 64 word \<Rightarrow> _"
-
+  "os_empty :: 64 word os_list llM" is "os_list os_empty ()"
+  "os_is_empty' :: 64 word os_list \<Rightarrow> _" is "char os_is_empty (os_list)"
+  "os_prepend :: 64 word \<Rightarrow> _" is "os_list os_prepend(_, os_list)"
+  "os_pop' :: 64 word os_list \<Rightarrow> _" is "void os_pop(os_list,pop_result*)"
+  "os_reverse:: 64 word os_list \<Rightarrow> _" is os_reverse
+  "os_rem :: 64 word \<Rightarrow> _" is os_rem
+  defines \<open>
+    typedef list_elem * os_list;
+    typedef struct {uint64_t data; list_elem *next;} list_elem;
+    typedef struct {uint64_t data; list_elem *list;} pop_result;
+  \<close>
+  rewrites \<open>64 word node\<close> = list_elem
+  file "../../regression/gencode/open_list.ll"
   
   
 end

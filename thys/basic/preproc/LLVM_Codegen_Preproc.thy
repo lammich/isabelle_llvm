@@ -328,7 +328,7 @@ subsection \<open>Code Generator Driver\<close>
         
         
         
-      fun consts_to_llvm hfname cns tydefs lthy = let
+      fun consts_to_llvm hfname cns tydefs nt_ovr lthy = let
         val dbg = Config.get lthy cfg_llvm_debug
         val tim = Config.get lthy cfg_llvm_timing
         val gen_header = Config.get lthy cfg_llvm_gen_header
@@ -339,12 +339,15 @@ subsection \<open>Code Generator Driver\<close>
         | (true,_) => (trace (fn () => Pretty.str msg); f x)
         | _ => f x
         
-                                                                       
         val (cthms,lthy) = trtimed "Gathering code theorems" (LLC_Preprocessor.gather_code_thms (map fst cns)) lthy
         val _ = trace (fn () => pretty_cthms lthy cthms)
         
         fun cmp_symtab cthms = let
-          val fixes = map_filter (fn (_,NONE) => NONE | (cn,SOME sigspec) => SOME (cn,LLC_HeaderGen.name_of_sigspec sigspec)) cns
+        
+          fun fx (_,NONE) = NONE
+            | fx (cn, SOME csig) = SOME (cn,C_Interface.name_of_sig csig)
+        
+          val fixes = map_filter fx cns
           val ftab = LLC_Compiler.compute_fun_names fixes cthms
         in ftab end
         
@@ -352,17 +355,26 @@ subsection \<open>Code Generator Driver\<close>
         val _ = trace (fn () => pretty_ftab lthy ftab)
         
                   
-        val (tys,eqns) = trtimed "Translating code theorems to IL" (LLC_Compiler.parse_cthms ftab cthms) lthy
+        val (tys,eqns) = trtimed "Translating code theorems to IL" (LLC_Compiler.parse_cthms ftab nt_ovr cthms) lthy
         val _ = trace (fn () => LLC_Intermediate.pretty_llc (tys,eqns))
         
         val _ = trace (fn () => Pretty.str "Writing LLVM")
         val res = trtimed "Writing LLVM" (LLC_Backend.compile_to_llvm lthy) (tys,eqns)
         
         val hdres = if gen_header then let
-        
             fun mk_hd eqns = let
               val sigspecs = map_filter snd cns
-              val hdres = LLC_HeaderGen.make_header hfname tydefs sigspecs eqns
+              fun dest_sig sg = (C_Interface.name_of_sig sg, sg) 
+          
+              val sigtab = Symtab.make (map dest_sig sigspecs)
+              
+              fun match_eqn (eqn as LLC_Intermediate.EQN (_,name,_,_)) = case Symtab.lookup sigtab name of
+                NONE => NONE
+              | SOME sg => SOME (eqn,sg)  
+              
+              val eqnsxsigs = map_filter match_eqn eqns
+              
+              val hdres = LLC_HeaderGen.make_header hfname tydefs tys eqnsxsigs
             in hdres end
         
             val hdres = trtimed "Preparing Header" mk_hd eqns
@@ -430,26 +442,30 @@ subsection \<open>Code Generator Driver\<close>
         *)  
           
       in
-        fun export_llvm cns tydefs path (hfname,hfpath) lthy = let
+        fun export_llvm cns tydefs nt_ovr path (hfname,hfpath) lthy = let
           val lthy = Config.put Syntax_Trans.eta_contract false lthy
-          val ((cthms,llvm_code,hcode),lthy) = consts_to_llvm hfname cns tydefs lthy
+          val ((cthms,llvm_code,hcode),lthy) = consts_to_llvm hfname cns tydefs nt_ovr lthy
           val _ = write_out path llvm_code      
           val _ = case hcode of SOME c => write_out hfpath c | NONE => ()
         in
           (cthms,lthy)
         end
         
+        val parse_ty_overrides = Scan.repeat1 (Parse.typ --| @{keyword "="} -- Parse.name)
+        
         val export_llvm_cmd = (
-          Args.mode "debug" 
+          (Args.mode "debug" 
           -- Args.mode "timing" 
           -- Args.mode "no_while" 
           -- Args.mode "no_header" 
           -- Parse_Spec.opt_thm_name ":" 
-          -- (Scan.repeat1 (Parse.term -- Scan.option (@{keyword "is"} |-- LLC_HeaderGen.parse_raw_sig )) 
+          -- Scan.repeat1 (Parse.term -- Scan.option (@{keyword "is"} |-- LLC_HeaderGen.parse_raw_sig )) 
           -- Scan.option (@{keyword "defines"} |-- LLC_HeaderGen.parse_raw_tydefs)
+          -- Scan.optional (@{keyword "rewrites"} |-- parse_ty_overrides) []
           -- Scan.option ((@{keyword "file"} |-- Parse.position Parse.path))
-          ) 
-            >> (fn (((((dbg,timing),nowhile),no_header),bnd),((cns,tydefs),path_spos)) => fn lthy => let 
+          )
+           
+            >> (fn (((((((((dbg,timing),nowhile),no_header),bnd),cns),tydefs),nt_ovr),path_spos)) => fn lthy => let 
             
               local
                 val lthy = (timing?Config.put cfg_llvm_timing true) lthy
@@ -461,10 +477,12 @@ subsection \<open>Code Generator Driver\<close>
                 val cns = map (apsnd (map_option (LLC_HeaderGen.check_raw_sig lthy))) cns
                 val tydefs = the_default [] (map_option (LLC_HeaderGen.check_raw_tydefs lthy) tydefs)
                 
+                val nt_ovr = map (apfst (Syntax.read_typ lthy)) nt_ovr
+                
                 val path = Option.map (prepare_path lthy) path_spos 
                 val hfnpath = prepare_hpath lthy path_spos
                 
-                val (cthms,lthy) = export_llvm cns tydefs path hfnpath lthy
+                val (cthms,lthy) = export_llvm cns tydefs nt_ovr path hfnpath lthy
               end
               
               val (_,lthy) = Local_Theory.note (bnd,cthms) lthy 
@@ -652,8 +670,9 @@ definition fib :: "64 word \<Rightarrow> 64 word llM"
 export_llvm fib is fib
 
 
-definition triple_sum :: "(64 word \<times> 64 word \<times> 64 word) \<Rightarrow> 64 word llM" where [llvm_code]:
+definition triple_sum :: "(64 word \<times> 64 word \<times> 64 word) ptr \<Rightarrow> 64 word llM" where [llvm_code]:
   "triple_sum abc \<equiv> doM {
+    abc \<leftarrow> ll_load abc;
     a \<leftarrow> ll_extract_value abc 0;
     bc::64 word \<times> 64 word \<leftarrow> ll_extract_value abc 1;
     b \<leftarrow> ll_extract_value bc 0;
@@ -663,8 +682,9 @@ definition triple_sum :: "(64 word \<times> 64 word \<times> 64 word) \<Rightarr
     return r
    }"
    
-export_llvm triple_sum is \<open>_ triple_sum(triple)\<close> 
+export_llvm triple_sum is \<open>_ triple_sum(triple*)\<close> 
   defines \<open>typedef struct {int64_t a; struct {int64_t b; int64_t c;};} triple;\<close>
+ 
   
  
   

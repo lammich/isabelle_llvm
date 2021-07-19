@@ -3,11 +3,13 @@
 #define _KMP_H 1
 
 
-typedef struct {
+typedef struct string string;
+
+typedef struct string {
   int64_t len;
   char*str;
 } string;
 
-int64_t kmp(string, string);
+int64_t kmp(string*, string*);
 
 #endif

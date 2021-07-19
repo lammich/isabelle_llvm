@@ -1,7 +1,7 @@
 section \<open>Examples\<close>
 theory LLVM_Examples
 imports 
-  "../ds/LLVM_DS_Dflt"
+  "../ds/LLVM_DS_All"
   "../ds/LLVM_DS_Array_List"
 begin
 
@@ -256,6 +256,19 @@ thm ll_identified_structures
 
 export_llvm (debug) test_named file "code/test_named.ll"
 
+definition test_foo :: "(64 word \<times> 64 word ptr) ptr \<Rightarrow> 64 word \<Rightarrow> 64 word llM" 
+  where [llvm_code]:
+  "test_foo a b \<equiv> return 0"
+
+  export_llvm test_foo is \<open>int64_t test_foo(larray_t*, elem_t)\<close> 
+  defines \<open>
+    typedef uint64_t elem_t;
+    typedef struct {
+      int64_t len;
+      elem_t *data;
+    } larray_t;
+  \<close>
+
 
 subsubsection \<open>Linked List\<close>
 
@@ -340,7 +353,8 @@ definition [llvm_code]: "llist_split l \<equiv> doM {
   return (case c of CELL x n \<Rightarrow> (x,n))
 }"  
 
-export_llvm "llist_append::1 word \<Rightarrow>1 word list_cell ptr \<Rightarrow> _ llM" 
+export_llvm 
+  "llist_append::1 word \<Rightarrow>1 word list_cell ptr \<Rightarrow> _ llM"
   file "code/list_cell.ll"
 
   

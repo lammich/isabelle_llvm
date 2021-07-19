@@ -4,7 +4,7 @@ imports LLVM_Shallow
 begin
 
     (* DO NOT USE IN PRODUCTION VERSION \<rightarrow> SLOWDOWN *)
-    (* declare [[ML_exception_debugger, ML_debugger, ML_exception_trace]] *)
+    declare [[ML_exception_debugger, ML_debugger, ML_exception_trace]]
 
   text \<open>This is the trusted part of the code generator, which accepts
     Isabelle-LLVM programs that follow a strict format 
@@ -88,9 +88,10 @@ begin
         Thm.instantiate (tyi,ti) thm
       end
 
-      fun is_monomorphic_const (Const (_,T)) = 
-        not (Term.exists_subtype (fn TVar _ => true | TFree _ => true | _ => false) T)
-      | is_monomorphic_const _ = false
+      fun is_monomorphic_type T = not (Term.exists_subtype (fn TVar _ => true | TFree _ => true | _ => false) T)
+      
+      fun is_monomorphic_const (Const (_,T)) = is_monomorphic_type T
+        | is_monomorphic_const _ = false
 
       fun assert_monomorphic_const t = 
         is_monomorphic_const t orelse 
@@ -275,6 +276,26 @@ begin
     struct
       open LLC_Lib LLC_Intermediate
     
+      (* Declare custom names for specific type instances *)
+      structure Named_Type_Override = Proof_Data (
+        type T = string Typtab.table
+        val init = K Typtab.empty
+      )
+      
+      fun add_named_type_override (T,name) ctxt = let
+        val tab = Named_Type_Override.get ctxt
+      
+        val _ = is_monomorphic_type T orelse raise TYPE("Named type override: expected monomorphic type",[T],[])
+        val _ = Typtab.defined tab T andalso raise TYPE("Named type override: duplicate override for type",[T],[])
+        
+        val name' = Name.desymbolize NONE name
+        val _ = if name = name' then () else warning ("Named type override: name was desymbolized: " ^ name ^ " -> " ^ name')
+      in
+        Named_Type_Override.map (Typtab.update_new (T,name')) ctxt
+      end
+      
+      
+      
       (* Maps Isabelle type names to named type theorems *)
       structure Named_Type_Tab = Proof_Data (
         type T = (Proof.context -> typ -> string) Symtab.table
@@ -317,9 +338,14 @@ begin
           | dflt_type_name _ T = raise TYPE("dflt_type_name: expected type",[T],[])
         
         (* Get name for type, using named type info. *)
-        and get_type_name ctxt (T as (Type (name,_))) = (case Symtab.lookup (Named_Type_Tab.get ctxt) name of
-              SOME cr_name => SOME (cr_name ctxt T)
-            | NONE => NONE)
+        and get_type_name ctxt (T as (Type (name,_))) = (
+          case Typtab.lookup (Named_Type_Override.get ctxt) T of
+            SOME name => SOME name
+          | NONE =>  
+              case Symtab.lookup (Named_Type_Tab.get ctxt) name of
+                  SOME cr_name => SOME (cr_name ctxt T)
+                | NONE => NONE
+          )
           | get_type_name _ T = raise TYPE("get_type_name: expected type",[T],[])
         and get_type_name_dflt ctxt T = case get_type_name ctxt T of 
               SOME n => n 
@@ -365,6 +391,7 @@ begin
             |> map (fastype_of o dest_to_val)
       | _ => raise THM("Invalid to_val theorem: ",~1,[thm])
         
+      
       fun llc_get_type_struct ctxt T = let
         val ts_thms = Named_Theorems.get ctxt @{named_theorems ll_to_val}
         
@@ -780,8 +807,11 @@ begin
       
       fun parse_cthms_aux thms ctxt = fold_map (llc_parse_eqn o Thm.prop_of) thms ctxt
             
-      fun parse_cthms ftab thms ctxt = let
+      fun parse_cthms ftab nt_ovr thms ctxt = let
         val ctxt = Fun_Tab.put ftab ctxt
+        
+        val ctxt = fold add_named_type_override nt_ovr ctxt
+        
         val (eqns,ctxt) = parse_cthms_aux thms (build_named_type_tables ctxt)
         
         val named_tys = Identified_Structures.get ctxt |> Symtab.dest |> map Named_Type
@@ -1075,7 +1105,7 @@ begin
   \<close>  
 
   ML \<open> structure Simple_PP = struct
-    datatype T = Word of string | NWord of string | Space of bool | Newline of bool | Block of int * T list
+    datatype T = Empty | Word of string | NWord of string | Space of bool | Newline of bool | Block of int * T list
 
     datatype last_tk = NL | WR | NW | SP (* Newline | word | nonword | space *)
     
@@ -1108,6 +1138,8 @@ begin
       | string_of' (Space false) (i,SP) = ("", (i,SP))
       | string_of' (Space false) (i,_) = (spaceS, (i,SP))
       
+      | string_of' (Empty) (i,ltk) = ("", (i,ltk))
+      
       | string_of' (Block (ii,tks)) (i,lt) = let 
           val (strs,(_,lt)) = fold_map string_of' tks (i+ii,lt)
           val str = implode strs
@@ -1117,6 +1149,7 @@ begin
     fun string_of tk = string_of' tk init_state |> fst
             
     (* Basic Functions *)
+    val empty = Empty
     val word = Word
     val nword = NWord
     val brk = Newline false
@@ -1198,11 +1231,714 @@ begin
     in
       res
     end
-    
+                                              
         
     
   end\<close> 
+               
   
+  ML_val \<open>
+    open Name
+  \<close>
+
+  
+  ML \<open>structure C_Interface = struct
+    datatype cprim = 
+        PRIM_CHAR
+      | PRIM_SI8 | PRIM_UI8
+      | PRIM_SI16 | PRIM_UI16
+      | PRIM_SI32 | PRIM_UI32
+      | PRIM_SI64 | PRIM_UI64
+    datatype cfield = FLD_NAMED of ctype * string | FLD_ANON of cfield list
+         and ctype = 
+              CTY_PRIM of cprim 
+            | CTY_PTR of ctype            
+            | CTY_STRUCT of cfield list
+            | CTY_NAMED of string
+  
+         
+    datatype typedef = TYPEDEF of string * ctype
+    fun dest_tydef (TYPEDEF (n,t)) = (n,t)
+    val mk_tydef = TYPEDEF
+
+    (* Signature *)
+    datatype c_sig = CSIG of ctype option * string * ctype list 
+    
+    (* Optional types, not all info needs to be specified *)
+    
+    datatype cfieldo = FLDO_NAMED of ctypeo option * string option
+         and ctypeo = 
+              CTYO_PRIM of cprim 
+            | CTYO_PTR of ctypeo
+            | CTYO_STRUCT of cfieldo list
+            | CTYO_NAMED of string
+  
+    datatype crtypeo = CRTYO_UNSPEC | CRTYO_VOID | CRTYO_TY of ctypeo         
+            
+    datatype typedefo = TYPEDEFO of string * ctypeo
+    
+    datatype c_sigo = CSIGO of crtypeo * string option * ctypeo option list option
+    
+    fun dest_tydefo (TYPEDEFO (n,t)) = (n,t)
+    val mk_tydefo = TYPEDEFO
+    
+    fun name_of_sig (CSIGO (_,SOME n,_)) = n
+      | name_of_sig _ = error "Signature must have name"
+    
+         
+    (* Parsing *)
+    local open Parser_Util in
+    
+      (* TODO: Check for valid C identifier *)
+      val parse_id = Parse.short_ident
+      
+      val parse_cprim = 
+         pcm "char" >> K PRIM_CHAR
+      || pcm "int8_t" >> K PRIM_SI8
+      || pcm "int16_t" >> K PRIM_SI16
+      || pcm "int32_t" >> K PRIM_SI32
+      || pcm "int64_t" >> K PRIM_SI64
+      || pcm "uint8_t" >> K PRIM_UI8
+      || pcm "uint16_t" >> K PRIM_UI16
+      || pcm "uint32_t" >> K PRIM_UI32
+      || pcm "uint64_t" >> K PRIM_UI64
+  
+      fun mk_ptr ty [] = ty
+        | mk_ptr ty (_::xs) = CTYO_PTR (mk_ptr ty xs)
+      
+      fun parse_cfield s = (
+           parse_ctype -- Scan.option parse_id --| Parse.$$$ ";" >> FLDO_NAMED
+        (*|| parse_fld_struct --| Parse.$$$ ";" >> FLDO_ANON*)
+      ) s
+      and parse_fld_struct s = (pkw "struct" |-- Parse.$$$ "{" |-- Scan.repeat1 parse_cfield --| Parse.$$$ "}") s
+      and parse_ctype1 s = (
+           parse_cprim >> CTYO_PRIM
+        || parse_id >> CTYO_NAMED   
+        || parse_fld_struct >> CTYO_STRUCT
+      ) s
+      and parse_ctype_noauto s = (parse_ctype1 -- Scan.repeat (Parse.$$$ "*") >> (fn (ty,ptrs) => (mk_ptr ty ptrs))) s
+      and parse_ctype s = (
+           pcm "auto" >> (fn _ => NONE)
+        || Parse.underscore >> (fn _ => NONE)
+        || parse_ctype_noauto >> SOME
+      ) s
+         
+      val parse_rtype = 
+           pcm "auto" >> K CRTYO_UNSPEC 
+        || Parse.underscore >> K CRTYO_UNSPEC 
+        || pcm "void" >> K CRTYO_VOID
+        || parse_ctype_noauto >> CRTYO_TY 
+      
+      val parse_typedef = pkw "typedef" |-- parse_ctype_noauto -- parse_id --| Parse.$$$ ";" >> (fn (ty,name) => mk_tydefo (name,ty))
+      val parse_typedefs = Scan.repeat parse_typedef
+    
+      fun long_sig ((rt,n),args) = CSIGO (rt,SOME n,args)
+      
+      fun parse_wildcard p = Parse.underscore >> K NONE || p >> SOME
+      
+      val parse_parlist = Parse.$$$ "(" |-- Parse.enum "," parse_ctype --| Parse.$$$ ")"
+      val parse_short_sig = parse_id >> (fn name => CSIGO (CRTYO_UNSPEC,SOME name,NONE))
+      val parse_long_sig = 
+          parse_rtype -- parse_id -- parse_wildcard parse_parlist 
+        >> long_sig
+        
+      val parse_sig = parse_long_sig || parse_short_sig
+            
+    end
+    
+    
+    
+    
+    
+    
+    (* Checking *)
+    
+    val ct_basic_kws =       [
+      "auto",
+      "break",
+      "case",
+      "char",
+      "const",
+      "continue",
+      "default",
+      "do",
+      "double",
+      "else",
+      "enum",
+      "extern",
+      "float",
+      "for",
+      "goto",
+      "if",
+      "inline",
+      "int",
+      "long",
+      "register",
+      "restrict",
+      "return",
+      "short",
+      "signed",
+      "sizeof",
+      "static",
+      "struct",
+      "switch",
+      "typedef",
+      "union",
+      "unsigned",
+      "void",
+      "volatile",
+      "while",
+      "_Alignas",
+      "_Alignof",
+      "_Atomic",
+      "_Bool",
+      "_Complex",
+      "_Generic",
+      "_Imaginary",
+      "_Noreturn",
+      "_Static_assert",
+      "_Thread_local"
+    ]
+    val ct_basic_kw_set = Symtab.make_set ct_basic_kws
+    
+    val ct_kws = 
+    ["(",")",";","{","}","*",","] (* TODO: Complete this list *)      
+    @
+    ct_basic_kws
+    @
+    ["int8_t", "int16_t", "int32_t", "int64_t",
+     "uint8_t", "uint16_t", "uint32_t", "uint64_t"]
+      
+    val ct_kws_context = Name.make_context ct_kws
+     
+    fun is_cid_start s = Symbol.is_ascii_letter s orelse s="_"
+    fun is_cid_ctd s = is_cid_start s orelse Symbol.is_ascii_digit s
+    
+    fun is_c_identifier s =
+      size s > 0 andalso is_cid_start (String.substring (s, 0, 1)) andalso
+      forall_string is_cid_ctd s andalso
+      not (Symtab.defined ct_basic_kw_set s);
+         
+    fun check_identifier name = (is_c_identifier name orelse error ("Invalid identifier " ^ name); ())
+      
+    fun check_decl ctab name = (Symtab.defined ctab name orelse error ("Undeclared type " ^ name); ())
+          
+    fun check_type ctab (CTY_NAMED name) = check_decl ctab name
+      | check_type _ (CTY_PRIM _) = ()
+      | check_type ctab (CTY_PTR t) = check_type ctab t
+      | check_type ctab (CTY_STRUCT fs) = (map (check_field ctab) fs; ())
+    and check_field ctab (FLD_NAMED (ty,name)) = (check_type ctab ty; check_identifier name)
+      | check_field ctab (FLD_ANON fs) = (map (check_field ctab) fs; ())
+
+    fun clookup ctab n = case Symtab.lookup ctab n of 
+      NONE => error ("Undeclared type: " ^ n) 
+    | SOME t => t  
+
+    fun make_ctab tydefs = let
+      fun add_tydef (name,ty) ctab = let
+        val _ = Symtab.defined ctab name andalso error ("Duplicate typedef " ^ name)
+      in
+        Symtab.update (name,ty) ctab
+      end
+    in
+      fold add_tydef tydefs Symtab.empty
+    end
+    
+    fun mk_indirect (a,b) = ([],a@b)
+    
+    fun join_di (a,b) (c,d) = (a@c, b@d)
+    fun flat_dis dis = fold join_di dis ([],[])
+    
+    fun cty_di_names (CTY_NAMED n) = ([n],[])
+      | cty_di_names (CTY_STRUCT fs) = map cfld_di_names fs |> flat_dis
+      | cty_di_names (CTY_PTR ty) = cty_di_names ty |> mk_indirect
+      | cty_di_names (CTY_PRIM _) = ([],[])
+    and cfld_di_names (FLD_NAMED (ty,_)) = cty_di_names ty
+      | cfld_di_names (FLD_ANON fs) = map cfld_di_names fs |> flat_dis
+    
+    
+    fun cty_direct_names (CTY_NAMED n) = [n]
+      | cty_direct_names (CTY_STRUCT fs) = 
+          map cfld_direct_names fs |> flat
+      | cty_direct_names _ = []
+    and cfld_direct_names (FLD_NAMED (ty,_)) = cty_direct_names ty
+      | cfld_direct_names (FLD_ANON fs) = 
+          map cfld_direct_names fs |> flat
+        
+          
+          
+          
+    fun order_tydefs tydefs = let
+      val ctab = make_ctab (map dest_tydef tydefs)
+
+      fun succs_of_ty ty = let
+        fun is_struct n = case Symtab.lookup ctab n of 
+            SOME (CTY_STRUCT _) => true 
+          | _ => false
+        
+        fun filter_indirect names = filter (not o is_struct) names
+      
+        val (d,i) = cty_di_names ty
+        val succs = d @ filter_indirect i
+      in
+        succs
+      end
+            
+      datatype state = OPEN | CLOSED
+      
+      fun add name (vset,res) = 
+        case Symtab.lookup vset name of 
+          SOME CLOSED => (vset,res) 
+        | SOME OPEN => error ("C-Header: circular typedefs via " ^ name)
+        | NONE => let
+            val vset = Symtab.update (name,OPEN) vset
+            val ty = clookup ctab name
+            val succs = succs_of_ty ty
+            
+            (*val _ = (@{print} name, @{print} succs)*)
+            
+            val (vset,res) = fold add succs (vset,res)
+            val vset = Symtab.update (name,CLOSED) vset
+            
+            val res = TYPEDEF (name,ty) :: res
+          in
+            (vset,res)
+          end
+      
+      val (_,tydefs) = fold add (Symtab.keys ctab) (Symtab.empty,[])
+      val tydefs = rev tydefs
+    in
+      tydefs
+    end
+    
+    
+            
+    fun check_tdef_cycle ctab = let
+    
+      val clookup = clookup ctab
+    
+      datatype state = OPEN | CLOSE
+    
+      fun ccyc (CTY_NAMED name) stab = (
+        case Symtab.lookup stab name of 
+          NONE => Symtab.update (name,OPEN) stab |> ccyc (clookup name) |> Symtab.update (name,CLOSE)
+        | SOME OPEN => error ("Circular struct via " ^ name)
+        | SOME CLOSE => stab
+      )
+      | ccyc (CTY_STRUCT fs) stab = fold ccyc_fld fs stab
+      | ccyc (CTY_PRIM _) stab = stab
+      | ccyc (CTY_PTR _) stab = stab
+      and 
+        ccyc_fld (FLD_NAMED (ty,_)) = ccyc ty
+      | ccyc_fld (FLD_ANON fs) = fold ccyc_fld fs
+    
+      val decls = Symtab.dest ctab |> map snd
+      val _ = Symtab.empty |> fold ccyc decls   
+    in
+      ()
+    end  
+      
+
+    (*      
+    fun is_valid_rty ctab (CTY_NAMED name) = 
+          (case Symtab.lookup ctab name of NONE => false | SOME t => is_valid_rty ctab t)
+      | is_valid_rty _ (CTY_PRIM _) = true
+      | is_valid_rty _ (CTY_PTR _) = true
+      | is_valid_rty _ (CTY_STRUCT _) = false
+    
+    fun check_valid_rty dd t = (is_valid_rty dd t orelse error "Aggregate return type not supported by C"; ())  
+    *)
+      
+    fun is_allowed_ty ctab (CTY_NAMED name) = 
+          (case Symtab.lookup ctab name of NONE => false | SOME t => is_allowed_ty ctab t)
+      | is_allowed_ty _ (CTY_PRIM _) = true
+      | is_allowed_ty _ (CTY_PTR _) = true
+      | is_allowed_ty _ (CTY_STRUCT _) = false
+
+    fun check_allowed_ty dd t = (is_allowed_ty dd t orelse error "C-Header: struct argument or return types in LLVM not compatible with C-ABI!"; ())
+    
+    fun check_rtype _ NONE = ()
+      | check_rtype dd (SOME t) = (check_type dd t; check_allowed_ty dd t)
+      
+    fun check_csig ctab (CSIG (rty,name,argtys)) = (
+      check_rtype ctab rty;
+      check_identifier name;
+      map (check_type ctab) argtys;
+      map (check_allowed_ty ctab) argtys;
+      ()
+    ) handle ERROR msg => error ("Signature " ^ name ^ ": " ^ msg)
+      
+    
+    (* Check list of type definitions, and create lookup table *)
+    fun check_tydefs tydefs = let
+      val tydefs = map dest_tydef tydefs
+      val _ = map (check_identifier o fst) tydefs
+      
+      val ctab = make_ctab tydefs
+      
+      val _ = check_tdef_cycle ctab
+      
+      fun check_tydef ctab (name,cty) = (check_identifier name; check_type ctab cty; ())
+      
+      val _ = map (check_tydef ctab) tydefs
+    in
+      ctab
+    end
+      
+    fun check_tydefs_sigs tydefs sigs = let
+      val ctab = check_tydefs tydefs
+      val _ = map (check_csig ctab) sigs
+    in
+      ()
+    end
+    
+    
+    (* Printing *)
+    local open Simple_PP in
+      (* TODO: Rename _to_Cs \<mapsto> pretty_ *)
+      fun cprim_to_Cs PRIM_CHAR = word "char"
+        | cprim_to_Cs PRIM_SI8 = word "int8_t" 
+        | cprim_to_Cs PRIM_SI16 = word "int16_t"
+        | cprim_to_Cs PRIM_SI32 = word "int32_t"
+        | cprim_to_Cs PRIM_SI64 = word "int64_t"
+        | cprim_to_Cs PRIM_UI8 = word "uint8_t" 
+        | cprim_to_Cs PRIM_UI16 = word "uint16_t"
+        | cprim_to_Cs PRIM_UI32 = word "uint32_t"
+        | cprim_to_Cs PRIM_UI64 = word "uint64_t"
+                                                  
+      fun cfield_to_Cs (FLD_NAMED (ty,name)) = block [ctype_to_Cs ty, word name, nword ";"]  
+        | cfield_to_Cs (FLD_ANON fs) = block [fldstruct_to_Cs empty fs, nword ";"]
+      and fldstruct_to_Cs n fs = block [word "struct",n, sep, big_braces (map (line o single o cfield_to_Cs) fs) ]
+      and ctype_to_Cs (CTY_PRIM t) = cprim_to_Cs t
+        | ctype_to_Cs (CTY_PTR t) = block [ctype_to_Cs t, nword "*"]
+        | ctype_to_Cs (CTY_STRUCT fs) = fldstruct_to_Cs empty fs
+        | ctype_to_Cs (CTY_NAMED name) = word name
+
+      fun tydef_proto_to_Cs (TYPEDEF (name,CTY_STRUCT _)) = block [word "typedef", word "struct", word name, word name, nword ";"]
+        | tydef_proto_to_Cs _ = empty
+        
+      fun tydef_to_Cs (TYPEDEF (name,CTY_STRUCT fs)) = block [word "typedef", fldstruct_to_Cs (word name) fs, sep, word name, nword ";"]
+        | tydef_to_Cs (TYPEDEF (name,ty)) = block [word "typedef", ctype_to_Cs ty, sep, word name, nword ";"]
+      
+      val tydefs_proto_to_Cs = fbrks o map tydef_proto_to_Cs
+      val tydefs_to_Cs = fbrks o map tydef_to_Cs
+        
+      fun rty_to_Cs NONE = word "void" | rty_to_Cs (SOME ty) = ctype_to_Cs ty
+      
+      fun csig_to_Cs (CSIG (rty,name,partys)) = block [rty_to_Cs rty,fsep,word name,parlist (map ctype_to_Cs partys),word ";"]
+                
+      val csigs_to_Cs = fbrks o map csig_to_Cs
+    end
+
+    (* Conversion from optional to definitive C *)
+
+    fun invent_fld_names fs = let
+      fun add (FLDO_NAMED (_,SOME n)) = Name.declare n
+        | add (FLDO_NAMED (SOME (CTYO_STRUCT fs),NONE)) = fold add fs
+        | add _ = I
+
+      (* Create field names. 
+        Special rule: anonymous structure fields stay anonymous 
+      *)    
+      fun amend ((_,fld as FLDO_NAMED (SOME (CTYO_STRUCT _), NONE))) context = (fld,context)
+        | amend (i,FLDO_NAMED (ty,NONE)) context = let
+              val (n,context) = Name.variant ("field" ^ Int.toString i) context
+            in 
+              (FLDO_NAMED (ty,SOME n), context)
+            end  
+        | amend (_,fld) context = (fld,context) 
+      
+      val context = ct_kws_context |> fold add fs
+      
+      val fs = map_index I fs
+      val (fs,_) = fold_map amend fs context
+      
+    in
+      fs
+    end
+      
+    fun ctypeo_to_ctype (CTYO_PRIM p) = CTY_PRIM p
+      | ctypeo_to_ctype (CTYO_PTR t) = CTY_PTR (ctypeo_to_ctype t)
+      | ctypeo_to_ctype (CTYO_STRUCT fso) = CTY_STRUCT (fso_to_fs fso)
+      | ctypeo_to_ctype (CTYO_NAMED n) = CTY_NAMED n
+    and fso_to_fs fso = invent_fld_names fso |> map cfieldo_to_cfield
+    and cfieldo_to_cfield (FLDO_NAMED (NONE, _)) = error ("C-Header: incomplete type for field")
+      | cfieldo_to_cfield (FLDO_NAMED (SOME (CTYO_STRUCT fso), NONE)) = FLD_ANON (map cfieldo_to_cfield fso)
+      | cfieldo_to_cfield (FLDO_NAMED (_, NONE)) = error ("C-Header: incomplete name for field")
+      | cfieldo_to_cfield (FLDO_NAMED (SOME cty, SOME n)) = FLD_NAMED (ctypeo_to_ctype cty,n)
+    
+    fun crtypeo_to_ctype CRTYO_UNSPEC = error "C-Header: unspecified return type"  
+      | crtypeo_to_ctype CRTYO_VOID = NONE
+      | crtypeo_to_ctype (CRTYO_TY ty) = SOME (ctypeo_to_ctype ty)
+      
+    fun cargo_to_carg NONE = error "C-Header: unspecified argument type"  
+      | cargo_to_carg (SOME ty) = ctypeo_to_ctype ty
+    fun csigo_to_csig (CSIGO (rty, SOME n, SOME argtys)) = CSIG (crtypeo_to_ctype rty, n, map cargo_to_carg argtys)
+      | csigo_to_csig _ = error "C-Header: incomplete signature"
+      
+  
+    fun ctdefo_to_ctdef (TYPEDEFO (n,ty)) = TYPEDEF (n, ctypeo_to_ctype ty)   
+          
+    (* Amending partial specification *)
+    
+    fun amend_cprim PRIM_CHAR PRIM_SI8 = PRIM_SI8
+      | amend_cprim PRIM_CHAR PRIM_UI8 = PRIM_UI8
+      | amend_cprim PRIM_SI8 PRIM_UI8 = PRIM_UI8
+      | amend_cprim PRIM_SI8 PRIM_CHAR = PRIM_CHAR
+      | amend_cprim PRIM_UI8 PRIM_SI8 = PRIM_SI8
+      | amend_cprim PRIM_UI8 PRIM_CHAR = PRIM_CHAR
+    
+      | amend_cprim PRIM_SI16 PRIM_UI16 = PRIM_UI16
+      | amend_cprim PRIM_UI16 PRIM_SI16 = PRIM_SI16
+    
+      | amend_cprim PRIM_SI32 PRIM_UI32 = PRIM_UI32
+      | amend_cprim PRIM_UI32 PRIM_SI32 = PRIM_SI32
+      
+      | amend_cprim PRIM_SI64 PRIM_UI64 = PRIM_UI64
+      | amend_cprim PRIM_UI64 PRIM_SI64 = PRIM_SI64
+      
+      | amend_cprim t ta = if t=ta then ta else error "C-Header: declared type does not match"
+
+    fun amend_option _ NONE NONE = NONE
+      | amend_option _ NONE (SOME x) = SOME x  
+      | amend_option _ (SOME x) NONE = SOME x  
+      | amend_option f (SOME x) (SOME x') = SOME (f x x')
+
+    val amend_name = amend_option (K I)
+
+    fun check_named_override ctab' cty n = let
+      
+      fun chk_ty (CTYO_PRIM p) (CTYO_PRIM p') stab = ( amend_cprim p p'; stab )
+        | chk_ty (CTYO_PTR p) (CTYO_PTR p') stab = chk_ty p p' stab
+        | chk_ty (CTYO_NAMED n) (CTYO_NAMED n') stab = (n=n' orelse error "C-Header: cannot override structure name"; stab)
+        | chk_ty (CTYO_STRUCT fs) (CTYO_STRUCT fs') stab = fold2 chk_fld fs fs' stab
+        | chk_ty ty (CTYO_NAMED n') stab = (case Symtab.lookup stab n' of
+            NONE => chk_ty ty (clookup ctab' n') (Symtab.update (n',ty) stab)
+          | SOME tyy => (tyy=ty orelse error "C-Header: ambiguous named override"; stab)  
+        )
+        | chk_ty _ _ _ = error "C-Header: mismatched named override"
+        
+      and chk_fld (FLDO_NAMED (SOME ty,_)) (FLDO_NAMED (SOME ty',_)) = chk_ty ty ty'
+        | chk_fld _ _ = error "C-Header: incomplete or mismatching structure in named override"
+        
+    
+    in
+      chk_ty cty (CTYO_NAMED n) Symtab.empty;
+      ()
+    end
+                
+    fun amend_ctype _ (CTYO_PRIM p) (CTYO_PRIM p') = CTYO_PRIM (amend_cprim p p')
+      | amend_ctype ctab' (CTYO_PTR t) (CTYO_PTR t') = CTYO_PTR (amend_ctype ctab' t t')
+      | amend_ctype ctab' (CTYO_STRUCT fs) (CTYO_STRUCT fs') = (
+          length fs = length fs' orelse error "C-Header: declared number of fields do not match";
+          CTYO_STRUCT (map2 (amend_cfield ctab') fs fs')
+        )
+      | amend_ctype _ (CTYO_NAMED n) (CTYO_NAMED n') = (
+          n=n' orelse error ("C-Header: cannot override structure name: " ^ n ^ " -> " ^ n');
+          CTYO_NAMED n
+        ) 
+      | amend_ctype ctab' cty (CTYO_NAMED n') = ( check_named_override ctab' cty n'; CTYO_NAMED n' ) 
+      | amend_ctype _ _ _ = error ("C-Header: declared structure does not match")
+    and amend_cfield ctab' (FLDO_NAMED (t,n)) (FLDO_NAMED (t',n')) = FLDO_NAMED (amend_option (amend_ctype ctab') t t', amend_name n n')
+          
+
+    fun amend_crtype _ CRTYO_UNSPEC ty = ty
+      | amend_crtype _ ty CRTYO_UNSPEC = ty
+      | amend_crtype ctab (CRTYO_TY ty) (CRTYO_TY ty') = CRTYO_TY (amend_ctype ctab ty ty')
+      | amend_crtype _ (CRTYO_VOID) (CRTYO_VOID) = CRTYO_VOID
+      | amend_crtype _ _ _ = error "C-Header: return type mismatch"
+      
+    fun make_ctabo tydefs = let
+      fun add (TYPEDEFO (name,ty)) tab = 
+        if Symtab.defined tab name then error ("Duplicate typdef: " ^ name)
+        else Symtab.update (name,ty) tab
+    
+    in
+      fold add tydefs Symtab.empty
+    end  
+            
+    fun amend_typedefs tydefs tydefs' = let
+      val ctab = make_ctabo tydefs
+      val ctab' = make_ctabo tydefs'
+    
+    in
+      Symtab.join (K (uncurry (amend_ctype ctab'))) (ctab, ctab')
+    end  
+      
+    
+    fun amend_sig ctab (CSIGO (ty,n,argtys)) (CSIGO (ty',n',argtys')) = let
+      fun nts NONE = "_" | nts (SOME x) = x
+    
+      val _ =
+        case (argtys, argtys') of
+          (SOME xs, SOME xs') => length xs = length xs' orelse error("C-Header: (" ^ nts n ^ "): parameter number mismatch")
+        | _ => false   
+    in
+      CSIGO (amend_crtype ctab ty ty', amend_name n n', amend_option (map2 (amend_option (amend_ctype ctab))) argtys argtys')
+    end
+    
+    
+    local open LLC_Intermediate in      
+      (* Create initial optional specification from LLVM *)
+    
+      fun cty_of_lty (TInt 8) = CTYO_PRIM PRIM_SI8
+        | cty_of_lty (TInt 16) = CTYO_PRIM PRIM_SI16
+        | cty_of_lty (TInt 32) = CTYO_PRIM PRIM_SI32
+        | cty_of_lty (TInt 64) = CTYO_PRIM PRIM_SI64
+        | cty_of_lty (TInt w) = error ("cty_of_lty: Unsupported integer width " ^ Int.toString w)
+        | cty_of_lty (TPtr ty) = CTYO_PTR (cty_of_lty ty)
+        | cty_of_lty (TStruct tys) = CTYO_STRUCT (map cfld_of_lty tys)
+        | cty_of_lty (TNamed name) = CTYO_NAMED name
+      and cfld_of_lty ty = FLDO_NAMED (SOME (cty_of_lty ty),NONE)
+        
+      fun cty_of_rlty NONE = CRTYO_VOID
+        | cty_of_rlty (SOME lty) = CRTYO_TY (cty_of_lty lty)
+    
+      fun csig_of_eqn (EQN (rlty,name,largs,_)) 
+        = CSIGO (cty_of_rlty rlty, SOME name, SOME (map (SOME o cty_of_lty o fst) largs))
+        
+      fun cfield_of_lty lty = FLDO_NAMED (SOME (cty_of_lty lty), NONE)
+        
+      fun ctydef_of_llc_named (Named_Type (name,ltys)) = 
+        TYPEDEFO (name,CTYO_STRUCT (map cfield_of_lty ltys))
+        
+        
+    end    
+    
+    
+  end\<close>
+  
+  
+    
+  
+  
+  
+  ML \<open>structure LLC_HeaderGen = struct
+    open C_Interface
+  
+    val parse_raw_tydefs = Parse.position Parse.cartouche
+    val parse_raw_sig = Parse.position (Parse.cartouche || Parse.short_ident || Parse.string)
+    
+    val check_raw_tydefs = Parser_Util.parse_inner ct_kws parse_typedefs
+    val check_raw_sig = Parser_Util.parse_inner ct_kws parse_sig
+    
+    fun find_reachable_types ntys eqns = let
+      open LLC_Intermediate
+      
+      fun dest_nty (Named_Type (name,ftys)) = (name,ftys)
+      fun make_ltab ntys = Symtab.make (map dest_nty ntys)
+      fun mk_nty (name,ftys) = Named_Type (name,ftys)
+      
+      val ltab = make_ltab ntys
+      
+      fun llookup name = case Symtab.lookup ltab name of 
+            NONE => error ("Undefined type: " ^ name)
+          | SOME x => x
+      
+      fun rc_eqn (EQN (rty,_,args,_)) = rc_rty rty #> fold rc_ty (map fst args)
+      and rc_rty NONE = I
+        | rc_rty (SOME ty) = rc_ty ty
+      and rc_ty (TPtr ty) = rc_ty ty
+        | rc_ty (TStruct tys) = fold rc_ty tys
+        | rc_ty (TNamed name) = (fn tab => 
+            if Symtab.defined tab name then tab
+            else let
+              val tys = llookup name
+              val tab = Symtab.update (name,tys) tab
+            in fold rc_ty tys tab
+            end
+          )
+        | rc_ty (TInt _) = I
+      
+    in
+      fold rc_eqn eqns Symtab.empty
+      |> Symtab.dest |> map mk_nty
+    end
+    
+    
+    fun make_header _ _ _ [] = NONE 
+      | make_header hfname tydefs named_types eqns = let
+    
+      (* Strip down named types to what is reachable from signatures *)
+      val named_types = find_reachable_types named_types (map fst eqns)
+    
+      (* Create joint named type table *)
+      local val ctydefs = map ctydef_of_llc_named named_types in
+        val ctab = amend_typedefs ctydefs tydefs
+      end
+      
+      (* Create signatures from equations, and amend with declared signatures *)
+      val sigs = map (apfst csig_of_eqn #> uncurry (amend_sig ctab)) eqns
+      
+      (* Convert optional type-table and signatures to definitive ones *)
+      val tydefs = map ctdefo_to_ctdef (map mk_tydefo (Symtab.dest ctab))
+      val sigs = map csigo_to_csig sigs
+
+      (* Order typedefs *)
+      (*xxx: we must also consider *indirect* references!
+        see bin_search, where typedef uint64 elem_t gets sorted to the end!
+      *)
+        
+        
+        
+      
+      val tydefs = order_tydefs tydefs
+      
+      (* Check consistency *)
+      val _ = check_tydefs_sigs tydefs sigs      
+            
+      (* Print *)
+      fun make_hd_id name = let 
+        val name = Symbol.explode name |> filter is_cid_ctd |> map Symbol.to_ascii_upper |> implode
+        val name = "_" ^ name ^ "_H"
+      in name end  
+        
+      val hfname = make_hd_id hfname
+      
+      val h_to_C = let
+        open Simple_PP
+        val hfsym = word hfname
+      in block [
+          (* TODO: Include information for which version of ll-file this has been generated! *)
+          line [word "// Generated by Isabelle-LLVM. Do not modify."],
+          line [word "#ifndef", hfsym],
+          line [word "#define", hfsym, word "1"],
+          fbrk, fbrk,
+          tydefs_proto_to_Cs tydefs,
+          fbrk, fbrk,
+          tydefs_to_Cs tydefs,
+          fbrk, fbrk,
+          csigs_to_Cs sigs,
+          fbrk, fbrk,
+          line [word "#endif"]
+        ]
+      end
+      
+    in
+      SOME (Simple_PP.string_of h_to_C)
+    end
+    
+    
+  end    
+    
+\<close>    
+  
+  
+  
+  
+
+  
+  
+  
+  
+  
+(*  
+  
+  
+  
+  
+    
+    
   
   ML \<open>structure C_Interface = struct
     datatype cprim = 
@@ -1421,8 +2157,8 @@ begin
     (* Interface to LLVM types *)
     
     local open LLC_Intermediate in      
-      (* TODO: Will loop on recursive types! *)
-      fun lty_of_prim _ PRIM_CHAR = TInt 8
+    
+      (*fun lty_of_prim _ PRIM_CHAR = TInt 8
         | lty_of_prim _ PRIM_SI8 = TInt 8
         | lty_of_prim _ PRIM_SI16 = TInt 16
         | lty_of_prim _ PRIM_SI32 = TInt 32
@@ -1431,7 +2167,7 @@ begin
         | lty_of_prim _ PRIM_UI16 = TInt 16
         | lty_of_prim _ PRIM_UI32 = TInt 32
         | lty_of_prim _ PRIM_UI64 = TInt 64
-        | lty_of_prim ntab (PRIM_NAMED name) = 
+        | lty_of_prim rtab (PRIM_NAMED name) = 
             case Symtab.lookup ntab name of 
               NONE => error ("Undefined named type " ^ name)
             | SOME ty => lty_of_ctype ntab ty  
@@ -1440,17 +2176,20 @@ begin
       and lty_of_ctype ntab (CTY_PRIM t) = lty_of_prim ntab t               
         | lty_of_ctype ntab (CTY_PTR t) = TPtr (lty_of_ctype ntab t)
         | lty_of_ctype ntab (CTY_STRUCT fs) = TStruct (map (lty_of_cfield ntab) fs)
-    
+      *)        
+
+      
+      fun csname_of_lsname rtab n = the_default n (Symtab.lookup rtab n)
         
-      fun cty_of_lty (TInt 8) = CTY_PRIM PRIM_SI8
-        | cty_of_lty (TInt 16) = CTY_PRIM PRIM_SI16
-        | cty_of_lty (TInt 32) = CTY_PRIM PRIM_SI32
-        | cty_of_lty (TInt 64) = CTY_PRIM PRIM_SI64
-        | cty_of_lty (TInt w) = error ("cty_of_lty: Unsupported integer width " ^ Int.toString w)
-        | cty_of_lty (TPtr ty) = CTY_PTR (cty_of_lty ty)
-        | cty_of_lty (TStruct tys) = CTY_STRUCT (map_index cfld_of_lty tys)
-        | cty_of_lty (TNamed name) = error ("cty_of_lty: Named ltys not supported: " ^ name)
-      and cfld_of_lty (i,ty) = FLD_NAMED (cty_of_lty ty,"field" ^ Int.toString i)        
+      fun cty_of_lty _ (TInt 8) = CTY_PRIM PRIM_SI8
+        | cty_of_lty _ (TInt 16) = CTY_PRIM PRIM_SI16
+        | cty_of_lty _ (TInt 32) = CTY_PRIM PRIM_SI32
+        | cty_of_lty _ (TInt 64) = CTY_PRIM PRIM_SI64
+        | cty_of_lty _ (TInt w) = error ("cty_of_lty: Unsupported integer width " ^ Int.toString w)
+        | cty_of_lty rtab (TPtr ty) = CTY_PTR (cty_of_lty rtab ty)
+        | cty_of_lty rtab (TStruct tys) = CTY_STRUCT (map_index (cfld_of_lty rtab) tys)
+        | cty_of_lty rtab (TNamed name) = CTY_PRIM (PRIM_NAMED (csname_of_lsname rtab name))
+      and cfld_of_lty rtab (i,ty) = FLD_NAMED (cty_of_lty rtab ty,"field" ^ Int.toString i)        
         
       val cty_of_rlty = map_option cty_of_lty  
         
@@ -1511,11 +2250,120 @@ begin
       tab
     end 
     
-    fun match_sig dd (rty,args) (RSIG (crty,name,cargs)) = let
+    (*
+      Signature matching:
+        phase 1: create re-namings, i.e., where named llvm structure is mapped to different named C structure
+    
+        phase 2: structural check, inferring omitted structures from LLVM structures
+        
+    *)
+
+    fun gen_lookup tn tab x = case Symtab.lookup tab x of
+      NONE => error("No such " ^ tn)          
+      | SOME y => y
+                
+
+    fun cty_of_cfield (FLD_NAMED (ty,_)) = ty
+      | cty_of_cfield (FLD_ANON fs) = (CTY_STRUCT fs)
+    
+          
+    fun cr_struct_rename ltab ctab = let
+      open LLC_Intermediate    
+      
+      fun check_eq ln cn cn' = 
+        cn = cn' orelse raise 
+          error("C-Header: ambiguous C-name for LLVM named structure: " 
+                ^ ln ^ " -> " ^ cn ^ " / " ^ cn')
+        
+      val ltab_lookup = gen_lookup "Named LLVM structure" ltab
+      val ctab_lookup = gen_lookup "Named C structure" ctab
+        
+      fun cr _ NONE rtab = rtab
+        | cr (TNamed ln) (SOME (CTY_PRIM (PRIM_NAMED cn))) rtab = upd_rtab ln cn rtab
+        | cr (TStruct tys) (SOME (CTY_STRUCT fs)) rtab = (
+            length tys = length fs orelse error "C-Header: mismatch in number of fields for LLVM and C struct";
+            fold2 cr tys (map (SOME o cty_of_cfield) fs) rtab
+          )
+        | cr (cty as TStruct _) (SOME (CTY_PRIM (PRIM_NAMED cn))) rtab = cr cty (SOME (ctab_lookup cn)) rtab
+        | cr _ _ rtab = rtab 
+      and upd_rtab ln cn rtab = (case Symtab.lookup rtab ln of
+          NONE => Symtab.update (ln,cn) rtab 
+                |> cr (ltab_lookup ln) (SOME (ctab_lookup cn))
+        | SOME cn' => (check_eq ln cn cn'; rtab))
+    
+    
+    in
+      cr
+    end
+    
+    fun cr_struct_rename_rt ltab ctab (SOME lty) (SOME (SOME cty)) rtab =
+        cr_struct_rename ltab ctab lty (SOME cty) rtab
+    | cr_struct_rename_rt _ _ _ _ rtab = rtab 
+    
+    
+    fun match_lty_cty ltab ctab rtab lty NONE = cty_of_lty rtab lty
+      | match_lty_cty ltab ctab rtab lty (SOME cty) = let
+          open LLC_Intermediate
+          
+          val ltab_lookup = gen_lookup "Named LLVM structure" ltab
+          val ctab_lookup = gen_lookup "Named C structure" ctab
+      
+          fun match_int 8 PRIM_SI8 = ()
+            | match_int 8 PRIM_UI8 = ()
+            | match_int 16 PRIM_UI16 = ()
+            | match_int 16 PRIM_UI16 = ()
+            | match_int 32 PRIM_UI32 = ()
+            | match_int 32 PRIM_UI32 = ()
+            | match_int 64 PRIM_UI64 = ()
+            | match_int 64 PRIM_UI64 = ()
+            | match_int _ _ = error "C-Header: Integer type mismatch"
+          
+          fun match (TNamed ln) (CTY_PRIM (PRIM_NAMED cn)) dtab = 
+            if Symtab.defined dtab ln then dtab else 
+              Symtab.insert_set ln dtab
+              |> match (ltab_lookup ln) (ctab_lookup cn)
+          | match (lty as TStruct _) (CTY_PRIM (PRIM_NAMED cn)) dtab =
+              match lty (ctab_lookup cn) dtab
+          | match (TStruct ltys) (CTY_STRUCT cflds) dtab = (
+              length ltys = length cflds orelse error "C-Header: Mismatch in number of fields";
+              fold2 match ltys (map cty_of_cfield cflds) dtab
+            )
+          | match (TInt w) (CTY_PRIM ct) dtab = (match_int w ct; dtab)
+          | match (TPtr lty) (CTY_PTR cty) dtab = match lty cty dtab
+          | match lty cty dtab = error "C-Header: Type mismatch"
+        
+        in
+          cty
+        end
+    
+    fun match_lty_cty_rt ltab ctab rtab (SOME lty) NONE = SOME (match_lty_cty ltab ctab rtab lty NONE)
+      | match_lty_cty_rt ltab ctab rtab (SOME lty) (SOME (SOME cty)) = SOME (match_lty_cty ltab ctab rtab lty (SOME cty))
+      | match_lty_cty_rt ltab ctab rtab NONE (SOME NONE) = NONE
+      | match_lty_cty_rt ltab ctab rtab NONE NONE = NONE
+      | match_lty_cty_rt _ _ _ _ _ = error "C-Header: Return type voidness mismatch"
+        
+    
+    fun match_sig ltab ctab (rty,args) (RSIG (crty,name,cargs)) = let
       val argtys = map fst args
+      val cargs = the_default (replicate (length argtys) NONE) cargs
+      
+      val _ = length argtys = length cargs orelse error ("C-Header: Wrong number of arguments")
+      
+      
+      (* Build rename table *)
+      val rtab = Symtab.empty
+        |> cr_struct_rename_rt ltab ctab rty crty
+        |> fold2 (cr_struct_rename ltab ctab) argtys cargs
+            
+      (* Match return type *)
+      val crty = match_lty_cty_rt ltab ctab rtab rty crty
+      
+      (* Match arguments *)
+      val cargs = map2 (match_lty_cty ltab ctab rtab) argtys cargs
+      
+      (*
       val crty = the_default (cty_of_rlty rty) crty
       
-      val cargs = the_default (replicate (length argtys) NONE) cargs
     
       val _ = length argtys = length cargs orelse error ("Wrong number of arguments")
       
@@ -1530,6 +2378,7 @@ begin
       | _ => error "Return type voidness mismatch"
       
       val _ = map check_match (argtys ~~ cargs)
+      *)
     
     in
       CSIG (crty,name,cargs)
@@ -1737,5 +2586,7 @@ oops
     end
   \<close>
   *)
+  
+*)  
   
 end

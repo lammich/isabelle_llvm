@@ -3,7 +3,9 @@
 #define _INTROSORT_H 1
 
 
-typedef struct {
+typedef struct llstring llstring;
+
+typedef struct llstring {
   int64_t size;
   struct {
     int64_t capacity;

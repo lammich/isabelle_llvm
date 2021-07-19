@@ -3,12 +3,15 @@
 #define _BIN_SEARCH_H 1
 
 
+
+typedef struct larray_t larray_t;
+
 typedef uint64_t elem_t;
-typedef struct {
+typedef struct larray_t {
   int64_t len;
   elem_t*data;
 } larray_t;
 
-int64_t bin_search(larray_t, elem_t);
+int64_t bin_search(larray_t*, elem_t);
 
 #endif

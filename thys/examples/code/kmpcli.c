@@ -71,8 +71,8 @@ int main (int argc, char** argv) {
   
   clock_t time = clock();
   
-  for (int i=1;i<n;++i) kmp(s1,s2);
-  int64_t res = kmp(s1,s2);
+  for (int i=1;i<n;++i) kmp(&s1,&s2);
+  int64_t res = kmp(&s1,&s2);
 
   time = clock() - time;
   double dtime = ((double)time)/CLOCKS_PER_SEC*1000000/n;
