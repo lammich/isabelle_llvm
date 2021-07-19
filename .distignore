@@ -1,6 +1,6 @@
 *~
 papers
-dist.tgz
+dist*.tgz
 mkdist.sh
 mkhtml.sh
 html
@@ -8,5 +8,6 @@ TODO
 others
 .distignore
 thys-2018
+thys-2020
 .git
 
