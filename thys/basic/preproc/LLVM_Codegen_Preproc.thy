@@ -10,12 +10,6 @@ begin
 
   subsection \<open>Fixed-Point Unfolding Setup\<close>
 
-  lemma llc_while_mono[partial_function_mono]:      
-    assumes "\<And>x. M_mono (\<lambda>f. b f x)"
-    assumes "\<And>x. M_mono (\<lambda>f. c f x)"
-    shows "M_mono (\<lambda>D. llc_while (b D) (c D) \<sigma>)"
-    using assms unfolding llc_while_def by pf_mono_prover
-      
   declaration \<open>fn _ => Definition_Utils.declare_extraction_group @{binding LLVM} #> snd\<close>
   declaration \<open>fn _ => Definition_Utils.declare_extraction_group @{binding LLVM_while} #> snd\<close>
     
@@ -42,18 +36,19 @@ subsection \<open>Preprocessor\<close>
     brings them into the right shape.
   \<close>
   
-  named_theorems llvm_code \<open>Isabelle-LLVM code theorems\<close>
-  
-  named_simpset llvm_inline = HOL_ss
+  named_simpset llvm_pre_simp = HOL_ss
 
-  attribute_setup llvm_inline = \<open>
+  lemmas [named_ss llvm_pre_simp cong] = refl[of "M_CONST c" for c]
+
+  (* TODO: Also add preprocessing step for complex constant defs *)  
+  attribute_setup llvm_pre_simp = \<open>
     Attrib.add_del 
-      (Named_Simpsets.add_attr @{named_simpset llvm_inline}) 
-      (Named_Simpsets.del_attr @{named_simpset llvm_inline})
+      (Named_Simpsets.add_attr @{named_simpset llvm_pre_simp}) 
+      (Named_Simpsets.del_attr @{named_simpset llvm_pre_simp})
   \<close>
     
   
-  lemma llvm_inline_bind_laws[llvm_inline]:
+  lemma llvm_inline_bind_laws[llvm_pre_simp]:
     "bind m return = m"
     "bind (bind m (\<lambda>x. f x)) g = bind m (\<lambda>x. bind (f x) g)"
     by auto
@@ -63,241 +58,475 @@ subsection \<open>Preprocessor\<close>
   lemma pull_lambda_case: "(case x of (a,b) \<Rightarrow> \<lambda>y. t a b y) = (\<lambda>y. case x of (a,b) \<Rightarrow> t a b y)"
     apply (rule ext) apply (cases x) by auto
 
-  ML \<open> structure LLC_Preprocessor = 
-    struct
-      open LLC_Lib
-          
-      val cfg_llvm_preproc_timing = Attrib.setup_config_bool @{binding llvm_preproc_timing} (K false)
-      
-      structure Monadify = Gen_Monadify_Cong (
-      
-        fun mk_return x = @{mk_term "return ?x ::_ llM"}
-        fun mk_bind m f = @{mk_term "bind ?m ?f ::_ llM"}
-      
-        fun dest_return @{mpat "return ?x ::_ llM"} = SOME x | dest_return _ = NONE
-        fun dest_bind @{mpat "bind ?m ?f ::_ llM"} = SOME (m,f) | dest_bind _ = NONE
+  text \<open>First part of setup, for processing of code and inline theorems\<close>  
+  
+  named_theorems llvm_code_raw \<open>Isabelle-LLVM code theorems\<close>
+  
+  ML \<open> structure LLC_Preprocessor = struct
+    open LLC_Lib
         
-        fun dest_monadT (Type (@{type_name M},[T,@{typ unit},@{typ llvm_memory},@{typ err}])) = SOME T | dest_monadT _ = NONE
+    val cfg_llvm_preproc_timing = Attrib.setup_config_bool @{binding llvm_preproc_timing} (K false)
+    
+    structure Monadify = struct 
+      structure BT = Gen_Monadify_Cong_Basis ()
+      open BT
 
-        (*val strip_op = K strip_comb*)
-        
-        val bind_return_thm = @{lemma "bind m return = m" by simp}
-        val return_bind_thm = @{lemma "bind (return x) f = f x" by simp}
-        val bind_bind_thm = @{lemma "bind (bind m (\<lambda>x. f x)) g = bind m (\<lambda>x. bind (f x) g)" by simp}
-        
+      fun mk_return x = @{mk_term "return ?x ::_ llM"}
+      fun mk_bind m f = @{mk_term "bind ?m ?f ::_ llM"}
+    
+      fun dest_return @{mpat "return ?x ::_ llM"} = SOME x | dest_return _ = NONE
+      fun dest_bind @{mpat "bind ?m ?f ::_ llM"} = SOME (m,f) | dest_bind _ = NONE
+      
+      fun dest_monadT (Type (@{type_name M},[T,@{typ unit},@{typ llvm_memory},@{typ err},@{typ "llvm_macc"}])) = SOME T | dest_monadT _ = NONE
+
+      
+      fun strip_op _ @{mpat \<open>llc_par ?fa ?fb ?a ?b\<close>} = (@{mk_term "llc_par ?fa ?fb"},[a,b])
+      | strip_op ctxt t = BT.strip_op ctxt t  
+      
+      
+      val bind_return_thm = @{lemma "bind m return = m" by simp}
+      val return_bind_thm = @{lemma "bind (return x) f = f x" by simp}
+      val bind_bind_thm = @{lemma "bind (bind m (\<lambda>x. f x)) g = bind m (\<lambda>x. bind (f x) g)" by simp}
+      
+      structure T = Gen_Monadify (
+        val mk_return = mk_return
+        val mk_bind = mk_bind
+        val dest_return = dest_return
+        val dest_bind = dest_bind
+        val dest_monadT = dest_monadT
+        val strip_op = strip_op
+        val bind_return_thm = bind_return_thm
+        val return_bind_thm = return_bind_thm
+        val bind_bind_thm = bind_bind_thm
       )
+      open T
       
-      (********* Normalization of code theorems *)
-      
-  
-      fun cthm_inline ctxt thm = let
-        val ctxt = Named_Simpsets.put @{named_simpset llvm_inline} ctxt
-      in
-        (* TODO: Simplifier.rewrite may introduce beta redexes. 
-          Currently we eliminate them right away. Or is it OK to have beta-redexes? *)
-        Conv.fconv_rule (rhs_conv (Simplifier.rewrite ctxt) then_conv Thm.beta_conversion true) thm
-      end
+    end        
     
-      val cthm_monadify = Conv.fconv_rule o (rhs_conv o Monadify.monadify_conv)
-            
-      val inline_iteration_limit =
-        Config.int (Config.declare ("inline_iteration_limit", \<^here>) (fn _ => Config.Int ~1));
+    (********* Identification of complex constant heads *)
+    (* Get head of equation and conversion on this head. 
+      If inline is set, TYPE() and higher-order variable arguments are treated like normal first-order arguments
+    *)
+    fun get_eqn_head inline t = let
+      open Conv
+      
+      fun app c (h,cnv) = (h, fn cc => c (cnv cc))
+      
+      fun is_typarg @{mpat \<open>TYPE(_)\<close>} = true
+        | is_typarg _ = false
+      
+      fun is_fo_argument x = 
+        (is_Var x orelse is_Free x orelse (inline andalso is_typarg x))
+        andalso (inline orelse not (Monadify.is_ho_operand x))
       
       
-      fun monadify_inline_cthm ctxt thm = let
-        fun rpt 0 thm' = raise THM ("inline_iteration_limit exceeded",~1,[thm,thm'])
-          | rpt n thm = let
-          val thm' = thm |> cthm_monadify ctxt |> cthm_inline ctxt
-        in
-          if Thm.eq_thm_prop (thm,thm') then thm 
-          else rpt (n-1) thm'
-        end
-        
-        val it_limit = Config.get ctxt inline_iteration_limit
-      in
-        thm 
-        |> cthm_inline ctxt
-        |> rpt it_limit
-      end  
-      
-      (*
-        Bring code theorem into parseable format. To be applied after inlining, 
-          immediately before parsing.
-        
-        Applies eta-expansion, return-expansion, and converts \<equiv> to =.
-        Finally, it will replace unit-binds by () constants and anonymous bind.
-        
-        May fail on non-well-formed theorems.
-      *)
-      fun cthm_format ctxt thm = let
-        fun normalize_bind1 t = let
-          val (f,args) = strip_comb t
-          val _ = check_valid_head f
-  
-          val args_is_M = fastype_of f |> binder_types |> map (is_llM o body_type)
-                  
-          val _ = length args_is_M = length args orelse raise TYPE ("cthm_format: All arguments must be explicit", [fastype_of f], [t])
-          
-          val args = map2 (fn isM => isM?(normalize o expand_eta_all)) args_is_M args
-          
-        in
-          list_comb (f, args)
-        end  
-          
-        and normalize @{mpat "bind ?m ?f"} = let
-            val m = normalize_bind1 m
-            val f = (*ensure_abs f*) expand_eta_all f |> normalize
-          in @{mk_term "bind ?m ?f"} end
-        | normalize (Abs (x,T,t)) = Abs (x,T,normalize t)
-        | normalize (t as @{mpat "return _"}) = t
-        | normalize t = let val t = normalize_bind1 t in @{mk_term "bind ?t (\<lambda>x. return x)"} end
-      
-        fun normalize_eq @{mpat "Trueprop (?a = ?b)"} = let val b = normalize b in @{mk_term "Trueprop (?a = ?b)"} end
-          | normalize_eq @{mpat "?a \<equiv> ?b"} = let val b = normalize b in @{mk_term "?a \<equiv> ?b"} end
-          | normalize_eq t = raise TERM ("format_code_thm: normalize_eq", [t])
-      
-        fun norm_tac ctxt = ALLGOALS (simp_tac (put_simpset HOL_ss ctxt addsimps @{thms bind_laws}))
+      fun aux @{mpat \<open>Trueprop ?t\<close>} = app arg_conv (aux t)
+        | aux @{mpat \<open>?lhs = _\<close>} = app arg1_conv (aux lhs)
+        | aux @{mpat \<open>?lhs \<equiv> _\<close>} = app arg1_conv (aux lhs)
+        | aux (t as f$x) = (
+            if is_fo_argument x then app fun_conv (aux f) 
+            else (t,I)
+          )  
+        | aux t = (t,I)
     
-        fun cthm_norm_lambda ctxt thm = let
-          val thm = Local_Defs.unfold ctxt @{thms pull_lambda_case} thm
-        
-          (*fun r thm = case Thm.concl_of thm of
-            @{mpat "Trueprop (_ = (\<lambda>_. _))"} => r (thm RS @{thm fun_cong})
-          | @{mpat "_ \<equiv> (\<lambda>_. _)"} => r (thm RS @{thm meta_fun_cong})
-          | _ => thm
-          *)
-          
-          fun r thm = case try (fn () => (thm RS @{thm fun_cong})) () of
-            NONE => thm
-          | SOME thm => r thm  
-          
-        in
-          r thm
-        end
-        
-      in
-        thm 
-        |> (simplify (put_simpset HOL_ss ctxt addsimps @{thms Monad.bind_laws atomize_eq}))
-        |> cthm_norm_lambda ctxt
-        |> (Conv.fconv_rule (Refine_Util.f_tac_conv ctxt normalize_eq (norm_tac ctxt)))
-        |> (Conv.fconv_rule (Conv.top_sweep_conv (K (Conv.rewr_conv @{thm unit_meta_eq})) ctxt))
+    in
+      aux t
+    end
+    
+    (* Handle adding of M_CONST and constant registration to monadifier *)
+    
+    fun gen_prep_code_eq h_reg t_reg inline thm context = let
+      val t = Thm.prop_of thm
+      val _ = is_eqn t orelse raise THM ("prep_code_eq: not an equation",~1,[thm])
+    
+      val (h,cnv) = get_eqn_head inline t 
+      
+      fun prep (thm,context) = let
+        open Conv
+        val thm = Conv.fconv_rule (cnv (rewr_conv @{thm M_CONST_def[symmetric]})) thm
+        val context = h_reg h context
+      in 
+        (thm,context)
       end
       
-      (********* Gathering of code equations *)
-      (* TODO: Use net *)
+      fun need_prep (Const _) = false
+        | need_prep (Free _) = false
+        | need_prep @{mpat \<open>M_CONST _\<close>} = false
+        | need_prep _ = true
 
+      val (thm,context) = (thm,context) |> need_prep h ? prep  
+              
+      val context = t_reg thm context
+    in
+      (context)
+    end
+    
+    val gen_prep_code_eq_add = gen_prep_code_eq (Monadify.prepare_add_const_decl true)
+    val gen_prep_code_eq_del = gen_prep_code_eq (Monadify.prepare_remove_const_decl true)
+
+    val add_inline_eq = gen_prep_code_eq_add (Named_Simpsets.add_simp @{named_simpset llvm_pre_simp}) true
+    val del_inline_eq = gen_prep_code_eq_del (Named_Simpsets.del_simp @{named_simpset llvm_pre_simp}) true
+
+    val add_code_eq = gen_prep_code_eq_add (Named_Theorems.add_thm @{named_theorems llvm_code_raw}) false
+    val del_code_eq = gen_prep_code_eq_del (Named_Theorems.del_thm @{named_theorems llvm_code_raw}) false
+        
+    local 
+      val to_attr = Thm.declaration_attribute 
+    in
+      val add_inline_eq_attr = to_attr add_inline_eq
+      val del_inline_eq_attr = to_attr del_inline_eq 
+  
+      val add_code_eq_attr = to_attr add_code_eq 
+      val del_code_eq_attr = to_attr del_code_eq 
+    end
+    
+    
+    (*    
+    fun prep_code_eq thm context = let
+      val t = Thm.prop_of thm
+      val _ = is_eqn t orelse raise THM ("prep_code_eq: not an equation",~1,[thm])
+    
+      val (h,cnv) = get_eqn_head t
       
-      fun dep_prep_code_thm thm = let
-        val c = head_of_eqn_thm thm
-        val _ = check_valid_head c
-      in
-        (c,thm)
+      fun prep context = let
+        open Conv
+        val thm = Conv.fconv_rule (cnv (rewr_conv @{thm M_CONST_def[symmetric]})) thm
+        val context = Monadify.prepare_add_const_decl true h context
+      in 
+        (thm,context)
       end
       
-      fun dep_try_instantiate_code_thm c (l,thm) = let
-        val thy = Thm.theory_of_thm thm
-      in
-        case SOME (Pattern.match thy (l,c) (Vartab.empty,Vartab.empty)) handle Pattern.MATCH => NONE of
-          NONE => NONE
-        | SOME m => SOME (instantiate_uc m thm)
-      end
       
-      fun dep_find_code_thm pthms c = 
-        case get_first (dep_try_instantiate_code_thm c) pthms of
-          SOME eqn => eqn
-        | NONE => raise TERM ("No code equation",[c])
+      fun need_prep (Const _) = false
+        | need_prep (Free _) = false
+        | need_prep @{mpat \<open>M_CONST _\<close>} = false
+        | need_prep _ = true
       
-      val cmd_name_prefix = Long_Name.qualify (Long_Name.qualifier @{const_name ll_add}) "ll_"
-      val comb_name_prefix = Long_Name.qualify (Long_Name.qualifier @{const_name llc_while}) "llc_"
+    in
+      if need_prep h then prep context
+      else (thm,context)
+    end
+    
+    fun prep_code_attr attr = Thm.mixed_attribute (fn (context,thm) => let
+      val (thm,context) = prep_code_eq thm context
+      val (thm,context) = Thm.apply_attribute attr thm context
+    in
+      (context,thm)
+    end)
+    *)
+    
+  end
+  \<close>      
+   
+  attribute_setup llvm_inline = \<open>
+    Attrib.add_del 
+      (LLC_Preprocessor.add_inline_eq_attr) 
+      (LLC_Preprocessor.del_inline_eq_attr)
+  \<close>
+  
+  attribute_setup llvm_code = \<open>
+    Attrib.add_del 
+      (LLC_Preprocessor.add_code_eq_attr) 
+      (LLC_Preprocessor.del_code_eq_attr)
+  \<close>
+  
+  
+  
+  ML \<open> structure LLC_Preprocessor = struct
+    open LLC_Preprocessor  
+    (********* Normalization of code theorems *)
+    
+
+    fun cthm_inline ctxt thm = let
+      val ctxt = Named_Simpsets.put @{named_simpset llvm_pre_simp} ctxt
+    in
+      (* TODO: Simplifier.rewrite may introduce beta redexes. 
+        Currently we eliminate them right away. Or is it OK to have beta-redexes? *)
+      Conv.fconv_rule (rhs_conv (Simplifier.rewrite ctxt) then_conv Thm.beta_conversion true) thm
+    end
+  
+    val cthm_monadify = Conv.fconv_rule o (rhs_conv o Monadify.monadify_conv)
           
-      fun dep_is_ll_comb_name name =
-               name = @{const_name bind}
-        orelse name = @{const_name return}
-        orelse String.isPrefix cmd_name_prefix name
-        orelse String.isPrefix comb_name_prefix name
+    val inline_iteration_limit = Attrib.setup_config_int @{binding inline_iteration_limit} (K ~1)
+    
+    fun monadify_inline_cthm ctxt thm = let
+      fun rpt 0 thm' = raise THM ("inline_iteration_limit exceeded",~1,[thm,thm'])
+        | rpt n thm = let
+        val thm' = thm |> cthm_monadify ctxt |> cthm_inline ctxt
+      in
+        if Thm.eq_thm_prop (thm,thm') then thm 
+        else rpt (n-1) thm'
+      end
+      
+      val it_limit = Config.get ctxt inline_iteration_limit
+    in
+      thm 
+      |> cthm_inline ctxt
+      |> rpt it_limit
+    end  
+    
+    (*
+      Bring code theorem into parseable format. To be applied after inlining, 
+        immediately before parsing.
+      
+      Applies eta-expansion, return-expansion, and converts \<equiv> to =.
+      Finally, it will replace unit-binds by () constants and anonymous bind.
+      
+      May fail on non-well-formed theorems.
+    *)
+    
+    fun is_valid_fname t = is_ground_term t andalso not (LLC_Compiler.is_llvm_instr_t t)
+    fun check_valid_fname t = is_valid_fname t orelse raise TYPE("Expected (ground) function name",[fastype_of t],[t])
+    
+    
+    fun cthm_format ctxt thm = let
+      fun check_valid_op t = assert_ground_term t
+    
+      fun check_valid_op' (t as @{mpat "llc_par ?f ?g"}) = (
+        is_valid_fname f andalso is_valid_fname g orelse 
+          raise TERM("cthm_format: llc_par expects function names",[t]);
+          t
+        )
+        | check_valid_op' t = (check_valid_op t; t)
+    
+      fun normalize_bind1 t = let
+        val (f,args) = Monadify.strip_op ctxt t
+        val _ = check_valid_op' f
+
+        val args_is_M = fastype_of f |> binder_types |> map (is_llM o body_type)
+                
+        val _ = length args_is_M = length args orelse raise TYPE ("cthm_format: All arguments must be explicit", [fastype_of f], [t])
         
+        val args = map2 (fn isM => isM?(normalize o expand_eta_all)) args_is_M args
         
-      fun dep_is_call_const t = case try dest_head t of
-        NONE => false
-      | SOME (name,T) => 
-                  not (dep_is_ll_comb_name name) (* Not an internal name *)
+      in
+        list_comb (f, args)
+      end  
+        
+      and normalize @{mpat "bind ?m ?f"} = let
+          val m = normalize_bind1 m
+          val f = (*ensure_abs f*) expand_eta_all f |> normalize
+        in @{mk_term "bind ?m ?f"} end
+      | normalize (Abs (x,T,t)) = Abs (x,T,normalize t)
+      | normalize (t as @{mpat "return _"}) = t
+      | normalize t = let val t = normalize_bind1 t in @{mk_term "bind ?t (\<lambda>x. return x)"} end
+    
+      fun normalize_eq @{mpat "Trueprop (?a = ?b)"} = let val b = normalize b in @{mk_term "Trueprop (?a = ?b)"} end
+        | normalize_eq @{mpat "?a \<equiv> ?b"} = let val b = normalize b in @{mk_term "?a \<equiv> ?b"} end
+        | normalize_eq t = raise TERM ("format_code_thm: normalize_eq", [t])
+    
+      fun norm_tac ctxt = ALLGOALS (simp_tac (put_simpset HOL_ss ctxt addsimps @{thms bind_laws M_CONST_def}))
+  
+      fun cthm_norm_lambda ctxt thm = let
+        val thm = Local_Defs.unfold ctxt @{thms pull_lambda_case} thm
+      
+        (*fun r thm = case Thm.concl_of thm of
+          @{mpat "Trueprop (_ = (\<lambda>_. _))"} => r (thm RS @{thm fun_cong})
+        | @{mpat "_ \<equiv> (\<lambda>_. _)"} => r (thm RS @{thm meta_fun_cong})
+        | _ => thm
+        *)
+        
+        fun r thm = case try (fn () => (thm RS @{thm fun_cong})) () of
+          NONE => thm
+        | SOME thm => r thm  
+        
+      in
+        r thm
+      end
+      
+    in
+      thm 
+      |> (simplify (put_simpset HOL_ss ctxt addsimps @{thms Monad.bind_laws atomize_eq}))
+      |> cthm_norm_lambda ctxt
+      |> (Conv.fconv_rule (Refine_Util.f_tac_conv ctxt normalize_eq (norm_tac ctxt)))
+      |> (Conv.fconv_rule (Conv.top_sweep_conv (K (Conv.rewr_conv @{thm unit_meta_eq})) ctxt))
+    end
+    
+    (********* Gathering of code equations *)
+    (* TODO: Use net *)
+
+    
+    fun dep_prep_code_thm thm = let
+      val ((_,(c,_)),_) = LLC_Compiler.analyze_eqn_thm thm
+    in
+      (c,thm)
+    end
+    
+    fun dep_try_instantiate_code_thm ctxt c (l,thm) = let
+      val c = Thm.cterm_of ctxt c
+      val incr = Thm.maxidx_of_cterm c + 1
+      val thm = Thm.incr_indexes incr thm
+      val l = Thm.cterm_of ctxt l |> Thm.incr_indexes_cterm incr
+    
+    in
+      case try Thm.match (l,c) of
+        NONE => NONE
+      | SOME inst => SOME (Thm.instantiate inst thm)
+    end
+    
+    fun dep_find_code_thm ctxt pthms c = 
+      case get_first (dep_try_instantiate_code_thm ctxt c) pthms of
+        SOME eqn => eqn
+      | NONE => raise TERM ("No code equation",[c])
+    
+    val cmd_name_prefix = Long_Name.qualify (Long_Name.qualifier @{const_name ll_add}) "ll_"
+    val comb_name_prefix = Long_Name.qualify (Long_Name.qualifier @{const_name llc_while}) "llc_"
+        
+    fun dep_is_ll_comb_name name =
+             name = @{const_name bind}
+      orelse name = @{const_name return}
+      orelse String.isPrefix cmd_name_prefix name
+      orelse String.isPrefix comb_name_prefix name
+      
+    fun dep_is_ll_comb_t (Const (name,_)) = dep_is_ll_comb_name name
+      | dep_is_ll_comb_t _ = false
+      
+      
+    fun fold_aterms_mc f (t as @{mpat \<open>M_CONST _\<close>}) = f t
+      | fold_aterms_mc f (t $ u) = fold_aterms_mc f t #> fold_aterms_mc f u
+      | fold_aterms_mc f (Abs (_, _, t)) = fold_aterms_mc f t
+      | fold_aterms_mc f a = f a;
+      
+      
+    fun dep_is_call_const (Bound _) = false
+      | dep_is_call_const t = let 
+          val T = fastype_of t 
+        in
+                  not (dep_is_ll_comb_t t) (* Not an internal name *)
           andalso is_llM (body_type T)           (* Yields a monadic result *)
           andalso not (exists (exists_subtype is_llM) (binder_types T)) (* No monadic parameters *)
-        
-      fun calls_of_cthm thm = Term.fold_aterms 
-        (fn t => dep_is_call_const t?cons t) 
-        (rhs_of_eqn (Thm.prop_of thm))
-        []
+        end
       
-      fun default_extractions ctxt = 
-          Definition_Utils.get_extraction_group ctxt @{extraction_group LLVM}
-        |> (not (Config.get ctxt llc_compile_while) ? 
-              append (Definition_Utils.get_extraction_group ctxt @{extraction_group LLVM_while}))  
+    (*fun dep_is_call_const t = case try dest_head t of
+      NONE => false
+    | SOME (name,T) => 
+                not (dep_is_ll_comb_name name) (* Not an internal name *)
+        andalso is_llM (body_type T)           (* Yields a monadic result *)
+        andalso not (exists (exists_subtype is_llM) (binder_types T)) (* No monadic parameters *)
+    *)
       
-      fun gather_code_thms roots lthy = let
-        val thy = Proof_Context.theory_of lthy
-        val pthms = Named_Theorems.get lthy @{named_theorems llvm_code}
-          |> map dep_prep_code_thm
-          |> Refine_Util.subsume_sort fst thy
+    fun calls_of_cthm thm = fold_aterms_mc 
+      (fn t => dep_is_call_const t?cons t) 
+      (rhs_of_eqn (Thm.prop_of thm))
+      []
+    
+    fun default_extractions ctxt = 
+        Definition_Utils.get_extraction_group ctxt @{extraction_group LLVM}
+      |> (not (Config.get ctxt llc_compile_while) ? 
+            append (Definition_Utils.get_extraction_group ctxt @{extraction_group LLVM_while}))  
+    
+    fun gather_code_thms roots lthy = let
+      val thy = Proof_Context.theory_of lthy
+      val pthms = Named_Theorems.get lthy @{named_theorems llvm_code_raw}
+        |> map dep_prep_code_thm
+        |> Refine_Util.subsume_sort fst thy
+    
+        
+      val tim = Config.get lthy cfg_llvm_preproc_timing  
+        
+      fun trace msg = if tim then msg () |> tracing else ()
       
-          
-        val tim = Config.get lthy cfg_llvm_preproc_timing  
-          
-        fun trace msg = if tim then msg () |> tracing else ()
-        
-        fun process_root c (ctab, lthy) = let
-          val _ = check_valid_head c
-          val basename = name_of_head c |> Long_Name.base_name
-        in
-          case Termtab.lookup ctab c of
-            SOME _ => (ctab, lthy)
-          | NONE => let
-          
-              val _ = trace (fn () => "Processing " ^ basename)
-              val startt = Time.now ()
-          
-              val _ = assert_monomorphic_const c
-              (* Get code theorem and inline it *)
-              val teqn = dep_find_code_thm pthms c |> monadify_inline_cthm lthy
-
-              (* Extract recursion equations *)
-              val exs = default_extractions lthy
-              
-              val ((teqn,add_eqns,_),lthy) = Definition_Utils.extract_recursion_eqs exs basename teqn lthy
-              val teqns = teqn::add_eqns
-              
-              (* Inline and format again *)
-              val teqns = map (monadify_inline_cthm lthy #> cthm_format lthy) teqns
-
-              (* Update table *)
-              val ctab = fold Termtab.update_new (map dep_prep_code_thm teqns) ctab
-                            
-              (* Find calls *)
-              val calls = map calls_of_cthm teqns |> flat
-              
-              val stopt = Time.now()
-              val _ = trace (fn () => "Done " ^ basename ^ ": " ^ Time.toString (stopt - startt))
-              
-              (* Recurse *)
-              val (ctab,lthy) = fold process_root calls (ctab,lthy)
-            in
-              (ctab, lthy)
-            end
-        end 
-
-        val (ctab,lthy) = fold process_root roots (Termtab.empty,lthy)
-        val thms = Termtab.dest ctab |> map snd
-        
+      fun process_root c (ctab, lthy) = let
+        val _ = check_valid_fname c
+        val basename = name_of_head c |> Long_Name.base_name
       in
-        (thms,lthy)
-      end
+        case Termtab.lookup ctab c of
+          SOME _ => (ctab, lthy)
+        | NONE => let
+            val _ = trace (fn () => "Processing " ^ basename)
+            val startt = Time.now ()
         
+            (* Get code theorem and inline it *)
+            val teqn = dep_find_code_thm lthy pthms c |> monadify_inline_cthm lthy
+            
+            (* Extract recursion equations *)
+            val exs = default_extractions lthy
+            
+            val ((teqn,add_eqns,_),lthy) = Definition_Utils.extract_recursion_eqs exs basename teqn lthy
+            val teqns = teqn::add_eqns
+            
+            (* Inline and format again *)
+            val teqns = map (monadify_inline_cthm lthy #> cthm_format lthy) teqns
+
+            (* Update table *)
+            val ctab = fold Termtab.update_new (map dep_prep_code_thm teqns) ctab
+                          
+            (* Find calls *)
+            val calls = map calls_of_cthm teqns |> flat
+            
+            val stopt = Time.now()
+            val _ = trace (fn () => "Done " ^ basename ^ ": " ^ Time.toString (stopt - startt))
+
+            
+            (* Recurse *)
+
+            (** Recursion error traceback message *)                            
+            fun msg () = let
+              val p_msg = Pretty.block[ Pretty.str "from ", Syntax.pretty_term lthy c ]
+              val p_eqns = map (Thm.pretty_thm lthy) teqns |> Pretty.fbreaks |> Pretty.block
+              
+              val p = Pretty.block [p_msg, Pretty.fbrk, p_eqns]
+            in
+              Pretty.string_of p
+            end
+            
+            val (ctab,lthy) = trace_exn msg (fold process_root calls) (ctab,lthy)
+          in
+            (ctab, lthy)
+          end
+      end 
+      
+      val (ctab,lthy) = fold process_root roots (Termtab.empty,lthy)
+      val thms = Termtab.dest ctab |> map snd
+      
+    in
+      (thms,lthy)
     end
+      
+  end
   \<close>
 
-  declaration \<open>K (LLC_Preprocessor.Monadify.prepare_add_const_decl @{term "numeral a"})\<close>  
+  declaration \<open>K (LLC_Preprocessor.Monadify.prepare_add_const_decl false @{term "numeral a"})\<close>  
+  declaration \<open>K (LLC_Preprocessor.Monadify.prepare_add_const_decl false @{term "double_of_word (numeral a)"})\<close>  
   
+  attribute_setup llvm_dbg_pre_monadified = \<open>Scan.succeed (
+    Thm.rule_attribute [] (LLC_Preprocessor.cthm_monadify o Context.proof_of)
+  )\<close>
   
+  attribute_setup llvm_dbg_pre_inlined = \<open>Scan.succeed (
+    Thm.rule_attribute [] (LLC_Preprocessor.cthm_inline o Context.proof_of)
+  )\<close>
+  
+  attribute_setup llvm_dbg_pre_monadify_inlined = \<open>Scan.succeed (
+    Thm.rule_attribute [] (LLC_Preprocessor.monadify_inline_cthm o Context.proof_of)
+  )\<close>
+  
+  attribute_setup llvm_dbg_pre_formatted = \<open>Scan.succeed (
+    Thm.rule_attribute [] (LLC_Preprocessor.cthm_format o Context.proof_of)
+  )\<close>
+  
+  attribute_setup llvm_dbg_preprocessed = \<open>Scan.succeed (
+    Thm.rule_attribute [] (fn context => (
+      let val ctxt = Context.proof_of context 
+      in LLC_Preprocessor.monadify_inline_cthm ctxt #> LLC_Preprocessor.cthm_format ctxt 
+    end))
+  )\<close>
+  
+  attribute_setup llvm_dbg_instantiated = \<open>Args.term >> (fn c => 
+    Thm.rule_attribute [] (fn context => fn thm =>
+      let 
+        open LLC_Preprocessor
+        val ctxt = Context.proof_of context 
+        val pthm = dep_prep_code_thm thm        
+        val thm = the (dep_try_instantiate_code_thm ctxt c pthm)
+        
+      in 
+        thm   
+      end
+    )
+  )\<close>
+  
+declare [[Pure.of]]
     
 subsection \<open>Code Generator Driver\<close>  
   text \<open>
@@ -342,20 +571,19 @@ subsection \<open>Code Generator Driver\<close>
         val (cthms,lthy) = trtimed "Gathering code theorems" (LLC_Preprocessor.gather_code_thms (map fst cns)) lthy
         val _ = trace (fn () => pretty_cthms lthy cthms)
         
-        fun cmp_symtab cthms = let
+        fun cmp_fixes () = let
         
           fun fx (_,NONE) = NONE
             | fx (cn, SOME csig) = SOME (cn,C_Interface.name_of_sig csig)
         
           val fixes = map_filter fx cns
-          val ftab = LLC_Compiler.compute_fun_names fixes cthms
-        in ftab end
+        in fixes end
         
-        val ftab = trtimed "Computing symbol table" cmp_symtab cthms
-        val _ = trace (fn () => pretty_ftab lthy ftab)
         
+        val fixes = trtimed "Computing fixes table" cmp_fixes ()
+        (*val _ = trace (fn () => pretty_ftab lthy ftab)*)
                   
-        val (tys,eqns) = trtimed "Translating code theorems to IL" (LLC_Compiler.parse_cthms ftab nt_ovr cthms) lthy
+        val (tys,eqns) = trtimed "Translating code theorems to IL" (LLC_Compiler.parse_cthms fixes nt_ovr cthms) lthy
         val _ = trace (fn () => LLC_Intermediate.pretty_llc (tys,eqns))
         
         val _ = trace (fn () => Pretty.str "Writing LLVM")
@@ -506,7 +734,7 @@ subsection \<open>Code Generator Driver\<close>
         
             
       end
-
+                                                                                                                   
       val _ = Outer_Syntax.local_theory @{command_keyword export_llvm} "generate LLVM code for constants" export_llvm_cmd
       val _ = Outer_Syntax.local_theory @{command_keyword llvm_deps} "Print LLVM code theorems for constants" llvm_deps_cmd
     end
@@ -515,7 +743,7 @@ subsection \<open>Code Generator Driver\<close>
   subsection \<open>Setup for Product Type\<close>
   text \<open>We prepare a setup to compile product types to anonymous 2-element structures\<close>
   
-  lemma to_val_prod[ll_to_val]: "to_val x = llvm_struct [to_val (fst x), to_val (snd x)]"
+  lemma to_val_prod[ll_to_val]: "to_val x = LL_STRUCT [to_val (fst x), to_val (snd x)]"
     by (cases x; simp)
   
   definition prod_insert_fst :: "('a::llvm_rep \<times> 'b::llvm_rep) \<Rightarrow> 'a \<Rightarrow> _" 
@@ -526,10 +754,11 @@ subsection \<open>Code Generator Driver\<close>
     where [llvm_inline]: "prod_extract_fst p \<equiv> ll_extract_value p 0"
   definition prod_extract_snd :: "('a::llvm_rep \<times> 'b::llvm_rep) \<Rightarrow> 'b llM"
     where [llvm_inline]: "prod_extract_snd p \<equiv> ll_extract_value p 1"
-  definition prod_gep_fst :: "('a::llvm_rep \<times> 'b::llvm_rep) ptr \<Rightarrow> 'a ptr llM"
+  (*definition prod_gep_fst :: "('a::llvm_rep \<times> 'b::llvm_rep) ptr \<Rightarrow> 'a ptr llM"
     where [llvm_inline]: "prod_gep_fst p \<equiv> ll_gep_struct p 0"
   definition prod_gep_snd :: "('a::llvm_rep \<times> 'b::llvm_rep) ptr \<Rightarrow> 'b ptr llM"
     where [llvm_inline]: "prod_gep_snd p \<equiv> ll_gep_struct p 1"
+  *)
   
   lemma prod_ops_simp:
     "prod_insert_fst = (\<lambda>(_,b) a. return (a,b))"
@@ -539,6 +768,7 @@ subsection \<open>Code Generator Driver\<close>
     unfolding 
       prod_insert_fst_def prod_insert_snd_def ll_insert_value_def
       prod_extract_fst_def prod_extract_snd_def ll_extract_value_def 
+    unfolding llvm_insert_value_def llvm_extract_value_def  
     apply (all \<open>intro ext\<close>  )
     apply (auto 
       simp: to_val_prod_def from_val_prod_def checked_from_val_def
@@ -625,7 +855,10 @@ experiment begin
   
 definition [llvm_code]: "testx (a::64 word) \<equiv> llc_while (\<lambda>a. ll_icmp_ult 0 a) (\<lambda>a. ll_sub a 1) a"
 export_llvm (debug) testx
+
 export_llvm (debug) exp_thms1: exp  
+
+
 export_llvm (debug) (no_while) exp_thms2: exp  
 export_llvm (debug) (no_while) exp_thms3: exp  
 
@@ -686,9 +919,127 @@ export_llvm triple_sum is \<open>_ triple_sum(triple*)\<close>
   defines \<open>typedef struct {int64_t a; struct {int64_t b; int64_t c;};} triple;\<close>
  
   
+definition [llvm_code]: "ppar \<equiv> llc_par fib test2 3 3"
+  
+declare [[llc_compile_par_call=true]]
+
+export_llvm ppar file "test_par.ll"
  
   
+(* Higher-Order stuff *)
 
+definition repeat2 :: "(_ word \<Rightarrow> _ word llM) \<Rightarrow> _" where [llvm_code]:
+"repeat2 f x \<equiv> doM {
+  x \<leftarrow> f x;
+  f x
+}"
+
+definition [llvm_code]: "fibfib \<equiv> repeat2 fib"
+
+export_llvm fibfib
+
+
+
+definition times3_f :: "double \<Rightarrow> double llM" where [llvm_code]:
+  "times3_f x \<equiv> doM {
+    x'\<leftarrow>ll_fadd x x;
+    x'\<leftarrow>ll_fadd x' x;
+    x'\<leftarrow>ll_fadd x' (double_of_word 0x3FD5555555555555);
+    return x'
+  }"
+
+
+export_llvm times3_f is "double times3_f (double)"
+
+definition times3_pf :: "(double*double) ptr \<Rightarrow> double llM" where [llvm_code]:
+  "times3_pf x \<equiv> doM {
+    x \<leftarrow> ll_load x;
+    a \<leftarrow> ll_extract_value x 0;
+    b \<leftarrow> ll_extract_value x 1;
+    x'\<leftarrow>ll_fadd a a;
+    x'\<leftarrow>ll_fadd x' b;
+    return x'
+  }"
+
+export_llvm times3_pf is "double times3_f (dpair*)" 
+  defines \<open>typedef struct {double a; double b;} dpair;\<close>
+
+
+value "real_of_double (double_of_word 0x3FD5555555555555)"
+
+(* TODO: More meaningful tests, and check results! 
+
+  f (a,b) = (sqrt (a\<^sup>2 + b\<^sup>2) - a/b) fmod (a+b)
+
+*)
+definition test_double :: "double \<Rightarrow> double \<Rightarrow> double llM" where [llvm_code]:
+  "test_double a b \<equiv> doM {
+    aa \<leftarrow> ll_fmul a a;
+    bb \<leftarrow> ll_fmul b b;
+    t\<^sub>1 \<leftarrow> ll_fadd aa bb;
+    t\<^sub>1 \<leftarrow> ll_sqrt_f64 t\<^sub>1;
+    t\<^sub>2 \<leftarrow> ll_fdiv a b;
+    t\<^sub>1 \<leftarrow> ll_fsub t\<^sub>1 t\<^sub>2;
+    t\<^sub>2 \<leftarrow> ll_fadd a b;
+    t\<^sub>1 \<leftarrow> ll_frem t\<^sub>1 t\<^sub>2;
+  
+    return t\<^sub>1
+  }"
+
+  
+export_llvm 
+  test_double is "double test_double(double,double)"
+  file "../../../regression/gencode/test_double.ll"
+  
+  
+  
+definition "rm_opposite rm \<equiv> 
+  if rm = AVX512_FROUND_TO_POS_INF_NO_EXC then AVX512_FROUND_TO_NEG_INF_NO_EXC
+  else if rm = AVX512_FROUND_TO_NEG_INF_NO_EXC then AVX512_FROUND_TO_POS_INF_NO_EXC
+  else rm"
+
+lemma rm_opposite_inlines[llvm_pre_simp]:
+  "rm_opposite AVX512_FROUND_TO_POS_INF_NO_EXC = AVX512_FROUND_TO_NEG_INF_NO_EXC"
+  "rm_opposite AVX512_FROUND_TO_NEG_INF_NO_EXC = AVX512_FROUND_TO_POS_INF_NO_EXC"
+  "rm_opposite AVX512_FROUND_TO_NEAREST_NO_EXC = AVX512_FROUND_TO_NEAREST_NO_EXC"
+  "rm_opposite AVX512_FROUND_TO_ZERO_NO_EXC = AVX512_FROUND_TO_ZERO_NO_EXC"
+  unfolding rm_opposite_def by auto
+  
+
+(*
+  f (a,b) = (sqrt (a\<^sup>2 + b\<^sup>2) - a/b) + a
+                      ^ fused multiply-add
+                               ^ needs to round opposite way
+*)
+
+  
+definition test_avx512f_tmpl :: "nat \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double llM" where [llvm_pre_simp]:
+"test_avx512f_tmpl rm \<equiv> \<lambda>a b. doM {
+  aa \<leftarrow> ll_x86_avx512_mul_sd_round rm a a;
+  t\<^sub>1 \<leftarrow> ll_x86_avx512_vfmadd_f64 rm b b aa;
+  t\<^sub>1 \<leftarrow> ll_x86_avx512_sqrt_sd rm t\<^sub>1;
+  t\<^sub>2 \<leftarrow> ll_x86_avx512_div_sd_round (rm_opposite rm) a b;
+  t\<^sub>1 \<leftarrow> ll_x86_avx512_sub_sd_round rm t\<^sub>1 t\<^sub>2;
+  t\<^sub>1 \<leftarrow> ll_x86_avx512_add_sd_round rm t\<^sub>1 a;
+
+  return t\<^sub>1
+}"
+
+definition [llvm_code]: "test_avx512f_to_nearest \<equiv> test_avx512f_tmpl AVX512_FROUND_TO_NEAREST_NO_EXC"
+definition [llvm_code]: "test_avx512f_to_pinf \<equiv> test_avx512f_tmpl AVX512_FROUND_TO_POS_INF_NO_EXC"
+definition [llvm_code]: "test_avx512f_to_ninf \<equiv> test_avx512f_tmpl AVX512_FROUND_TO_NEG_INF_NO_EXC"
+definition [llvm_code]: "test_avx512f_to_zero \<equiv> test_avx512f_tmpl AVX512_FROUND_TO_ZERO_NO_EXC"
+
+
+
+declare [[llc_compile_avx512f=true]]  
+export_llvm 
+  test_avx512f_to_nearest is "double test_avx512f_to_nearest(double,double)"
+  test_avx512f_to_pinf is "double test_avx512f_to_pinf(double,double)"
+  test_avx512f_to_ninf is "double test_avx512f_to_ninf(double,double)"
+  test_avx512f_to_zero is "double test_avx512f_to_zero(double,double)"
+  file "../../../regression/gencode/test_avx512f.ll"
+  
 end
 
 end

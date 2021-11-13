@@ -259,14 +259,14 @@ lemma pred_lift_move_front_simps[sep_algebra_simps]:
 lemmas pred_lift_move_merge_simps = pred_lift_merge_simps pred_lift_move_front_simps
 
   
-lemma pred_lift_extract_simps:
+lemma pred_lift_extract_simps[sep_algebra_simps]:
   "(\<up>\<Phi>) h \<longleftrightarrow> \<Phi> \<and> h=0"
   "(\<up>\<Phi> ** A) h \<longleftrightarrow> \<Phi> \<and> A h"
   by (auto simp: pred_lift_def sep_conj_def sep_algebra_simps)
   
-lemma pure_true_conv[sep_algebra_simps]: "\<up>True = \<box>" by (auto simp: sep_algebra_simps pred_lift_extract_simps)
+lemma pure_true_conv[sep_algebra_simps]: "\<up>True = \<box>" by (auto simp: sep_algebra_simps)
 
-lemma pred_lift_false_conv[simp]: "\<up>False = sep_false" by (auto simp: sep_algebra_simps pred_lift_extract_simps)
+lemma pred_lift_false_conv[simp]: "\<up>False = sep_false" by (auto simp: sep_algebra_simps)
 
 lemma pure_assn_eq_conv[simp]: "(\<up>\<Phi>) = (\<up>\<Psi>) \<longleftrightarrow> \<Phi>=\<Psi>"
   by (smt pred_lift_extract_simps(1))
@@ -310,7 +310,7 @@ lemma sep_is_pure_assn_conjI: "sep_is_pure_assn A \<Longrightarrow> sep_is_pure_
   by (auto simp: sep_is_pure_assn_def sep_conj_def)
 
 lemma pure_part_pure_conj_eq: "pure_part (\<up>P ** Q) \<longleftrightarrow> P \<and> pure_part Q"    
-  unfolding pure_part_def by (auto simp: sep_algebra_simps pred_lift_extract_simps)
+  unfolding pure_part_def by (auto simp: sep_algebra_simps)
 
 lemma and_pure_true: "((A ** F) and ((\<up>\<Phi> ** sep_true) ** F)) s \<longrightarrow> ((\<up>\<Phi> ** A) ** F) s"  
   unfolding sep_conj_def pred_lift_def
@@ -318,7 +318,7 @@ lemma and_pure_true: "((A ** F) and ((\<up>\<Phi> ** sep_true) ** F)) s \<longri
   
 subsection \<open>Exact Assertion\<close>
   
-definition EXACT :: "'a::sep_algebra \<Rightarrow> 'a \<Rightarrow> bool" where [simp]: "EXACT h h' \<equiv> h'=h"
+definition EXACT :: "'a::sep_algebra \<Rightarrow> 'a \<Rightarrow> bool" where [sep_algebra_simps]: "EXACT h h' \<equiv> h'=h"
 lemma strictly_exact_EXACT[simp]: "strictly_exact (EXACT h)"
   unfolding EXACT_def by (auto intro: strictly_exactI)
 
@@ -401,6 +401,17 @@ lemma sep_distinct_simps[simp]:
   "sep_distinct (x#xs) \<longleftrightarrow> x ## sepsum_list xs \<and> sep_distinct xs"
   by (auto simp: ss)
   
+lemma disj_sepsum_list1[sep_algebra_simps]: 
+  "sep_distinct bs \<Longrightarrow> a ## sepsum_list bs \<longleftrightarrow> (\<forall>b\<in>set bs. a ## b)"
+  apply (induction bs)
+  apply auto
+  done
+
+lemma disj_sepsum_list2[sep_algebra_simps]: 
+  "sep_distinct bs \<Longrightarrow> sepsum_list bs ## a \<longleftrightarrow> (\<forall>b\<in>set bs. b ## a)"
+  by (simp add: disj_sepsum_list1 sep_disj_commute)
+  
+  
   
 end  
   
@@ -434,7 +445,7 @@ lemma sep_set_img_empty[simp]: "sep_set_img {} P = \<box>"
   and sep_set_img_insert[simp]: "x\<notin>S \<Longrightarrow> sep_set_img (insert x S) P = (P x ** sep_set_img S P)"
   and sep_set_img_remove: "x\<in>S \<Longrightarrow> sep_set_img S P = (P x ** sep_set_img (S-{x}) P)"
   by (auto 
-    simp: sep_set_img_def sep_algebra_simps pred_lift_extract_simps sep_folding.insert_remove sep_folding.remove 
+    simp: sep_set_img_def sep_algebra_simps sep_folding.insert_remove sep_folding.remove 
     del: ext intro!: ext)
     
 lemma sep_set_img_cong:

@@ -167,48 +167,48 @@ lemma Range_of_constraint_conv[simp]: "Range (A\<inter>UNIV\<times>C) = Range A 
 
 subsection \<open>Heap-Nres Refinement Calculus\<close>
 
-text {* Predicate that expresses refinement. Given a heap
+text \<open>Predicate that expresses refinement. Given a heap
   @{text "\<Gamma>"}, program @{text "c"} produces a heap @{text "\<Gamma>'"} and
   a concrete result that is related with predicate @{text "R"} to some
-  abstract result from @{text "m"}*}
+  abstract result from @{text "m"}\<close>
   
-definition "hn_refine \<Gamma> c \<Gamma>' R m \<equiv> nofail m \<longrightarrow>
-  llvm_htriple \<Gamma> c (\<lambda>r. \<Gamma>' ** (EXS x. R x r ** \<up>(RETURN x \<le> m)))"
+definition "hn_refine \<Gamma> c \<Gamma>' R CP m \<equiv> nofail m \<longrightarrow>
+  llvm_htriple \<Gamma> c (\<lambda>r. \<Gamma>' ** \<up>(CP r) ** (EXS x. R x r ** \<up>(RETURN x \<le> m)))"
 
 lemma hn_refineI[intro?]:
   assumes "nofail m 
-    \<Longrightarrow> llvm_htriple \<Gamma> c (\<lambda>r. \<Gamma>' ** (EXS x. R x r ** \<up>(RETURN x \<le> m)))"
-  shows "hn_refine \<Gamma> c \<Gamma>' R m"
+    \<Longrightarrow> llvm_htriple \<Gamma> c (\<lambda>r. \<Gamma>' ** \<up>(CP r) ** (EXS x. R x r ** \<up>(RETURN x \<le> m)))"
+  shows "hn_refine \<Gamma> c \<Gamma>' R CP m"
   using assms unfolding hn_refine_def by blast
 
 lemma hn_refineD:
-  assumes "hn_refine \<Gamma> c \<Gamma>' R m"
+  assumes "hn_refine \<Gamma> c \<Gamma>' R CP m"
   assumes "nofail m"
-  shows "llvm_htriple \<Gamma> c (\<lambda>r. \<Gamma>' ** (EXS x. R x r ** \<up>(RETURN x \<le> m)))"
+  shows "llvm_htriple \<Gamma> c (\<lambda>r. \<Gamma>' ** \<up>(CP r) ** (EXS x. R x r ** \<up>(RETURN x \<le> m)))"
   using assms unfolding hn_refine_def by blast
 
 lemma hn_refine_preI: 
-  assumes "\<And>h. \<Gamma> h \<Longrightarrow> hn_refine \<Gamma> c \<Gamma>' R a"
-  shows "hn_refine \<Gamma> c \<Gamma>' R a"
+  assumes "\<And>h. \<Gamma> h \<Longrightarrow> hn_refine \<Gamma> c \<Gamma>' R CP a"
+  shows "hn_refine \<Gamma> c \<Gamma>' R CP a"
   using assms unfolding hn_refine_def
   apply auto
-  using htripleI sep_conjD by blast
+  by (meson htriple_pure_preI pure_part_def)
 
 lemma hn_refine_nofailI: 
-  assumes "nofail a \<Longrightarrow> hn_refine \<Gamma> c \<Gamma>' R a"  
-  shows "hn_refine \<Gamma> c \<Gamma>' R a"
+  assumes "nofail a \<Longrightarrow> hn_refine \<Gamma> c \<Gamma>' R CP a"  
+  shows "hn_refine \<Gamma> c \<Gamma>' R CP a"
   using assms by (auto simp: hn_refine_def)
 
-lemma hn_refine_false[simp]: "hn_refine sep_false c \<Gamma>' R m"
+lemma hn_refine_false[simp]: "hn_refine sep_false c \<Gamma>' R CP m"
   by rule auto
 
-lemma hnr_FAIL[simp, intro!]: "hn_refine \<Gamma> c \<Gamma>' R FAIL"
+lemma hnr_FAIL[simp, intro!]: "hn_refine \<Gamma> c \<Gamma>' R CP FAIL"
   by rule auto
 
 lemma hn_refine_frame:
-  assumes "hn_refine P' c Q' R m"
+  assumes "hn_refine P' c Q' R CP m"
   assumes "P \<turnstile> P' ** F"
-  shows "hn_refine P c (Q' ** F) R m"
+  shows "hn_refine P c (Q' ** F) R CP m"
   using assms
   unfolding hn_refine_def entails_def
   apply clarsimp
@@ -220,15 +220,15 @@ lemma hn_refine_frame:
   apply (auto simp: sep_algebra_simps pred_lift_extract_simps)
   by (metis sep.mult_commute)
 
-lemma hn_refine_frame': "hn_refine \<Gamma> c \<Gamma>' R m \<Longrightarrow> hn_refine (\<Gamma>**F) c (\<Gamma>'**F) R m"  
+lemma hn_refine_frame': "hn_refine \<Gamma> c \<Gamma>' R CP m \<Longrightarrow> hn_refine (\<Gamma>**F) c (\<Gamma>'**F) R CP m"  
   by (simp add: hn_refine_frame)
   
 lemma hn_refine_cons:
   assumes I: "P\<turnstile>P'"
-  assumes R: "hn_refine P' c Q R m"
+  assumes R: "hn_refine P' c Q R CP m"
   assumes I': "Q\<turnstile>Q'"
   assumes R': "\<And>x y. R x y \<turnstile> R' x y"
-  shows "hn_refine P c Q' R' m"
+  shows "hn_refine P c Q' R' CP m"
   using R unfolding hn_refine_def
   apply clarify
   apply (erule cons_rule)
@@ -236,6 +236,21 @@ lemma hn_refine_cons:
   using I' R'
   by (smt entails_def sep_conj_impl)
 
+lemma hn_refine_cons_cp:
+  assumes I: "P \<turnstile> P'"
+  assumes R: "hn_refine P' c Q R CP m"
+  assumes I': "Q \<turnstile> Q'"
+  assumes R': "\<And>x y. R x y \<turnstile> R' x y"
+  assumes CP': "\<And>y. CP y \<Longrightarrow> CP' y"
+  shows "hn_refine P c Q' R' CP' m"
+  using R unfolding hn_refine_def
+  apply clarify
+  apply (erule cons_rule)
+  subgoal using I by (simp add: entails_def)
+  apply (simp add: sep_algebra_simps)
+  by (metis CP' I' R' conj_entails_mono entails_def)
+  
+  
 (*lemma hn_refine_cons:
   assumes I: "P\<Longrightarrow>\<^sub>AP'"
   assumes R: "hn_refine P' c Q R m"
@@ -251,26 +266,35 @@ lemma hn_refine_cons:
 *)
 lemma hn_refine_cons_pre:
   assumes I: "P \<turnstile> P'"
-  assumes R: "hn_refine P' c Q R m"
-  shows "hn_refine P c Q R m"
+  assumes R: "hn_refine P' c Q R CP m"
+  shows "hn_refine P c Q R CP m"
   apply (rule hn_refine_cons[OF I R])
   by auto
 
 lemma hn_refine_cons_post:
-  assumes R: "hn_refine P c Q R m"
+  assumes R: "hn_refine P c Q R CP m"
   assumes I: "Q\<turnstile>Q'"
-  shows "hn_refine P c Q' R m"
+  shows "hn_refine P c Q' R CP m"
   using assms
   by (rule hn_refine_cons[OF entails_refl _ _ entails_refl])
 
+lemma hn_refine_cons_cp_only:
+  assumes R: "hn_refine P c Q R CP m"
+  assumes I: "\<And>x. CP x \<Longrightarrow> CP' x"
+  shows "hn_refine P c Q R CP' m"
+  apply (rule hn_refine_cons_cp[OF _ R])
+  using assms
+  apply (auto)
+  done
+  
 lemma hn_refine_cons_res: 
-  "\<lbrakk> hn_refine \<Gamma> f \<Gamma>' R g; \<And>a c. R a c \<turnstile> R' a c \<rbrakk> \<Longrightarrow> hn_refine \<Gamma> f \<Gamma>' R' g"
+  "\<lbrakk> hn_refine \<Gamma> f \<Gamma>' R CP g; \<And>a c. R a c \<turnstile> R' a c \<rbrakk> \<Longrightarrow> hn_refine \<Gamma> f \<Gamma>' R' CP g"
   by (erule hn_refine_cons[OF entails_refl]) auto
 
 lemma hn_refine_ref:
   assumes LE: "m\<le>m'"
-  assumes R: "hn_refine P c Q R m"
-  shows "hn_refine P c Q R m'"
+  assumes R: "hn_refine P c Q R CP m"
+  shows "hn_refine P c Q R CP m'"
   apply rule
   apply (rule cons_post_rule)
   apply (rule hn_refineD[OF R])
@@ -279,25 +303,24 @@ lemma hn_refine_ref:
 
 lemma hn_refine_cons_complete:
   assumes I: "P\<turnstile>P'"
-  assumes R: "hn_refine P' c Q R m"
+  assumes R: "hn_refine P' c Q R CP m"
   assumes I': "Q\<turnstile>Q'"
   assumes R': "\<And>x y. R x y \<turnstile> R' x y"
   assumes LE: "m\<le>m'"
-  shows "hn_refine P c Q' R' m'"
+  shows "hn_refine P c Q' R' CP m'"
   apply (rule hn_refine_ref[OF LE])
   apply (rule hn_refine_cons[OF I R I' R'])
   done
  
 lemma hn_refine_augment_res:
-  assumes A: "hn_refine \<Gamma> f \<Gamma>' R g"
+  assumes A: "hn_refine \<Gamma> f \<Gamma>' R CP g"
   assumes B: "g \<le>\<^sub>n SPEC \<Phi>"
-  shows "hn_refine \<Gamma> f \<Gamma>' (\<lambda>a c. R a c ** \<up>(\<Phi> a)) g"
+  shows "hn_refine \<Gamma> f \<Gamma>' (\<lambda>a c. R a c ** \<up>(\<Phi> a)) CP g"
   apply (rule hn_refineI)
   apply (rule cons_post_rule)
   apply (erule A[THEN hn_refineD])
   apply (erule sep_conj_impl, simp)
-  apply clarsimp apply (rule exI)
-  apply (erule sep_conj_impl, simp)
+  apply (clarsimp simp: sep_algebra_simps) apply (rule exI)
   using B
   apply (auto simp: pred_lift_extract_simps pw_le_iff pw_leof_iff)
   done
@@ -313,37 +336,37 @@ definition prod_assn :: "('a1\<Rightarrow>'c1\<Rightarrow>assn) \<Rightarrow> ('
 notation prod_assn (infixr "\<times>\<^sub>a" 70)
   
 lemma prod_assn_pure_conv[simp]: "prod_assn (pure R1) (pure R2) = pure (R1 \<times>\<^sub>r R2)"
-  by (auto simp: pure_def prod_assn_def pred_lift_extract_simps intro!: ext)
+  by (auto simp: pure_def prod_assn_def pred_lift_extract_simps fun_eq_iff)
 
 lemma prod_assn_pair_conv[simp]: 
   "prod_assn A B (a1,b1) (a2,b2) = (A a1 a2 ** B b1 b2)"
   unfolding prod_assn_def by auto
 
 lemma prod_assn_true[simp]: "prod_assn (\<lambda>_ _. sep_true) (\<lambda>_ _. sep_true) = (\<lambda>_ _. sep_true)"
-  by (auto intro!: ext simp: hn_ctxt_def prod_assn_def)
+  by (auto simp: hn_ctxt_def prod_assn_def fun_eq_iff)
 
 subsection "Convenience Lemmas"
 
 lemma hn_refine_guessI:
-  assumes "hn_refine P f P' R f'"
+  assumes "hn_refine P f P' R CP f'"
   assumes "f=f_conc"
-  shows "hn_refine P f_conc P' R f'"
+  shows "hn_refine P f_conc P' R CP f'"
   \<comment> \<open>To prove a refinement, first synthesize one, and then prove equality\<close>
   using assms by simp
 
 
 lemma imp_correctI:
-  assumes R: "hn_refine \<Gamma> c \<Gamma>' R a"
+  assumes R: "hn_refine \<Gamma> c \<Gamma>' R CP a"
   assumes C: "a \<le> SPEC \<Phi>"
-  shows "llvm_htriple \<Gamma> c (\<lambda>r'. EXS r. \<Gamma>' ** R r r' ** \<up>(\<Phi> r))"
+  shows "llvm_htriple \<Gamma> c (\<lambda>r'. EXS r. \<Gamma>' ** \<up>(CP r') ** R r r' ** \<up>(\<Phi> r))"
   apply (rule cons_post_rule)
   apply (rule hn_refineD[OF R])
   apply (rule le_RES_nofailI[OF C])
-  apply (force simp: sep_algebra_simps pred_lift_extract_simps dest: order_trans[OF _ C])
+  apply (force simp: sep_algebra_simps dest: order_trans[OF _ C])
   done
 
 lemma hnr_pre_ex_conv: 
-  shows "hn_refine (EXS x. \<Gamma> x) c \<Gamma>' R a \<longleftrightarrow> (\<forall>x. hn_refine (\<Gamma> x) c \<Gamma>' R a)"
+  shows "hn_refine (EXS x. \<Gamma> x) c \<Gamma>' R CP a \<longleftrightarrow> (\<forall>x. hn_refine (\<Gamma> x) c \<Gamma>' R CP a)"
   unfolding hn_refine_def
   apply (safe; clarsimp?)
   subgoal by (metis (mono_tags, lifting) cons_rule)
@@ -353,20 +376,22 @@ lemma hnr_pre_ex_conv:
   done
 
 lemma hnr_pre_pure_conv:  
-  shows "hn_refine (\<up>P ** \<Gamma>) c \<Gamma>' R a \<longleftrightarrow> (P \<longrightarrow> hn_refine \<Gamma> c \<Gamma>' R a)"
+  shows "hn_refine (\<up>P ** \<Gamma>) c \<Gamma>' R CP a \<longleftrightarrow> (P \<longrightarrow> hn_refine \<Gamma> c \<Gamma>' R CP a)"
   unfolding hn_refine_def
-  by (auto simp: sep_algebra_simps htriple_extract_pre_pure)
+  apply (cases P)
+  apply (auto simp: sep_algebra_simps)
+  done
 
 lemma hn_refine_split_post:
-  assumes "hn_refine \<Gamma> c \<Gamma>' R a"
-  shows "hn_refine \<Gamma> c (\<Gamma>' or \<Gamma>'') R a"
+  assumes "hn_refine \<Gamma> c \<Gamma>' R CP a"
+  shows "hn_refine \<Gamma> c (\<Gamma>' or \<Gamma>'') R CP a"
   apply (rule hn_refine_cons_post[OF assms])
   apply (auto simp: entails_def)
   done
 
 lemma hn_refine_post_other: 
-  assumes "hn_refine \<Gamma> c \<Gamma>'' R a"
-  shows "hn_refine \<Gamma> c (\<Gamma>' or \<Gamma>'') R a"
+  assumes "hn_refine \<Gamma> c \<Gamma>'' R CP a"
+  shows "hn_refine \<Gamma> c (\<Gamma>' or \<Gamma>'') R CP a"
   apply (rule hn_refine_cons_post[OF assms])
   apply (auto simp: entails_def)
   done
@@ -375,7 +400,7 @@ lemma hn_refine_post_other:
 subsubsection \<open>Return\<close>
 
 lemma hnr_RETURN_pass:
-  "hn_refine (hn_ctxt R x p) (return p) (hn_invalid R x p) R (RETURN x)"
+  "hn_refine (hn_ctxt R x p) (return p) (hn_invalid R x p) R (\<lambda>r. r=p) (RETURN x)"
   \<comment> \<open>Pass on a value from the heap as return value\<close>
   apply (subst invalidate_clone')
   apply rule unfolding hn_ctxt_def
@@ -384,7 +409,7 @@ lemma hnr_RETURN_pass:
 
 lemma hnr_RETURN_pure:
   assumes "(c,a)\<in>R"
-  shows "hn_refine emp (return c) emp (pure R) (RETURN a)"
+  shows "hn_refine emp (return c) emp (pure R) (\<lambda>r. r=c) (RETURN a)"
   \<comment> \<open>Return pure value\<close>
   unfolding hn_refine_def using assms
   supply [simp] = pure_def
@@ -393,8 +418,8 @@ lemma hnr_RETURN_pure:
 subsubsection \<open>Assertion\<close>
 
 lemma hnr_ASSERT:
-  assumes "\<Phi> \<Longrightarrow> hn_refine \<Gamma> c \<Gamma>' R c'"
-  shows "hn_refine \<Gamma> c \<Gamma>' R (do { ASSERT \<Phi>; c'})"
+  assumes "\<Phi> \<Longrightarrow> hn_refine \<Gamma> c \<Gamma>' R CP c'"
+  shows "hn_refine \<Gamma> c \<Gamma>' R CP (do { ASSERT \<Phi>; c'})"
   using assms
   apply (cases \<Phi>)
   by auto
@@ -446,21 +471,21 @@ lemma mk_free_pair:
 
   
 lemma hnr_bind:
-  assumes D1: "hn_refine \<Gamma> m' \<Gamma>1 Rh m"
+  assumes D1: "hn_refine \<Gamma> m' \<Gamma>1 Rh CP\<^sub>1 m"
   assumes D2: 
-    "\<And>x x'. RETURN x \<le> m \<Longrightarrow> hn_refine (hn_ctxt Rh x x' ** \<Gamma>1) (f' x') (\<Gamma>2 x x') R (f x)"
+    "\<And>x x'. RETURN x \<le> m \<Longrightarrow> CP\<^sub>1 x' \<Longrightarrow> hn_refine (hn_ctxt Rh x x' ** \<Gamma>1) (f' x') (\<Gamma>2 x x') R (CP\<^sub>2 x') (f x)"
   assumes IMP: "\<And>x x'. \<Gamma>2 x x' \<turnstile> hn_ctxt Rx x x' ** \<Gamma>'"
   assumes MKF: "MK_FREE Rx fr"
-  shows "hn_refine \<Gamma> (doM {x\<leftarrow>m'; r \<leftarrow> f' x; fr x; return r}) \<Gamma>' R (m\<bind>f)"
+  shows "hn_refine \<Gamma> (doM {x\<leftarrow>m'; r \<leftarrow> f' x; fr x; return r}) \<Gamma>' R (\<lambda>r. \<exists>x'. CP\<^sub>1 x' \<and> CP\<^sub>2 x' r) (m\<bind>f)"
   apply rule
   supply [vcg_rules] = D1[THEN hn_refineD]
   supply [simp] = pw_bind_nofail
   apply vcg
 proof goal_cases
-  case C: (1 F r s x)
+  case C: (1 asf r s x)
   hence "nofail (f x)" by (simp add: refine_pw_simps pw_le_iff)
   
-  note [vcg_rules] = D2[unfolded hn_ctxt_def, OF \<open>RETURN x \<le> m\<close>, THEN hn_refineD, OF \<open>nofail (f x)\<close>, of r]
+  note [vcg_rules] = D2[unfolded hn_ctxt_def, OF \<open>RETURN x \<le> m\<close>, THEN hn_refineD, OF _ \<open>nofail (f x)\<close>, of r]
   
   note [vcg_rules] = MKF[THEN MK_FREED]
   
@@ -485,21 +510,21 @@ proof goal_cases
   show ?case using C by vcg
 qed  
 
-text \<open>Version fro manual synthesis, if freeing of bound variable has been inserted manually\<close>
+text \<open>Version for manual synthesis, if freeing of bound variable has been inserted manually\<close>
 lemma hnr_bind_manual_free:
-  assumes D1: "hn_refine \<Gamma> m' \<Gamma>1 Rh m"
+  assumes D1: "hn_refine \<Gamma> m' \<Gamma>1 Rh CP\<^sub>1 m"
   assumes D2: 
-    "\<And>x x'. RETURN x \<le> m \<Longrightarrow> hn_refine (hn_ctxt Rh x x' ** \<Gamma>1) (f' x') (\<Gamma>') R (f x)"
-  shows "hn_refine \<Gamma> (m'\<bind>f') \<Gamma>' R (m\<bind>f)"
+    "\<And>x x'. RETURN x \<le> m \<Longrightarrow> CP\<^sub>1 x' \<Longrightarrow> hn_refine (hn_ctxt Rh x x' ** \<Gamma>1) (f' x') (\<Gamma>') R (CP\<^sub>2 x') (f x)"
+  shows "hn_refine \<Gamma> (m'\<bind>f') \<Gamma>' R (\<lambda>r. \<exists>x'. CP\<^sub>1 x' \<and> CP\<^sub>2 x' r) (m\<bind>f)"
   apply rule
   supply [vcg_rules] = D1[THEN hn_refineD]
   supply [simp] = pw_bind_nofail
   apply vcg
 proof goal_cases
-  case C: (1 F r s x)
+  case C: (1 asf r s x)
   hence "nofail (f x)" by (simp add: refine_pw_simps pw_le_iff)
   
-  note [vcg_rules] = D2[unfolded hn_ctxt_def, OF \<open>RETURN x \<le> m\<close>, THEN hn_refineD, OF \<open>nofail (f x)\<close>, of r]
+  note [vcg_rules] = D2[unfolded hn_ctxt_def, OF \<open>RETURN x \<le> m\<close>, THEN hn_refineD, OF _ \<open>nofail (f x)\<close>, of r]
   
   note [simp] = refine_pw_simps pw_le_iff
   show ?case using C by vcg
@@ -513,8 +538,8 @@ subsubsection \<open>Recursion\<close>
 
 definition "hn_rel P m \<equiv> \<lambda>r. EXS x. \<up>(RETURN x \<le> m) ** P x r"
 
-lemma hn_refine_alt: "hn_refine Fpre c Fpost P m \<equiv> nofail m \<longrightarrow>
-  llvm_htriple Fpre c (\<lambda>r. hn_rel P m r ** Fpost)"
+lemma hn_refine_alt: "hn_refine Fpre c Fpost P CP m \<equiv> nofail m \<longrightarrow>
+  llvm_htriple Fpre c (\<lambda>r. hn_rel P m r ** \<up>(CP r) ** Fpost)"
   apply (rule eq_reflection)
   unfolding hn_refine_def hn_rel_def
   by (auto simp: sep_conj_commute)
@@ -523,19 +548,56 @@ lemma hn_refine_alt: "hn_refine Fpre c Fpost P m \<equiv> nofail m \<longrightar
 term "Monad.REC  "
 find_theorems "Monad.REC"
   
+lemma hnr_RECT_cp:
+  assumes S: "\<And>cf af ax px. \<lbrakk>C px;
+    \<And>ax px. C px \<Longrightarrow> hn_refine (hn_ctxt Rx ax px ** F) (cf px) (F' ax px) Ry (CP px) (af ax)\<rbrakk> 
+    \<Longrightarrow> hn_refine (hn_ctxt Rx ax px ** F) (cB cf px) (F' ax px) Ry (CP px) (aB af ax)"
+  assumes M: "(\<And>x. M.mono_body (\<lambda>f. cB f x))"
+  assumes C: "C px"
+  shows "hn_refine 
+    (hn_ctxt Rx ax px ** F) (Monad.REC cB px) (F' ax px) Ry (CP px) (RECT aB ax)"
+  unfolding RECT_def Monad.REC_def
+proof (simp add: , intro conjI impI)
+  assume "trimono aB"
+  hence "flatf_mono_ge aB" by (simp add: trimonoD)
+  have "\<forall>ax px. C px \<longrightarrow>
+    hn_refine (hn_ctxt Rx ax px ** F) (M.fixp_fun cB px) (F' ax px) Ry (CP px)
+      (flatf_gfp aB ax)"
+      
+    apply (rule flatf_ord.fixp_induct[OF _ \<open>flatf_mono_ge aB\<close>])  
+
+    apply (rule flatf_admissible_pointwise)
+    apply simp
+
+    apply (auto simp: hn_refine_alt) []
+
+    apply clarsimp
+    
+    apply (subst M.mono_body_fixp[of cB, OF M])
+    apply (rule S)
+    apply blast
+    apply blast
+    done
+  thus "hn_refine (hn_ctxt Rx ax px ** F) (M.fixp_fun cB px) (F' ax px) Ry (CP px) (flatf_gfp aB ax)" 
+    using C
+    by simp
+qed
+
+
+
 lemma hnr_RECT:
   assumes S: "\<And>cf af ax px. \<lbrakk>
-    \<And>ax px. hn_refine (hn_ctxt Rx ax px ** F) (cf px) (F' ax px) Ry (af ax)\<rbrakk> 
-    \<Longrightarrow> hn_refine (hn_ctxt Rx ax px ** F) (cB cf px) (F' ax px) Ry (aB af ax)"
+    \<And>ax px. hn_refine (hn_ctxt Rx ax px ** F) (cf px) (F' ax px) Ry (CP px) (af ax)\<rbrakk> 
+    \<Longrightarrow> hn_refine (hn_ctxt Rx ax px ** F) (cB cf px) (F' ax px) Ry (CP px) (aB af ax)"
   assumes M: "(\<And>x. M.mono_body (\<lambda>f. cB f x))"
   shows "hn_refine 
-    (hn_ctxt Rx ax px ** F) (Monad.REC cB px) (F' ax px) Ry (RECT aB ax)"
+    (hn_ctxt Rx ax px ** F) (Monad.REC cB px) (F' ax px) Ry (CP px) (RECT aB ax)"
   unfolding RECT_def Monad.REC_def
 proof (simp, intro conjI impI)
   assume "trimono aB"
   hence "flatf_mono_ge aB" by (simp add: trimonoD)
   have "\<forall>ax px. 
-    hn_refine (hn_ctxt Rx ax px ** F) (M.fixp_fun cB px) (F' ax px) Ry 
+    hn_refine (hn_ctxt Rx ax px ** F) (M.fixp_fun cB px) (F' ax px) Ry (CP px) 
       (flatf_gfp aB ax)"
       
     apply (rule flatf_ord.fixp_induct[OF _ \<open>flatf_mono_ge aB\<close>])  
@@ -550,7 +612,7 @@ proof (simp, intro conjI impI)
     apply (rule S)
     apply blast
     done
-  thus "hn_refine (hn_ctxt Rx ax px ** F) (M.fixp_fun cB px) (F' ax px) Ry (flatf_gfp aB ax)" 
+  thus "hn_refine (hn_ctxt Rx ax px ** F) (M.fixp_fun cB px) (F' ax px) Ry (CP px) (flatf_gfp aB ax)" 
     by simp
 qed
 
@@ -660,7 +722,7 @@ ML \<open>
 
 
     (* Conversion for hn_refine - term*)
-    val hn_refine_conv: conv -> conv -> conv -> conv -> conv -> conv
+    val hn_refine_conv: conv -> conv -> conv -> conv -> conv -> conv -> conv
 
     (* Conversion on abstract value (last argument) of hn_refine - term *)
     val hn_refine_conv_a: conv -> conv
@@ -669,9 +731,9 @@ ML \<open>
     val hn_refine_concl_conv_a: (Proof.context -> conv) -> Proof.context -> conv
 
     (* Destruct hn_refine term *)
-    val dest_hn_refine: term -> term * term * term * term * term 
+    val dest_hn_refine: term -> term * term * term * term * term * term 
     (* Make hn_refine term *)
-    val mk_hn_refine: term * term * term * term * term -> term
+    val mk_hn_refine: term * term * term * term * term * term -> term
     (* Check if given term is Trueprop (hn_refine ...). Use with CONCL_COND'. *)
     val is_hn_refine_concl: term -> bool
 
@@ -791,15 +853,15 @@ ML \<open>
 
 
     local open Conv in
-      fun hn_refine_conv c1 c2 c3 c4 c5 ct = case Thm.term_of ct of
-        @{mpat "hn_refine _ _ _ _ _"} => let
+      fun hn_refine_conv c1 c2 c3 c4 c5 c6 ct = case Thm.term_of ct of
+        @{mpat "hn_refine _ _ _ _ _ _"} => let
           val cc = combination_conv
         in
-          cc (cc (cc (cc (cc all_conv c1) c2) c3) c4) c5 ct
+          cc (cc (cc (cc (cc (cc all_conv c1) c2) c3) c4) c5) c6 ct
         end
       | _ => raise CTERM ("hn_refine_conv",[ct])
   
-      val hn_refine_conv_a = hn_refine_conv all_conv all_conv all_conv all_conv
+      val hn_refine_conv_a = hn_refine_conv all_conv all_conv all_conv all_conv all_conv
   
       fun hn_refine_concl_conv_a conv ctxt = Refine_Util.HOL_concl_conv 
         (fn ctxt => hn_refine_conv_a (conv ctxt)) ctxt
@@ -850,10 +912,10 @@ ML \<open>
   
     end  
   
-    fun dest_hn_refine @{mpat "hn_refine ?P ?c ?Q ?R ?a"} = (P,c,Q,R,a)
+    fun dest_hn_refine @{mpat "hn_refine ?P ?c ?Q ?R ?CP ?a"} = (P,c,Q,R,CP,a)
       | dest_hn_refine t = raise TERM("dest_hn_refine",[t])
   
-    fun mk_hn_refine (P,c,Q,R,a) = @{mk_term "hn_refine ?P ?c ?Q ?R ?a"}
+    fun mk_hn_refine (P,c,Q,R,CP,a) = @{mk_term "hn_refine ?P ?c ?Q ?R ?CP ?a"}
   
     val is_hn_refine_concl = can (HOLogic.dest_Trueprop #> dest_hn_refine)
   

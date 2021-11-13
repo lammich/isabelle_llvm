@@ -1,3 +1,7 @@
+/*
+ * Isabelle LLVM support library
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 

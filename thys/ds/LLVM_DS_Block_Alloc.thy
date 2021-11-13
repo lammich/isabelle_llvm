@@ -49,7 +49,11 @@ lemma ll_load_bpto_rule[vcg_rules]: "llvm_htriple (\<upharpoonleft>ll_bpto x p) 
 lemma ll_store_bpto_rule[vcg_rules]: "llvm_htriple (\<upharpoonleft>ll_bpto x p) (ll_store x' p) (\<lambda>_. \<upharpoonleft>ll_bpto x' p)"
   unfolding ll_bpto_def
   by vcg
-  
+
+lemma vcg_assert_valid_ptr_bpto_rule[vcg_rules]: "llvm_htriple (\<upharpoonleft>ll_bpto x p) (vcg_assert_valid_ptr p) (\<lambda>_. \<upharpoonleft>ll_bpto x p)"
+  unfolding ll_bpto_def
+  by vcg
+    
 end
   
 end

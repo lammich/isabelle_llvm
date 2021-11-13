@@ -1,5 +1,19 @@
 #!/usr/bin/gawk -f
 
+BEGIN {
+  if (ARGC == 3) {
+    sample_machine=ARGV[1]
+    sample_elem_type=ARGV[2]
+
+    ARGC=0
+  } else {
+    print "Usage __eval_benchmark {L|S} <elem-type>" > "/dev/stderr"
+    exit 1
+  }
+
+}
+
+
 /^#/ {
 
     next
@@ -185,17 +199,51 @@ function pr_res_pgf_abs(name,color,ty,m,alg) {
   printf "};\n\\addlegendentry{%s};\n", name
 }
 
-function output_pgf_abs () {
-  print "@ preamble"
+function pr_res_pgf_abs_speedup(name,color,ty,m,algb,alg) {
+  if (! (m in machines)) return;
 
+  printf "\\addplot[color=%s,fill=%s] coordinates {\n",color,color
+  for (distr in results) {
+    tb = results[distr][ty][algb][m]
+    t = results[distr][ty][alg][m]
+
+    speedup = (tb*1.0)/t
+
+    printf "(%s,%f)\n",distr,speedup
+  }
+  printf "};\n\\addlegendentry{%s};\n", name
+}
+
+
+function output_pgf_preamble () {
   printf "\n\n"
   printf("symbolic x coords={")
   for (distr in results) {
     printf("%s,",distr)
   }
   printf "}\n\n"
+}
 
-  print "@ introsort"
+function output_pgf_abs (machine, elem_type) {
+#   machine="S" | "L"
+#   elem_type="uint64" | "llstring"
+
+
+#   pr_res_pgf_abs("std::sort","green",elem_type,"S","std::sort");
+  pr_res_pgf_abs("verified","red",elem_type,machine,"isabelle::parqsort");
+  pr_res_pgf_abs("std::sort(par-unseq)","blue",elem_type,machine,"std::parsort");
+  pr_res_pgf_abs("sample sort","black",elem_type,machine,"boost::sample_sort");
+
+
+#   pr_res_pgf_abs_speedup("isa-string","blue","llstring","L","std::sort","isabelle::parqsort");
+#   pr_res_pgf_abs_speedup("boost-string","black","llstring","L","std::sort","boost::sample_sort");
+
+#   pr_res_pgf_abs("isa-uint64 (laptop)","blue","uint64","L","isabelle::parqsort");
+#   pr_res_pgf_abs("c++-uint64 (laptop)","green","uint64","L","naive::parqsort");
+#   pr_res_pgf_abs("boost-uint64 (laptop)","black","uint64","L","boost::sample_sort");
+
+
+#  print "@ introsort"
 
 #   pr_res_pgf_abs("isa-uint64 (server)","red","uint64","S","isabelle::sort");
 #   pr_res_pgf_abs("std-uint64 (server)","red","uint64","S","std::sort");
@@ -210,10 +258,10 @@ function output_pgf_abs () {
 #   pr_res_pgf_abs("std-string (laptop)","blue","llstring","L","std::sort");
 
 
-  print "@ pdqsort"
-
-  pr_res_pgf_abs("isa-uint64 (server)","red","uint64","S","isabelle::pdqsort");
-  pr_res_pgf_abs("std-uint64 (server)","blue","uint64","S","boost::pdqsort");
+#   print "@ pdqsort"
+#
+#   pr_res_pgf_abs("isa-uint64 (server)","red","uint64","S","isabelle::pdqsort");
+#   pr_res_pgf_abs("std-uint64 (server)","blue","uint64","S","boost::pdqsort");
 
 #   pr_res_pgf_abs("isa-uint64 (laptop)","green","uint64","L","isabelle::pdqsort");
 #   pr_res_pgf_abs("std-uint64 (laptop)","green","uint64","L","boost::pdqsort");
@@ -227,6 +275,30 @@ function output_pgf_abs () {
 
 }
 
+function output_pgf_speedup () {
+  print "@ preamble"
+
+  printf "\n\n"
+  printf("symbolic x coords={")
+  for (distr in results) {
+    printf("%s,",distr)
+  }
+  printf "}\n\n"
+
+  print "@ server"
+
+  pr_res_pgf_abs_speedup("isa-uint64","red","uint64","S","std::sort","isabelle::parqsort");
+#   pr_res_pgf_abs_speedup("isa-uint64","red","uint64","S","std::sort","naive::parqsort");
+  pr_res_pgf_abs_speedup("boost-uint64","green","uint64","S","std::sort","boost::sample_sort");
+
+
+  print "@ laptop"
+  pr_res_pgf_abs_speedup("isa-uint64","red","uint64","L","std::sort","isabelle::parqsort");
+#   pr_res_pgf_abs_speedup("isa-uint64","red","uint64","L","std::sort","naive::parqsort");
+  pr_res_pgf_abs_speedup("boost-uint64","green","uint64","L","std::sort","boost::sample_sort");
+
+
+}
 
 
 function pr_rpt_cmd(distr,type,m,alg) {
@@ -248,19 +320,26 @@ function pr_rpt_diff(distr,type,m,alg1,alg2,t1,t2) {
   printf "\n",m
 }
 
-function check_diverg(distr,type,m,alg1,alg2) {
+function check_diverg1(distr,type,m,alg) {
+  if (lfnoise[distr][type][alg][m]) {
+    pr_rpt_noise(distr,type,m,alg)
+  }
+}
+
+
+function check_diverg2(distr,type,m,alg1,alg2) {
 
   if (arraysize[distr][type][alg1][m] != arraysize[distr][type][alg2][m]) {
     printf "%s %s %s: %s/%s DIFFERENT ARRAY SIZES \n", m, type, distr, alg1, alg2
   }
 
-  if (lfnoise[distr][type][alg1][m]) {
-    pr_rpt_noise(distr,type,m,alg1)
-  }
-
-  if (lfnoise[distr][type][alg2][m]) {
-    pr_rpt_noise(distr,type,m,alg2)
-  }
+#   if (lfnoise[distr][type][alg1][m]) {
+#     pr_rpt_noise(distr,type,m,alg1)
+#   }
+#
+#   if (lfnoise[distr][type][alg2][m]) {
+#     pr_rpt_noise(distr,type,m,alg2)
+#   }
 
   # if (!lfnoise[distr][type][alg1][m] && !lfnoise[distr][type][alg2][m]) {
     if (is_valid_point(distr,type,alg1,m) && is_valid_point(distr,type,alg2,m)) {
@@ -269,7 +348,10 @@ function check_diverg(distr,type,m,alg1,alg2) {
 
       frac = t1 / t2
 
-      if (frac < .85 || frac > 1.15) {
+      bound = .0505
+
+
+      if (frac < 1-bound || frac > 1+bound) {
         pr_rpt_diff(distr,type,m,alg1,alg2,t1,t2)
       }
     }
@@ -302,8 +384,18 @@ function check_divergs() {
     pr_rptscript_header(m)
     for (distr in results) {
       for (type in results[distr]) {
-        check_diverg(distr,type,m,"std::sort","isabelle::sort");
-        check_diverg(distr,type,m,"boost::pdqsort","isabelle::pdqsort");
+
+#         for (algo in results[distr][type]) {
+#
+#           # print "Checking " distr " " type " " m " " algo
+#
+#           check_diverg1(distr,type,m,algo)
+#         }
+
+#         check_diverg2(distr,type,m,"std::sort","isabelle::sort");
+#         check_diverg2(distr,type,m,"boost::pdqsort","isabelle::pdqsort");
+
+        check_diverg2(distr,type,m,"naive::parqsort","isabelle::parqsort");
       }
     }
   }
@@ -311,10 +403,12 @@ function check_divergs() {
 
 
 END {
- # check_divergs()
+#   check_divergs()
 
-#  output_pgf()
- output_pgf_abs()
+
+  output_pgf_abs(sample_machine,sample_elem_type)
+
+# output_pgf_abs()
 
 }
 

@@ -101,8 +101,8 @@ define i64 @KMP_kmp_impl({ i64, i8* } %x, { i64, i8* } %x1) {
   ctd_ifb:
     %r = phi { i64, i64 } [ %x8, %elseb ], [ %x7, %thenb ]
     %c_1 = extractvalue { i64, i64 } %s, 0
-    %b = extractvalue { i64, i64 } %s, 1
-    %d = icmp eq i64 -1, %b
+    %xga4 = extractvalue { i64, i64 } %s, 1
+    %d = icmp eq i64 -1, %xga4
     br i1 %d, label %thenc, label %elsec
 
   thenc:
@@ -124,8 +124,8 @@ define i64 @KMP_kmp_impl({ i64, i8* } %x, { i64, i8* } %x1) {
     %a1c3 = extractvalue { i64, i64* } %xaa, 0
     %a2c3 = extractvalue { i64, i64* } %xaa, 1
     %xfa2 = getelementptr i64, i64* %a2c3, i64 %a1b3
-    %xga4 = load i64, i64* %xfa2
-    %xha1 = sub i64 %a1b3, %xga4
+    %xga5 = load i64, i64* %xfa2
+    %xha1 = sub i64 %a1b3, %xga5
     %xia1 = add i64 %xha1, 1
     %xja = add i64 %a1a1, %xia1
     %a1d1 = extractvalue { i64, i64* } %xaa, 0
@@ -160,8 +160,8 @@ define i64 @KMP_kmp_impl({ i64, i8* } %x, { i64, i8* } %x1) {
   ctd_ifd:
     %r1 = phi { i64, { i64, i64 } } [ %x11, %elsed ], [ %x10, %ctd_ife ]
     %c_11 = extractvalue { i64, i64 } %s, 0
-    %b1 = extractvalue { i64, i64 } %s, 1
-    %d1 = icmp eq i64 -1, %b1
+    %xfa4 = extractvalue { i64, i64 } %s, 1
+    %d1 = icmp eq i64 -1, %xfa4
     br i1 %d1, label %thenf, label %elsef
 
   thenf:
@@ -178,9 +178,9 @@ define i64 @KMP_kmp_impl({ i64, i8* } %x, { i64, i8* } %x1) {
     %xca2 = extractvalue { i64, i64* } %xaa, 1
     call void @LLVM_DS_NArray_narray_free (i64* %xca2)
     %a1b4 = extractvalue { i64, { i64, i64 } } %xba, 0
-    %b2 = extractvalue { i64, { i64, i64 } } %xba, 1
-    %a1aa2 = extractvalue { i64, i64 } %b2, 0
-    %x12 = extractvalue { i64, i64 } %b2, 1
+    %b = extractvalue { i64, { i64, i64 } } %xba, 1
+    %a1aa2 = extractvalue { i64, i64 } %b, 0
+    %x12 = extractvalue { i64, i64 } %b, 1
     br label %ctd_if
 
   ctd_if:

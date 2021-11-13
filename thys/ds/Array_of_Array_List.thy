@@ -35,7 +35,7 @@ subsection \<open>Arrays that own their Elements\<close>
   )"
 
   definition [llvm_inline]: "nao_new TYPE('a::llvm_rep) n \<equiv> narray_new TYPE('a) n"
-
+  
   
   lemma nao_repl_init_aux: 
     assumes [fri_rules]: "\<box> \<turnstile> \<upharpoonleft>A x init"
@@ -119,7 +119,17 @@ subsection \<open>Arrays that own their Elements\<close>
     unfolding nao_rejoin_def nao_assn_def
     supply [simp] = le_idxe_map_delD' nao_rejoin_aux domI le_idxe_mapD
     by vcg
-  
+
+  lemma nao_rejoin_rule': "llvm_htriple 
+    (\<upharpoonleft>(nao_assn A R) xs a ** \<upharpoonleft>snat.assn i ii ** \<upharpoonleft>A (xs!i) xi ** \<up>(i<length xs \<and> R i = Some xi))
+    (nao_rejoin a ii)
+    (\<lambda>_. \<upharpoonleft>(nao_assn A (R(i:=None))) xs a)"
+    unfolding nao_rejoin_def nao_assn_def
+    supply [simp] = le_idxe_map_delD' nao_rejoin_aux domI le_idxe_mapD
+    by vcg
+        
+    
+      
   
   definition [llvm_inline]: "nao_open a \<equiv> return ()"  
     

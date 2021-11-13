@@ -1,13 +1,13 @@
 default: do_benchmark # do_benchmark_gcc sexplore
 
 gcode=../../thys/examples/code
-libs=../../src/lib_isabelle_llvm.cpp ../../src/lib_isabelle_llvm.c
-cflags=-std=c++11 -stdlib=libstdc++ -Wall -Wno-unused-function -lpthread -O3 -flto -I${HOME}/include -I$(gcode) ../../src/lib_isabelle_llvm.cpp
+libs=../../src/lib_isabelle_llvm.cpp ../../src/lib_isabelle_llvm.c par_aux.ll
+cflags=-std=c++20 -stdlib=libstdc++ -Wall -Wno-unused-function -lpthread -ggdb -ltbb -O3 -flto -I${HOME}/include -I$(gcode) ../../src/lib_isabelle_llvm.cpp
 # cflags=-std=c++11 -stdlib=libstdc++ -march=native -w -Wall -fexceptions -O3 -I${HOME}/include -I$(gcode) -s
 # -mllvm -inline-threshold=100000 -flto
 
 compile=clang++ $(cflags)
-compile_gcc=g++ -std=c++11 -Wall -Wno-unused-function -flto -pthread -O4 -I${HOME}/include
+compile_gcc=g++ -std=c++20 -Wall -Wno-unused-function -flto -pthread -ltbb -O4 -I${HOME}/include
 
 sexplore: sexplore.cpp
 	$(compile) ./sexplore.cpp -o sexplore

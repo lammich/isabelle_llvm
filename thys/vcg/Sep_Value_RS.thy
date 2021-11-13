@@ -730,7 +730,6 @@ begin
         and put_rule: "(pto p (val x) ** F) (\<alpha> s) \<Longrightarrow> \<exists>s'. put (L p) x' s = Some s' \<and> (pto p (val x') ** F) (\<alpha> s')"
       
   begin
-    find_consts "(_,_,_,_) M" name: lift
   
   
   end      

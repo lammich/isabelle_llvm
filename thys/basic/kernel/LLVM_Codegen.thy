@@ -1,6 +1,8 @@
 section \<open>LLVM Code Generator\<close>
 theory LLVM_Codegen
-imports LLVM_Shallow
+imports 
+  LLVM_Shallow
+  "../preproc/Monadify" (* Needed for M_CONST *)
 begin
 
     (* DO NOT USE IN PRODUCTION VERSION \<rightarrow> SLOWDOWN *)
@@ -19,20 +21,22 @@ begin
     The code generator will create identified types in LLVM for types registered here
   \<close>
   
-  definition "ll_is_identified_structure (name::string) TYPE('t::llvm_rep) \<equiv> llvm_is_s_struct (struct_of TYPE('t))"
+  definition "ll_is_identified_structure (name::string) TYPE('t::llvm_rep) \<equiv> llvm_struct.is_struct (struct_of TYPE('t))"
   named_theorems ll_identified_structures \<open>LLVM: Identified Structures\<close>
 
   
   named_theorems ll_to_val \<open>LLVM: Equations to compute \<open>to_val\<close> shape\<close>
   
-    
+  
   (*lemma TERM_TYPE_I: "TERM (TYPE ('a))" .*)
+  
+  ML_val \<open> IntInf.pow (2,64)  \<close>
   
   
   subsection \<open>General Functions\<close>
   ML \<open> structure LLC_Lib = 
     struct
-      fun dest_llM (Type (@{type_name M},[T,@{typ unit},@{typ llvm_memory},@{typ err}])) = T
+      fun dest_llM (Type (@{type_name M},[T,@{typ unit},@{typ llvm_memory},@{typ err},@{typ "llvm_macc"}])) = T
         | dest_llM ty = raise TYPE("dest_llM",[ty],[]);
       
       val is_llM = can dest_llM
@@ -50,6 +54,14 @@ begin
         | dest_wordT T = raise TYPE("dest_wordT",[T],[])
         
       fun dest_word_const (t) = HOLogic.dest_number t |>> dest_wordT
+      
+      fun dest_double_const @{mpat \<open>double_of_word ?w\<close>} = let
+          val (_,n) = HOLogic.dest_number w 
+          val _ = 0<=n andalso n<IntInf.pow (2,64) orelse raise TERM("dest_double_const (0\<le> _ <2^64): ",[w])
+          val n = Word64.fromInt n
+        in n end
+        | dest_double_const t = raise TERM("dest_double_const",[t])
+      
       
       fun dest_eqn @{mpat "?lhs\<equiv>?rhs"} = (lhs,rhs)
         | dest_eqn @{mpat \<open>Trueprop (?lhs = ?rhs)\<close>} = (lhs,rhs)
@@ -83,20 +95,30 @@ begin
         val thy = Thm.theory_of_thm thm
         
         val tyi = Vartab.dest tyenv |> map (fn (n,(s,T)) => ((n,s),Thm.global_ctyp_of thy T))
+          |> @{print}
         val ti = Vartab.dest tenv |> map (fn (n,(s,t)) => ((n,s),Thm.global_cterm_of thy t))
+          |> @{print}
       in
         Thm.instantiate (tyi,ti) thm
       end
 
       fun is_monomorphic_type T = not (Term.exists_subtype (fn TVar _ => true | TFree _ => true | _ => false) T)
       
+      fun is_ground_term t = 
+        not (Term.exists_type (not o is_monomorphic_type) t)
+        andalso not (Term.exists_subterm (fn tt => is_Var tt orelse is_Free tt) t)
+
+      fun assert_ground_term t = is_ground_term t orelse           
+        raise TYPE("Expected ground term",[fastype_of t],[t])
+      
+      (*  
       fun is_monomorphic_const (Const (_,T)) = is_monomorphic_type T
         | is_monomorphic_const _ = false
 
       fun assert_monomorphic_const t = 
         is_monomorphic_const t orelse 
           raise TYPE("Expected monomorphic constant",[fastype_of t],[t])
-            
+      *)      
 
       fun unique_variant1 n name ntab = let
         val name' = if n=0 then name else name ^ Int.toString n
@@ -138,23 +160,24 @@ begin
       end  
       
 
-      fun dest_head (Const nt) = nt
-        | dest_head (Free nt) = nt
-        | dest_head t = raise TERM("dest_head", [t])
+      (* Simple name mangling. Get uniqued afterwards! *)
+      fun name_of_head (Const (x,_)) = x
+        | name_of_head (Free (x,_)) = x
+        | name_of_head (Var ((x, _), _)) = x
+        | name_of_head (f$x) = name_of_head f ^ "_" ^ name_of_head x
+        | name_of_head (Abs (_,_,t)) = name_of_head t
+        | name_of_head (Bound _) = "__"
+      
+              
+      val llc_compile_while = Attrib.setup_config_bool @{binding llc_compile_while} (K true)
+      
+      val llc_compile_par_call = Attrib.setup_config_bool @{binding llc_compile_par_call} (K false)
+      
+      val llc_compile_avx512f = Attrib.setup_config_bool @{binding llc_compile_avx512f} (K false)
+
+      val str_of_w64 = Word64.fmt StringCvt.HEX #> StringCvt.padLeft #"0" 16 #> prefix "0x";
+      
             
-      val is_valid_head = can dest_head
-      fun check_valid_head f = 
-        (is_valid_head f orelse raise TERM("Invalid head (expected const or free)",[f]); f)
-      
-      val name_of_head = fst o dest_head
-                    
-      
-      
-      val llc_compile_while =
-        Config.bool (Config.declare ("llc_compile_while", \<^here>) (fn _ => Config.Bool true));
-      
-      
-      
     end
   \<close>
   
@@ -173,13 +196,20 @@ begin
     Is this feasible? Monomorphization would have to define new types.
   *)  
   
+  ML_val \<open>
+    Word64.fromInt 63 |> Word64.fmt StringCvt.HEX |> StringCvt.padLeft #"0" 16 |> prefix "0x";
+  
+    Word64.fromInt 63 
+  \<close>
+  
+  
   ML \<open> structure LLC_Intermediate = 
     struct
     
       (* LLC intermediate representation. Somewhere in between Isabelle and LLVM-IR *)    
       
-      datatype llc_type = TInt of int | TPtr of llc_type | TStruct of llc_type list | TNamed of string
-      datatype llc_const = CInit | CInt of int | CNull
+      datatype llc_type = TInt of int | TDouble | TPtr of llc_type | TStruct of llc_type list | TNamed of string
+      datatype llc_const = CInit | CInt of int | CDouble of Word64.word | CNull
       datatype llc_opr = OVar of string | OConst of llc_const
       type llc_topr = llc_type * llc_opr
       datatype llc_topr' = OOOp of llc_topr | OOType of llc_type | OOCIdx of int
@@ -189,6 +219,7 @@ begin
                | CmWhile of (llc_type * string) * llc_block * llc_block * llc_topr
                | CmInstr of string * llc_topr' list
                | CmCall of llc_type option * string * llc_topr list
+               | CmPar of llc_type * string * llc_topr * llc_type * string * llc_topr
       
           and llc_block =
                 BlBind of (llc_type * string) option * llc_cmd * llc_block
@@ -199,15 +230,18 @@ begin
     
       datatype llc_named_type = Named_Type of string * llc_type list                
                 
+      
       fun pretty_mstr m s = Pretty.markup m [Pretty.str s]
       
       fun pretty_type (TInt w) = pretty_mstr Markup.keyword1 ("i" ^ Int.toString w)
+        | pretty_type (TDouble) = pretty_mstr Markup.keyword1 ("double")
         | pretty_type (TPtr T) = Pretty.block [pretty_type T, Pretty.str "*"]
         | pretty_type (TStruct Ts) = Pretty.list "{" "}" (map pretty_type Ts)
         | pretty_type (TNamed name) = Pretty.str name
       
       fun pretty_const CInit = pretty_mstr Markup.keyword1 "zeroinitializer"
         | pretty_const (CInt i) = pretty_mstr Markup.numeral (Int.toString i)
+        | pretty_const (CDouble w) = pretty_mstr Markup.numeral (LLC_Lib.str_of_w64 w)
         | pretty_const CNull = pretty_mstr Markup.keyword1 "null"
 
       fun pretty_opr (OVar name) = Pretty.str name
@@ -239,6 +273,11 @@ begin
           ] 
         | pretty_cmd (CmInstr (name,ops)) = Pretty.block [Pretty.str name, Pretty.brk 1, Pretty.list "" "" (map pretty_topr' ops)]
         | pretty_cmd (CmCall (T,name,ops)) = Pretty.block [pretty_type' T, pretty_mstr Markup.keyword2 " call ", Pretty.str name, Pretty.brk 1, Pretty.list "(" ")" (map pretty_topr ops)]
+        | pretty_cmd (CmPar (T1,name1,op1,T2,name2,op2)) = Pretty.block [
+          pretty_type (TStruct [T1,T2]), pretty_mstr Markup.keyword2 " par ", 
+          Pretty.str name1, Pretty.brk 1, Pretty.list "(" ")" [pretty_topr op1], pretty_mstr Markup.keyword2 " and ",
+          Pretty.str name2, Pretty.brk 1, Pretty.list "(" ")" [pretty_topr op2]
+          ]
         
       and pretty_block blk = let
         fun pblst (BlBind (SOME tv,c,b)) = Pretty.block [pretty_tname tv, Pretty.str " = ", pretty_cmd c] :: pblst b
@@ -268,8 +307,8 @@ begin
   \<close>
    
   lemma llc_to_val_eq_triv: "to_val x = a \<Longrightarrow> to_val x = a" by simp
-  
-       
+
+    
   subsection \<open>Isabelle Term Parser\<close>
   text \<open>Parser from Isabelle terms to intermediate representation\<close>
   ML \<open> structure LLC_Compiler = 
@@ -319,7 +358,7 @@ begin
       
       local
         (* Concatenate type name with argument names, and desymbolize type name.
-           assumes argument names already desymbolized.
+           assumes argument names already desymbolized.partial_function_mono
         *)
         fun mangle_typename name args = name ^ implode (map (fn s => "_" ^ s) args)
         
@@ -386,7 +425,7 @@ begin
         | dest_to_val t = raise TERM("dest_to_val",[t])
               
       fun dest_to_val_thm thm = case Thm.prop_of thm of 
-        @{mpat "Trueprop (to_val _ = llvm_struct ?fs)"} => 
+        @{mpat "Trueprop (to_val _ = LL_STRUCT ?fs)"} => 
             HOLogic.dest_list fs 
             |> map (fastype_of o dest_to_val)
       | _ => raise THM("Invalid to_val theorem: ",~1,[thm])
@@ -408,6 +447,7 @@ begin
       
       (* Lookup already cached type *)
       fun llc_lookup_type _ (Type (@{type_name word},[T])) = SOME (dest_numeralT T |> TInt, [])
+        | llc_lookup_type _ (Type (@{type_name double},_)) = SOME (TDouble, [])
         | llc_lookup_type ctxt (Type (@{type_name ptr},[T])) = (case llc_lookup_type ctxt T of
             NONE => NONE
           | SOME (lT,_) => SOME (TPtr lT, []))
@@ -416,6 +456,7 @@ begin
       
       
       fun llc_parse_type (Type (@{type_name word},[T])) ctxt = (dest_numeralT T |> TInt, ctxt)
+        | llc_parse_type (Type (@{type_name double},_)) ctxt = (TDouble, ctxt)
         | llc_parse_type (Type (@{type_name ptr},[T])) ctxt = llc_parse_type T ctxt |>> TPtr
         | llc_parse_type (T as Type _) ctxt = llc_make_type_inst T ctxt
         | llc_parse_type T _ = raise TYPE ("llc_parse_type: ",[T],[])
@@ -456,79 +497,61 @@ begin
         end
       
       
-      (*
-      fun mk_type_thm ctxt T = Thm.instantiate' [SOME (Thm.ctyp_of ctxt T)] [] @{thm TERM_TYPE_I}
-      val dest_type_thm = Thm.prop_of #> Logic.dest_term #> Logic.dest_type
+      
+      (* TODO/FIXME: Populate with actual instructions! Register them, together with their compilers! *)  
+      fun is_llvm_instr name = String.isPrefix "LLVM_Shallow.ll_" name
+      fun is_llvm_instr_t (Const (name,_)) = is_llvm_instr name
+        | is_llvm_instr_t _ = false
+                
 
-      fun inst_pair_type ctxt (T as Type(tname,_)) = let
-        val thm = Symtab.lookup (Named_Type_Tab.get ctxt) tname
-        val _ = is_none thm andalso raise TYPE("Not a registered pair type",[T],[]);
-        val thm = the thm
-        val (anon,_,_,_) = dest_is_pair_type_thm thm
-      
-        val ftypes = map (fn x => dest_type_thm (x OF [thm,mk_type_thm ctxt T])) @{thms ll_dest_pair_type}
-      in
-        (anon,ftypes)
-      end
-      | inst_pair_type _ T = raise TYPE("Invalid type for pair type",[T],[])
-      
-      fun llc_parse_type (Type (@{type_name word},[T])) ctxt = (dest_numeralT T |> TInt, ctxt)
-        | llc_parse_type (Type (@{type_name ptr},[T])) ctxt = llc_parse_type T ctxt |>> TPtr
-        | llc_parse_type (T as Type _) ctxt = llc_make_type_inst T ctxt
-        | llc_parse_type T _ = raise TYPE ("llc_parse_type: ",[T],[])
-      and
-      (* Lookup or make named type instance *)
-      llc_make_type_inst T ctxt = case Typtab.lookup (NTInst_Tab.get ctxt) T of
-        SOME (name,_) => (TNamed name, ctxt)
-      | NONE => let
-          val (tname,_) = dest_Type T
-          
-          
-          (* Get anonymity and instantiated field types *)
-          val (anon,field_types) = inst_pair_type ctxt T
-        in  
-          if anon then let
-            (* Recursively parse field types *)
-            val (field_ltypes,ctxt) = fold_map llc_parse_type field_types ctxt
-            
-            val (lta,ltb) = case field_ltypes of
-              [lta,ltb] => (lta,ltb)
-            | _ => raise TYPE("Internal: Currently expecting exactly 2 fields!",T::field_types,[])
-          in
-            (TPair (lta,ltb), ctxt)
-          end
-          else let
-            (* Make name variant *)
-            val used_names = NTInst_Tab.get ctxt |> Typtab.dest |> map (fst o snd) |> Name.make_context
-            val (lname,_) = Name.variant (Name.desymbolize NONE tname) used_names
-            
-            (* Register this instance, with empty fields first *)
-            val ctxt = NTInst_Tab.map (Typtab.update (T,(lname,[]))) ctxt
-            
-            (* Recursively parse field types *)
-            val (field_ltypes,ctxt) = fold_map llc_parse_type field_types ctxt
-            
-            (* Register fields for this instance *)
-            val ctxt = NTInst_Tab.map (Typtab.update (T,(lname,field_ltypes))) ctxt
+      (* M_CONST aware strip_comb *)          
+      fun strip_comb_mc t = let 
+        fun stripc (t as @{mpat \<open>M_CONST _\<close>},xs) = (t,xs)
+          | stripc (f$x, xs) = stripc (f, x::xs)
+          | stripc  x =  x
+      in  stripc(t,[])  end;
         
-          in
-            (TNamed lname, ctxt)
-          end
-        end
-      *)  
-    
-      fun compute_fun_names fixes thms = let
-        val _ = map (assert_monomorphic_const o fst) fixes
+      fun analyze_eqn t = let
+        val (lhs,rhs) = dest_eqn t
+        val (hdc,params) = strip_comb_mc lhs 
       
-        val ftab = Termtab.make fixes
+        val hdc = Envir.beta_eta_contract hdc
+        
+      in
+        ((lhs,(hdc,params)),rhs)
+      end
+
+      fun check_eqn t = let 
+        val (res as ((_,(hdc,params)),_)) = analyze_eqn t
+        val _ = assert_ground_term hdc
+        
+        val _ = is_llvm_instr_t hdc andalso raise TERM("Code equation for internal LLVM instruction",[t])
+        
+        val _ = map (fn a => is_Var a orelse raise TERM ("llc_parse_eqn: arguments must be vars",[a])) params
+      in res end  
+        
+            
+      val analyze_eqn_thm = analyze_eqn o Thm.prop_of
+      val check_eqn_thm = check_eqn o Thm.prop_of
+      
+      fun compute_fun_names fixes thms = let
+        val fixes = map (apfst Envir.beta_eta_contract) fixes
+        val _ = map (assert_ground_term o fst) fixes
+      
+        
+        val fixtab = Termtab.make fixes
+        (* Pre-populate with fixed names, AND ensure no duplicate fixes *)
         val names = fold (fn (_,n) => Symtab.update_new (n,())) fixes Symtab.empty
         
         fun add_thm thm (ftab,names) = let
-          val c = head_of_eqn_thm thm
+          val ((_,(c,_)),_) = check_eqn_thm thm
         in
-          if Termtab.defined ftab c then
-            (ftab,names)
-          else let
+          if Termtab.defined ftab c then (
+            raise TERM ("More than one code equation for constant",[c])
+          ) else
+          case Termtab.lookup fixtab c of
+            SOME n => (Termtab.update_new (c,n) ftab,names)
+          | NONE => let
             val n = name_of_head c |> Name.desymbolize NONE
             val (n,names) = unique_variant n names
             val ftab = Termtab.update_new (c,n) ftab
@@ -537,14 +560,11 @@ begin
           end
         end
         
-        val (ftab,_) = fold add_thm thms (ftab,names)
+        val (ftab,_) = fold add_thm thms (Termtab.empty,names)
       in
         ftab
       end
 
-                
-      (* TODO/FIXME: Populate with actual instructions! Register them, together with their compilers! *)  
-      fun is_llvm_instr name = String.isPrefix "LLVM_Shallow.ll_" name
                 
       fun llc_parse_vtype (Type (@{type_name unit},[])) ctxt = (NONE, ctxt)
         | llc_parse_vtype T ctxt = llc_parse_type T ctxt |>> SOME
@@ -553,7 +573,9 @@ begin
         | llc_parse_const @{mpat (typs) \<open>null::?'v_T::llvm_rep ptr\<close>} ctxt = llc_parse_type T ctxt |>> (fn T => (TPtr T, CNull))
         | llc_parse_const t ctxt = case try dest_word_const t of
             SOME (w,v) => ((TInt w, CInt v), ctxt)
-          | NONE => raise TERM ("llc_parse_const",[t])
+          | NONE => case try dest_double_const t of
+              SOME d => ((TDouble,CDouble d),ctxt)
+            | NONE => raise TERM ("llc_parse_const",[t])
       
       fun dest_cidx t = let
         val (T,idx) = HOLogic.dest_number t
@@ -678,6 +700,7 @@ begin
         
         
         fun ftab_lookup ctxt f = let
+          val f = Envir.beta_eta_contract f
           val fname = Termtab.lookup (Fun_Tab.get ctxt) f
           val _ = is_none fname andalso raise TYPE("No such function in ftab",[fastype_of f],[f])
           val fname = the fname
@@ -711,20 +734,32 @@ begin
             = check_valid_struct_inst ctxt t pT i aT        
         | check_llvm_struct_cmd ctxt (t as @{mpat (typs) \<open>ll_insert_value (_::?'v_pT::llvm_rep) (_ :: ?'v_aT::llvm_rep) ?i\<close>})
             = check_valid_struct_inst ctxt t pT i aT
-        | check_llvm_struct_cmd ctxt (t as @{mpat (typs) \<open>ll_gep_struct (_::?'v_pT::llvm_rep ptr) ?i :: ?'v_aT::llvm_rep ptr llM\<close>})
-            = check_valid_struct_inst ctxt t pT i aT
+        (*| check_llvm_struct_cmd ctxt (t as @{mpat (typs) \<open>ll_gep_struct (_::?'v_pT::llvm_rep ptr) ?i :: ?'v_aT::llvm_rep ptr llM\<close>})
+            = check_valid_struct_inst ctxt t pT i aT*)
         | check_llvm_struct_cmd _ _ = ()    
                         
+        fun llc_parse_fun_name f ctxt = let
+          (*val _ = check_valid_head f            
+          val cname = name_of_head f
+          val _ = is_llvm_instr cname andalso raise TERM("llc_parse_fun_name: expected function name, but got instruction",[f])
+          *)
+          val fname = ftab_lookup ctxt f
+          
+          val T = fastype_of f |> body_type |> dest_llM
+          val (rty,ctxt) = llc_parse_vtype T ctxt
+          
+        in
+          ((rty,fname),ctxt)
+        end
+        
+        
         fun llc_parse_cmd rty t ctxt = 
           let
-            val (f,args) = strip_comb t
+            val (f,args) = strip_comb_mc t
 
-            val _ = check_valid_head f            
-            val cname = name_of_head f
-            
           in
-            case cname of
-              @{const_name \<open>llc_if\<close>} => (case args of 
+            case f of
+              Const (@{const_name \<open>llc_if\<close>},_) => (case args of 
                   [arg_cond,arg_then,arg_else] => let
                     val (l_cond, ctxt) = llc_parse_op_bool arg_cond ctxt
                     val (l_then,ctxt) = llc_parse_block arg_then ctxt
@@ -734,7 +769,7 @@ begin
                   end
                 | _ => raise TERM ("parse_cmd: If needs 3 arguments",[t])
               )
-            | @{const_name \<open>llc_while\<close>} => (case args of [@{mpat "\<lambda>_. ?tcond"}, @{mpat "\<lambda>xb. ?tbody"}, arg_inits] => let
+            | Const (@{const_name \<open>llc_while\<close>},_) => (case args of [@{mpat "\<lambda>_. ?tcond"}, @{mpat "\<lambda>xb. ?tbody"}, arg_inits] => let
                     val (inits,ctxt) = llc_parse_op arg_inits ctxt
 
                     val env = env_save ctxt
@@ -753,8 +788,24 @@ begin
                   end
                 | _ => raise TERM ("parse_cmd: While needs 3 arguments",[t])
               )
+            | Const (@{const_name \<open>llc_par\<close>},_) => (case args of
+                [arg_f1,arg_f2,arg_x1,arg_x2] => let
+                  val ((rty1,fn1),ctxt) = llc_parse_fun_name arg_f1 ctxt
+                  val ((rty2,fn2),ctxt) = llc_parse_fun_name arg_f2 ctxt
+                  val (op1,ctxt) = llc_parse_op arg_x1 ctxt
+                  val (op2,ctxt) = llc_parse_op arg_x2 ctxt
+                in
+                  case (rty1,rty2) of
+                    (SOME ty1,SOME ty2) => (CmPar (ty1,fn1,op1,ty2,fn2,op2),ctxt)
+                  | _ => raise TERM("parse_cmd: llc_par expects two non-void one-argument functions",[t])
+                      
+                
+                end
+              | _ => raise TERM("parse_cmd: llc_par needs 4 arguments",[t])
+              )
             | _ => 
-                if is_llvm_instr cname then let 
+                if is_llvm_instr_t f then let 
+                    val (cname,_) = dest_Const f
                     val (ops,ctxt) = fold_map llc_parse_op' args ctxt
                     val _ = check_llvm_struct_cmd ctxt t
                   in (CmInstr (cname,ops), ctxt) end
@@ -780,34 +831,40 @@ begin
           | llc_parse_block t _ = raise TERM ("llc_parse_block: structural error",[t])
          
           
-        fun llc_parse_eqn @{mpat "Trueprop (?lhs = ?rhs)"} ctxt = let
-          val (hdc,params) = strip_comb lhs
+        fun llc_parse_eqn t ctxt = let
         
-          val _ = check_valid_head hdc
-          val _ = map (fn a => is_Var a orelse raise TERM ("llc_parse_eqn: arguments must be vars",[a])) params
-
-          val fname = ftab_lookup ctxt hdc 
+          fun aux () = let
+            val ((lhs,(hdc,params)),rhs) = check_eqn t
           
-          val ctxt = env_init ctxt
-                    
-          val (params,ctxt) = fold_map env_add_param params ctxt
-          val (blk,ctxt) = llc_parse_block rhs ctxt
+            val fname = ftab_lookup ctxt hdc 
+            
+            val ctxt = env_init ctxt
+                      
+            val (params,ctxt) = fold_map env_add_param params ctxt
+            val (blk,ctxt) = llc_parse_block rhs ctxt
+            
+            val (rlty, ctxt) = llc_parse_vtype (dest_llM (fastype_of lhs)) ctxt
+  
+            (* Erase meaningless environment after equation has been parsed! *)
+            val ctxt = env_init ctxt 
+          in
+            (EQN (rlty,fname,params,blk), ctxt)
+          end
           
-          val (rlty, ctxt) = llc_parse_vtype (dest_llM (fastype_of lhs)) ctxt
-
-          (* Erase meaningless environment after equation has been parsed! *)
-          val ctxt = env_init ctxt 
+          fun msg () = Pretty.block [Pretty.str "From ", Syntax.pretty_term ctxt t] |> Pretty.string_of
+          
         in
-          (EQN (rlty,fname,params,blk), ctxt)
+          trace_exn msg aux ()
         end
-        | llc_parse_eqn t _ = raise TERM ("llc_parse_eqn: Expected equation of form lhs = rhs", [t])
           
           
       end      
       
       fun parse_cthms_aux thms ctxt = fold_map (llc_parse_eqn o Thm.prop_of) thms ctxt
-            
-      fun parse_cthms ftab nt_ovr thms ctxt = let
+      
+      fun parse_cthms fixes nt_ovr thms ctxt = let
+        val ftab = compute_fun_names fixes thms      
+      
         val ctxt = Fun_Tab.put ftab ctxt
         
         val ctxt = fold add_named_type_override nt_ovr ctxt
@@ -818,8 +875,7 @@ begin
       in 
         (named_tys,eqns)
       end
-          
-      
+     
     end
     
   \<close>  
@@ -827,6 +883,7 @@ begin
   subsection \<open>LLVM Writer\<close>
   
   text \<open>LLVM Builder. Interface to build actual LLVM text.\<close>
+  ML_file "par_wrapper.tmpl.ml"
   ML_file "LLVM_Builder.ml"
   
   text \<open>Compiler from intermediate representation to actual LLVM text.\<close>
@@ -835,9 +892,10 @@ begin
       open LLC_Lib LLC_Intermediate
     
       type vtab = LLVM_Builder.value Symtab.table
-      type builder = vtab -> LLVM_Builder.regname -> llc_topr' list -> LLVM_Builder.T -> LLVM_Builder.value option
+      type builder = vtab -> LLVM_Builder.regname -> llc_topr' list -> Proof.context -> LLVM_Builder.T -> LLVM_Builder.value option
     
       fun llc_ty _ (TInt w) = LLVM_Builder.mkty_i w
+        | llc_ty _ (TDouble) = LLVM_Builder.mkty_double
         | llc_ty b (TPtr ty) = LLVM_Builder.mkty_ptr (llc_ty b ty)
         | llc_ty b (TStruct tys) = LLVM_Builder.mkty_struct (map (llc_ty b) tys)
         | llc_ty b (TNamed name) = LLVM_Builder.mkty_named b name
@@ -845,64 +903,153 @@ begin
       
       fun llc_const_to_val b ty CInit = LLVM_Builder.mkc_zeroinit (llc_ty b ty)
         | llc_const_to_val b ty (CInt v) = LLVM_Builder.mkc_i (llc_ty b ty) v
+        | llc_const_to_val b ty (CDouble v) = LLVM_Builder.mkc_d (llc_ty b ty) v
         | llc_const_to_val b ty (CNull) = LLVM_Builder.mkc_null (llc_ty b ty)
       
       fun llc_op_to_val _ vtab (_,OVar x) = the_assert ("Variable not in vtab " ^ x) (Symtab.lookup vtab x)
         | llc_op_to_val b _ (ty,OConst c) = llc_const_to_val b ty c
         
-      
+
+      fun llc_op'_to_val b vtab (OOOp x) = llc_op_to_val b vtab x  
+        | llc_op'_to_val _ _ t = raise Fail ("llc_op'_to_val: Expected value operand: " ^ (LLC_Intermediate.pretty_topr' t |> Pretty.string_of))
+              
       fun dstreg NONE = NONE | dstreg (SOME s) = SOME s
         
       
-      fun arith_instr_builder iname vtab dst [OOOp x1, OOOp x2] b = (
+      fun arith_instr_builder iname vtab dst [OOOp x1, OOOp x2] _ b = (
         LLVM_Builder.mk_arith_instr iname b dst (llc_op_to_val b vtab x1) (llc_op_to_val b vtab x2) |> SOME
-      ) | arith_instr_builder _ _ _ _ _ = raise Fail "arith_instr_builder: invalid arguments"
+      ) | arith_instr_builder _ _ _ _ _ _ = raise Fail "arith_instr_builder: invalid arguments"
       
-      fun icmp_instr_builder cmpcode vtab dst [OOOp x1, OOOp x2] b = (
+      fun icmp_instr_builder cmpcode vtab dst [OOOp x1, OOOp x2] _ b = (
         LLVM_Builder.mk_icmp_instr cmpcode b dst (llc_op_to_val b vtab x1) (llc_op_to_val b vtab x2) |> SOME
-      ) | icmp_instr_builder _ _ _ _ _ = raise Fail "icmp_instr_builder: invalid arguments"
+      ) | icmp_instr_builder _ _ _ _ _ _ = raise Fail "icmp_instr_builder: invalid arguments"
 
-      fun ptrcmp_instr_builder cmpcode vtab dst [OOOp x1, OOOp x2] b = (
+      fun fcmp_instr_builder cmpcode vtab dst [OOOp x1, OOOp x2] _ b = (
+        LLVM_Builder.mk_fcmp_instr cmpcode b dst (llc_op_to_val b vtab x1) (llc_op_to_val b vtab x2) |> SOME
+      ) | fcmp_instr_builder _ _ _ _ _ _ = raise Fail "fcmp_instr_builder: invalid arguments"
+      
+      fun ptrcmp_instr_builder cmpcode vtab dst [OOOp x1, OOOp x2] _ b = (
         LLVM_Builder.mk_ptrcmp_instr cmpcode b dst (llc_op_to_val b vtab x1) (llc_op_to_val b vtab x2) |> SOME
-      ) | ptrcmp_instr_builder _ _ _ _ _ = raise Fail "icmp_instr_builder: invalid arguments"
+      ) | ptrcmp_instr_builder _ _ _ _ _ _ = raise Fail "icmp_instr_builder: invalid arguments"
             
-      fun conv_instr_builder cmpcode vtab dst [OOOp x1, OOType ty] b = (
+      fun conv_instr_builder cmpcode vtab dst [OOOp x1, OOType ty] _ b = (
         LLVM_Builder.mk_conv_instr cmpcode b dst (llc_op_to_val b vtab x1) (llc_ty b ty) |> SOME
-      ) | conv_instr_builder _ _ _ _ _ = raise Fail "conv_instr_builder: invalid arguments"
+      ) | conv_instr_builder _ _ _ _ _ _ = raise Fail "conv_instr_builder: invalid arguments"
 
       
-      fun extract_value_builder vtab dst [OOOp x1, OOCIdx idx] b = (
+      fun extract_value_builder vtab dst [OOOp x1, OOCIdx idx] _ b = (
         LLVM_Builder.mk_extractvalue b dst (llc_op_to_val b vtab x1) idx |> SOME
-      ) | extract_value_builder _ _ _ _ = raise Fail "extract_value_builder: invalid arguments"
+      ) | extract_value_builder _ _ _ _ _ = raise Fail "extract_value_builder: invalid arguments"
 
-      fun insert_value_builder vtab dst [OOOp x1, OOOp x2, OOCIdx idx] b = (
+      fun insert_value_builder vtab dst [OOOp x1, OOOp x2, OOCIdx idx] _ b = (
         LLVM_Builder.mk_insertvalue b dst (llc_op_to_val b vtab x1) (llc_op_to_val b vtab x2) idx |> SOME
-      ) | insert_value_builder _ _ _ _ = raise Fail "insert_value_builder: invalid arguments"
+      ) | insert_value_builder _ _ _ _ _ = raise Fail "insert_value_builder: invalid arguments"
       
-      fun malloc_builder vtab dst [OOType ty, OOOp x] b = (
+      fun malloc_builder vtab dst [OOType ty, OOOp x] _ b = (
         LLVM_Builder.mk_malloc b dst (llc_ty b ty) (llc_op_to_val b vtab x) |> SOME
-      ) | malloc_builder _ _ _ _ = raise Fail "malloc_builder: invalid arguments"
+      ) | malloc_builder _ _ _ _ _ = raise Fail "malloc_builder: invalid arguments"
             
-      fun free_builder vtab _ [OOOp x] b = (
+      fun free_builder vtab _ [OOOp x] _ b = (
         LLVM_Builder.mk_free b (llc_op_to_val b vtab x); NONE
-      ) | free_builder _ _ _ _ = raise Fail "free_builder: invalid arguments"
+      ) | free_builder _ _ _ _ _ = raise Fail "free_builder: invalid arguments"
 
-      fun load_builder vtab dst [OOOp x] b = (
+      fun load_builder vtab dst [OOOp x] _ b = (
         LLVM_Builder.mk_load b dst (llc_op_to_val b vtab x) |> SOME
-      ) | load_builder _ _ _ _ = raise Fail "load_builder: invalid arguments"
+      ) | load_builder _ _ _ _ _ = raise Fail "load_builder: invalid arguments"
       
-      fun store_builder vtab _ [OOOp x1, OOOp x2] b = (
+      fun store_builder vtab _ [OOOp x1, OOOp x2] _ b = (
         LLVM_Builder.mk_store b (llc_op_to_val b vtab x1) (llc_op_to_val b vtab x2); NONE
-      ) | store_builder _ _ _ _ = raise Fail "store_builder: invalid arguments"
+      ) | store_builder _ _ _ _ _ = raise Fail "store_builder: invalid arguments"
 
-      fun ofs_ptr_builder vtab dst [OOOp x1, OOOp x2] b = (
+      fun ofs_ptr_builder vtab dst [OOOp x1, OOOp x2] _ b = (
         LLVM_Builder.mk_ofs_ptr b dst (llc_op_to_val b vtab x1) (llc_op_to_val b vtab x2) |> SOME
-      ) | ofs_ptr_builder _ _ _ _ = raise Fail "ofs_ptr_builder: invalid arguments"
+      ) | ofs_ptr_builder _ _ _ _ _ = raise Fail "ofs_ptr_builder: invalid arguments"
       
-      fun gep_idx_builder vtab dst [OOOp x1, OOCIdx idx] b = (
+      fun gep_idx_builder vtab dst [OOOp x1, OOCIdx idx] _ b = (
         LLVM_Builder.mk_gep_idx b dst (llc_op_to_val b vtab x1) (LLVM_Builder.mkc_iw 32 idx) |> SOME
-      ) | gep_idx_builder _ _ _ _ = raise Fail "gep_idx_builder: invalid arguments"
+      ) | gep_idx_builder _ _ _ _ _ = raise Fail "gep_idx_builder: invalid arguments"
+
       
+      fun intrinsic_builder rty name vtab dst args _ b = let
+        val args = map (llc_op'_to_val b vtab) args
+        val res = LLVM_Builder.mk_external_call b dst rty name args
+      in SOME res end
+      
+      local open LLVM_Builder in
+        val ll_t_2xdouble = mkty_vector 2 mkty_double
+        val ll_zeroinit_2xdouble = mkc_zeroinit ll_t_2xdouble
+      end
+      
+      fun llc_to_vector_2xdouble_sd b x = LLVM_Builder.mk_insertelement b (SOME "mmx_") ll_zeroinit_2xdouble x (LLVM_Builder.mkc_iw 32 0)
+      fun llc_from_vector_2xdouble_sd b dst x = LLVM_Builder.mk_extractelement b dst x (LLVM_Builder.mkc_iw 32 0)
+
+      fun assert_avx512f ctxt = Config.get ctxt llc_compile_avx512f orelse
+                raise Fail "AVX512f support is experimental and disabled! Declare [[llc_compile_avx512f=true]] to enable!"
+                  
+      fun llc_op_to_2xdouble_sd b vtab = llc_op_to_val b vtab #> llc_to_vector_2xdouble_sd b          
+      fun llc_op'_to_2xdouble_sd b vtab = llc_op'_to_val b vtab #> llc_to_vector_2xdouble_sd b          
+                
+      (* {add, sub, mul, div} r x1 x2 \<rightarrow> llvm.x86.avx512.mask.XXX.sd.round x1 x2 0 -1 r *)
+      fun avx512_asmd_sd_round_intrinsic_builder iname vtab dst [OOCIdx rounding, OOOp x1, OOOp x2] ctxt b = let
+        val _ = assert_avx512f ctxt
+        
+        val iname = unsuffix "_sd_round" iname
+        val iname = "llvm.x86.avx512.mask."^iname^".sd.round"
+
+        val rounding = LLVM_Builder.mkc_iw 32 rounding
+        val mask = LLVM_Builder.mkc_iw 8 ~1
+        
+        val cop = llc_op_to_2xdouble_sd b vtab
+        
+        val args = [cop x1, cop x2, ll_zeroinit_2xdouble, mask, rounding]
+        val attrs = [ [],    [],       [],                 [],  ["immarg"] ]
+        
+        val res = LLVM_Builder.mk_external_call_attrs b (SOME "mmx_") ll_t_2xdouble iname args attrs
+          |> llc_from_vector_2xdouble_sd b dst
+                
+      in
+        SOME res
+      end
+      | avx512_asmd_sd_round_intrinsic_builder _ _ _ _ _ _ = raise Fail "avx512_asmd_sd_round_intrinsic_builder: invalid arguments"
+      
+      (* sqrt r x \<rightarrow> llvm.x86.avx512.mask.sqrt.sd x x 0 -1 r   *)
+      fun avx512_sqrt_sd_round_intrinsic_builder vtab dst [OOCIdx rounding, OOOp x] ctxt b = let
+        val _ = assert_avx512f ctxt
+        
+        val iname = "llvm.x86.avx512.mask.sqrt.sd"
+        val x = llc_op_to_2xdouble_sd b vtab x
+        val mask = LLVM_Builder.mkc_iw 8 ~1
+        val rounding = LLVM_Builder.mkc_iw 32 rounding
+
+        val args = [x,x,ll_zeroinit_2xdouble, mask, rounding]      
+        val attrs = [ [],[],[],[],["immarg"] ]
+
+        val res = LLVM_Builder.mk_external_call_attrs b (SOME "mmx_") ll_t_2xdouble iname args attrs
+          |> llc_from_vector_2xdouble_sd b dst
+              
+      in
+        SOME res
+      end
+      | avx512_sqrt_sd_round_intrinsic_builder _ _ _ _ _ = raise Fail "avx512_sqrt_sd_round_intrinsic_builder: invalid arguments"
+
+      (* fmadd r x1 x2 x3 \<rightarrow> llvm.x86.avx512.vfmadd.f64 x1 x2 x3 r *)      
+      fun avx512_vfmadd_f64_builder vtab dst [OOCIdx rounding, OOOp x1, OOOp x2, OOOp x3] ctxt b = let
+        val _ = assert_avx512f ctxt
+
+        val iname = "llvm.x86.avx512.vfmadd.f64"
+
+        val cop = llc_op_to_val b vtab
+        val rounding = LLVM_Builder.mkc_iw 32 rounding
+        val args = map cop [x1,x2,x3] @ [rounding]
+        val attrs = [ [],[],[],["immarg"] ]
+        
+        val res = LLVM_Builder.mk_external_call_attrs b dst LLVM_Builder.mkty_double iname args attrs
+      in
+        SOME res
+      end
+      | avx512_vfmadd_f64_builder _ _ _ _ _ = raise Fail "avx512_vfmadd_f64_builder: invalid arguments"
+      
+            
       fun register_builder (b:builder) (n:string) = Symtab.update_new (n,b)
       
       fun register_prfx_builder prfx b n = let
@@ -916,7 +1063,8 @@ begin
           [@{const_name ll_add}, @{const_name ll_sub}, @{const_name ll_mul},
            @{const_name ll_udiv}, @{const_name ll_urem}, @{const_name ll_sdiv}, @{const_name ll_srem},
            @{const_name ll_shl}, @{const_name ll_lshr}, @{const_name ll_ashr},
-           @{const_name ll_and}, @{const_name ll_or}, @{const_name ll_xor}
+           @{const_name ll_and}, @{const_name ll_or}, @{const_name ll_xor},
+           @{const_name ll_fadd}, @{const_name ll_fsub}, @{const_name ll_fmul}, @{const_name ll_fdiv}, @{const_name ll_frem}
           ]
         |> fold (register_prfx_builder "ll_" conv_instr_builder) [
              @{const_name ll_trunc}, @{const_name ll_sext}, @{const_name ll_zext}
@@ -925,6 +1073,16 @@ begin
              @{const_name ll_icmp_eq}, @{const_name ll_icmp_ne}, 
              @{const_name ll_icmp_slt}, @{const_name ll_icmp_sle}, 
              @{const_name ll_icmp_ult}, @{const_name ll_icmp_ule} 
+          ]  
+        |> fold (register_prfx_builder "ll_fcmp_" fcmp_instr_builder) [
+             @{const_name ll_fcmp_oeq}, @{const_name ll_fcmp_one}, 
+             @{const_name ll_fcmp_olt}, @{const_name ll_fcmp_ogt}, 
+             @{const_name ll_fcmp_ole}, @{const_name ll_fcmp_oge}, 
+             @{const_name ll_fcmp_ord},
+             @{const_name ll_fcmp_ueq}, @{const_name ll_fcmp_une}, 
+             @{const_name ll_fcmp_ult}, @{const_name ll_fcmp_ugt}, 
+             @{const_name ll_fcmp_ule}, @{const_name ll_fcmp_uge}, 
+             @{const_name ll_fcmp_uno}
           ]  
         |> fold (register_prfx_builder "ll_ptrcmp_" ptrcmp_instr_builder) [
              @{const_name ll_ptrcmp_eq}, @{const_name ll_ptrcmp_ne}
@@ -938,23 +1096,34 @@ begin
         |> register_builder (store_builder) @{const_name ll_store}          
       
         |> register_builder (ofs_ptr_builder) @{const_name ll_ofs_ptr}          
-        |> register_builder (gep_idx_builder) @{const_name ll_gep_struct}          
+        (*|> register_builder (gep_idx_builder) @{const_name ll_gep_struct}          *)
+        
+        |> register_builder (intrinsic_builder LLVM_Builder.mkty_double "llvm.sqrt.f64") @{const_name ll_sqrt_f64}
+        
+        |> fold (register_prfx_builder "ll_x86_avx512_" avx512_asmd_sd_round_intrinsic_builder) [
+              @{const_name ll_x86_avx512_add_sd_round},
+              @{const_name ll_x86_avx512_sub_sd_round},
+              @{const_name ll_x86_avx512_mul_sd_round},
+              @{const_name ll_x86_avx512_div_sd_round}
+          ]
+        |> register_builder (avx512_sqrt_sd_round_intrinsic_builder) @{const_name ll_x86_avx512_sqrt_sd}
+        |> register_builder (avx512_vfmadd_f64_builder) @{const_name ll_x86_avx512_vfmadd_f64}
             
 
       fun vtab_bind (SOME dst) (SOME v) vtab = Symtab.update_new (dst,v) vtab  
         | vtab_bind (SOME dst) NONE _ = raise Fail ("Void instruction bound to value (" ^ dst ^ ") ")
         | vtab_bind _ _ vtab = vtab
         
-      fun build_instr b vtab dst (iname,args) = let
+      fun build_instr ctxt b vtab dst (iname,args) = let
         val bld = Symtab.lookup builders iname 
           |> the_assert ("Unknown instruction " ^ iname)
           
-        val v = bld vtab (dstreg dst) args b
+        val v = bld vtab (dstreg dst) args ctxt b
       in
         vtab_bind dst v vtab
       end  
       
-      fun build_call b vtab dst (rty,pname,args) = let
+      fun build_call _ b vtab dst (rty,pname,args) = let
         val args = map (llc_op_to_val b vtab) args
         val rty = map_option (llc_ty b) rty
         
@@ -965,8 +1134,26 @@ begin
       in
         vtab_bind dst v vtab
       end
+
+      fun build_par_call ctxt b vtab dst (rty1,pname1,arg1,rty2,pname2,arg2) = let
+        val _ = Config.get ctxt llc_compile_par_call orelse
+                raise Fail "Parallel call is experimental and disabled! Declare [[llc_compile_par_call=true]] to enable!"
       
-      fun build_if build_block b vtab dst (op_cond, blk_then, blk_else) = let
+        val arg1 = llc_op_to_val b vtab arg1
+        val arg2 = llc_op_to_val b vtab arg2
+        val rty1 = llc_ty b rty1
+        val rty2 = llc_ty b rty2
+        
+        val v = LLVM_Builder.mk_par_call b (dstreg dst) rty1 pname1 arg1 rty2 pname2 arg2
+          |> SOME
+
+      in
+        vtab_bind dst v vtab
+      end
+      
+      
+            
+      fun build_if build_block ctxt b vtab dst (op_cond, blk_then, blk_else) = let
         val l_then = LLVM_Builder.variant_label b "then"
         val l_else = LLVM_Builder.variant_label b "else"
         val l_ctd_if = LLVM_Builder.variant_label b "ctd_if"
@@ -974,11 +1161,11 @@ begin
         val _ = LLVM_Builder.mk_cbr b (llc_op_to_val b vtab op_cond) l_then l_else
         
         val _ = LLVM_Builder.open_bb b l_then 
-        val r_then = build_block b vtab blk_then
+        val r_then = build_block ctxt b vtab blk_then
         val l_then' = LLVM_Builder.mk_br b l_ctd_if
         
         val _ = LLVM_Builder.open_bb b l_else
-        val r_else = build_block b vtab blk_else
+        val r_else = build_block ctxt b vtab blk_else
         val l_else' = LLVM_Builder.mk_br b l_ctd_if
         
         val _ = LLVM_Builder.open_bb b l_ctd_if
@@ -1009,7 +1196,11 @@ begin
           (returns %s)
 
       *)
-      fun build_while build_block b vtab dst (sv, blk_cond, blk_body, op_init) = let
+      fun build_while build_block ctxt b vtab dst (sv, blk_cond, blk_body, op_init) = let
+      
+        val _ = Config.get ctxt llc_compile_while orelse
+                raise Fail "Direct while compilation disabled! Declare [[llc_compile_while=true]] to enable!"
+      
         val l_start = LLVM_Builder.variant_label b "while_start"
         val l_body = LLVM_Builder.variant_label b "while_body"
         val l_end = LLVM_Builder.variant_label b "while_end"
@@ -1028,7 +1219,7 @@ begin
         val vtab' = vtab_bind (SOME sname) (SOME v_state) vtab
         
         (* cond *)
-        val r_cond = build_block b vtab' blk_cond
+        val r_cond = build_block ctxt b vtab' blk_cond
         val r_cond = case r_cond of SOME x => x | NONE => raise Fail "While (bug): Cond-block with no result"
         
         (* cbr r_cond body end *)
@@ -1036,7 +1227,7 @@ begin
         
         (* body: *)
         val _ = LLVM_Builder.open_bb b l_body
-        val r_body = build_block b vtab' blk_body
+        val r_body = build_block ctxt b vtab' blk_body
         val r_body = case r_body of SOME x => x | NONE => raise Fail "While (bug): Body-block with no result"
         val l_body' = LLVM_Builder.mk_br b l_start
         
@@ -1048,14 +1239,11 @@ begin
         vtab_bind dst (SOME v_state) vtab
       end
       
-      fun build_cmd _ b vtab dst (CmInstr ia) = build_instr b vtab dst ia
-        | build_cmd _ b vtab dst (CmCall na) = build_call b vtab dst na
-        | build_cmd ctxt b vtab dst (CmIf bte) = build_if (build_block ctxt) b vtab dst bte
-        | build_cmd ctxt b vtab dst (CmWhile cbi) = 
-            if Config.get ctxt llc_compile_while then
-              build_while (build_block ctxt) b vtab dst cbi
-            else
-              raise Fail "Direct while compilation disabled! Declare [[llc_compile_while=true]] to enable!"
+      fun build_cmd ctxt b vtab dst (CmInstr ia) = build_instr ctxt b vtab dst ia
+        | build_cmd ctxt b vtab dst (CmCall na) = build_call ctxt b vtab dst na
+        | build_cmd ctxt b vtab dst (CmIf bte) = build_if build_block ctxt b vtab dst bte
+        | build_cmd ctxt b vtab dst (CmWhile cbi) = build_while build_block ctxt b vtab dst cbi
+        | build_cmd ctxt b vtab dst (CmPar na) = build_par_call ctxt b vtab dst na
             
       and build_block ctxt b vtab (BlBind (dst,cmd,blk)) = let
             val dst = map_option snd dst
@@ -1249,6 +1437,7 @@ begin
       | PRIM_SI16 | PRIM_UI16
       | PRIM_SI32 | PRIM_UI32
       | PRIM_SI64 | PRIM_UI64
+      | PRIM_DOUBLE
     datatype cfield = FLD_NAMED of ctype * string | FLD_ANON of cfield list
          and ctype = 
               CTY_PRIM of cprim 
@@ -1302,6 +1491,7 @@ begin
       || pcm "uint16_t" >> K PRIM_UI16
       || pcm "uint32_t" >> K PRIM_UI32
       || pcm "uint64_t" >> K PRIM_UI64
+      || pcm "double" >> K PRIM_DOUBLE
   
       fun mk_ptr ty [] = ty
         | mk_ptr ty (_::xs) = CTYO_PTR (mk_ptr ty xs)
@@ -1605,6 +1795,7 @@ begin
         | cprim_to_Cs PRIM_UI16 = word "uint16_t"
         | cprim_to_Cs PRIM_UI32 = word "uint32_t"
         | cprim_to_Cs PRIM_UI64 = word "uint64_t"
+        | cprim_to_Cs PRIM_DOUBLE = word "double"
                                                   
       fun cfield_to_Cs (FLD_NAMED (ty,name)) = block [ctype_to_Cs ty, word name, nword ";"]  
         | cfield_to_Cs (FLD_ANON fs) = block [fldstruct_to_Cs empty fs, nword ";"]
@@ -1786,6 +1977,7 @@ begin
         | cty_of_lty (TInt 32) = CTYO_PRIM PRIM_SI32
         | cty_of_lty (TInt 64) = CTYO_PRIM PRIM_SI64
         | cty_of_lty (TInt w) = error ("cty_of_lty: Unsupported integer width " ^ Int.toString w)
+        | cty_of_lty (TDouble) = CTYO_PRIM PRIM_DOUBLE
         | cty_of_lty (TPtr ty) = CTYO_PTR (cty_of_lty ty)
         | cty_of_lty (TStruct tys) = CTYO_STRUCT (map cfld_of_lty tys)
         | cty_of_lty (TNamed name) = CTYO_NAMED name
@@ -1849,6 +2041,7 @@ begin
             end
           )
         | rc_ty (TInt _) = I
+        | rc_ty (TDouble) = I
       
     in
       fold rc_eqn eqns Symtab.empty
@@ -1923,670 +2116,5 @@ begin
     
 \<close>    
   
-  
-  
-  
 
-  
-  
-  
-  
-  
-(*  
-  
-  
-  
-  
-    
-    
-  
-  ML \<open>structure C_Interface = struct
-    datatype cprim = 
-        PRIM_CHAR
-      | PRIM_SI8 | PRIM_UI8
-      | PRIM_SI16 | PRIM_UI16
-      | PRIM_SI32 | PRIM_UI32
-      | PRIM_SI64 | PRIM_UI64
-      | PRIM_NAMED of string
-    datatype cfield = FLD_NAMED of ctype * string | FLD_ANON of cfield list
-         and ctype = CTY_PRIM of cprim | CTY_PTR of ctype | CTY_STRUCT of cfield list
-  
-         
-    datatype typedef = TYPEDEF of string * ctype
-    fun dest_tydef (TYPEDEF (n,t)) = (n,t)
-    val mk_tydef = TYPEDEF
-
-    (* Signature *)
-    datatype c_sig = CSIG of ctype option * string * ctype list 
-    
-    
-         
-    (* Parsing *)
-    local open Parser_Util in
-    
-      (* TODO: Check for valid C identifier *)
-      val parse_id = Parse.short_ident
-      
-      val parse_cprim = 
-         pcm "char" >> K PRIM_CHAR
-      || pcm "int8_t" >> K PRIM_SI8
-      || pcm "int16_t" >> K PRIM_SI16
-      || pcm "int32_t" >> K PRIM_SI32
-      || pcm "int64_t" >> K PRIM_SI64
-      || pcm "uint8_t" >> K PRIM_UI8
-      || pcm "uint16_t" >> K PRIM_UI16
-      || pcm "uint32_t" >> K PRIM_UI32
-      || pcm "uint64_t" >> K PRIM_UI64
-      || parse_id >> PRIM_NAMED
-  
-      fun mk_ptr ty [] = ty
-        | mk_ptr ty (_::xs) = CTY_PTR (mk_ptr ty xs)
-      
-      fun parse_cfield s = (
-           parse_ctype -- parse_id --| Parse.$$$ ";" >> FLD_NAMED
-        || parse_fld_struct --| Parse.$$$ ";" >> FLD_ANON
-      ) s
-      and parse_fld_struct s = (pkw "struct" |-- Parse.$$$ "{" |-- Scan.repeat1 parse_cfield --| Parse.$$$ "}") s
-      and parse_ctype1 s = (
-           parse_cprim >> CTY_PRIM
-        || parse_fld_struct >> CTY_STRUCT
-      ) s
-      and parse_ctype s = (
-        parse_ctype1 -- Scan.repeat (Parse.$$$ "*") >> (fn (ty,ptrs) => mk_ptr ty ptrs)
-      ) s
-         
-      val parse_rtype = parse_ctype >> SOME || pcm "void" >> K NONE
-      
-      val parse_typedef = pkw "typedef" |-- parse_ctype -- parse_id --| Parse.$$$ ";" >> (fn (ty,name) => mk_tydef (name,ty))
-      val parse_typedefs = Scan.repeat parse_typedef
-    
-    end
-    
-    val ct_basic_kws =       [
-      "auto",
-      "break",
-      "case",
-      "char",
-      "const",
-      "continue",
-      "default",
-      "do",
-      "double",
-      "else",
-      "enum",
-      "extern",
-      "float",
-      "for",
-      "goto",
-      "if",
-      "inline",
-      "int",
-      "long",
-      "register",
-      "restrict",
-      "return",
-      "short",
-      "signed",
-      "sizeof",
-      "static",
-      "struct",
-      "switch",
-      "typedef",
-      "union",
-      "unsigned",
-      "void",
-      "volatile",
-      "while",
-      "_Alignas",
-      "_Alignof",
-      "_Atomic",
-      "_Bool",
-      "_Complex",
-      "_Generic",
-      "_Imaginary",
-      "_Noreturn",
-      "_Static_assert",
-      "_Thread_local"
-    ]
-    val ct_basic_kw_set = Symtab.make_set ct_basic_kws
-    
-    val ct_kws = 
-    ["(",")",";","{","}","*",","] (* TODO: Complete this list *)      
-    @
-    ct_basic_kws
-    @
-    ["int8_t", "int16_t", "int32_t", "int64_t",
-     "uint8_t", "uint16_t", "uint32_t", "uint64_t"]
-      
-    (* Checking *)
-    
-    fun is_cid_start s = Symbol.is_ascii_letter s orelse s="_"
-    fun is_cid_ctd s = is_cid_start s orelse Symbol.is_ascii_digit s
-    
-    fun is_c_identifier s =
-      size s > 0 andalso is_cid_start (String.substring (s, 0, 1)) andalso
-      forall_string is_cid_ctd s andalso
-      not (Symtab.defined ct_basic_kw_set s);
-         
-    fun check_identifier name = (is_c_identifier name orelse error ("Invalid identifier " ^ name); ())
-      
-
-    fun check_decl (decl,_) name = (Symtab.defined decl name orelse error ("Undeclared type " ^ name); ())
-    fun check_complete (decl,def) name = (check_decl (decl,def) name; Symtab.defined def name orelse error ("Incomplete type " ^ name); ())
-          
-    fun check_type dd (CTY_PRIM (PRIM_NAMED name)) = check_complete dd name
-      | check_type _ (CTY_PRIM _) = ()
-      | check_type dd (CTY_PTR (CTY_PRIM (PRIM_NAMED name))) = check_decl dd name
-      | check_type dd (CTY_PTR t) = check_type dd t
-      | check_type dd (CTY_STRUCT fs) = (map (check_field dd) fs; ())
-    and check_field dd (FLD_NAMED (ty,name)) = (check_type dd ty; check_identifier name)
-      | check_field dd (FLD_ANON fs) = (map (check_field dd) fs; ())
-      
-    fun is_valid_rty (dd as (_,def)) (CTY_PRIM (PRIM_NAMED name)) = 
-          (case Symtab.lookup def name of NONE => false | SOME t => is_valid_rty dd t)
-      | is_valid_rty _ (CTY_PRIM _) = true
-      | is_valid_rty _ (CTY_PTR _) = true
-      | is_valid_rty _ (CTY_STRUCT _) = false
-    
-    fun check_valid_rty dd t = (is_valid_rty dd t orelse error "Aggregate return type not supported by C"; ())  
-      
-    fun check_rtype _ NONE = ()
-      | check_rtype dd (SOME t) = (check_type dd t; check_valid_rty dd t)
-      
-    fun check_csig dd (CSIG (rty,name,argtys)) = (
-      check_rtype dd rty;
-      check_identifier name;
-      map (check_type dd) argtys;
-      ()
-    ) handle ERROR msg => error ("Signature " ^ name ^ ": " ^ msg)
-      
-    (* Check list of type definitions, and create lookup table *)
-    fun check_tydefs tydefs = let
-      val tydefs = map dest_tydef tydefs
-      val _ = map (check_identifier o fst) tydefs
-      val decl = Symtab.make_set (map fst tydefs)
-            
-      fun add_tydef (name,ty) def = let
-        val _ = check_identifier name
-        val _ = Symtab.defined def name andalso error ("Duplicate typedef " ^ name)
-        val _ = check_type (decl,def) ty
-        val def = Symtab.update (name,ty) def
-      in
-        def
-      end
-    
-      val def = fold add_tydef tydefs Symtab.empty
-    in
-      (decl,def)
-    end
-      
-    
-    (* Printing *)
-    local open Simple_PP in
-      (* TODO: Rename _to_Cs \<mapsto> pretty_ *)
-      fun cprim_to_Cs PRIM_CHAR = word "char"
-        | cprim_to_Cs PRIM_SI8 = word "int8_t" 
-        | cprim_to_Cs PRIM_SI16 = word "int16_t"
-        | cprim_to_Cs PRIM_SI32 = word "int32_t"
-        | cprim_to_Cs PRIM_SI64 = word "int64_t"
-        | cprim_to_Cs PRIM_UI8 = word "uint8_t" 
-        | cprim_to_Cs PRIM_UI16 = word "uint16_t"
-        | cprim_to_Cs PRIM_UI32 = word "uint32_t"
-        | cprim_to_Cs PRIM_UI64 = word "uint64_t"
-        | cprim_to_Cs (PRIM_NAMED name) = word name
-                                                  
-      fun cfield_to_Cs (FLD_NAMED (ty,name)) = block [ctype_to_Cs ty, word name, nword ";"]  
-        | cfield_to_Cs (FLD_ANON fs) = block [fldstruct_to_Cs fs, nword ";"]
-      and fldstruct_to_Cs fs = block [word "struct", sep, big_braces (map (line o single o cfield_to_Cs) fs) ]
-      and ctype_to_Cs (CTY_PRIM t) = cprim_to_Cs t
-        | ctype_to_Cs (CTY_PTR t) = block [ctype_to_Cs t, nword "*"]
-        | ctype_to_Cs (CTY_STRUCT fs) = fldstruct_to_Cs fs
-        
-      fun tydef_to_Cs (TYPEDEF (name,ty)) = block [word "typedef", ctype_to_Cs ty, sep, word name, nword ";"]
-      
-      val tydefs_to_Cs = fbrks o map tydef_to_Cs
-        
-      fun rty_to_Cs NONE = word "void" | rty_to_Cs (SOME ty) = ctype_to_Cs ty
-      
-      fun csig_to_Cs (CSIG (rty,name,partys)) = block [rty_to_Cs rty,fsep,word name,parlist (map ctype_to_Cs partys),word ";"]
-                
-      val csigs_to_Cs = fbrks o map csig_to_Cs
-    end
-
-    
-    (* Interface to LLVM types *)
-    
-    local open LLC_Intermediate in      
-    
-      (*fun lty_of_prim _ PRIM_CHAR = TInt 8
-        | lty_of_prim _ PRIM_SI8 = TInt 8
-        | lty_of_prim _ PRIM_SI16 = TInt 16
-        | lty_of_prim _ PRIM_SI32 = TInt 32
-        | lty_of_prim _ PRIM_SI64 = TInt 64
-        | lty_of_prim _ PRIM_UI8 = TInt 8
-        | lty_of_prim _ PRIM_UI16 = TInt 16
-        | lty_of_prim _ PRIM_UI32 = TInt 32
-        | lty_of_prim _ PRIM_UI64 = TInt 64
-        | lty_of_prim rtab (PRIM_NAMED name) = 
-            case Symtab.lookup ntab name of 
-              NONE => error ("Undefined named type " ^ name)
-            | SOME ty => lty_of_ctype ntab ty  
-      and lty_of_cfield ntab (FLD_NAMED (ty,_)) = lty_of_ctype ntab ty
-        | lty_of_cfield ntab (FLD_ANON fs) = TStruct (map (lty_of_cfield ntab) fs)
-      and lty_of_ctype ntab (CTY_PRIM t) = lty_of_prim ntab t               
-        | lty_of_ctype ntab (CTY_PTR t) = TPtr (lty_of_ctype ntab t)
-        | lty_of_ctype ntab (CTY_STRUCT fs) = TStruct (map (lty_of_cfield ntab) fs)
-      *)        
-
-      
-      fun csname_of_lsname rtab n = the_default n (Symtab.lookup rtab n)
-        
-      fun cty_of_lty _ (TInt 8) = CTY_PRIM PRIM_SI8
-        | cty_of_lty _ (TInt 16) = CTY_PRIM PRIM_SI16
-        | cty_of_lty _ (TInt 32) = CTY_PRIM PRIM_SI32
-        | cty_of_lty _ (TInt 64) = CTY_PRIM PRIM_SI64
-        | cty_of_lty _ (TInt w) = error ("cty_of_lty: Unsupported integer width " ^ Int.toString w)
-        | cty_of_lty rtab (TPtr ty) = CTY_PTR (cty_of_lty rtab ty)
-        | cty_of_lty rtab (TStruct tys) = CTY_STRUCT (map_index (cfld_of_lty rtab) tys)
-        | cty_of_lty rtab (TNamed name) = CTY_PRIM (PRIM_NAMED (csname_of_lsname rtab name))
-      and cfld_of_lty rtab (i,ty) = FLD_NAMED (cty_of_lty rtab ty,"field" ^ Int.toString i)        
-        
-      val cty_of_rlty = map_option cty_of_lty  
-        
-    end
-  end\<close>
-  
-  
-  
-  ML \<open>structure LLC_HeaderGen = struct
-    open C_Interface
-  
-    (* Optional signature *)
-    datatype raw_sig = RSIG of ctype option option * string * ctype option list option
-    
-    datatype sigspec = NAME of string | SIG of raw_sig
-    
-    
-    fun name_of_rsig (RSIG (_,name,_)) = name
-    fun name_of_sigspec (NAME name) = name | name_of_sigspec (SIG sg) = name_of_rsig sg
-    
-    fun short_sig name = NAME name
-    fun long_sig sg = SIG sg
-    
-    (* Parsing of optional signature *)
-    fun parse_wildcard p = Parse.underscore >> K NONE || p >> SOME
-
-    fun parse_parlist p = Parse.$$$ "(" |-- Parse.enum "," p --| Parse.$$$ ")"
-        
-    val parse_long_sig = 
-      parse_wildcard parse_rtype -- parse_id -- Scan.option (parse_parlist (parse_wildcard parse_ctype))
-      >> (fn ((r,n),p) => long_sig (RSIG (r,n,p)))
-                           
-    val parse_short_sig = parse_id >> short_sig  
-    val parse_sig = parse_long_sig || parse_short_sig
-      
-    val parse_raw_sig = Parse.position (Parse.cartouche || Parse.short_ident || Parse.string)
-    val parse_raw_tydefs = Parse.position Parse.cartouche
-    
-    val check_raw_tydefs = Parser_Util.parse_inner ct_kws parse_typedefs
-    val check_raw_sig = Parser_Util.parse_inner ct_kws parse_sig
-    
-    
-    fun check_sigs dd sigs = let
-      fun add_sig (sg as RSIG (rt,name,args)) tab = let  
-        val _ = map_option (check_rtype dd) rt
-        val _ = map_option (map (map_option (check_type dd))) args
-        val _ = check_identifier name
-        
-        val _ = Symtab.defined tab name andalso error ("Duplicate name")
-        
-        val tab = Symtab.update (name,sg) tab
-        
-      in tab end handle ERROR msg => error ("Signature " ^ name ^ ": " ^ msg)
-        
-      val tab = fold add_sig sigs Symtab.empty
-    
-    in
-      tab
-    end 
-    
-    (*
-      Signature matching:
-        phase 1: create re-namings, i.e., where named llvm structure is mapped to different named C structure
-    
-        phase 2: structural check, inferring omitted structures from LLVM structures
-        
-    *)
-
-    fun gen_lookup tn tab x = case Symtab.lookup tab x of
-      NONE => error("No such " ^ tn)          
-      | SOME y => y
-                
-
-    fun cty_of_cfield (FLD_NAMED (ty,_)) = ty
-      | cty_of_cfield (FLD_ANON fs) = (CTY_STRUCT fs)
-    
-          
-    fun cr_struct_rename ltab ctab = let
-      open LLC_Intermediate    
-      
-      fun check_eq ln cn cn' = 
-        cn = cn' orelse raise 
-          error("C-Header: ambiguous C-name for LLVM named structure: " 
-                ^ ln ^ " -> " ^ cn ^ " / " ^ cn')
-        
-      val ltab_lookup = gen_lookup "Named LLVM structure" ltab
-      val ctab_lookup = gen_lookup "Named C structure" ctab
-        
-      fun cr _ NONE rtab = rtab
-        | cr (TNamed ln) (SOME (CTY_PRIM (PRIM_NAMED cn))) rtab = upd_rtab ln cn rtab
-        | cr (TStruct tys) (SOME (CTY_STRUCT fs)) rtab = (
-            length tys = length fs orelse error "C-Header: mismatch in number of fields for LLVM and C struct";
-            fold2 cr tys (map (SOME o cty_of_cfield) fs) rtab
-          )
-        | cr (cty as TStruct _) (SOME (CTY_PRIM (PRIM_NAMED cn))) rtab = cr cty (SOME (ctab_lookup cn)) rtab
-        | cr _ _ rtab = rtab 
-      and upd_rtab ln cn rtab = (case Symtab.lookup rtab ln of
-          NONE => Symtab.update (ln,cn) rtab 
-                |> cr (ltab_lookup ln) (SOME (ctab_lookup cn))
-        | SOME cn' => (check_eq ln cn cn'; rtab))
-    
-    
-    in
-      cr
-    end
-    
-    fun cr_struct_rename_rt ltab ctab (SOME lty) (SOME (SOME cty)) rtab =
-        cr_struct_rename ltab ctab lty (SOME cty) rtab
-    | cr_struct_rename_rt _ _ _ _ rtab = rtab 
-    
-    
-    fun match_lty_cty ltab ctab rtab lty NONE = cty_of_lty rtab lty
-      | match_lty_cty ltab ctab rtab lty (SOME cty) = let
-          open LLC_Intermediate
-          
-          val ltab_lookup = gen_lookup "Named LLVM structure" ltab
-          val ctab_lookup = gen_lookup "Named C structure" ctab
-      
-          fun match_int 8 PRIM_SI8 = ()
-            | match_int 8 PRIM_UI8 = ()
-            | match_int 16 PRIM_UI16 = ()
-            | match_int 16 PRIM_UI16 = ()
-            | match_int 32 PRIM_UI32 = ()
-            | match_int 32 PRIM_UI32 = ()
-            | match_int 64 PRIM_UI64 = ()
-            | match_int 64 PRIM_UI64 = ()
-            | match_int _ _ = error "C-Header: Integer type mismatch"
-          
-          fun match (TNamed ln) (CTY_PRIM (PRIM_NAMED cn)) dtab = 
-            if Symtab.defined dtab ln then dtab else 
-              Symtab.insert_set ln dtab
-              |> match (ltab_lookup ln) (ctab_lookup cn)
-          | match (lty as TStruct _) (CTY_PRIM (PRIM_NAMED cn)) dtab =
-              match lty (ctab_lookup cn) dtab
-          | match (TStruct ltys) (CTY_STRUCT cflds) dtab = (
-              length ltys = length cflds orelse error "C-Header: Mismatch in number of fields";
-              fold2 match ltys (map cty_of_cfield cflds) dtab
-            )
-          | match (TInt w) (CTY_PRIM ct) dtab = (match_int w ct; dtab)
-          | match (TPtr lty) (CTY_PTR cty) dtab = match lty cty dtab
-          | match lty cty dtab = error "C-Header: Type mismatch"
-        
-        in
-          cty
-        end
-    
-    fun match_lty_cty_rt ltab ctab rtab (SOME lty) NONE = SOME (match_lty_cty ltab ctab rtab lty NONE)
-      | match_lty_cty_rt ltab ctab rtab (SOME lty) (SOME (SOME cty)) = SOME (match_lty_cty ltab ctab rtab lty (SOME cty))
-      | match_lty_cty_rt ltab ctab rtab NONE (SOME NONE) = NONE
-      | match_lty_cty_rt ltab ctab rtab NONE NONE = NONE
-      | match_lty_cty_rt _ _ _ _ _ = error "C-Header: Return type voidness mismatch"
-        
-    
-    fun match_sig ltab ctab (rty,args) (RSIG (crty,name,cargs)) = let
-      val argtys = map fst args
-      val cargs = the_default (replicate (length argtys) NONE) cargs
-      
-      val _ = length argtys = length cargs orelse error ("C-Header: Wrong number of arguments")
-      
-      
-      (* Build rename table *)
-      val rtab = Symtab.empty
-        |> cr_struct_rename_rt ltab ctab rty crty
-        |> fold2 (cr_struct_rename ltab ctab) argtys cargs
-            
-      (* Match return type *)
-      val crty = match_lty_cty_rt ltab ctab rtab rty crty
-      
-      (* Match arguments *)
-      val cargs = map2 (match_lty_cty ltab ctab rtab) argtys cargs
-      
-      (*
-      val crty = the_default (cty_of_rlty rty) crty
-      
-    
-      val _ = length argtys = length cargs orelse error ("Wrong number of arguments")
-      
-      val cargs = map (fn (lty,cty) => the_default (cty_of_lty lty) cty) (argtys ~~ cargs)
-      
-      (* Consistency check *)
-      fun check_match (lty,cty) = if lty_of_ctype (snd dd) cty = lty then () else error "Type mismatch" (* TODO: More specific error message *)
-      
-      val _ = case (rty,crty) of 
-        (NONE,NONE) => () 
-      | (SOME lty, SOME cty) => check_match (lty,cty)
-      | _ => error "Return type voidness mismatch"
-      
-      val _ = map check_match (argtys ~~ cargs)
-      *)
-    
-    in
-      CSIG (crty,name,cargs)
-    end handle ERROR msg => error ("Signature " ^ name ^ ": " ^ msg)
-    
-    
-    fun make_header hfname tydefs sigspecs eqns = let
-      val sigs = map_filter (fn (NAME _) => NONE | (SIG sg) => SOME sg) sigspecs
-    
-      val dd = check_tydefs tydefs
-      val stab = check_sigs dd sigs
-
-      fun make_hd_id name = let 
-        val name = Symbol.explode name |> filter is_cid_ctd |> map Symbol.to_ascii_upper |> implode
-        val name = "_" ^ name ^ "_H"
-      in name end  
-        
-      val hfname = make_hd_id hfname
-      
-            
-      fun process_eqn (LLC_Intermediate.EQN (rty,name,args,_)) = case Symtab.lookup stab name of
-        NONE => NONE
-      | SOME sg => SOME (match_sig dd (rty,args) sg)
-      
-      val csigs = map_filter process_eqn eqns
-      
-      val _ = map (check_csig dd) csigs
-      
-      val h_to_C = let
-        open Simple_PP
-        val hfsym = word hfname
-      in block [
-          (* TODO: Include information for which version of ll-file this has been generated! *)
-          line [word "// Generated by Isabelle-LLVM. Do not modify."],
-          line [word "#ifndef", hfsym],
-          line [word "#define", hfsym, word "1"],
-          fbrk, fbrk,
-          tydefs_to_Cs tydefs,
-          fbrk, fbrk,
-          csigs_to_Cs csigs,
-          fbrk, fbrk,
-          line [word "#endif"]
-        ]
-      end
-      
-    in
-      case csigs of [] => NONE | _ => SOME (Simple_PP.string_of h_to_C)
-    end
-    
-    
-  end    
-    
-\<close>    
- 
-(*
-oops   
-    
-    local open LLC_Intermediate Simple_PP in      
-         
-
-        
-
-          
-        fun resolve_lty_def (name,cty) ntab = 
-          Symtab.update_new (name,lty_of_ctype ntab cty) ntab
-          handle Symtab.DUP _ => error ("Duplicate named type " ^ name)
-
-        fun resolve_lty_defs defs = fold resolve_lty_def defs Symtab.empty
-        
-        (*
-        xxx, ctd here: 
-          Allow named types for function return types and arguments.
-          Look them up in ntab, and check for compatibility!
-        *)
-          
-          
-          
-      end
-      
-      val parse_tyn = parse_id >> SOME || Parse.underscore >> (fn _ => NONE)
-      val parse_rtyn = Parse.$$$ "void" >> (K (SOME NONE)) || parse_tyn >> map_option SOME
-      val parse_parlist = Parse.$$$ "(" |-- Parse.enum "," parse_tyn --| Parse.$$$ ")"
-      val parse_long_sig = parse_rtyn -- parse_id -- parse_parlist
-        >> (fn ((rty,name),pars) => (name,RSIG (rty,SOME pars)))
-      
-      val parse_short_sig = Parse.short_ident >> (fn name => (name,RSIG (NONE,NONE)))
-      val parse_sig = parse_long_sig || parse_short_sig
-      
-            
-      
-      
-      
-      
-      val parse_sig_spec = Parse.position (Parse.cartouche || Parse.short_ident || Parse.string)
-      val parse_tydefs_spec = Parse.position Parse.cartouche
-
-            
-
-      val check_sig_spec = parse_inner ct_kws parse_sig
-      val check_tydefs_spec = parse_inner ct_kws parse_typedefs
-      
-      fun check_ctype tdtab lty cty = let
-        val lty' = lty_of_ctype tdtab cty
-        val _ = lty = lty' orelse error "Declared ctype does not match ltype" (* TODO: Better error message *)
-      in
-        cty
-      end
-      
-      fun mk_ctype tdtab (lty, NONE) = check_ctype tdtab lty (cty_of_lty lty)
-        | mk_ctype tdtab (lty, SOME name) = check_ctype tdtab lty (CTY_PRIM (PRIM_NAMED name))
-      
-      fun mk_rtype _ NONE NONE = NONE
-        | mk_rtype _ NONE (SOME NONE) = NONE
-        | mk_rtype _ NONE (SOME (SOME _)) = error "Return type declared for void function"
-        | mk_rtype _ (SOME _) (SOME NONE) = error "Void type for non-void function"
-        | mk_rtype tdtab (SOME lty) NONE = SOME (mk_ctype tdtab (lty, NONE))
-        | mk_rtype tdtab (SOME lty) (SOME (SOME name)) = SOME (mk_ctype tdtab (lty,SOME name))
-        
-      fun mk_csig tdtab (LLC_Intermediate.EQN (rty,name,pars,_), RSIG (rtyn,partyns)) = let
-        val rcty = mk_rtype tdtab rty rtyn
-        
-        val partyns = the_default (map (K NONE) pars) partyns
-        val pars = map fst pars
-        
-        val _ = length pars = length partyns orelse error "Parameter number mismatch"
-        val cpartys = (pars ~~ partyns) |> map (mk_ctype tdtab)
-        
-      in
-        CSIG (rcty,name,cpartys)
-      end handle ERROR msg => error ("Signature for " ^ name ^ ": " ^ msg)
-        
-      fun is_valid_rty tdtab (CTY_PRIM (PRIM_NAMED name)) = 
-            (case Symtab.lookup tdtab name of NONE => false | SOME t => is_valid_rty tdtab t)
-            
-        | is_valid_rty _ (CTY_PRIM _) = true
-        | is_valid_rty _ (CTY_PTR _) = true
-        | is_valid_rty _ (CTY_PAIR _) = false
-        
-      fun is_valid_rty' tdtab = the_default true o map_option (is_valid_rty tdtab)
-      
-      fun check_csig tdtab (CSIG (rty,name,_)) = let
-        (* TODO: Are there more restrictions? *)
-        
-        fun err msg = error ("In function " ^ name ^ ": " ^ msg)
-      
-        val _ = is_valid_rty' tdtab rty orelse err "Complex return type not supported by C"
-        val _ = is_c_identifier name orelse err "Invalid name"
-      in () end  
-      
-      fun check_tydef_name (name,_) = ( is_c_identifier name orelse error ("Invalid name " ^ name)  ;())
-      
-                
-      fun make_header hfname eqns sigtab tydefs = let
-      
-        fun is_valid_cidchar s = 
-          Symbol.is_ascii_letter s 
-          orelse Symbol.is_ascii_digit s
-          orelse s="_"
-
-        fun make_hd_id name = let 
-          val name = Symbol.explode name |> filter is_valid_cidchar |> map Symbol.to_ascii_upper |> implode
-          val name = "_" ^ name ^ "_H"
-        in name end  
-          
-        val hfname = make_hd_id hfname
-      
-        val _ = map check_tydef_name tydefs
-        
-        val tdtab = resolve_lty_defs tydefs
-        
-        (* Filter equations for which header entry is to be generated *)
-        val eqns = map_filter (fn eqn as LLC_Intermediate.EQN (_,name,_,_) => case Symtab.lookup sigtab name of
-            NONE => NONE
-          | SOME sg => SOME (eqn,sg)
-        ) eqns
-
-        (* Generate header entries *)
-        val csigs = map (mk_csig tdtab) eqns
-        
-        val _ = map (check_csig (Symtab.make tydefs)) csigs
-        
-        (* TODO: Check that only ASCII-Names are used *)
-
-        val h_to_C = let
-          open Simple_PP
-          val hfsym = word ("_"^hfname^"_H")
-        in block [
-            (* TODO: Include information for which version of ll-file this has been generated! *)
-            line [word "// Generated by Isabelle-LLVM. Do not modify."],
-            line [word "#ifndef", hfsym],
-            line [word "#define", hfsym, word "1"],
-            fbrk, fbrk,
-            tydefs_to_Cs tydefs,
-            fbrk, fbrk,
-            csigs_to_Cs csigs,
-            fbrk, fbrk,
-            line [word "#endif"]
-          ]
-        end
-      
-      in
-        case csigs of [] => NONE | _ => SOME (Simple_PP.string_of h_to_C)
-      end
-  
-    end
-  \<close>
-  *)
-  
-*)  
-  
 end

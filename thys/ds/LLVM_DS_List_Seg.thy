@@ -15,9 +15,9 @@ subsubsection \<open>Encoding to heap-representable\<close>
 
 instantiation node :: (llvm_rep)llvm_rep
 begin
-  definition "to_val_node \<equiv> \<lambda>Node a b \<Rightarrow> llvm_struct [to_val a, to_val b]"
-  definition "from_val_node p \<equiv> case llvm_the_struct p of [a,b] \<Rightarrow> Node (from_val a) (from_val b)"
-  definition [simp]: "struct_of_node (_::(('a) node) itself) \<equiv> llvm_s_struct [struct_of TYPE('a), struct_of TYPE('a node ptr)]"
+  definition "to_val_node \<equiv> \<lambda>Node a b \<Rightarrow> LL_STRUCT [to_val a, to_val b]"
+  definition "from_val_node p \<equiv> case llvm_val.the_fields p of [a,b] \<Rightarrow> Node (from_val a) (from_val b)"
+  definition [simp]: "struct_of_node (_::(('a) node) itself) \<equiv> VS_STRUCT [struct_of TYPE('a), struct_of TYPE('a node ptr)]"
   definition [simp]: "init_node ::('a) node \<equiv> Node init init"
   
   instance
@@ -25,14 +25,19 @@ begin
     unfolding from_val_node_def to_val_node_def struct_of_node_def init_node_def
     (* TODO: Clean proof here, not breaking abstraction barriers! *)
     apply (auto simp: to_val_word_def init_zero fun_eq_iff split: node.splits)
-    apply (smt (z3) from_to_id' list.case(1) list.case(2) node.sel(1) node.sel(2) llvm_the_struct_inv struct_of_prod_def struct_of_ptr_def to_from_id to_val_prod)
-    by (metis init_ptr_def init_zero llvm_zero_initializer_simps(2) struct_of_ptr_def)
+    subgoal for v v1 v2
+      apply (cases v)
+      apply (auto split: list.splits)
+      done
+    subgoal
+      by (simp add: LLVM_Shallow.null_def to_val_ptr_def)
+    done
 
 end
 
 subsubsection \<open>Setup for LLVM code export\<close>
 text \<open>Declare structure to code generator.\<close>
-lemma to_val_node[ll_to_val]: "to_val x = llvm_struct [to_val (node.val x), to_val (node.next x)]"
+lemma to_val_node[ll_to_val]: "to_val x = LL_STRUCT [to_val (node.val x), to_val (node.next x)]"
   apply (cases x)
   apply (auto simp: to_val_node_def)
   done
@@ -40,7 +45,7 @@ lemma to_val_node[ll_to_val]: "to_val x = llvm_struct [to_val (node.val x), to_v
 text \<open>Declare as named structure. Required b/c of circular reference.\<close>
 lemma [ll_identified_structures]: "ll_is_identified_structure ''node'' TYPE(_ node)"  
   unfolding ll_is_identified_structure_def
-  by (simp add: llvm_s_struct_def)
+  by simp
 
 subsubsection \<open>Code Generator Preprocessor Setup\<close>  
 text \<open>The next two are auxiliary lemmas\<close>
@@ -48,19 +53,19 @@ lemma node_insert_value:
   "ll_insert_value (Node x n) x' 0 = return (Node x' n)"
   "ll_insert_value (Node x n) n' (Suc 0) = return (Node x n')"
 
-  apply (simp_all add: ll_insert_value_def Let_def checked_from_val_def 
+  apply (simp_all add: ll_insert_value_def llvm_insert_value_def Let_def checked_from_val_def 
                 to_val_node_def from_val_node_def)
   done
 
 lemma node_extract_value:
   "ll_extract_value (Node x n) 0 = return x"  
   "ll_extract_value (Node x n) (Suc 0) = return n"  
-  apply (simp_all add: ll_extract_value_def Let_def checked_from_val_def 
+  apply (simp_all add: ll_extract_value_def llvm_extract_value_def Let_def checked_from_val_def 
                 to_val_node_def from_val_node_def)
   done
   
 text \<open>Lemmas to translate node construction and destruction\<close>
-lemma inline_return_node[llvm_inline]: "return (Node a x) = doM {
+lemma inline_return_node[llvm_pre_simp]: "return (Node a x) = doM {
     r \<leftarrow> ll_insert_value init a 0;
     r \<leftarrow> ll_insert_value r x 1;
     return r
@@ -68,7 +73,7 @@ lemma inline_return_node[llvm_inline]: "return (Node a x) = doM {
   apply (auto simp: node_insert_value)
   done
 
-lemma inline_node_case[llvm_inline]: "(case x of (Node a n) \<Rightarrow> f a n) = doM {
+lemma inline_node_case[llvm_pre_simp]: "(case x of (Node a n) \<Rightarrow> f a n) = doM {
   a \<leftarrow> ll_extract_value x 0;
   n \<leftarrow> ll_extract_value x 1;
   f a n
@@ -77,7 +82,7 @@ lemma inline_node_case[llvm_inline]: "(case x of (Node a n) \<Rightarrow> f a n)
   apply (auto simp: node_extract_value)
   done
   
-lemma inline_return_node_case[llvm_inline]: "doM {return (case x of (Node a n) \<Rightarrow> f a n)} = doM {
+lemma inline_return_node_case[llvm_pre_simp]: "doM {return (case x of (Node a n) \<Rightarrow> f a n)} = doM {
   a \<leftarrow> ll_extract_value x 0;
   n \<leftarrow> ll_extract_value x 1;
   return (f a n)

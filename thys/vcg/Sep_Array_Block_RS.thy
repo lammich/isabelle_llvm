@@ -34,9 +34,9 @@ end
 locale array_block2 = array_block1 static_err mem_err vload vstore vgep
     for static_err :: 'err
     and mem_err :: 'err
-    and vload :: "'vaddr::this_addr \<Rightarrow> ('val,_,'val,'err) M"
-    and vstore :: "'val \<Rightarrow> 'vaddr \<Rightarrow> (unit,_,'val,'err) M"
-    and vgep :: "'vaddr \<Rightarrow> 'vidx \<Rightarrow> ('vaddr,_,'val,'err) M"
+    and vload :: "'vaddr::this_addr \<Rightarrow> ('val,_,'val,'err,'i::interference) M"
+    and vstore :: "'val \<Rightarrow> 'vaddr \<Rightarrow> (unit,_,'val,'err,'i) M"
+    and vgep :: "'vaddr \<Rightarrow> 'vidx \<Rightarrow> ('vaddr,_,'val,'err,'i) M"
     
 + fixes \<alpha>v :: "'val \<Rightarrow> 'aval::unique_zero_sep_algebra"
     and vpto :: "'val \<Rightarrow> 'vaddr \<Rightarrow> 'aval \<Rightarrow> bool"

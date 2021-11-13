@@ -262,7 +262,8 @@ context sort_impl_context begin
     is_unguarded_insert3: "is_insert3 False"
   
   sepref_def is_guarded_insert_impl is "uncurry2 (PR_CONST (is_insert3 True))" 
-    :: "(woarray_assn elem_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a woarray_assn elem_assn"
+    :: "[\<lambda>_. True]\<^sub>c (woarray_slice_assn elem_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k 
+      \<rightarrow> woarray_slice_assn elem_assn [\<lambda>((ai,_),_) r. r=ai]\<^sub>c"
     unfolding is_insert3_def PR_CONST_def
     apply (simp named_ss HOL_ss:)
     supply [[goals_limit = 1]]
@@ -270,7 +271,8 @@ context sort_impl_context begin
     by sepref
 
   sepref_def is_unguarded_insert_impl is "uncurry2 (PR_CONST (is_insert3 False))" 
-    :: "(woarray_assn elem_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a woarray_assn elem_assn"
+    :: "[\<lambda>_. True]\<^sub>c (woarray_slice_assn elem_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k 
+      \<rightarrow> woarray_slice_assn elem_assn [\<lambda>((ai,_),_) r. r=ai]\<^sub>c"
     unfolding is_insert3_def PR_CONST_def
     apply (simp named_ss HOL_ss:)
     supply [[goals_limit = 1]]
@@ -300,7 +302,7 @@ context sort_impl_context begin
     (xs, i);
     array_upd xs i x
   }"
-    using is_unguarded_insert_impl_def[unfolded eo_extract_impl_def cmpo_v_idx_impl_def, simplified bind_laws split]
+    using is_unguarded_insert_impl_def[unfolded M_CONST_def eo_extract_impl_def cmpo_v_idx_impl_def, simplified bind_laws split] 
     by simp
     
 end    
@@ -559,13 +561,15 @@ context sort_impl_context begin
     guarded_insertion_sort2: "gen_insertion_sort2 True"
     
   sepref_def unguarded_insertion_sort_impl is "uncurry3 (PR_CONST (gen_insertion_sort2 False))" 
-    :: "size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (woarray_assn elem_assn)\<^sup>d \<rightarrow>\<^sub>a woarray_assn elem_assn"
+    :: "[\<lambda>_. True]\<^sub>c size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (woarray_slice_assn elem_assn)\<^sup>d 
+      \<rightarrow> woarray_slice_assn elem_assn [\<lambda>(((_,_),_),ai) r. r=ai]\<^sub>c"
     unfolding gen_insertion_sort2_def PR_CONST_def
     apply (annot_snat_const "TYPE(size_t)")
     by sepref
     
   sepref_def guarded_insertion_sort_impl is "uncurry3 (PR_CONST (gen_insertion_sort2 True))" 
-    :: "size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (woarray_assn elem_assn)\<^sup>d \<rightarrow>\<^sub>a woarray_assn elem_assn"
+    :: "[\<lambda>_. True]\<^sub>c size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (woarray_slice_assn elem_assn)\<^sup>d 
+      \<rightarrow> woarray_slice_assn elem_assn [\<lambda>(((_,_),_),ai) r. r=ai]\<^sub>c"
     unfolding gen_insertion_sort2_def PR_CONST_def
     apply (annot_snat_const "TYPE(size_t)")
     by sepref
@@ -657,7 +661,8 @@ context parameterized_sort_impl_context begin
     is_unguarded_param_insert3: "is_insert_param False"
   
   sepref_def is_guarded_param_insert_impl is "uncurry3 (PR_CONST (is_insert_param True))" 
-    :: "cparam_assn\<^sup>k *\<^sub>a wo_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a wo_assn"
+    :: "[\<lambda>_. True]\<^sub>c cparam_assn\<^sup>k *\<^sub>a wo_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k 
+      \<rightarrow> wo_assn [\<lambda>(((_,ai),_),_) r. r=ai]\<^sub>c"
     unfolding is_insert_param_def PR_CONST_def
     apply (simp named_ss HOL_ss:)
     supply [[goals_limit = 1]]
@@ -665,7 +670,8 @@ context parameterized_sort_impl_context begin
     by sepref
 
   sepref_def is_unguarded_param_insert_impl is "uncurry3 (PR_CONST (is_insert_param False))" 
-    :: "cparam_assn\<^sup>k *\<^sub>a wo_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a wo_assn"
+    :: "[\<lambda>_. True]\<^sub>c cparam_assn\<^sup>k *\<^sub>a wo_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k 
+      \<rightarrow> wo_assn [\<lambda>(((_,ai),_),_) r. r=ai]\<^sub>c"
     unfolding is_insert_param_def PR_CONST_def
     apply (simp named_ss HOL_ss:)
     supply [[goals_limit = 1]]
@@ -679,13 +685,15 @@ context parameterized_sort_impl_context begin
     guarded_insertion_sort_param: "gen_insertion_sort_param True"
     
   sepref_def unguarded_insertion_sort_param_impl is "uncurry4 (PR_CONST (gen_insertion_sort_param False))" 
-    :: "cparam_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a wo_assn\<^sup>d \<rightarrow>\<^sub>a wo_assn"
+    :: "[\<lambda>_. True]\<^sub>c cparam_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a wo_assn\<^sup>d 
+      \<rightarrow> wo_assn [\<lambda>((((_,_),_),_),ai) r. r=ai]\<^sub>c"
     unfolding gen_insertion_sort_param_def PR_CONST_def
     apply (annot_snat_const "TYPE(size_t)")
     by sepref
     
   sepref_def guarded_insertion_sort_param_impl is "uncurry4 (PR_CONST (gen_insertion_sort_param True))" 
-    :: "cparam_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a wo_assn\<^sup>d \<rightarrow>\<^sub>a wo_assn"
+    :: "[\<lambda>_. True]\<^sub>c cparam_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a wo_assn\<^sup>d 
+      \<rightarrow> wo_assn [\<lambda>((((_,_),_),_),ai) r. r=ai]\<^sub>c"
     unfolding gen_insertion_sort_param_def PR_CONST_def
     apply (annot_snat_const "TYPE(size_t)")
     by sepref

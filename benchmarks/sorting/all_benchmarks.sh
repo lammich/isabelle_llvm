@@ -49,17 +49,53 @@ function run_int_std() {
   run uint64 std::sort $1 $NIELEM $NITER
 }
 
+function run_int_std_par() {
+  run uint64 std::parsort $1 $NIELEM $NITER
+}
+
+
 function run_int_isa() {
   run uint64 isabelle::sort $1 $NIELEM $NITER
 }
+
+function run_int_naive_par() {
+  run uint64 naive::parqsort $1 $NIELEM $NITER
+}
+
+function run_int_isa_par() {
+  run uint64 isabelle::parqsort $1 $NIELEM $NITER
+}
+
+function run_int_sample() {
+  run uint64 boost::sample_sort $1 $NIELEM $NITER
+}
+
+
 
 function run_str_std() {
   run llstring std::sort $1 $NSELEM $NITER
 }
 
+function run_str_std_par() {
+  run llstring std::parsort $1 $NSELEM $NITER
+}
+
 function run_str_isa() {
   run llstring isabelle::sort $1 $NSELEM $NITER
 }
+
+function run_str_naive_par() {
+  run llstring naive::parqsort $1 $NSELEM $NITER
+}
+
+function run_str_isa_par() {
+  run llstring isabelle::parqsort $1 $NSELEM $NITER
+}
+
+function run_str_sample() {
+  run llstring boost::sample_sort $1 $NSELEM $NITER
+}
+
 
 function run_pdq_int_std() {
   run uint64 boost::pdqsort $1 $NIELEM $NITER
@@ -85,18 +121,32 @@ function run_int_gcc() {
 }
 
 for i in $INT_DATA; do
-  run_int_isa $i
+
   run_int_std $i
-  run_pdq_int_isa $i
-  run_pdq_int_std $i
+  run_int_std_par $i
+  run_int_isa_par $i
+  run_int_naive_par $i
+  run_int_sample $i
+
+
+#   run_int_isa $i
+#   run_int_std $i
+#   run_pdq_int_isa $i
+#   run_pdq_int_std $i
 #   run_int_gcc $i
 done
 
 for i in $STR_DATA; do
-  run_str_isa $i
   run_str_std $i
-  run_pdq_str_isa $i
-  run_pdq_str_std $i
+  run_str_std_par $i
+  run_str_isa_par $i
+  run_str_naive_par $i
+  run_str_sample $i
+
+#   run_str_isa $i
+#   run_str_std $i
+#   run_pdq_str_isa $i
+#   run_pdq_str_std $i
 done
 
 

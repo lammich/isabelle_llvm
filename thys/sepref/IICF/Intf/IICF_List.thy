@@ -72,6 +72,9 @@ sepref_decl_op list_rev: rev :: "\<langle>A\<rangle>list_rel \<rightarrow> \<lan
 sepref_decl_op list_index: index :: "\<langle>A\<rangle>list_rel \<rightarrow> A \<rightarrow> nat_rel" 
   where "single_valued A" "single_valued (A\<inverse>)" .
 
+sepref_decl_op split_list: "\<lambda>i xs. (take i xs, drop i xs)" :: "[\<lambda>(i,xs). i\<le>length xs]\<^sub>f nat_rel \<times>\<^sub>r \<langle>A\<rangle>list_rel \<rightarrow> \<langle>A\<rangle>list_rel \<times>\<^sub>r \<langle>A\<rangle>list_rel" .
+sepref_decl_op join_list: "(@)" :: "\<langle>A\<rangle>list_rel \<rightarrow> \<langle>A\<rangle>list_rel \<rightarrow> \<langle>A\<rangle>list_rel" .
+  
 subsection \<open>Patterns\<close>
 lemma [def_pat_rules]:
   "[] \<equiv> op_list_empty"

@@ -178,6 +178,11 @@ begin
       apply (annot_snat_const "TYPE(32)")
       by sepref
     
+      
+    print_named_simpset llvm_pre_simp  
+      
+    find_theorems "- neg_numeral_class.dbl_dec (numeral ?k1)"
+    
     export_llvm test
     
   end

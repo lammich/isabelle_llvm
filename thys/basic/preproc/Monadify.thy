@@ -31,7 +31,11 @@ begin
   \<close>
 
   lemma eta_expand: "f \<equiv> \<lambda>x. f x" by (rule reflexive)
-    
+
+  (* Tag for constants, optional *)  
+  definition "M_CONST c \<equiv> c"
+  
+      
   ML \<open>
     functor Gen_Monadify (
       (*
@@ -135,6 +139,7 @@ begin
       fun is_operand (Free _) = true
         | is_operand (Var _) = true
         | is_operand (Bound _) = true
+        | is_operand @{mpat \<open>TYPE (_)\<close>} = true
         | is_operand _ = false
 
       val is_ho_operand = fastype_of #> body_type #> is_monadT
@@ -145,6 +150,32 @@ begin
         is_monadT T andalso length (strip_abs_vars t) = length argTs
       end  
       
+      
+      fun eta_expandN n t = let
+        val Ts = binder_types (fastype_of t) |> take n
+        val ex_names = Term.add_free_names t []
+        val args = (Name.invent_list ex_names "x" n ~~ Ts) |> map Free
+        val t = list_comb (t, args)
+          |> fold lambda args
+        
+      in
+        t
+      end
+           
+      
+      fun eta_expand_monadT t = let 
+        
+        fun countT T =
+          if is_monadT T then 0
+          else case try dest_funT T of 
+            NONE => 0 
+          | SOME (_,Tb) => 1 + countT Tb
+
+        val n = countT (fastype_of t)        
+        
+      in
+        eta_expandN n t
+      end
        
       fun mk_operand t F = 
         if is_operand t then F t 
@@ -162,9 +193,9 @@ begin
           | NONE => mk_operation t (fn t => K t)
       and mk_monadify_all (Abs xTt) = ABS_CNV xTt mk_monadify_all
         | mk_monadify_all t = 
-            if is_monadT (fastype_of t) then mk_monadify t 
+            if is_monadT (body_type (fastype_of t)) then eta_expand_monadT t |> mk_monadify
             else fn ctxt =>
-              strip_comb t |> apsnd (map (fn t => mk_monadify_all t ctxt)) |> list_comb
+              strip_op ctxt t |> apsnd (map (fn t => mk_monadify_all t ctxt)) |> list_comb
             
       
       fun monadify ctxt t = mk_monadify t (Variable.declare_term t ctxt |> Variable.set_body false)
@@ -173,7 +204,7 @@ begin
           val _ = is_monadT (Thm.typ_of_cterm ct |> body_type) 
             orelse raise TYPE("No monad type",[Thm.typ_of_cterm ct],[Thm.term_of ct])
       
-          val ctxt = put_simpset HOL_basic_ss ctxt addsimps monad_laws
+          val ctxt = put_simpset HOL_basic_ss ctxt addsimps (@{thms M_CONST_def} @ monad_laws)
           val tac = ALLGOALS (simp_tac ctxt)
         in 
           (* TODO: f_tac_conv will choke on beta-redexes! *)
@@ -187,6 +218,89 @@ begin
     end
   \<close>
 
+  
+  ML \<open>
+  
+    functor Gen_Monadify_Cong_Basis () = struct
+      structure Consts = Generic_Data (
+        type T = (bool * term) Item_Net.T
+        val empty = Item_Net.init (fn ((_,t1), (_,t2)) => t1 aconv t2) (single o snd)
+        val merge = Item_Net.merge
+        val extend = I
+      )    
+  
+      val add_const_decl = Consts.map o Item_Net.update
+      val remove_const_decl = Consts.map o Item_Net.remove
+      val get_const_decls = Context.Proof #> Consts.get #> Item_Net.content
+      
+      fun prepare_const_decl t ctxt = let
+        val t = singleton (Variable.export_terms (Proof_Context.augment t ctxt) ctxt) t
+        
+        val _ = is_Var (head_of t) andalso 
+          (Pretty.block [
+            Pretty.str "Head of const is variable: ", 
+            Syntax.pretty_term ctxt t
+           ]) |> Pretty.string_of |> error
+        
+      in
+        t
+      end
+      
+      fun prepare_add_const_decl wrap t context = add_const_decl (wrap,prepare_const_decl t (Context.proof_of context)) context
+      fun prepare_remove_const_decl wrap t context = remove_const_decl (wrap,prepare_const_decl t (Context.proof_of context)) context
+      
+      fun mk_M_CONST c = @{mk_term "M_CONST ?c"}
+      
+      fun is_const _ @{mpat "M_CONST _"} = SOME false
+      | is_const ctxt t = case Item_Net.retrieve_matching (Consts.get (Context.Proof ctxt)) t of
+          [] => NONE
+        | (wr,_)::_  => SOME wr
+            
+      fun strip_op ctxt t = let
+        fun stripc (t as f$x, xs) = (case is_const ctxt t of
+              NONE => stripc (f,x::xs)
+            | SOME false => (t,xs)
+            | SOME true => (mk_M_CONST t,xs)
+            )
+          | stripc tt = tt
+      in stripc (t,[]) end
+  
+    end
+  
+    functor Gen_Monadify_Cong (
+      val mk_return: term -> term
+      val mk_bind: term -> term -> term
+      val dest_return: term -> term option
+      val dest_bind: term -> (term * term) option
+      val dest_monadT: typ -> typ option
+      
+      val bind_return_thm : thm  (* bind m return = m *)
+      val return_bind_thm : thm  (* bind (return x) f = f x  *)
+      val bind_bind_thm : thm    (* bind (bind m f) g = bind m (\<lambda>x. bind (f x) g) *)
+      
+    ) = struct
+
+      structure BT = Gen_Monadify_Cong_Basis()
+      open BT
+
+      structure T = Gen_Monadify (
+        val mk_return = mk_return
+        val mk_bind = mk_bind
+        val dest_return = dest_return
+        val dest_bind = dest_bind
+        val dest_monadT = dest_monadT
+        val strip_op = strip_op
+        val bind_return_thm = bind_return_thm
+        val return_bind_thm = return_bind_thm
+        val bind_bind_thm = bind_bind_thm
+      )
+      open T
+  
+    end
+  \<close>
+  
+  
+  (*
   ML \<open>
     functor Gen_Monadify_Cong (
       val mk_return: term -> term
@@ -252,6 +366,7 @@ begin
   
     end
   \<close>
+  *)
   
   (*
   (* Test Monad *)

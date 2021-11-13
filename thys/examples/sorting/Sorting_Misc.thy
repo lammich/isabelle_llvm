@@ -474,8 +474,7 @@ lemma word_clz_1[simp]: "word_clz (1::'a::len word) = LENGTH ('a) - 1"
   
   
 (* CG-pre setup for LENGTH constants *)
-lemmas [named_ss llvm_inline] = 
-  len_of_numeral_defs of_nat_numeral
+lemmas [llvm_pre_simp] = len_of_numeral_defs of_nat_numeral
   
 (* Sepref setup for LENGTH *)
   

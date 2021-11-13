@@ -6,13 +6,43 @@ Path=.
 parseAmbiguousAsCPP=true
 parserArguments=-ferror-limit=100 -fspell-checking -Wdocumentation -Wunused-parameter -Wunreachable-code -Wall -std=c++11
 parserArgumentsC=-ferror-limit=100 -fspell-checking -Wdocumentation -Wunused-parameter -Wunreachable-code -Wall -std=c99
+parserArgumentsCuda=-ferror-limit=100 -fspell-checking -Wdocumentation -Wunused-parameter -Wunreachable-code -Wall -std=c++11
+parserArgumentsOpenCL=-ferror-limit=100 -fspell-checking -Wdocumentation -Wunused-parameter -Wunreachable-code -Wall -cl-std=CL1.1
 
 [CustomDefinesAndIncludes][ProjectPath0][Compiler]
 Name=Clang
 
 [CustomDefinesAndIncludes][ProjectPath0][Includes]
-1=/home/j65266pl/devel/isabelle/isabelle_llvm/thys/examples/code
-2=/home/j65266pl/include
+1=/home/peter/devel/isabelle/isabelle_llvm_par/thys/examples/code
+
+[Launch]
+Launch Configurations=Launch Configuration 0
+
+[Launch][Launch Configuration 0]
+Configured Launch Modes=execute
+Configured Launchers=nativeAppLauncher
+Name=New Compiled Binary Launcher
+Type=Native Application
+
+[Launch][Launch Configuration 0][Data]
+Arguments=uint64 std::parsort random 1000000 1
+Debugger Shell=
+Dependencies=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x00)
+Dependency Action=Nothing
+Display Demangle Names=true
+Display Static Members=false
+EnvironmentGroup=
+Executable=file:///home/peter/devel/isabelle/isabelle_llvm_par/benchmarks/sorting/do_benchmark
+External Terminal=konsole --noclose --workdir %workdir -e %exe
+GDB Path=
+Project Target=
+Remote GDB Config Script=
+Remote GDB Run Script=
+Remote GDB Shell Script=
+Start With=ApplicationOutput
+Use External Terminal=false
+Working Directory=file:///home/peter/devel/isabelle/isabelle_llvm_par/benchmarks/sorting
+isExecutable=true
 
 [Project]
 VersionControlSupport=kdevgit

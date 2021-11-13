@@ -2,6 +2,8 @@ theory Sorting_Quicksort_Partition
 imports Sorting_Quicksort_Scheme
 begin
   
+hide_const (open) Transcendental.pi \<comment> \<open>\<open>pi\<close> is the implementation of \<open>p\<close>, not some constant related to a circle ;)\<close>
+
 (* TODO: Move. Found useful for ATPs *)
 lemma strict_itrans: "a < c \<Longrightarrow> a < b \<or> b < c" for a b c :: "_::linorder"
   by auto
@@ -97,7 +99,9 @@ context sort_impl_context begin
   
 sepref_register move_median_to_first
 
-sepref_def move_median_to_first_impl [llvm_inline] is "uncurry4 (PR_CONST move_median_to_first)" :: "size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (arr_assn)\<^sup>d \<rightarrow>\<^sub>a arr_assn"
+sepref_def move_median_to_first_impl [llvm_inline] is "uncurry4 (PR_CONST move_median_to_first)" 
+  :: "[\<lambda>_. True]\<^sub>c size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (arr_assn)\<^sup>d 
+    \<rightarrow> arr_assn [\<lambda>((((_,_),_),_),ai) r. r=ai]\<^sub>c"
   unfolding move_median_to_first_alt PR_CONST_def
   by sepref 
                     
@@ -317,7 +321,9 @@ lemmas [sepref_fr_rules] = qsp_next_h_impl.refine[FCOMP qsp_next_h_refine]
   
                         
 sepref_register qs_partition  
-sepref_def qs_partition_impl (*[llvm_inline]*) is "uncurry3 (PR_CONST qs_partition)" :: "size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (arr_assn)\<^sup>d \<rightarrow>\<^sub>a arr_assn \<times>\<^sub>a size_assn"
+sepref_def qs_partition_impl (*[llvm_inline]*) is "uncurry3 (PR_CONST qs_partition)" 
+  :: "[\<lambda>_. True]\<^sub>c size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (arr_assn)\<^sup>d 
+    \<rightarrow> arr_assn \<times>\<^sub>a size_assn [\<lambda>(((_,_),_),ai) (r,_). r=ai]\<^sub>c"
   unfolding qs_partition_def PR_CONST_def
   apply (annot_snat_const "TYPE(size_t)")
   supply [dest] = slice_eq_mset_eq_length
@@ -332,7 +338,8 @@ sepref_def qs_partitionXXX_impl (*[llvm_inline]*) is "uncurry3 (PR_CONST qs_part
 *)  
 
 sepref_register partition_pivot  
-sepref_def partition_pivot_impl [llvm_inline] is "uncurry2 (PR_CONST partition_pivot)" :: "arr_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a arr_assn \<times>\<^sub>a size_assn"
+sepref_def partition_pivot_impl [llvm_inline] is "uncurry2 (PR_CONST partition_pivot)" 
+  :: "[\<lambda>_. True]\<^sub>c arr_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow> arr_assn \<times>\<^sub>a size_assn [\<lambda>((ai,_),_) (r,_). r=ai]\<^sub>c"
   unfolding partition_pivot_def PR_CONST_def    
   apply (annot_snat_const "TYPE(size_t)")
   by sepref
@@ -507,7 +514,9 @@ sepref_def qsp_next_h_impl [llvm_inline] is "uncurry3 (PR_CONST qsp_next_h_param
   
                         
 sepref_register qs_partition_param  
-sepref_def qs_partition_impl is "uncurry4 (PR_CONST qs_partition_param)" :: "cparam_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (arr_assn)\<^sup>d \<rightarrow>\<^sub>a arr_assn \<times>\<^sub>a size_assn"
+sepref_def qs_partition_impl is "uncurry4 (PR_CONST qs_partition_param)" 
+  :: "[\<lambda>_. True]\<^sub>c cparam_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (arr_assn)\<^sup>d 
+    \<rightarrow> arr_assn \<times>\<^sub>a size_assn [\<lambda>((((_,_),_),_),ai) (r,_). r=ai]\<^sub>c"
   unfolding qs_partition_param_def PR_CONST_def
   apply (annot_snat_const "TYPE(size_t)")
   supply [dest] = slice_eq_mset_eq_length
@@ -517,7 +526,8 @@ sepref_register move_median_to_first_param
 
 sepref_def move_median_to_first_param_impl (*[llvm_inline] *)
   is "uncurry5 (PR_CONST move_median_to_first_param)" 
-  :: "cparam_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (arr_assn)\<^sup>d \<rightarrow>\<^sub>a arr_assn"
+  :: "[\<lambda>_. True]\<^sub>c cparam_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (arr_assn)\<^sup>d 
+    \<rightarrow> arr_assn [\<lambda>(((((_,_),_),_),_),ai) r. r=ai]\<^sub>c"
   unfolding move_median_to_first_param_def PR_CONST_def
   by sepref  
   
@@ -525,7 +535,8 @@ sepref_def move_median_to_first_param_impl (*[llvm_inline] *)
 sepref_register partition_pivot_param  
 sepref_def partition_pivot_impl (*[llvm_inline] *)
   is "uncurry3 (PR_CONST partition_pivot_param)" 
-  :: "cparam_assn\<^sup>k *\<^sub>a arr_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a arr_assn \<times>\<^sub>a size_assn"
+  :: "[\<lambda>_. True]\<^sub>c cparam_assn\<^sup>k *\<^sub>a arr_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k 
+    \<rightarrow> arr_assn \<times>\<^sub>a size_assn [\<lambda>(((_,ai),_),_) (r,_). r=ai]\<^sub>c"
   unfolding partition_pivot_param_def PR_CONST_def    
   apply (annot_snat_const "TYPE(size_t)")
   by sepref

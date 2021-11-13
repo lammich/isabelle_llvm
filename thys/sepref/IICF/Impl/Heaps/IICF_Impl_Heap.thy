@@ -42,7 +42,6 @@ begin
     unfolding hn_ctxt_def invalid_assn_def prod_assn_def entails_def
     by (auto split: prod.split elim!: is_pureE 
       simp: sep_algebra_simps pure_part_pure_conj_eq)
-    argo
     
   (* TODO: Move
     TODO: Should be generic algorithm!

@@ -12,11 +12,16 @@ signature LLVM_BUILDER = sig
   
   (* Types *)
   val mkty_i: int -> ty
+  val mkty_double: ty
   val mkty_ptr: ty -> ty
   val mkty_array: int -> ty -> ty
+  val mkty_vector: int -> ty -> ty
   val mkty_struct: ty list -> ty
   val mkty_named: T -> string -> ty
+  val mkty_fptr: ty option -> ty list -> ty
 
+  val is_primitive_ty: ty -> bool
+  
   val dstty_i: ty -> int
   (* TODO: Add other dstty functions *)
 
@@ -27,9 +32,11 @@ signature LLVM_BUILDER = sig
   (* Constants *)    
   val mkc_iw: int -> int -> value
   val mkc_i: ty -> int -> value
+  val mkc_d: ty -> Word64.word -> value
   val mkc_undef: ty -> value
   val mkc_zeroinit: ty -> value
   val mkc_null: ty -> value
+  val mkc_fun: ty -> string -> value
   
   (* Procedures *)
   val open_proc: T -> ty option -> string -> (ty * string) list -> value list
@@ -47,6 +54,7 @@ signature LLVM_BUILDER = sig
   (** Arithmetic *)
   val mk_arith_instr: string -> T -> regname -> value -> value -> value
   val mk_icmp_instr: string -> T -> regname -> value -> value -> value
+  val mk_fcmp_instr: string -> T -> regname -> value -> value -> value
   val mk_ptrcmp_instr: string -> T -> regname -> value -> value -> value
   val mk_conv_instr: string -> T -> regname -> value -> ty -> value
   
@@ -54,6 +62,10 @@ signature LLVM_BUILDER = sig
   val mk_extractvalue: T -> regname -> value -> int -> value
   val mk_insertvalue: T -> regname -> value -> value -> int -> value
 
+  val mk_extractelement: T -> regname -> value -> value -> value
+  val mk_insertelement: T -> regname -> value -> value -> value -> value
+  
+  
   val mk_ofs_ptr: T -> regname -> value -> value -> value
   val mk_gep_idx: T -> regname -> value -> value -> value
 
@@ -64,12 +76,29 @@ signature LLVM_BUILDER = sig
   val mk_load: T -> regname -> value -> value
   val mk_store: T -> value -> value -> unit
   
+  val mk_alloca: T -> regname -> ty -> value
+  
+  
     
   (** Control Flow *)  
   val mk_call: T -> regname -> ty -> string -> value list -> value
   val mk_call_void: T -> string -> value list -> unit
   val mk_return: T -> value option -> unit
 
+  (** Call and declare function as external, e.g., for intrinsics *)
+  val mk_external_call: T -> regname -> ty -> string -> value list -> value
+  val mk_external_call_void: T -> string -> value list -> unit
+  
+  val mk_external_call_attrs: T -> regname -> ty -> string -> value list -> string list list -> value
+  val mk_external_call_void_attrs: T -> string -> value list -> string list list -> unit
+  
+  (** Parallel *)
+  val mk_par_call: T -> regname -> 
+    ty -> string -> value -> 
+    ty -> string -> value 
+    -> value  
+  
+  
   (* The branch instruction builders return the label of the current basic block, that is terminated by this branch *)
   val mk_br: T -> label -> label
   val mk_cbr: T -> value -> label -> label -> label
@@ -104,7 +133,15 @@ structure LLVM_Builder : LLVM_BUILDER = struct
   type label = string
 
     
-  datatype ty = TInt of int | TPtr of ty | TStruct of ty list | TArray of int * ty | TNamed of string
+  datatype ty = 
+      TInt of int 
+    | TDouble  
+    | TPtr of ty 
+    | TStruct of ty list 
+    | TVector of int * ty 
+    | TArray of int * ty 
+    | TNamed of string
+    | TFptr of ty option * ty list
 
   
   type T = {
@@ -211,21 +248,42 @@ structure LLVM_Builder : LLVM_BUILDER = struct
     | SOME (_, NONE) => raise Error ("Undefined (but declared) named type:" ^# name)
     | _ => raise Error ("Undeclared named type:" ^# name)
     
-  
+
+  (* Primitive types: those valid as vector elements *)  
+  fun is_primitive_ty (TInt _) = true
+    | is_primitive_ty (TDouble) = true
+    | is_primitive_ty (TPtr _) = true
+    | is_primitive_ty _ = false
+    
+      
   fun mkty_i w = TInt w
+  val mkty_double = TDouble
   fun mkty_ptr ty = TPtr ty
   (*fun mkty_array n ty = "[" ^ Int.toString n ^# "x" ^# ty ^"]"*)
   (*fun mkty_struct tys = "{" ^ (separate ", " tys |> implode) ^ "}"*)
   fun mkty_array n ty = TArray (n,ty)
+  fun mkty_vector n ty = ( 
+    assert (is_primitive_ty ty) "mkty_vector: non-primitive element"; 
+    assert (n>0) "mkty_vector: n=0";
+    TVector (n,ty)
+  )
   fun mkty_struct tys = TStruct tys
   fun mkty_named b name = (check_named_ty b name; TNamed name)
+  fun mkty_fptr ty tys = TFptr (ty, tys)
 
   fun dstty_i (TInt w) = w | dstty_i _ = raise Fail "dstty_i"
   fun dstty_ptr (TPtr ty) = ty | dstty_ptr _ = raise Fail "dstty_ptr"
   
+  fun isty_i (TInt _) = true | isty_i _ = false
+  fun isty_f (TDouble) = true | isty_f _ = false
+  
+  
+  
   val size_w = 64
   val size_t = mkty_i size_w (* TODO: Hardcoded target *)
   
+  
+  fun quote_name n = n (* TODO: Put into quotes, and escape if necessary! *)  
   
     
   datatype value = REG of ty * string | CONST of ty * string | UNNAMED
@@ -238,13 +296,23 @@ structure LLVM_Builder : LLVM_BUILDER = struct
   
   fun mkc_i (ty as TInt _) i = CONST (ty, int_to_string i)
     | mkc_i _ _ = raise Error ("mkc_i: Expected integer type")
-  
+
+  (* Also in LLC_Lib. Duplicated here as this is part of printing TCB *)  
+  val str_of_w64 = Word64.fmt StringCvt.HEX #> StringCvt.padLeft #"0" 16 #> prefix "0x";  
+    
+  fun mkc_d (ty as TDouble) d = CONST (ty, str_of_w64 d)
+    | mkc_d _ _ = raise Error ("mkc_d: Expected double type")
+    
+      
   fun mkc_iw w = mkc_i (mkty_i w)
   fun mkc_undef ty = CONST (ty, "undef")
   fun mkc_zeroinit ty = CONST (ty, "zeroinitializer")
 
   fun mkc_null (ty as TPtr _) = CONST (ty,"null")
     | mkc_null _ = raise Error ("mkc_null: Expected pointer type")
+    
+  fun mkc_fun (ty as TFptr _) name = CONST (ty,"@"^quote_name name)
+    | mkc_fun _ _ = raise Error ("mkc_fun: Expected function type")
     
   fun iop sr f = let val s = !sr; val (r,s) = f s in sr:=s; r end
   
@@ -267,24 +335,29 @@ structure LLVM_Builder : LLVM_BUILDER = struct
   ) 
   *)
   
+  fun fresh_id (builder:T) = iop (#next_id builder) (fn i => (i,i+1))
+  val fresh_id_str = Int.toString o fresh_id
+  
+  
   fun check_regname b (SOME s) = let val s = variant_reg b s in SOME s end
     | check_regname _ NONE = NONE
-  
-  fun quote_name n = n (* TODO: Put into quotes, and escape if necessary! *)  
 
   fun pr_tyname n = "%" ^ quote_name n
   fun pr_reg r = "%" ^ quote_name r
   fun pr_ty (TInt w) = "i" ^ Int.toString w
+    | pr_ty (TDouble) = "double"
     | pr_ty (TPtr ty) = pr_ty ty ^ "*"
+    | pr_ty (TVector (n, ty)) = "<" ^ Int.toString n ^# "x" ^# pr_ty ty ^">"
     | pr_ty (TArray (n, ty)) = "[" ^ Int.toString n ^# "x" ^# pr_ty ty ^"]"
-    | pr_ty (TStruct tys) = "{" ^# (separate ", " (map pr_ty tys) |> implode) ^# "}"
+    | pr_ty (TStruct tys) = "{" ^# pr_tys tys ^# "}"
+    | pr_ty (TFptr (ty,tys)) = pr_ty' ty ^# "(" ^# pr_tys tys ^# ")" ^# "*"
     | pr_ty (TNamed name) = pr_tyname name
-
-  fun pr_ty' (NONE) = "void" | pr_ty' (SOME ty) = pr_ty ty  
+  and pr_tys tys = separate ", " (map pr_ty tys) |> implode
+  and pr_ty' (NONE) = "void" | pr_ty' (SOME ty) = pr_ty ty  
       
   fun pr_param (ty,name) = pr_ty ty ^ " " ^ pr_reg name
   fun pr_params params = separate ", " (map pr_param params) |> implode
-  fun pr_tys tys = separate ", " (map pr_ty tys) |> implode
+  
   
   fun pr_label l = "%"^quote_name l
   fun pr_ty_label l = "label" ^# pr_label l
@@ -293,13 +366,18 @@ structure LLVM_Builder : LLVM_BUILDER = struct
   
   val pr_int = int_to_string 
 
+
+  fun pr_ty_attrs ty attrs = pr_ty ty ^ (map (prefix " ") attrs |> implode)
+  fun pr_tys_attrs tys attrs = separate ", " (map2 pr_ty_attrs tys attrs) |> implode
   
-  fun decl_ext_fun b rty name ptys = let
-    val raw = "declare" ^# pr_ty' rty ^# pr_proc name ^ "(" ^ pr_tys ptys ^ ")"
+  fun decl_ext_fun_attrs b rty name ptys pattrs = let
+    val raw = "declare" ^# pr_ty' rty ^# pr_proc name ^ "(" ^ pr_tys_attrs ptys pattrs ^ ")"
   in
     decl_ext_fun_raw b raw;
     name
   end  
+    
+  fun decl_ext_fun b rty name ptys = decl_ext_fun_attrs b rty name ptys (map (K []) ptys)
 
   fun decl_named_ty b name ty = let
     val text = pr_tyname name ^# "=" ^# "type" ^# pr_ty ty
@@ -383,16 +461,25 @@ structure LLVM_Builder : LLVM_BUILDER = struct
   in
     mk_dst_instr b dst ty (iname ^# pr_ty_val op1 ^ ", " ^ pr_val op2)
   end    
-    
+  
   fun mk_conv_instr iname b dst op1 ty = 
     mk_dst_instr b dst ty (iname ^# pr_ty_val op1 ^# "to" ^# pr_ty ty)
   
   fun mk_icmp_instr cty b dst op1 op2 = let
     val _ = assert (ty_of_val op1 = ty_of_val op2) "arith_instr: different types"
+    val _ = assert (isty_i (ty_of_val op2)) "mk_icmp_instr: expected integer type"
   in
     mk_dst_instr b dst (mkty_i 1) ("icmp" ^# cty ^# pr_ty_val op1 ^ ", " ^ pr_val op2)
   end
 
+  fun mk_fcmp_instr cty b dst op1 op2 = let
+    val _ = assert (ty_of_val op1 = ty_of_val op2) "arith_instr: different types"
+    val _ = assert (isty_f (ty_of_val op2)) "mk_fcmp_instr: expected float type"
+  in
+    mk_dst_instr b dst (mkty_i 1) ("fcmp" ^# cty ^# pr_ty_val op1 ^ ", " ^ pr_val op2)
+  end
+  
+  
   fun mk_extractvalue b dst op1 idx = let
     val _ = assert (idx>=0) "extractvalue: Negative index"
     
@@ -415,7 +502,27 @@ structure LLVM_Builder : LLVM_BUILDER = struct
   in
     mk_dst_instr b dst ty ("insertvalue" ^# pr_ty_val op1 ^", "^ pr_ty_val op2 ^", "^ pr_int idx)
   end
+
+  fun mk_extractelement b dst op1 idx = let
+    val ty = ty_of_val op1 |> resolve_named_ty b
+    
+    val dty = case ty of 
+        TVector (_,vty) => (
+          vty
+        )
+      | _ => raise Error "extractelement: expected vector type"
+    
+  in
+    mk_dst_instr b dst dty ("extractelement" ^# pr_ty_val op1 ^", "^  pr_ty_val idx)
+  end
   
+  fun mk_insertelement b dst op1 op2 idx = let
+    val ty = ty_of_val op1
+  in
+    mk_dst_instr b dst ty ("insertelement" ^# pr_ty_val op1 ^", "^ pr_ty_val op2 ^", "^ pr_ty_val idx)
+  end
+  
+    
   
   type phi_handle = ty * string list ref
   
@@ -483,6 +590,31 @@ structure LLVM_Builder : LLVM_BUILDER = struct
       #curr_bb b := NONE
     )
   
+  fun mk_external_call b dst rty proc args = let
+    val proc = decl_ext_fun b (SOME rty) proc (map ty_of_val args)
+  in
+    mk_call b dst rty proc args
+  end
+  
+  fun mk_external_call_void b proc args = let
+    val proc = decl_ext_fun b NONE proc (map ty_of_val args)
+  in
+    mk_call_void b proc args
+  end
+
+  fun mk_external_call_attrs b dst rty proc args attrs = let
+    val proc = decl_ext_fun_attrs b (SOME rty) proc (map ty_of_val args) attrs
+  in
+    mk_call b dst rty proc args
+  end
+  
+  fun mk_external_call_void_attrs b proc args attrs = let
+    val proc = decl_ext_fun_attrs b NONE proc (map ty_of_val args) attrs
+  in
+    mk_call_void b proc args
+  end
+      
+    
   fun mk_br b label = let
     val cbl = assert_open_bb b
     val _ = writeln b ("br" ^# pr_ty_label label)
@@ -565,7 +697,44 @@ structure LLVM_Builder : LLVM_BUILDER = struct
   in
     ()
   end
+  
+  fun decl_isabelle_llvm_parallel b = let
+    val fptr = mkty_fptr NONE [i8ptr]
+    val _ = decl_ext_fun b NONE "isabelle_llvm_parallel" [fptr,fptr,i8ptr,i8ptr]
+  in
+    ()
+  end
+  
+  fun mk_par_call_auxiliaries b rty1 proc1 aty1 rty2 proc2 aty2 = let
+    val rty1 = pr_ty rty1
+    val rty2 = pr_ty rty2
+    val aty1 = pr_ty aty1
+    val aty2 = pr_ty aty2
+    val uid = fresh_id_str b
+    
+    val (name, text) = LLVM_Builder_templates.mk_par_call uid rty1 rty2 proc1 proc2 aty1 aty2
+    
+    val _ = decl_isabelle_llvm_parallel b
+    
+    
+    val _ = decl_ext_fun_raw b text (* TODO: Somewhat of a hack. Add-to-prelude would be correct functionality here. *)
+  in
+    name
+  end
+  
+  fun mk_par_call b dst rty1 proc1 arg1 rty2 proc2 arg2 = let
+    val aty1 = ty_of_val arg1
+    val aty2 = ty_of_val arg2
+    val name = mk_par_call_auxiliaries b rty1 proc1 aty1 rty2 proc2 aty2
+    val rty = mkty_struct [rty1,rty2]
 
+    val res = mk_call b dst rty name [arg1,arg2]   
+  in
+    res
+  end
+  
+  
+  
   fun mk_ptrcmp_instr cty b dst op1 op2 = let
     val _ = assert (ty_of_val op1 = ty_of_val op2) "ptrcmp_instr: different types"
     val _ = assert (can dstty_ptr (ty_of_val op1)) "ptrcmp_instr: expected pointer types"
@@ -587,6 +756,13 @@ structure LLVM_Builder : LLVM_BUILDER = struct
   in
     writeln b ("store" ^# pr_ty_val op1 ^", "^ pr_ty_val op2)
   end   
-      
+
+  fun mk_alloca b dst ty = let
+    val rty = mkty_ptr ty
+  in
+    mk_dst_instr b dst rty ("alloca" ^# pr_ty ty)
+  end  
+  
+        
     
 end

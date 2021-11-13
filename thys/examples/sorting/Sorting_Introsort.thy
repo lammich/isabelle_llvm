@@ -79,15 +79,19 @@ qed
 context sort_impl_context begin
 
 sepref_register introsort_aux4
-sepref_def introsort_aux_impl is "uncurry3 (PR_CONST introsort_aux4)" :: "(arr_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a arr_assn"
+sepref_def introsort_aux_impl is "uncurry3 (PR_CONST introsort_aux4)" 
+  :: "[\<lambda>_. True]\<^sub>c (arr_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k 
+    \<rightarrow> arr_assn [\<lambda>(((ai,_),_),_) r. r=ai]\<^sub>c"
   unfolding introsort_aux4_def PR_CONST_def
   apply (annot_snat_const "TYPE(size_t)")
+  apply (rewrite RECT_cp_annot[where CP="\<lambda>(ai,_,_,_) r. r=ai"])
   by sepref
   
   
   
 sepref_register introsort4
-sepref_def introsort_impl is "uncurry2 (PR_CONST introsort4)" :: "(arr_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a arr_assn"
+sepref_def introsort_impl is "uncurry2 (PR_CONST introsort4)" 
+  :: "[\<lambda>_. True]\<^sub>c (arr_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow> arr_assn [\<lambda>((ai,_),_) r. r=ai]\<^sub>c"
   unfolding introsort4_def PR_CONST_def
   apply (annot_snat_const "TYPE(size_t)")
   supply [intro!] = introsort_depth_limit_in_bounds_aux 
@@ -97,7 +101,8 @@ sepref_def introsort_impl is "uncurry2 (PR_CONST introsort4)" :: "(arr_assn)\<^s
 lemma introsort4_refine_ss_spec: "(PR_CONST introsort4, slice_sort_spec (\<^bold><))\<in>Id\<rightarrow>Id\<rightarrow>Id\<rightarrow>\<langle>Id\<rangle>nres_rel"  
   using introsort4_correct by (auto intro: nres_relI)
   
-theorem introsort_impl_correct: "(uncurry2 introsort_impl, uncurry2 (slice_sort_spec (\<^bold><))) \<in> arr_assn\<^sup>d *\<^sub>a snat_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow>\<^sub>a arr_assn"  
+theorem introsort_impl_correct: "(uncurry2 introsort_impl, uncurry2 (slice_sort_spec (\<^bold><))) \<in> 
+  [\<lambda>_. True]\<^sub>c arr_assn\<^sup>d *\<^sub>a snat_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow> arr_assn [\<lambda>((ai,_),_) r. r=ai]\<^sub>c"  
   using introsort_impl.refine[FCOMP introsort4_refine_ss_spec] .
   
   
@@ -186,14 +191,17 @@ context parameterized_sort_impl_context begin
 
 sepref_register introsort_aux_param
 sepref_def introsort_aux_param_impl is "uncurry4 (PR_CONST introsort_aux_param)" 
-  :: "cparam_assn\<^sup>k *\<^sub>a (arr_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a arr_assn"
+  :: "[\<lambda>_. True]\<^sub>c cparam_assn\<^sup>k *\<^sub>a (arr_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k 
+    \<rightarrow> arr_assn [\<lambda>((((_,ai),_),_),_) r. r=ai]\<^sub>c"
   unfolding introsort_aux_param_def PR_CONST_def
   apply (annot_snat_const "TYPE(size_t)")
+  apply (rewrite RECT_cp_annot[where CP="\<lambda>(ai,_,_,_) r. r=ai"])
   by sepref
   
   
 sepref_register introsort_param
-sepref_def introsort_param_impl is "uncurry3 (PR_CONST introsort_param)" :: "cparam_assn\<^sup>k *\<^sub>a (arr_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a arr_assn"
+sepref_def introsort_param_impl is "uncurry3 (PR_CONST introsort_param)" 
+  :: "[\<lambda>_. True]\<^sub>c cparam_assn\<^sup>k *\<^sub>a (arr_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow> arr_assn [\<lambda>(((_,ai),_),_) r. r=ai]\<^sub>c"
   unfolding introsort_param_def PR_CONST_def
   apply (annot_snat_const "TYPE(size_t)")
   supply [intro!] = introsort_depth_limit_in_bounds_aux 
@@ -201,7 +209,7 @@ sepref_def introsort_param_impl is "uncurry3 (PR_CONST introsort_param)" :: "cpa
 
 
 lemma introsort_param_impl_correct: "(uncurry3 introsort_param_impl, uncurry3 (PR_CONST (pslice_sort_spec cdom pless)))
-        \<in> cparam_assn\<^sup>k *\<^sub>a arr_assn\<^sup>d *\<^sub>a snat_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow>\<^sub>a arr_assn"
+        \<in> [\<lambda>_. True]\<^sub>c cparam_assn\<^sup>k *\<^sub>a arr_assn\<^sup>d *\<^sub>a snat_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow> arr_assn [\<lambda>(((_,ai),_),_) r. r=ai]\<^sub>c"
   using introsort_param_impl.refine[FCOMP introsort_param_correct'] .
   
 end

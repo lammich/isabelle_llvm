@@ -5,6 +5,7 @@ session Isabelle_LLVM = Refine_Monadic +
     "Refine_Imperative_HOL"
     "Word_Lib"
     "Separation_Algebra"
+    "IEEE_Floating_Point"
   directories
     basic
     "basic/kernel"
@@ -29,3 +30,4 @@ session Isabelle_LLVM = Refine_Monadic +
     "examples/Bin_Search"
     "examples/KMP"
     "examples/LLVM_Examples"
+

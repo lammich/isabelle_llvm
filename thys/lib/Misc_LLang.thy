@@ -15,5 +15,15 @@ begin
   
   lemma nat_minus1_less_if_neZ[simp]: "a - Suc 0 < a \<longleftrightarrow> a\<noteq>0" by auto  
 
+  
+  ML \<open>
+    fun trace_exn msg e x = e x
+      handle exn => (
+        if not (Exn.is_interrupt exn) then msg () |> tracing else ();
+        Exn.reraise exn
+      )
+  \<close>
+  
+  
 
 end

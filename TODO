@@ -6,9 +6,15 @@ DONE verified bin-search
 
 DONE: Heap and Heapmap
 
-Instantiate higher-order (template) parameters in preprocessor
+DONE Instantiate higher-order (template) parameters in preprocessor
   (could also help for locale instantiations, e.g., in the sorting examples)
 
+double datatype and floating point  
+  partially DONE: in codegen, no preproc or reasoning setup yet
+
+avx512f -sd operations with rounding mode
+  either generate operands in TCB, or add vectors to value model
+  
 
 Elaborate memory model: No confusion for better verifiability!
 

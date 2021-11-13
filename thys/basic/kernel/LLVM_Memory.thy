@@ -13,7 +13,7 @@ begin
   \<close>
 
   subsection \<open>Monad Setup\<close>
-  datatype err = is_static: STATIC_ERROR string | MEM_ERROR | UNINIT_ERROR | OVERFLOW_ERROR
+  datatype err = is_static: STATIC_ERROR string | PAR_ERROR | MEM_ERROR | UNINIT_ERROR | OVERFLOW_ERROR
   hide_const (open) is_static
 
 
@@ -38,7 +38,7 @@ begin
   
   instantiation list :: (type) this_addr begin definition [simp]: "this_addr = []" instance .. end
   
-  interpretation ab: array_block1 "STATIC_ERROR ''''" MEM_ERROR "vload MEM_ERROR::_ \<Rightarrow> (llvm_primval val,_,_,_) M" "vstore MEM_ERROR" "checked_gep MEM_ERROR" .
+  interpretation ab: array_block1 "STATIC_ERROR ''''" MEM_ERROR "vload MEM_ERROR::_ \<Rightarrow> (llvm_primval val,_,_,_,_) M" "vstore MEM_ERROR" "checked_gep MEM_ERROR" .
     
 
   subsection \<open>Memory Model Interface\<close>
@@ -334,7 +334,7 @@ begin
         unfolding llvm_store_unchecked_def ab.ba.store_def llvm_zoom_base_def ptr_lens_def ab.ba.lens_of_bi_def
         apply (auto simp: run_simps mwp_def split!: option.splits mres.split)
         apply (auto simp: run_simps ab.store_def vstore_def split: baddr.splits if_splits option.splits)
-        apply (case_tac x42)
+        apply (case_tac x43)
         apply auto
         done
       done

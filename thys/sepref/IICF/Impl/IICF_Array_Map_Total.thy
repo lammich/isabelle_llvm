@@ -61,8 +61,8 @@ begin
     lemmas [fcomp_norm_unfold] = amt_assn_def[symmetric]
   
     lemma amt_assn_fold'[fcomp_norm_unfold]: 
-      "hrr_comp nat_rel (\<lambda>x _. hr_comp (IICF_Array.array_assn id_assn) (amt1_rel x))
-                        (\<lambda>x. \<langle>nat_rel, the_pure V\<rangle>map_rel) = (\<lambda>N _. amt_assn V N)"
+      "hrr_comp nat_rel (\<lambda>x. hr_comp (IICF_Array.array_assn id_assn) (amt1_rel x))
+                        (\<lambda>x. \<langle>nat_rel, the_pure V\<rangle>map_rel) = (\<lambda>N. amt_assn V N)"
       unfolding amt_assn_def 
       by (auto simp: fun_eq_iff hrr_comp_def pred_lift_extract_simps; smt non_dep_def)
     

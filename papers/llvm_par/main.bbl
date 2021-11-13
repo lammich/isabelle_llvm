@@ -1,0 +1,260 @@
+\begin{thebibliography}{10}
+
+\bibitem{AMI21}
+M.~Asiatici, D.~Maiorano, and P.~Ienne.
+\newblock How many cpu cores is an fpga worth? lessons learned from
+  accelerating string sorting on a cpu-fpga system.
+\newblock {\em Journal of Signal Processing Systems}, pages 1--13, 2021.
+
+\bibitem{BeCa10}
+Y.~Bertot and P.~Castran.
+\newblock {\em Interactive Theorem Proving and Program Development: Coq'Art The
+  Calculus of Inductive Constructions}.
+\newblock Springer Publishing Company, Incorporated, 1st edition, 2010.
+
+\bibitem{Vercors}
+S.~Blom, S.~Darabi, M.~Huisman, and W.~Oortwijn.
+\newblock The vercors tool set: Verification of parallel and concurrent
+  software.
+\newblock In N.~Polikarpova and S.~Schneider, editors, {\em Integrated Formal
+  Methods}, pages 102--110, Cham, 2017. Springer International Publishing.
+
+\bibitem{boost}
+Boost {C++} libraries.
+\newblock \url{https://www.boost.org/}.
+
+\bibitem{boost-sort}
+Boost {C++} libraries sorting algorithms.
+\newblock
+  \url{https://www.boost.org/doc/libs/1_77_0/libs/sort/doc/html/index.html}.
+
+\bibitem{BCOP05}
+R.~Bornat, C.~Calcagno, P.~O'Hearn, and M.~Parkinson.
+\newblock Permission accounting in separation logic.
+\newblock In {\em Proceedings of the 32Nd ACM SIGPLAN-SIGACT Symposium on
+  Principles of Programming Languages}, POPL '05, pages 259--270, New York, NY,
+  USA, 2005. ACM.
+
+\bibitem{BrLa18}
+J.~Brunner and P.~Lammich.
+\newblock Formal verification of an executable {LTL} model checker with partial
+  order reduction.
+\newblock {\em J. Autom. Reasoning}, 60(1):3--21, 2018.
+
+\bibitem{BKHEM08}
+L.~Bulwahn, A.~Krauss, F.~Haftmann, L.~Erk{\"{o}}k, and J.~Matthews.
+\newblock Imperative functional programming with {I}sabelle/{HOL}.
+\newblock In O.~A. Mohamed, C.~A. Mu{\~{n}}oz, and S.~Tahar, editors, {\em
+  TPHOLs 2008}, volume 5170 of {\em LNCS}, pages 134--149. Springer, 2008.
+
+\bibitem{CHY07}
+C.~Calcagno, P.~O'Hearn, and H.~Yang.
+\newblock Local action and abstract separation logic.
+\newblock In {\em LICS 2007}, pages 366--378, July 2007.
+
+\bibitem{CNLM08}
+J.~Chhugani, A.~D. Nguyen, V.~W. Lee, W.~Macy, M.~Hagog, Y.-K. Chen,
+  A.~Baransi, S.~Kumar, and P.~Dubey.
+\newblock Efficient implementation of sorting on multi-core simd cpu
+  architecture.
+\newblock {\em Proceedings of the VLDB Endowment}, 1(2):1313--1324, 2008.
+
+\bibitem{ELNN13}
+J.~Esparza, P.~Lammich, R.~Neumann, T.~Nipkow, A.~Schimpf, and J.-G. Smaus.
+\newblock A fully verified executable {LTL} model checker.
+\newblock In {\em CAV}, volume 8044 of {\em LNCS}, pages 463--478. Springer,
+  2013.
+
+\bibitem{FBL18}
+M.~Fleury, J.~C. Blanchette, and P.~Lammich.
+\newblock A verified {SAT} solver with watched literals using {Imperative}
+  {HOL}.
+\newblock In {\em Proc. of CPP}, pages 158--171, 2018.
+
+\bibitem{libstdc++}
+The {GNU} {C++} library 3.4.28.
+\newblock \url{https://gcc.gnu.org/onlinedocs/libstdc++/}.
+
+\bibitem{Ha72}
+A.~N. Habermann.
+\newblock Parallel neighbor-sort, Jun 1972.
+
+\bibitem{HaLa19}
+M.~Haslbeck and P.~Lammich.
+\newblock Refinement with time – refining the run-time of algorithms in
+  isabelle/hol.
+\newblock In {\em ITP2019: Interactive Theorem Proving}, 6 2019.
+
+\bibitem{HaLa21-toplas}
+M.~P.~L. Haslbeck and P.~Lammich.
+\newblock For a few dollars more - verified fine-grained algorithm analysis
+  down to {LLVM}.
+\newblock {\em TOPLAS, S.I. ESOP'21}.
+\newblock to appear.
+
+\bibitem{HaLa21}
+M.~P.~L. Haslbeck and P.~Lammich.
+\newblock For a few dollars more - verified fine-grained algorithm analysis
+  down to {LLVM}.
+\newblock In N.~Yoshida, editor, {\em Programming Languages and Systems - 30th
+  European Symposium on Programming, {ESOP} 2021, Held as Part of the European
+  Joint Conferences on Theory and Practice of Software, {ETAPS} 2021,
+  Luxembourg City, Luxembourg, March 27 - April 1, 2021, Proceedings}, volume
+  12648 of {\em Lecture Notes in Computer Science}, pages 292--319. Springer,
+  2021.
+
+\bibitem{JKJA18}
+R.~Jung, R.~Krebbers, J.~Jourdan, A.~Bizjak, L.~Birkedal, and D.~Dreyer.
+\newblock Iris from the ground up: {A} modular foundation for higher-order
+  concurrent separation logic.
+\newblock {\em J. Funct. Program.}, 28:e20, 2018.
+
+\bibitem{KWP99}
+F.~Kamm{\"u}ller, M.~Wenzel, and L.~C. Paulson.
+\newblock Locales a sectioning concept for isabelle.
+\newblock In Y.~Bertot, G.~Dowek, L.~Th{\'e}ry, A.~Hirschowitz, and C.~Paulin,
+  editors, {\em Theorem Proving in Higher Order Logics}, pages 149--165,
+  Berlin, Heidelberg, 1999. Springer Berlin Heidelberg.
+
+\bibitem{KKB12}
+G.~Klein, R.~Kolanski, and A.~Boyton.
+\newblock Mechanised separation algebra.
+\newblock In {\em ITP}, pages 332--337. Springer, Aug 2012.
+
+\bibitem{KKB12_afp}
+G.~Klein, R.~Kolanski, and A.~Boyton.
+\newblock Separation algebra.
+\newblock {\em Archive of Formal Proofs}, May 2012.
+\newblock \url{http://isa-afp.org/entries/Separation_Algebra.html}, Formal
+  proof development.
+
+\bibitem{Kr10}
+A.~Krauss.
+\newblock Recursive definitions of monadic functions.
+\newblock In {\em Proc. of PAR}, volume~43, pages 1--13, 2010.
+
+\bibitem{La13}
+P.~Lammich.
+\newblock Automatic data refinement.
+\newblock In {\em ITP}, volume 7998 of {\em LNCS}, pages 84--99. Springer,
+  2013.
+
+\bibitem{La14}
+P.~Lammich.
+\newblock Verified efficient implementation of gabow’s strongly connected
+  component algorithm.
+\newblock In {\em International Conference on Interactive Theorem Proving},
+  pages 325--340. Springer, 2014.
+
+\bibitem{La15}
+P.~Lammich.
+\newblock Refinement to {Imperative/HOL}.
+\newblock In {\em ITP}, volume 9236 of {\em LNCS}, pages 253--269. Springer,
+  2015.
+
+\bibitem{La17_CADE}
+P.~Lammich.
+\newblock Efficient verified {(UN)SAT} certificate checking.
+\newblock In {\em Proc. of CADE}. Springer, 2017.
+
+\bibitem{La17_SAT}
+P.~Lammich.
+\newblock The {GRAT} tool chain - efficient {(UN)SAT} certificate checking with
+  formal correctness guarantees.
+\newblock In {\em SAT}, pages 457--463, 2017.
+
+\bibitem{La19-llvm}
+P.~Lammich.
+\newblock {Generating Verified LLVM from Isabelle/HOL}.
+\newblock In J.~Harrison, J.~O'Leary, and A.~Tolmach, editors, {\em 10th
+  International Conference on Interactive Theorem Proving (ITP 2019)}, volume
+  141 of {\em Leibniz International Proceedings in Informatics (LIPIcs)}, pages
+  22:1--22:19, Dagstuhl, Germany, 2019. Schloss Dagstuhl--Leibniz-Zentrum fuer
+  Informatik.
+
+\bibitem{La20}
+P.~Lammich.
+\newblock Efficient verified implementation of introsort and pdqsort.
+\newblock In N.~Peltier and V.~Sofronie{-}Stokkermans, editors, {\em Automated
+  Reasoning - 10th International Joint Conference, {IJCAR} 2020, Paris, France,
+  July 1-4, 2020, Proceedings, Part {II}}, volume 12167 of {\em Lecture Notes
+  in Computer Science}, pages 307--323. Springer, 2020.
+
+\bibitem{LaMe12}
+P.~Lammich and R.~Meis.
+\newblock A separation logic framework for imperative hol.
+\newblock {\em Archive of Formal Proofs}, Nov. 2012.
+\newblock
+  \url{https://isa-afp.org/entries/Separation_Logic_Imperative_HOL.html},
+  Formal proof development.
+
+\bibitem{LaSe16}
+P.~Lammich and S.~R. Sefidgar.
+\newblock Formalizing the {Edmonds-Karp} algorithm.
+\newblock In {\em Proc. of ITP}, pages 219--234, 2016.
+
+\bibitem{LaSe19}
+P.~Lammich and S.~R. Sefidgar.
+\newblock Formalizing network flow algorithms: {A} refinement approach in
+  {Isabelle/HOL}.
+\newblock {\em J. Autom. Reasoning}, 62(2):261--280, 2019.
+
+\bibitem{LaTu12}
+P.~Lammich and T.~Tuerk.
+\newblock Applying data refinement for monadic programs to {H}opcroft's
+  algorithm.
+\newblock In L.~Beringer and A.~P. Felty, editors, {\em ITP 2012}, volume 7406
+  of {\em {LNCS}}, pages 166--182. Springer, 2012.
+
+\bibitem{MeJo21}
+G.~M\'{e}vel and J.-H. Jourdan.
+\newblock Formal verification of a concurrent bounded queue in a weak memory
+  model.
+\newblock {\em Proc. ACM Program. Lang.}, 5(ICFP), Aug. 2021.
+
+\bibitem{Muss97}
+D.~R. MUSSER.
+\newblock Introspective sorting and selection algorithms.
+\newblock {\em Software: Practice and Experience}, 27(8):983--993, 1997.
+
+\bibitem{NPW02}
+T.~Nipkow, L.~C. Paulson, and M.~Wenzel.
+\newblock {\em {Isabelle/HOL} --- A Proof Assistant for Higher-Order Logic},
+  volume 2283 of {\em LNCS}.
+\newblock Springer, 2002.
+
+\bibitem{OH04}
+P.~W. O'Hearn.
+\newblock Resources, concurrency and local reasoning.
+\newblock In P.~Gardner and N.~Yoshida, editors, {\em CONCUR 2004 - Concurrency
+  Theory}, pages 49--67, Berlin, Heidelberg, 2004. Springer Berlin Heidelberg.
+
+\bibitem{SaHu20}
+M.~Safari and M.~Huisman.
+\newblock A generic approach to the verification of the permutation property of
+  sequential and parallel swap-based sorting algorithms.
+\newblock In {\em International Conference on Integrated Formal Methods}, pages
+  257--275. Springer, 2020.
+
+\bibitem{SGGT21}
+S.~Spies, L.~G{\"a}her, D.~Gratzer, J.~Tassarotti, R.~Krebbers, D.~Dreyer, and
+  L.~Birkedal.
+\newblock Transfinite iris: Resolving an existential dilemma of step-indexed
+  separation logic.
+\newblock In {\em Proceedings of the 42nd ACM SIGPLAN International Conference
+  on Programming Language Design and Implementation}, pages 80--95, 2021.
+
+\bibitem{TBB}
+Intel oneapi threading building blocks.
+\newblock \url{https://software.intel.com/en-us/intel-tbb}.
+
+\bibitem{VST}
+Verified software toolchain project web page.
+\newblock \url{https://vst.cs.princeton.edu/}.
+
+\bibitem{WiLa18}
+S.~Wimmer and P.~Lammich.
+\newblock Verified model checking of timed automata.
+\newblock In {\em TACAS 2018}, pages 61--78, 2018.
+
+\end{thebibliography}

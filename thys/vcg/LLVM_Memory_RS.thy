@@ -7,7 +7,7 @@ begin
   
   definition "vpto_assn x p \<equiv> VAL.pto p (VAL.val x)"
 
-  interpretation ab: array_block2 "STATIC_ERROR ''''" MEM_ERROR "vload MEM_ERROR::_ \<Rightarrow> (llvm_primval val,_,_,_) M" "vstore MEM_ERROR" "checked_gep MEM_ERROR" val_\<alpha> vpto_assn "\<lambda>v. v\<in>range val_\<alpha>"
+  interpretation ab: array_block2 "STATIC_ERROR ''''" MEM_ERROR "vload MEM_ERROR::_ \<Rightarrow> (llvm_primval val,_,_,_,_) M" "vstore MEM_ERROR" "checked_gep MEM_ERROR" val_\<alpha> vpto_assn "\<lambda>v. v\<in>range val_\<alpha>"
     apply unfold_locales
     unfolding vpto_assn_def
     apply (rule vload_rule)

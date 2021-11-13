@@ -147,7 +147,7 @@ begin
       unfolding hn_ctxt_def invalid_assn_def prod_assn_def entails_def
       by (auto split: prod.split elim!: is_pureE 
         simp: sep_algebra_simps pure_part_pure_conj_eq)
-      argo
+      
     
     find_theorems is_pure b_assn  
     
@@ -371,18 +371,18 @@ begin
       using hm_empty_op_aref by (auto simp: hm_empty_op_N)
           
       
-    sepref_definition hm_empty_impl is "hm_empty_op'" :: "[\<lambda>_. 4<LENGTH('l)]\<^sub>a\<^sub>d (snat_assn' TYPE('l))\<^sup>k \<rightarrow> (\<lambda>N _. hm2_assn N)"
+    sepref_definition hm_empty_impl is "hm_empty_op'" :: "[\<lambda>_. 4<LENGTH('l)]\<^sub>a (snat_assn' TYPE('l))\<^sup>k \<rightarrow>\<^sub>d (\<lambda>N. hm2_assn N)"
       unfolding hm_empty_op_def hm_empty_op'_def hm2_assn_def
       apply (rule hfref_with_rdomI)
       by sepref
       
-    definition "hm12_assn N \<equiv> hrr_comp nat_rel (\<lambda>N _. hm2_assn N) (\<lambda>_. heapmap_rel) N ()"
+    definition "hm12_assn N \<equiv> hrr_comp nat_rel (\<lambda>N. hm2_assn N) (\<lambda>_. heapmap_rel) N"
     
     lemma hm12_assn_fold': "hr_comp (hm2_assn N) heapmap_rel = hm12_assn N"
       unfolding hm12_assn_def
       by auto
       
-    lemma hm12_assn_fold'': "hrr_comp nat_rel (\<lambda>N _. hm2_assn N) (\<lambda>_. heapmap_rel) = (\<lambda>N _. hm12_assn N)"  
+    lemma hm12_assn_fold'': "hrr_comp nat_rel (\<lambda>N. hm2_assn N) (\<lambda>_. heapmap_rel) = (\<lambda>N. hm12_assn N)"  
       unfolding hm12_assn_def
       by auto
     
@@ -407,7 +407,7 @@ begin
 
     definition "hm_assn N \<equiv> hr_comp (hm12_assn N) (\<langle>nat_rel, Id\<rangle>map_rel)"
     
-    lemma hm_assn_fold': "hrr_comp nat_rel (\<lambda>N _. hm12_assn N) (\<lambda>x. \<langle>nat_rel, Id\<rangle>map_rel) = (\<lambda>N _. hm_assn N)"
+    lemma hm_assn_fold': "hrr_comp nat_rel (\<lambda>N. hm12_assn N) (\<lambda>x. \<langle>nat_rel, Id\<rangle>map_rel) = (\<lambda>N. hm_assn N)"
       by (auto simp: hm_assn_def fun_eq_iff)
     
     context
@@ -427,7 +427,7 @@ begin
           apply rule
           apply (drule hfrefD[OF hm_empty_ref12, of N Ni])
           using Ni_ref
-          by (simp add: pure_def)
+          by (simp_all add: pure_def)
       
         sepref_decl_impl (ismop,no_register) hm_empty_fixed: hm_empty_fixed_ref
           uses mop_hm_empty_fixed.fref[where K=Id and V=Id] fixes 'l by parametricity simp
@@ -607,6 +607,6 @@ begin
     apply rule
     apply (rule hn_refine_preI)
     using heapmap_test_impl_aux.refine[to_hnr]
-    by (simp add: pure_def pred_lift_extract_simps sep_algebra_simps)
+    by (simp add: pure_def sep_algebra_simps)
     
 end    

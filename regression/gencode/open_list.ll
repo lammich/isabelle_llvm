@@ -89,8 +89,8 @@ define %list_elem* @os_prepend(i64 %a, %list_elem* %n) {
     %d = call i8* @isabelle_llvm_calloc (i64 %b, i64 %c)
     %r = bitcast i8* %d to %list_elem*
     %ra = insertvalue %list_elem zeroinitializer, i64 %a, 0
-    %tmpa = insertvalue %list_elem %ra, %list_elem* %n, 1
-    store %list_elem %tmpa, %list_elem* %r
+    %tmp = insertvalue %list_elem %ra, %list_elem* %n, 1
+    store %list_elem %tmp, %list_elem* %r
     ret %list_elem* %r
 }
 

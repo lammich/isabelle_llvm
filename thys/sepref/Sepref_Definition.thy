@@ -44,7 +44,7 @@ subsection \<open> Setup of Extraction-Tools \<close>
   lemma [synth_rules]: "SPEC_RES_ASSN UNSPEC R" by simp
   
   lemma synth_hnrI:
-    "\<lbrakk>CP_UNCURRY f fi; CP_PAT f fpat; INTRO_KD R R'; SPEC_RES_ASSN S S'\<rbrakk> \<Longrightarrow> SYNTH_TERM (SYNTH f ([P]\<^sub>a\<^sub>d R\<rightarrow>S)) ((fpat,SDUMMY)\<in>SDUMMY,(fi,f)\<in>([P]\<^sub>a\<^sub>d R'\<rightarrow>S'))" 
+    "\<lbrakk>CP_UNCURRY f fi; CP_PAT f fpat; INTRO_KD R R'; SPEC_RES_ASSN S S'\<rbrakk> \<Longrightarrow> SYNTH_TERM (SYNTH f ([P]\<^sub>a [C]\<^sub>c R\<rightarrow>\<^sub>dS [CP]\<^sub>c)) ((fpat,SDUMMY)\<in>SDUMMY,(fi,f)\<in>([P]\<^sub>a [C]\<^sub>c R'\<rightarrow>\<^sub>dS' [CP]\<^sub>c))" 
     by (simp add: SYNTH_def)
 
 

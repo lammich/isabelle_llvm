@@ -163,11 +163,9 @@ context begin
     supply [fri_rules] = fri_abs_cong_rl
     apply vcg
     done
+
+end    
     
-end  
-
-
-
 subsection \<open>Basic Algorithms\<close>
 
 subsubsection \<open>Array-Copy\<close>

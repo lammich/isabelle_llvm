@@ -9,20 +9,21 @@ subsection \<open>Sepref Method\<close>
 
 
 lemma CONS_init: 
-  assumes "hn_refine \<Gamma> c \<Gamma>' R a"
+  assumes "hn_refine \<Gamma> c \<Gamma>' R CP a"
   assumes "\<Gamma>' \<turnstile> \<Gamma>c'"
   assumes "\<And>a c. hn_ctxt R a c \<turnstile> hn_ctxt Rc a c"
-  shows "hn_refine \<Gamma> c \<Gamma>c' Rc a"
-  apply (rule hn_refine_cons)
+  assumes "\<And>r. CP_assm (CP r) \<Longrightarrow> CP_cond (CP' r)"
+  shows "hn_refine \<Gamma> c \<Gamma>c' Rc CP' a"
+  apply (rule hn_refine_cons_cp)
   apply (rule entails_refl)
   apply (rule assms[unfolded hn_ctxt_def])+
-  done
+  using assms(4) by (auto simp: CP_defs)
 
-lemma ID_init: "\<lbrakk>ID a a' TYPE('T); hn_refine \<Gamma> c \<Gamma>' R a'\<rbrakk> 
-  \<Longrightarrow> hn_refine \<Gamma> c \<Gamma>' R a" by simp
+lemma ID_init: "\<lbrakk>ID a a' TYPE('T); hn_refine \<Gamma> c \<Gamma>' R CP a'\<rbrakk> 
+  \<Longrightarrow> hn_refine \<Gamma> c \<Gamma>' R CP a" by simp
 
-lemma TRANS_init: "\<lbrakk> hn_refine \<Gamma> c \<Gamma>' R a; CNV c c' \<rbrakk> 
-  \<Longrightarrow> hn_refine \<Gamma> c' \<Gamma>' R a"
+lemma TRANS_init: "\<lbrakk> hn_refine \<Gamma> c \<Gamma>' R CP a; CNV c c' \<rbrakk> 
+  \<Longrightarrow> hn_refine \<Gamma> c' \<Gamma>' R CP a"
   by simp
 
 lemma infer_post_triv: "P \<turnstile> P" by (rule entails_refl)
@@ -54,6 +55,14 @@ ML \<open>
       )
     end
 
+    fun cons_solve_cp_tac dbg ctxt = let
+      val dbgSOLVED' = if dbg then I else SOLVED'
+    in
+      dbgSOLVED' (
+        apply_method_noargs @{method cp_solve_cond} ctxt
+      )
+    end
+    
     fun preproc_tac ctxt = let
       val ctxt = put_simpset HOL_basic_ss ctxt
       val ctxt = ctxt addsimps (sepref_preproc_simps.get ctxt)  
@@ -113,7 +122,7 @@ ML \<open>
       Sepref_Basic.PHASES'
         [ 
           ("preproc",preproc_tac,0),
-          ("cons_init",cons_init_tac,2),
+          ("cons_init",cons_init_tac,3),
           ("id",id_tac true,0),
           ("monadify",monadify_tac false,0),
           ("opt_init",fn ctxt => resolve_tac ctxt @{thms TRANS_init},1),
@@ -121,6 +130,7 @@ ML \<open>
           ("opt",opt_tac,~1),
           ("cons_solve1",cons_solve_tac false,~1),
           ("cons_solve2",cons_solve_tac false,~1),
+          ("cons_solve3",cons_solve_cp_tac false,~1),
           ("constraints",fn ctxt => K (Sepref_Constraints.solve_constraint_slot ctxt THEN Sepref_Constraints.remove_slot_tac),~1)
         ] (Sepref_Basic.flag_phases_ctrl ctxt dbg) ctxt
     
@@ -226,6 +236,11 @@ method_setup sepref_dbg_cons_solve = \<open>SIMPLE_METHOD_NOPARAM' (Sepref.cons_
 method_setup sepref_dbg_cons_solve_keep = \<open>SIMPLE_METHOD_NOPARAM' (Sepref.cons_solve_tac true)\<close>
   \<open>Sepref debug: Solve post-consequences, keep intermediate results\<close>
 
+method_setup sepref_dbg_cons_solve_cp = \<open>SIMPLE_METHOD_NOPARAM' (Sepref.cons_solve_cp_tac false)\<close>
+  \<open>Sepref debug: Solve post-consequences concrete postcond\<close>
+method_setup sepref_dbg_cons_solve_cp_keep = \<open>SIMPLE_METHOD_NOPARAM' (Sepref.cons_solve_cp_tac true)\<close>
+  \<open>Sepref debug: Solve post-consequences concrete postcond, keep intermediate results\<close>
+  
 method_setup sepref_dbg_constraints = \<open>SIMPLE_METHOD_NOPARAM' (fn ctxt => IF_EXGOAL (K (
     Sepref_Constraints.solve_constraint_slot ctxt
     THEN Sepref_Constraints.remove_slot_tac
@@ -242,6 +257,7 @@ method_setup sepref_dbg_constraints = \<open>SIMPLE_METHOD_NOPARAM' (fn ctxt => 
   apply sepref_dbg_opt
   apply sepref_dbg_cons_solve
   apply sepref_dbg_cons_solve
+  apply sepref_dbg_cons_solve_cp
   apply sepref_dbg_constraints
 
 *)
@@ -316,19 +332,19 @@ sepref_register COPY
 
 text \<open>Copy is treated as normal operator, and one can just declare rules for it! \<close>
 lemma hnr_pure_COPY[sepref_fr_rules]:
-  "CONSTRAINT is_pure R \<Longrightarrow> (return, RETURN o COPY) \<in> R\<^sup>k \<rightarrow>\<^sub>a R"
+  "CONSTRAINT is_pure R \<Longrightarrow> (return, RETURN o COPY) \<in> R\<^sup>k \<rightarrow>\<^sub>a\<^sub>d (\<lambda>_. R)"
   apply (intro hfrefI hn_refineI) unfolding is_pure_conv pure_def
   by vcg
   
 
-lemma hn_id[sepref_fr_rules]: "(\<lambda>x. return x,RETURN o id) \<in> A\<^sup>d \<rightarrow>\<^sub>a A"
+lemma hn_id[sepref_fr_rules]: "(\<lambda>x. return x,RETURN o id) \<in> [\<lambda>_. True]\<^sub>c A\<^sup>d \<rightarrow> A [\<lambda>x r. r=x]\<^sub>c"
   apply sepref_to_hoare
   by vcg
   
 subsubsection \<open>Destructors\<close>  
   
 lemma hn_MK_FREEI:
-  assumes "(free,RETURN o freea) \<in> A\<^sup>d \<rightarrow>\<^sub>a unit_assn"  
+  assumes "(free,RETURN o freea) \<in> A\<^sup>d \<rightarrow>\<^sub>a\<^sub>d (\<lambda>_. unit_assn)"
   shows "MK_FREE A free"
 proof -  
   note [vcg_rules] = assms[to_hnr, THEN hn_refineD, unfolded hn_ctxt_def invalid_assn_def pure_def, simplified]
@@ -348,8 +364,8 @@ proof -
 qed
 
 lemma MK_FREE_hrrcompI[sepref_frame_free_rules]:
-  assumes "\<And>x y. MK_FREE (A x y) f" 
-  shows "MK_FREE (hrr_comp S A R x y) f"
+  assumes "\<And>x. MK_FREE (A x) f" 
+  shows "MK_FREE (hrr_comp S A R x) f"
 proof -
   note [vcg_rules] = assms[THEN MK_FREED]
   show ?thesis

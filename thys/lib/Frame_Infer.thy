@@ -36,7 +36,7 @@ lemma entails_lift_extract_simps:
   "(\<up>\<Phi> \<turnstile> Q) \<longleftrightarrow> (\<Phi> \<longrightarrow> \<box> \<turnstile> Q)"
   "(\<up>\<Phi>**P \<turnstile> Q) \<longleftrightarrow> (\<Phi> \<longrightarrow> P \<turnstile> Q)"
   unfolding entails_def 
-  by (auto simp: sep_algebra_simps pred_lift_extract_simps)
+  by (auto simp: sep_algebra_simps)
 
 lemma entails_eq_iff: "A=B \<longleftrightarrow> (A\<turnstile>B) \<and> (B\<turnstile>A)"  
   unfolding entails_def by (auto)
@@ -111,11 +111,11 @@ lemma fri_move_sep_true_forward[named_ss fri_prepare_simps]:
   "(sep_true ** (sep_true**A)) = (sep_true ** A)"
   "NO_MATCH sep_true A \<Longrightarrow> (A ** sep_true) = (sep_true ** A)"
   "NO_MATCH sep_true A \<Longrightarrow> (A ** (sep_true ** B)) = (sep_true ** (A**B))"
-  by (auto simp: sep_algebra_simps sep_conj_ac)
+  by (auto simp: sep_algebra_simps sep_conj_c)
 
 lemma fri_prepare_sep_true_concl[named_ss fri_prepare_simps]: 
   "FRAME_INFER Ps (sep_true ** Q) \<box> = FRAME_INFER Ps Q sep_true"
-  by (auto simp: FRAME_INFER_def sep_algebra_simps sep_conj_ac)
+  by (auto simp: FRAME_INFER_def sep_algebra_simps sep_conj_c)
 
 lemma fri_exI: "FRAME_INFER Ps (Qs x) F \<Longrightarrow> FRAME_INFER Ps (EXS x. Qs x) F"
   by (auto simp: FRAME_INFER_def sep_algebra_simps intro: entails_exI) 

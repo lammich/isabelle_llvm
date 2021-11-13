@@ -916,6 +916,45 @@ abbreviation "tab_assn \<equiv> larray_assn' TYPE(size_t) size_t_assn"
 (*abbreviation "tab_assn \<equiv> array_assn size_t_assn" *) 
   
 subsection \<open>Refinement of Lookup Table Computation\<close>
+
+  ML \<open>
+    structure Cond_Iterate = struct
+      fun goal_params' gi =
+        let val rfrees = map Free (Term.rename_wrt_term gi (Logic.strip_params gi))
+        in (gi, rfrees) end;
+      
+      fun concl_of_goal' gi =
+        let val (gi, rfrees) = goal_params' gi
+            val B = Logic.strip_assums_concl gi
+        in subst_bounds (rfrees, B) end;
+      
+      fun prems_of_goal' gi =
+        let val (gi, rfrees) = goal_params' gi
+            val As = Logic.strip_assums_hyp gi
+        in map (fn A => subst_bounds (rfrees, A)) As end;
+    
+        
+      fun enum_list xs = (1 upto length xs) ~~ xs
+    
+      fun augment P (i,x) = if P x then true else (
+        tracing ("Fails for goal " ^ Int.toString i);
+        false
+      )
+      
+      fun forall_goals P thm = Thm.prems_of thm |> enum_list |> forall (augment P)
+      fun forall_concls P = forall_goals (concl_of_goal' #> P)
+
+      
+      fun REPEAT_trace tac n = tac THEN_ELSE (
+        (fn st => REPEAT_trace tac (n+1) st),
+        (fn st => (tracing ("Terminated after " ^ Int.toString n ^ " iterations"); Seq.single st))
+      )
+      
+      fun iterate_while P tac = REPEAT_trace ((fn st => if P st then all_tac st else no_tac st) THEN tac) 0
+    end    
+  \<close>
+
+
 sepref_def compute_butlast_\<ff>s_impl is compute_butlast_\<ff>s 
   :: "[\<lambda>s. length s < max_snat LENGTH(size_t)]\<^sub>a (string_assn)\<^sup>k \<rightarrow> tab_assn"
   unfolding compute_butlast_\<ff>s_def
@@ -924,8 +963,7 @@ sepref_def compute_butlast_\<ff>s_impl is compute_butlast_\<ff>s
   apply (annot_snat_const "TYPE(size_t)")
   apply (rewrite larray.fold_replicate_init)
   supply in_bounds_aux[dest]
-  apply sepref
-  done
+  by sepref
   
 (*prepare_code_thms (LLVM) [llvm_code] compute_butlast_\<ff>s_impl_def*)
 (*declare compute_butlast_\<ff>s_impl_def[llvm_code]*)
@@ -950,7 +988,6 @@ sepref_def kmp_impl is "uncurry kmp3"
   apply (rewrite in "RETURN \<hole>" in "monadic_WHILEIT (I_in_na _ _ _) \<hole>" short_circuit_conv)
   supply [[goals_limit = 3]]
   apply (annot_snat_const "TYPE(size_t)")
-  
   apply sepref_dbg_keep
   done
   

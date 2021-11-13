@@ -6,6 +6,149 @@ target triple = "x86_64-pc-linux-gnu"
 
 declare void @isabelle_llvm_free(i8*)
 declare i8* @isabelle_llvm_calloc(i64, i64)
+declare void @isabelle_llvm_parallel(void ( i8* ) *, void ( i8* ) *, i8*, i8*)
+
+define void @__isabelle_llvm_par_wrapper_0_1 (i8 * %clpv) {
+
+  %clp = bitcast i8* %clpv to {i64* *, { i64*, { i64, i64 } }} *
+
+  %cl = load {i64* *, { i64*, { i64, i64 } }}, {i64* *, { i64*, { i64, i64 } }} *%clp
+
+  %resp = extractvalue {i64* *, { i64*, { i64, i64 } }} %cl, 0
+  %arg = extractvalue {i64* *, { i64*, { i64, i64 } }} %cl, 1
+
+  %res = call i64* @Sorting_Export_Code_ll_icmp_ult_f_09016136 ({ i64*, { i64, i64 } } %arg)
+
+  store i64* %res, i64* *%resp
+
+  ret void
+}
+
+
+define void @__isabelle_llvm_par_wrapper_0_2 (i8 * %clpv) {
+
+  %clp = bitcast i8* %clpv to {i64* *, { i64*, { i64, i64 } }} *
+
+  %cl = load {i64* *, { i64*, { i64, i64 } }}, {i64* *, { i64*, { i64, i64 } }} *%clp
+
+  %resp = extractvalue {i64* *, { i64*, { i64, i64 } }} %cl, 0
+  %arg = extractvalue {i64* *, { i64*, { i64, i64 } }} %cl, 1
+
+  %res = call i64* @Sorting_Export_Code_ll_icmp_ult_f_09016136 ({ i64*, { i64, i64 } } %arg)
+
+  store i64* %res, i64* *%resp
+
+  ret void
+}
+
+
+define {i64*, i64*} @__isabelle_llvm_par_call_0({ i64*, { i64, i64 } } %arg1, { i64*, { i64, i64 } } %arg2) {
+  ; Build closure1
+  %resp1 = alloca i64*
+
+  %cl1a = insertvalue {i64* *, { i64*, { i64, i64 } }} zeroinitializer, i64** %resp1, 0
+  %cl1 = insertvalue {i64* *, { i64*, { i64, i64 } }} %cl1a, { i64*, { i64, i64 } } %arg1, 1
+
+  %cl1p = alloca {i64* *, { i64*, { i64, i64 } }}
+  store {i64* *, { i64*, { i64, i64 } }} %cl1, {i64* *, { i64*, { i64, i64 } }}* %cl1p
+
+  ; Build closure2
+  %resp2 = alloca i64*
+
+  %cl2a = insertvalue {i64* *, { i64*, { i64, i64 } }} zeroinitializer, i64** %resp2, 0
+  %cl2 = insertvalue {i64* *, { i64*, { i64, i64 } }} %cl2a, { i64*, { i64, i64 } } %arg2, 1
+
+  %cl2p = alloca {i64* *, { i64*, { i64, i64 } }}
+  store {i64* *, { i64*, { i64, i64 } }} %cl2, {i64* *, { i64*, { i64, i64 } }}* %cl2p
+
+  ; Invoke parallel
+  %cl1pv = bitcast {i64* *, { i64*, { i64, i64 } }}* %cl1p to i8*
+  %cl2pv = bitcast {i64* *, { i64*, { i64, i64 } }}* %cl2p to i8*
+
+  call void @isabelle_llvm_parallel (void (i8 *) *@__isabelle_llvm_par_wrapper_0_1, void (i8 *) *@__isabelle_llvm_par_wrapper_0_2, i8 * %cl1pv, i8 * %cl2pv)
+
+  ; Extract results
+  %res1 = load i64*, i64** %resp1
+  %res2 = load i64*, i64** %resp2
+
+  ; Assemble result
+  %resa = insertvalue {i64*, i64*} zeroinitializer, i64* %res1, 0
+  %res = insertvalue {i64*, i64*} %resa, i64* %res2, 1
+
+  ret {i64*, i64*} %res
+}
+
+
+define void @__isabelle_llvm_par_wrapper_1_1 (i8 * %clpv) {
+
+  %clp = bitcast i8* %clpv to {{ i64, { i64, i8* } }* *, { { i64, { i64, i8* } }*, { i64, i64 } }} *
+
+  %cl = load {{ i64, { i64, i8* } }* *, { { i64, { i64, i8* } }*, { i64, i64 } }}, {{ i64, { i64, i8* } }* *, { { i64, { i64, i8* } }*, { i64, i64 } }} *%clp
+
+  %resp = extractvalue {{ i64, { i64, i8* } }* *, { { i64, { i64, i8* } }*, { i64, i64 } }} %cl, 0
+  %arg = extractvalue {{ i64, { i64, i8* } }* *, { { i64, { i64, i8* } }*, { i64, i64 } }} %cl, 1
+
+  %res = call { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_09082218 ({ { i64, { i64, i8* } }*, { i64, i64 } } %arg)
+
+  store { i64, { i64, i8* } }* %res, { i64, { i64, i8* } }* *%resp
+
+  ret void
+}
+
+
+define void @__isabelle_llvm_par_wrapper_1_2 (i8 * %clpv) {
+
+  %clp = bitcast i8* %clpv to {{ i64, { i64, i8* } }* *, { { i64, { i64, i8* } }*, { i64, i64 } }} *
+
+  %cl = load {{ i64, { i64, i8* } }* *, { { i64, { i64, i8* } }*, { i64, i64 } }}, {{ i64, { i64, i8* } }* *, { { i64, { i64, i8* } }*, { i64, i64 } }} *%clp
+
+  %resp = extractvalue {{ i64, { i64, i8* } }* *, { { i64, { i64, i8* } }*, { i64, i64 } }} %cl, 0
+  %arg = extractvalue {{ i64, { i64, i8* } }* *, { { i64, { i64, i8* } }*, { i64, i64 } }} %cl, 1
+
+  %res = call { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_09082218 ({ { i64, { i64, i8* } }*, { i64, i64 } } %arg)
+
+  store { i64, { i64, i8* } }* %res, { i64, { i64, i8* } }* *%resp
+
+  ret void
+}
+
+
+define {{ i64, { i64, i8* } }*, { i64, { i64, i8* } }*} @__isabelle_llvm_par_call_1({ { i64, { i64, i8* } }*, { i64, i64 } } %arg1, { { i64, { i64, i8* } }*, { i64, i64 } } %arg2) {
+  ; Build closure1
+  %resp1 = alloca { i64, { i64, i8* } }*
+
+  %cl1a = insertvalue {{ i64, { i64, i8* } }* *, { { i64, { i64, i8* } }*, { i64, i64 } }} zeroinitializer, { i64, { i64, i8* } }** %resp1, 0
+  %cl1 = insertvalue {{ i64, { i64, i8* } }* *, { { i64, { i64, i8* } }*, { i64, i64 } }} %cl1a, { { i64, { i64, i8* } }*, { i64, i64 } } %arg1, 1
+
+  %cl1p = alloca {{ i64, { i64, i8* } }* *, { { i64, { i64, i8* } }*, { i64, i64 } }}
+  store {{ i64, { i64, i8* } }* *, { { i64, { i64, i8* } }*, { i64, i64 } }} %cl1, {{ i64, { i64, i8* } }* *, { { i64, { i64, i8* } }*, { i64, i64 } }}* %cl1p
+
+  ; Build closure2
+  %resp2 = alloca { i64, { i64, i8* } }*
+
+  %cl2a = insertvalue {{ i64, { i64, i8* } }* *, { { i64, { i64, i8* } }*, { i64, i64 } }} zeroinitializer, { i64, { i64, i8* } }** %resp2, 0
+  %cl2 = insertvalue {{ i64, { i64, i8* } }* *, { { i64, { i64, i8* } }*, { i64, i64 } }} %cl2a, { { i64, { i64, i8* } }*, { i64, i64 } } %arg2, 1
+
+  %cl2p = alloca {{ i64, { i64, i8* } }* *, { { i64, { i64, i8* } }*, { i64, i64 } }}
+  store {{ i64, { i64, i8* } }* *, { { i64, { i64, i8* } }*, { i64, i64 } }} %cl2, {{ i64, { i64, i8* } }* *, { { i64, { i64, i8* } }*, { i64, i64 } }}* %cl2p
+
+  ; Invoke parallel
+  %cl1pv = bitcast {{ i64, { i64, i8* } }* *, { { i64, { i64, i8* } }*, { i64, i64 } }}* %cl1p to i8*
+  %cl2pv = bitcast {{ i64, { i64, i8* } }* *, { { i64, { i64, i8* } }*, { i64, i64 } }}* %cl2p to i8*
+
+  call void @isabelle_llvm_parallel (void (i8 *) *@__isabelle_llvm_par_wrapper_1_1, void (i8 *) *@__isabelle_llvm_par_wrapper_1_2, i8 * %cl1pv, i8 * %cl2pv)
+
+  ; Extract results
+  %res1 = load { i64, { i64, i8* } }*, { i64, { i64, i8* } }** %resp1
+  %res2 = load { i64, { i64, i8* } }*, { i64, { i64, i8* } }** %resp2
+
+  ; Assemble result
+  %resa = insertvalue {{ i64, { i64, i8* } }*, { i64, { i64, i8* } }*} zeroinitializer, { i64, { i64, i8* } }* %res1, 0
+  %res = insertvalue {{ i64, { i64, i8* } }*, { i64, { i64, i8* } }*} %resa, { i64, { i64, i8* } }* %res2, 1
+
+  ret {{ i64, { i64, i8* } }*, { i64, { i64, i8* } }*} %res
+}
+
 
 
 define void @LLVM_DS_Array_arraycpy(i8* %dst, i8* %src, i64 %n) {
@@ -30,7 +173,27 @@ define void @LLVM_DS_Array_arraycpy(i8* %dst, i8* %src, i64 %n) {
     ret void
 }
 
-define void @LLVM_DS_NArray_narray_free(i8* %p) {
+define void @LLVM_DS_NArray_narray_free(i64* %p) {
+
+  start:
+    %a = ptrtoint i64* %p to i64
+    %b = ptrtoint i64* null to i64
+    %tmp = icmp eq i64 %a, %b
+    br i1 %tmp, label %then, label %else
+
+  then:
+    br label %ctd_if
+
+  else:
+    %c = bitcast i64* %p to i8*
+    call void @isabelle_llvm_free (i8* %c)
+    br label %ctd_if
+
+  ctd_if:
+    ret void
+}
+
+define void @LLVM_DS_NArray_narray_free1(i8* %p) {
 
   start:
     %a = ptrtoint i8* %p to i64
@@ -245,6 +408,18 @@ define i8 @llstrcmp({ i64, { i64, i8* } }* %ap, { i64, { i64, i8* } }* %bp) {
     ret i8 %x
 }
 
+define void @str_free({ i64, { i64, i8* } }* %ap) {
+
+  start:
+    %a = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %ap
+    %uu = extractvalue { i64, { i64, i8* } } %a, 0
+    %xb = extractvalue { i64, { i64, i8* } } %a, 1
+    %uua = extractvalue { i64, i8* } %xb, 0
+    %x = extractvalue { i64, i8* } %xb, 1
+    call void @LLVM_DS_NArray_narray_free1 (i8* %x)
+    ret void
+}
+
 define void @str_init({ i64, { i64, i8* } }* %sp) {
 
   start:
@@ -301,7 +476,7 @@ define { i64, { i64, i8* } } @LLVM_DS_Array_List_arl_resize(i64 %c, { i64, { i64
   ctd_ifb:
     %a1 = phi i8* [ %x1, %elseb ], [ null, %thenb ]
     call void @LLVM_DS_Array_arraycpy (i8* %a1, i8* %a, i64 %l)
-    call void @LLVM_DS_NArray_narray_free (i8* %a)
+    call void @LLVM_DS_NArray_narray_free1 (i8* %a)
     %xaa = insertvalue { i64, { i64, i8* } } zeroinitializer, i64 %l, 0
     %xja = insertvalue { i64, i8* } zeroinitializer, i64 %ca1, 0
     %tmpca = insertvalue { i64, i8* } %xja, i8* %a1, 1
@@ -357,7 +532,7 @@ define void @str_append({ i64, { i64, i8* } }* %sp, i8 %x) {
     ret void
 }
 
-define i64* @Proto_IICF_EOArray_swap_eo_impl(i64* %x, i64 %x1, i64 %x2) {
+define i64* @Proto_IICF_EOArray_swap_eos_impl(i64* %x, i64 %x1, i64 %x2) {
 
   start:
     %x3 = getelementptr i64, i64* %x, i64 %x1
@@ -371,7 +546,7 @@ define i64* @Proto_IICF_EOArray_swap_eo_impl(i64* %x, i64 %x1, i64 %x2) {
     ret i64* %x
 }
 
-define { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2) {
+define { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2) {
 
   start:
     %x3 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x, i64 %x1
@@ -395,16 +570,16 @@ define { i64, { i64, i8* } }* @str_pdqsort({ i64, { i64, i8* } }* %x, i64 %x1, i
   then:
     %xba = sub i64 64, 1
     %xc = call i64 @Sorting_Log2_word_clz_impl (i64 %x3)
-    %bib = sub i64 %xba, %xc
-    %xd = insertvalue { i64, i64 } zeroinitializer, i64 %x2, 0
-    %tmpaa = insertvalue { i64, i64 } %xd, i64 %bib, 1
-    %xe = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %x1, 0
-    %tmpab = insertvalue { i64, { i64, i64 } } %xe, { i64, i64 } %tmpaa, 1
-    %xf = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } zeroinitializer, { i64, { i64, i8* } }* %x, 0
-    %tmpac = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %xf, { i64, { i64, i64 } } %tmpab, 1
-    %xg = insertvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } zeroinitializer, i1 1, 0
-    %x4 = insertvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %xg, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %tmpac, 1
-    %x5 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_pdqsort_impl_f_08031364 ({ i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %x4)
+    %xd = sub i64 %xba, %xc
+    %xea = insertvalue { i64, i64 } zeroinitializer, i64 %x2, 0
+    %tmpca = insertvalue { i64, i64 } %xea, i64 %xd, 1
+    %xfa = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %x1, 0
+    %tmpcaa = insertvalue { i64, { i64, i64 } } %xfa, { i64, i64 } %tmpca, 1
+    %xga = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } zeroinitializer, { i64, { i64, i8* } }* %x, 0
+    %tmpcb = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %xga, { i64, { i64, i64 } } %tmpcaa, 1
+    %xha = insertvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } zeroinitializer, i1 1, 0
+    %x4 = insertvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %xha, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %tmpcb, 1
+    %x5 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_pdqsort_impl_f_09115036 ({ i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %x4)
     br label %ctd_if
 
   else:
@@ -415,50 +590,26 @@ define { i64, { i64, i8* } }* @str_pdqsort({ i64, { i64, i8* } }* %x, i64 %x1, i
     ret { i64, { i64, i8* } }* %x6
 }
 
-define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_heapsort_impl({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2) {
+define { i64, { i64, i8* } }* @str_par_sort({ i64, { i64, i8* } }* %x, i64 %x1) {
 
   start:
-    %x3 = sub i64 %x2, %x1
-    %xa = icmp slt i64 1, %x3
-    br i1 %xa, label %then, label %else
+    %x2 = icmp slt i64 1, %x1
+    br i1 %x2, label %then, label %else
 
   then:
-    %xb = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_heapify_btu_impl (i64 %x1, i64 %x2, { i64, { i64, i8* } }* %x)
-    %xc = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %xb, 0
-    %xd = insertvalue { { i64, { i64, i8* } }*, i64 } %xc, i64 %x2, 1
-    br label %while_start
-
-  while_start:
-    %xca = phi { { i64, { i64, i8* } }*, i64 } [ %x5, %while_body ], [ %xd, %then ]
-    %a1 = extractvalue { { i64, { i64, i8* } }*, i64 } %xca, 0
-    %a2 = extractvalue { { i64, { i64, i8* } }*, i64 } %xca, 1
-    %xda = add i64 %x1, 1
-    %x4 = icmp slt i64 %xda, %a2
-    br i1 %x4, label %while_body, label %while_end
-
-  while_body:
-    %a11 = extractvalue { { i64, { i64, i8* } }*, i64 } %xca, 0
-    %a21 = extractvalue { { i64, { i64, i8* } }*, i64 } %xca, 1
-    %xda1 = sub i64 %a21, 1
-    %xea = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %a11, i64 %x1, i64 %xda1)
-    %xfa = sub i64 %a21, 1
-    %xga = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_sift_down_impl (i64 %x1, i64 %xfa, i64 %x1, { i64, { i64, i8* } }* %xea)
-    %xha = sub i64 %a21, 1
-    %xia = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %xga, 0
-    %x5 = insertvalue { { i64, { i64, i8* } }*, i64 } %xia, i64 %xha, 1
-    br label %while_start
-
-  while_end:
-    %a12 = extractvalue { { i64, { i64, i8* } }*, i64 } %xca, 0
-    %a22 = extractvalue { { i64, { i64, i8* } }*, i64 } %xca, 1
+    %xa = sub i64 64, 1
+    %xb = call i64 @Sorting_Log2_word_clz_impl (i64 %x1)
+    %xc = sub i64 %xa, %xb
+    %x3 = mul i64 %xc, 2
+    %x4 = call { i64, { i64, i8* } }* @Monadify_M_CONST_Sorting_Parsort_sort_impl_context_par_sort_aux_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x3)
     br label %ctd_if
 
   else:
     br label %ctd_if
 
   ctd_if:
-    %x6 = phi { i64, { i64, i8* } }* [ %x, %else ], [ %a12, %while_end ]
-    ret { i64, { i64, i8* } }* %x6
+    %x5 = phi { i64, { i64, i8* } }* [ %x, %else ], [ %x4, %then ]
+    ret { i64, { i64, i8* } }* %x5
 }
 
 define i64* @pdqsort(i64* %x, i64 %x1, i64 %x2) {
@@ -471,16 +622,16 @@ define i64* @pdqsort(i64* %x, i64 %x1, i64 %x2) {
   then:
     %xba = sub i64 64, 1
     %xc = call i64 @Sorting_Log2_word_clz_impl (i64 %x3)
-    %bib = sub i64 %xba, %xc
-    %xd = insertvalue { i64, i64 } zeroinitializer, i64 %x2, 0
-    %tmpaa = insertvalue { i64, i64 } %xd, i64 %bib, 1
-    %xe = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %x1, 0
-    %tmpab = insertvalue { i64, { i64, i64 } } %xe, { i64, i64 } %tmpaa, 1
-    %xf = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %x, 0
-    %tmpac = insertvalue { i64*, { i64, { i64, i64 } } } %xf, { i64, { i64, i64 } } %tmpab, 1
-    %xg = insertvalue { i1, { i64*, { i64, { i64, i64 } } } } zeroinitializer, i1 1, 0
-    %x4 = insertvalue { i1, { i64*, { i64, { i64, i64 } } } } %xg, { i64*, { i64, { i64, i64 } } } %tmpac, 1
-    %x5 = call i64* @Sorting_Export_Code_unat_sort_pdqsort_impl_f_07989790 ({ i1, { i64*, { i64, { i64, i64 } } } } %x4)
+    %xd = sub i64 %xba, %xc
+    %xea = insertvalue { i64, i64 } zeroinitializer, i64 %x2, 0
+    %tmpca = insertvalue { i64, i64 } %xea, i64 %xd, 1
+    %xfa = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %x1, 0
+    %tmpcaa = insertvalue { i64, { i64, i64 } } %xfa, { i64, i64 } %tmpca, 1
+    %xga = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %x, 0
+    %tmpcb = insertvalue { i64*, { i64, { i64, i64 } } } %xga, { i64, { i64, i64 } } %tmpcaa, 1
+    %xha = insertvalue { i1, { i64*, { i64, { i64, i64 } } } } zeroinitializer, i1 1, 0
+    %x4 = insertvalue { i1, { i64*, { i64, { i64, i64 } } } } %xha, { i64*, { i64, { i64, i64 } } } %tmpcb, 1
+    %x5 = call i64* @Sorting_Export_Code_unat_pdqsort_impl_f_09049750 ({ i1, { i64*, { i64, { i64, i64 } } } } %x4)
     br label %ctd_if
 
   else:
@@ -504,8 +655,8 @@ define { i64, { i64, i8* } }* @str_introsort({ i64, { i64, i8* } }* %x, i64 %x1,
     %xd = call i64 @Sorting_Log2_word_clz_impl (i64 %xb)
     %xe = sub i64 %xc, %xd
     %xf = mul i64 %xe, 2
-    %xg = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_introsort_aux_impl ({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2, i64 %xf)
-    %x4 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_final_insertion_sort_impl ({ i64, { i64, i8* } }* %xg, i64 %x1, i64 %x2)
+    %xg = call { i64, { i64, i8* } }* @Monadify_M_CONST_Sorting_Introsort_sort_impl_context_introsort_aux_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2, i64 %xf)
+    %x4 = call { i64, { i64, i8* } }* @Monadify_M_CONST_Sorting_Final_insertion_Sort_sort_impl_context_final_insertion_sort_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %xg, i64 %x1, i64 %x2)
     br label %ctd_if
 
   else:
@@ -516,179 +667,29 @@ define { i64, { i64, i8* } }* @str_introsort({ i64, { i64, i8* } }* %x, i64 %x1,
     ret { i64, { i64, i8* } }* %x5
 }
 
-define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_sift_down_impl(i64 %x, i64 %x1, i64 %x2, { i64, { i64, i8* } }* %x3) {
+define i64* @par_sort(i64* %x, i64 %x1) {
 
   start:
-    %x4 = sub i64 %x2, %x
-    %xa = add i64 %x, %x4
-    %xb = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x3, i64 %xa
-    %r = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xb
-    %xc = insertvalue { i64, i1 } zeroinitializer, i64 %x4, 0
-    %tmpa = insertvalue { i64, i1 } %xc, i1 1, 1
-    %xd = insertvalue { { i64, { i64, i8* } }*, { i64, i1 } } zeroinitializer, { i64, { i64, i8* } }* %x3, 0
-    %xe = insertvalue { { i64, { i64, i8* } }*, { i64, i1 } } %xd, { i64, i1 } %tmpa, 1
-    br label %while_start
-
-  while_start:
-    %xca = phi { { i64, { i64, i8* } }*, { i64, i1 } } [ %x12, %ctd_if ], [ %xe, %start ]
-    %a1a = extractvalue { { i64, { i64, i8* } }*, { i64, i1 } } %xca, 0
-    %xda = extractvalue { { i64, { i64, i8* } }*, { i64, i1 } } %xca, 1
-    %a1b = extractvalue { i64, i1 } %xda, 0
-    %a2b = extractvalue { i64, i1 } %xda, 1
-    %xea = sub i64 %x1, %x
-    %xfa = sub i64 %xea, 1
-    %xga = udiv i64 %xfa, 2
-    %xha = icmp slt i64 %a1b, %xga
-    %x5 = and i1 %xha, %a2b
-    br i1 %x5, label %while_body, label %while_end
-
-  while_body:
-    %a1a1 = extractvalue { { i64, { i64, i8* } }*, { i64, i1 } } %xca, 0
-    %xda1 = extractvalue { { i64, { i64, i8* } }*, { i64, i1 } } %xca, 1
-    %a1b1 = extractvalue { i64, i1 } %xda1, 0
-    %a2b1 = extractvalue { i64, i1 } %xda1, 1
-    %xea1 = mul i64 2, %a1b1
-    %xfa1 = add i64 %xea1, 1
-    %xga1 = mul i64 2, %a1b1
-    %xha1 = add i64 %xga1, 2
-    %xia = add i64 %x, %xfa1
-    %xja = add i64 %x, %xha1
-    %xka = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a1, i64 %xia
-    %ra = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xka
-    %xl = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a1, i64 %xja
-    %rb = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xl
-    %xm = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %ra, { i64, { i64, i8* } } %rb)
-    %p = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a1, i64 %xia
-    store { i64, { i64, i8* } } %ra, { i64, { i64, i8* } }* %p
-    %pa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a1, i64 %xja
-    store { i64, { i64, i8* } } %rb, { i64, { i64, i8* } }* %pa
-    br i1 %xm, label %then, label %else
+    %x2 = icmp slt i64 1, %x1
+    br i1 %x2, label %then, label %else
 
   then:
-    %xq = add i64 %x, %xha1
-    %xr = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a1, i64 %xq
-    %rc = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xr
-    %xs = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r, { i64, { i64, i8* } } %rc)
-    %pb = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a1, i64 %xq
-    store { i64, { i64, i8* } } %rc, { i64, { i64, i8* } }* %pb
-    br i1 %xs, label %thena, label %elsea
-
-  thena:
-    %xv = add i64 %x, %xha1
-    %xw = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a1, i64 %xv
-    %rd = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xw
-    %xx = add i64 %x, %a1b1
-    %pc = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a1, i64 %xx
-    store { i64, { i64, i8* } } %rd, { i64, { i64, i8* } }* %pc
-    %xza = insertvalue { { i64, { i64, i8* } }*, { i64, i1 } } zeroinitializer, { i64, { i64, i8* } }* %a1a1, 0
-    %ya = insertvalue { i64, i1 } zeroinitializer, i64 %xha1, 0
-    %tmpf = insertvalue { i64, i1 } %ya, i1 1, 1
-    %x6 = insertvalue { { i64, { i64, i8* } }*, { i64, i1 } } %xza, { i64, i1 } %tmpf, 1
-    br label %ctd_ifa
-
-  elsea:
-    %xva = insertvalue { { i64, { i64, i8* } }*, { i64, i1 } } zeroinitializer, { i64, { i64, i8* } }* %a1a1, 0
-    %xw1 = insertvalue { i64, i1 } zeroinitializer, i64 %a1b1, 0
-    %tmpf1 = insertvalue { i64, i1 } %xw1, i1 0, 1
-    %x7 = insertvalue { { i64, { i64, i8* } }*, { i64, i1 } } %xva, { i64, i1 } %tmpf1, 1
-    br label %ctd_ifa
-
-  ctd_ifa:
-    %x8 = phi { { i64, { i64, i8* } }*, { i64, i1 } } [ %x7, %elsea ], [ %x6, %thena ]
+    %xa = sub i64 64, 1
+    %xb = call i64 @Sorting_Log2_word_clz_impl (i64 %x1)
+    %xc = sub i64 %xa, %xb
+    %x3 = mul i64 %xc, 2
+    %x4 = call i64* @Monadify_M_CONST_Sorting_Parsort_sort_impl_context_par_sort_aux_impl_LLVM_Shallow_ll_icmp_ult (i64* %x, i64 %x1, i64 %x3)
     br label %ctd_if
 
   else:
-    %xq1 = add i64 %x, %xfa1
-    %xr1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a1, i64 %xq1
-    %rc1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xr1
-    %xs1 = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r, { i64, { i64, i8* } } %rc1)
-    %pb1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a1, i64 %xq1
-    store { i64, { i64, i8* } } %rc1, { i64, { i64, i8* } }* %pb1
-    br i1 %xs1, label %thenb, label %elseb
-
-  thenb:
-    %xv1 = add i64 %x, %xfa1
-    %xw2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a1, i64 %xv1
-    %rd1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xw2
-    %xx1 = add i64 %x, %a1b1
-    %pc1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a1, i64 %xx1
-    store { i64, { i64, i8* } } %rd1, { i64, { i64, i8* } }* %pc1
-    %xza1 = insertvalue { { i64, { i64, i8* } }*, { i64, i1 } } zeroinitializer, { i64, { i64, i8* } }* %a1a1, 0
-    %ya1 = insertvalue { i64, i1 } zeroinitializer, i64 %xfa1, 0
-    %tmpf2 = insertvalue { i64, i1 } %ya1, i1 1, 1
-    %x9 = insertvalue { { i64, { i64, i8* } }*, { i64, i1 } } %xza1, { i64, i1 } %tmpf2, 1
-    br label %ctd_ifb
-
-  elseb:
-    %xva1 = insertvalue { { i64, { i64, i8* } }*, { i64, i1 } } zeroinitializer, { i64, { i64, i8* } }* %a1a1, 0
-    %xw3 = insertvalue { i64, i1 } zeroinitializer, i64 %a1b1, 0
-    %tmpf3 = insertvalue { i64, i1 } %xw3, i1 0, 1
-    %x10 = insertvalue { { i64, { i64, i8* } }*, { i64, i1 } } %xva1, { i64, i1 } %tmpf3, 1
-    br label %ctd_ifb
-
-  ctd_ifb:
-    %x11 = phi { { i64, { i64, i8* } }*, { i64, i1 } } [ %x10, %elseb ], [ %x9, %thenb ]
     br label %ctd_if
 
   ctd_if:
-    %x12 = phi { { i64, { i64, i8* } }*, { i64, i1 } } [ %x11, %ctd_ifb ], [ %x8, %ctd_ifa ]
-    br label %while_start
-
-  while_end:
-    %a1a2 = extractvalue { { i64, { i64, i8* } }*, { i64, i1 } } %xca, 0
-    %xda2 = extractvalue { { i64, { i64, i8* } }*, { i64, i1 } } %xca, 1
-    %a1b2 = extractvalue { i64, i1 } %xda2, 0
-    %a2b2 = extractvalue { i64, i1 } %xda2, 1
-    %xea2 = sub i64 %x1, %x
-    %xfa2 = udiv i64 %xea2, 2
-    %xga2 = icmp slt i64 %a1b2, %xfa2
-    br i1 %xga2, label %thenc, label %elsec
-
-  thenc:
-    %xha2 = mul i64 2, %a1b2
-    %xia1 = add i64 %xha2, 1
-    %xja1 = add i64 %x, %xia1
-    %xka1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a2, i64 %xja1
-    %ra1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xka1
-    %xl1 = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r, { i64, { i64, i8* } } %ra1)
-    %p1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a2, i64 %xja1
-    store { i64, { i64, i8* } } %ra1, { i64, { i64, i8* } }* %p1
-    br i1 %xl1, label %thend, label %elsed
-
-  thend:
-    %xo = add i64 %x, %xia1
-    %xp = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a2, i64 %xo
-    %rb1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xp
-    %xq2 = add i64 %x, %a1b2
-    %pa1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a2, i64 %xq2
-    store { i64, { i64, i8* } } %rb1, { i64, { i64, i8* } }* %pa1
-    %xs2 = add i64 %x, %xia1
-    %pb2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a2, i64 %xs2
-    store { i64, { i64, i8* } } %r, { i64, { i64, i8* } }* %pb2
-    br label %ctd_ifd
-
-  elsed:
-    %xo1 = add i64 %x, %a1b2
-    %pa2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a2, i64 %xo1
-    store { i64, { i64, i8* } } %r, { i64, { i64, i8* } }* %pa2
-    br label %ctd_ifd
-
-  ctd_ifd:
-    %x13 = phi { i64, { i64, i8* } }* [ %a1a2, %elsed ], [ %a1a2, %thend ]
-    br label %ctd_ifc
-
-  elsec:
-    %xha3 = add i64 %x, %a1b2
-    %p2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a2, i64 %xha3
-    store { i64, { i64, i8* } } %r, { i64, { i64, i8* } }* %p2
-    br label %ctd_ifc
-
-  ctd_ifc:
-    %x14 = phi { i64, { i64, i8* } }* [ %a1a2, %elsec ], [ %x13, %ctd_ifd ]
-    ret { i64, { i64, i8* } }* %x14
+    %x5 = phi i64* [ %x, %else ], [ %x4, %then ]
+    ret i64* %x5
 }
 
-define i64* @heapsort(i64* %x, i64 %x1, i64 %x2) {
+define i64* @introsort(i64* %x, i64 %x1, i64 %x2) {
 
   start:
     %x3 = sub i64 %x2, %x1
@@ -696,7 +697,2264 @@ define i64* @heapsort(i64* %x, i64 %x1, i64 %x2) {
     br i1 %xa, label %then, label %else
 
   then:
-    %xb = call i64* @Sorting_Export_Code_unat_sort_heapify_btu_impl (i64 %x1, i64 %x2, i64* %x)
+    %xb = sub i64 %x2, %x1
+    %xc = sub i64 64, 1
+    %xd = call i64 @Sorting_Log2_word_clz_impl (i64 %xb)
+    %xe = sub i64 %xc, %xd
+    %xf = mul i64 %xe, 2
+    %xg = call i64* @Monadify_M_CONST_Sorting_Introsort_sort_impl_context_introsort_aux_impl_LLVM_Shallow_ll_icmp_ult (i64* %x, i64 %x1, i64 %x2, i64 %xf)
+    %x4 = call i64* @Monadify_M_CONST_Sorting_Final_insertion_Sort_sort_impl_context_final_insertion_sort_impl_LLVM_Shallow_ll_icmp_ult (i64* %xg, i64 %x1, i64 %x2)
+    br label %ctd_if
+
+  else:
+    br label %ctd_if
+
+  ctd_if:
+    %x5 = phi i64* [ %x, %else ], [ %x4, %then ]
+    ret i64* %x5
+}
+
+define i64* @Sorting_Export_Code_ll_icmp_ult_f_09016136({ i64*, { i64, i64 } } %x) {
+
+  start:
+    %a1 = extractvalue { i64*, { i64, i64 } } %x, 0
+    %xaaa = extractvalue { i64*, { i64, i64 } } %x, 1
+    %a1a = extractvalue { i64, i64 } %xaaa, 0
+    %a2a = extractvalue { i64, i64 } %xaaa, 1
+    %xba = icmp eq i64 %a2a, 0
+    %xcaa = icmp slt i64 %a1a, 100000
+    %xdaa = or i1 %xba, %xcaa
+    br i1 %xdaa, label %then, label %else
+
+  then:
+    %x1 = call i64* @pdqsort (i64* %a1, i64 0, i64 %a1a)
+    br label %ctd_if
+
+  else:
+    %xeaa = call { i64*, i64 } @Monadify_M_CONST_Sorting_Sample_Partition_sort_impl_context_partition_pivot_sample_impl_LLVM_Shallow_ll_icmp_ult (i64* %a1, i64 %a1a)
+    %a1b = extractvalue { i64*, i64 } %xeaa, 0
+    %a2b = extractvalue { i64*, i64 } %xeaa, 1
+    %xfa = udiv i64 %a1a, 8
+    %xga = icmp slt i64 %a2b, %xfa
+    %xha = sub i64 %a1a, %a2b
+    %xia = udiv i64 %a1a, 8
+    %xja = icmp slt i64 %xha, %xia
+    %xka = or i1 %xga, %xja
+    %p_2 = getelementptr i64, i64* %a1b, i64 %a2b
+    br i1 %xka, label %thena, label %elsea
+
+  thena:
+    %xla = sub i64 %a2a, 1
+    %xoa = insertvalue { i64, i64 } zeroinitializer, i64 %a2b, 0
+    %tmpac = insertvalue { i64, i64 } %xoa, i64 %xla, 1
+    %xpa = insertvalue { i64*, { i64, i64 } } zeroinitializer, i64* %a1b, 0
+    %xqa = insertvalue { i64*, { i64, i64 } } %xpa, { i64, i64 } %tmpac, 1
+    %xma = call i64* @Sorting_Export_Code_ll_icmp_ult_f_09016136 ({ i64*, { i64, i64 } } %xqa)
+    %xna = sub i64 %a1a, %a2b
+    %xoaa = sub i64 %a2a, 1
+    %xsa = insertvalue { i64, i64 } zeroinitializer, i64 %xna, 0
+    %tmpbb = insertvalue { i64, i64 } %xsa, i64 %xoaa, 1
+    %xta = insertvalue { i64*, { i64, i64 } } zeroinitializer, i64* %p_2, 0
+    %xua = insertvalue { i64*, { i64, i64 } } %xta, { i64, i64 } %tmpbb, 1
+    %xpaa = call i64* @Sorting_Export_Code_ll_icmp_ult_f_09016136 ({ i64*, { i64, i64 } } %xua)
+    %xqaa = insertvalue { i64*, i64* } zeroinitializer, i64* %xma, 0
+    %x2 = insertvalue { i64*, i64* } %xqaa, i64* %xpaa, 1
+    br label %ctd_ifa
+
+  elsea:
+    %xla1 = sub i64 %a2a, 1
+    %xma1 = sub i64 %a1a, %a2b
+    %xna1 = sub i64 %a2a, 1
+    %xpa1 = insertvalue { i64, i64 } zeroinitializer, i64 %a2b, 0
+    %tmpac1 = insertvalue { i64, i64 } %xpa1, i64 %xla1, 1
+    %xqa1 = insertvalue { i64*, { i64, i64 } } zeroinitializer, i64* %a1b, 0
+    %tmpba = insertvalue { i64*, { i64, i64 } } %xqa1, { i64, i64 } %tmpac1, 1
+    %xra = insertvalue { i64, i64 } zeroinitializer, i64 %xma1, 0
+    %tmpaaa = insertvalue { i64, i64 } %xra, i64 %xna1, 1
+    %xsa1 = insertvalue { i64*, { i64, i64 } } zeroinitializer, i64* %p_2, 0
+    %x3 = insertvalue { i64*, { i64, i64 } } %xsa1, { i64, i64 } %tmpaaa, 1
+    %x4 = call { i64*, i64* } @__isabelle_llvm_par_call_0 ({ i64*, { i64, i64 } } %tmpba, { i64*, { i64, i64 } } %x3)
+    br label %ctd_ifa
+
+  ctd_ifa:
+    %xla2 = phi { i64*, i64* } [ %x4, %elsea ], [ %x2, %thena ]
+    %a1c = extractvalue { i64*, i64* } %xla2, 0
+    %a2c = extractvalue { i64*, i64* } %xla2, 1
+    br label %ctd_if
+
+  ctd_if:
+    %x5 = phi i64* [ %a1b, %ctd_ifa ], [ %x1, %then ]
+    ret i64* %x5
+}
+
+define i64* @Sorting_Export_Code_ll_icmp_ult_f_09027306(i64* %ai, { i64*, { i64, { i64, i64 } } } %x) {
+
+  start:
+    %a1 = extractvalue { i64*, { i64, { i64, i64 } } } %x, 0
+    %xaaa = extractvalue { i64*, { i64, { i64, i64 } } } %x, 1
+    %a1a = extractvalue { i64, { i64, i64 } } %xaaa, 0
+    %xbaa = extractvalue { i64, { i64, i64 } } %xaaa, 1
+    %a1b = extractvalue { i64, i64 } %xbaa, 0
+    %a2b = extractvalue { i64, i64 } %xbaa, 1
+    %xca = sub i64 %a1b, %a1a
+    %xdaa = icmp slt i64 16, %xca
+    br i1 %xdaa, label %then, label %else
+
+  then:
+    %xeaa = icmp eq i64 %a2b, 0
+    br i1 %xeaa, label %thena, label %elsea
+
+  thena:
+    %x1 = call i64* @Monadify_M_CONST_Sorting_Heapsort_parameterized_sort_impl_context_heapsort_param_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult (i64* %ai, i64* %a1, i64 %a1a, i64 %a1b)
+    br label %ctd_ifa
+
+  elsea:
+    %xfaa = call { i64*, i64 } @Monadify_M_CONST_Sorting_Quicksort_Partition_parameterized_sort_impl_context_partition_pivot_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult (i64* %ai, i64* %a1, i64 %a1a, i64 %a1b)
+    %a1c = extractvalue { i64*, i64 } %xfaa, 0
+    %a2c = extractvalue { i64*, i64 } %xfaa, 1
+    %xgaa = sub i64 %a2b, 1
+    %xoa = insertvalue { i64, i64 } zeroinitializer, i64 %a2c, 0
+    %tmpca = insertvalue { i64, i64 } %xoa, i64 %xgaa, 1
+    %xpa = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %a1a, 0
+    %tmpda = insertvalue { i64, { i64, i64 } } %xpa, { i64, i64 } %tmpca, 1
+    %xqa = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %a1c, 0
+    %xra = insertvalue { i64*, { i64, { i64, i64 } } } %xqa, { i64, { i64, i64 } } %tmpda, 1
+    %xha = call i64* @Sorting_Export_Code_ll_icmp_ult_f_09027306 (i64* %ai, { i64*, { i64, { i64, i64 } } } %xra)
+    %xia = sub i64 %a2b, 1
+    %xta = insertvalue { i64, i64 } zeroinitializer, i64 %a1b, 0
+    %tmpeb = insertvalue { i64, i64 } %xta, i64 %xia, 1
+    %xua = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %a2c, 0
+    %tmpfa = insertvalue { i64, { i64, i64 } } %xua, { i64, i64 } %tmpeb, 1
+    %xva = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %xha, 0
+    %x2 = insertvalue { i64*, { i64, { i64, i64 } } } %xva, { i64, { i64, i64 } } %tmpfa, 1
+    %x3 = call i64* @Sorting_Export_Code_ll_icmp_ult_f_09027306 (i64* %ai, { i64*, { i64, { i64, i64 } } } %x2)
+    br label %ctd_ifa
+
+  ctd_ifa:
+    %x4 = phi i64* [ %x3, %elsea ], [ %x1, %thena ]
+    br label %ctd_if
+
+  else:
+    br label %ctd_if
+
+  ctd_if:
+    %x5 = phi i64* [ %a1, %else ], [ %x4, %ctd_ifa ]
+    ret i64* %x5
+}
+
+define i64* @Sorting_Export_Code_ll_icmp_ult_f_09073862({ i64*, { i64, { i64, i64 } } } %x) {
+
+  start:
+    %a1 = extractvalue { i64*, { i64, { i64, i64 } } } %x, 0
+    %xaaa = extractvalue { i64*, { i64, { i64, i64 } } } %x, 1
+    %a1a = extractvalue { i64, { i64, i64 } } %xaaa, 0
+    %xbaa = extractvalue { i64, { i64, i64 } } %xaaa, 1
+    %a1b = extractvalue { i64, i64 } %xbaa, 0
+    %a2b = extractvalue { i64, i64 } %xbaa, 1
+    %xca = sub i64 %a1b, %a1a
+    %xdaa = icmp slt i64 16, %xca
+    br i1 %xdaa, label %then, label %else
+
+  then:
+    %xeaa = icmp eq i64 %a2b, 0
+    br i1 %xeaa, label %thena, label %elsea
+
+  thena:
+    %x1 = call i64* @Monadify_M_CONST_Sorting_Heapsort_sort_impl_context_heapsort_impl_LLVM_Shallow_ll_icmp_ult (i64* %a1, i64 %a1a, i64 %a1b)
+    br label %ctd_ifa
+
+  elsea:
+    %xl = sub i64 %a1b, %a1a
+    %xma = udiv i64 %xl, 2
+    %xn = add i64 %a1a, %xma
+    %xoa = add i64 %a1a, 1
+    %xpa = sub i64 %a1b, 1
+    %x2 = getelementptr i64, i64* %a1, i64 %xoa
+    %r = load i64, i64* %x2
+    %x3 = getelementptr i64, i64* %a1, i64 %xn
+    %r1 = load i64, i64* %x3
+    %x4 = icmp ult i64 %r, %r1
+    %p = getelementptr i64, i64* %a1, i64 %xoa
+    store i64 %r, i64* %p
+    %p1 = getelementptr i64, i64* %a1, i64 %xn
+    store i64 %r1, i64* %p1
+    br i1 %x4, label %thenb, label %elseb
+
+  thenb:
+    %x5 = getelementptr i64, i64* %a1, i64 %xn
+    %r2 = load i64, i64* %x5
+    %x6 = getelementptr i64, i64* %a1, i64 %xpa
+    %r3 = load i64, i64* %x6
+    %x7 = icmp ult i64 %r2, %r3
+    %p2 = getelementptr i64, i64* %a1, i64 %xn
+    store i64 %r2, i64* %p2
+    %p3 = getelementptr i64, i64* %a1, i64 %xpa
+    store i64 %r3, i64* %p3
+    br i1 %x7, label %thenc, label %elsec
+
+  thenc:
+    %x8 = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %a1, i64 %a1a, i64 %xn)
+    br label %ctd_ifc
+
+  elsec:
+    %x9 = getelementptr i64, i64* %a1, i64 %xoa
+    %r4 = load i64, i64* %x9
+    %x10 = getelementptr i64, i64* %a1, i64 %xpa
+    %r5 = load i64, i64* %x10
+    %x11 = icmp ult i64 %r4, %r5
+    %p4 = getelementptr i64, i64* %a1, i64 %xoa
+    store i64 %r4, i64* %p4
+    %p5 = getelementptr i64, i64* %a1, i64 %xpa
+    store i64 %r5, i64* %p5
+    br i1 %x11, label %thend, label %elsed
+
+  thend:
+    %x12 = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %a1, i64 %a1a, i64 %xpa)
+    br label %ctd_ifd
+
+  elsed:
+    %x13 = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %a1, i64 %a1a, i64 %xoa)
+    br label %ctd_ifd
+
+  ctd_ifd:
+    %x14 = phi i64* [ %x13, %elsed ], [ %x12, %thend ]
+    br label %ctd_ifc
+
+  ctd_ifc:
+    %x15 = phi i64* [ %x14, %ctd_ifd ], [ %x8, %thenc ]
+    br label %ctd_ifb
+
+  elseb:
+    %x16 = getelementptr i64, i64* %a1, i64 %xoa
+    %r6 = load i64, i64* %x16
+    %x17 = getelementptr i64, i64* %a1, i64 %xpa
+    %r7 = load i64, i64* %x17
+    %x18 = icmp ult i64 %r6, %r7
+    %p6 = getelementptr i64, i64* %a1, i64 %xoa
+    store i64 %r6, i64* %p6
+    %p7 = getelementptr i64, i64* %a1, i64 %xpa
+    store i64 %r7, i64* %p7
+    br i1 %x18, label %thene, label %elsee
+
+  thene:
+    %x19 = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %a1, i64 %a1a, i64 %xoa)
+    br label %ctd_ife
+
+  elsee:
+    %x20 = getelementptr i64, i64* %a1, i64 %xn
+    %r8 = load i64, i64* %x20
+    %x21 = getelementptr i64, i64* %a1, i64 %xpa
+    %r9 = load i64, i64* %x21
+    %x22 = icmp ult i64 %r8, %r9
+    %p8 = getelementptr i64, i64* %a1, i64 %xn
+    store i64 %r8, i64* %p8
+    %p9 = getelementptr i64, i64* %a1, i64 %xpa
+    store i64 %r9, i64* %p9
+    br i1 %x22, label %thenf, label %elsef
+
+  thenf:
+    %x23 = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %a1, i64 %a1a, i64 %xpa)
+    br label %ctd_iff
+
+  elsef:
+    %x24 = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %a1, i64 %a1a, i64 %xn)
+    br label %ctd_iff
+
+  ctd_iff:
+    %x25 = phi i64* [ %x24, %elsef ], [ %x23, %thenf ]
+    br label %ctd_ife
+
+  ctd_ife:
+    %x26 = phi i64* [ %x25, %ctd_iff ], [ %x19, %thene ]
+    br label %ctd_ifb
+
+  ctd_ifb:
+    %xqa = phi i64* [ %x26, %ctd_ife ], [ %x15, %ctd_ifc ]
+    %xra = add i64 %a1a, 1
+    %xs = call { i64*, i64 } @Monadify_M_CONST_Sorting_Quicksort_Partition_sort_impl_context_qs_partition_impl_LLVM_Shallow_ll_icmp_ult (i64 %xra, i64 %a1b, i64 %a1a, i64* %xqa)
+    %a = extractvalue { i64*, i64 } %xs, 0
+    %b = extractvalue { i64*, i64 } %xs, 1
+    %xta = insertvalue { i64*, i64 } zeroinitializer, i64* %a, 0
+    %xfaa = insertvalue { i64*, i64 } %xta, i64 %b, 1
+    %a1c = extractvalue { i64*, i64 } %xfaa, 0
+    %a2c = extractvalue { i64*, i64 } %xfaa, 1
+    %xgaa = sub i64 %a2b, 1
+    %xxa = insertvalue { i64, i64 } zeroinitializer, i64 %a2c, 0
+    %tmpcb = insertvalue { i64, i64 } %xxa, i64 %xgaa, 1
+    %xya = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %a1a, 0
+    %tmpda = insertvalue { i64, { i64, i64 } } %xya, { i64, i64 } %tmpcb, 1
+    %xza = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %a1c, 0
+    %yaa = insertvalue { i64*, { i64, { i64, i64 } } } %xza, { i64, { i64, i64 } } %tmpda, 1
+    %xha = call i64* @Sorting_Export_Code_ll_icmp_ult_f_09073862 ({ i64*, { i64, { i64, i64 } } } %yaa)
+    %xia = sub i64 %a2b, 1
+    %yca = insertvalue { i64, i64 } zeroinitializer, i64 %a1b, 0
+    %tmpeb = insertvalue { i64, i64 } %yca, i64 %xia, 1
+    %yda = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %a2c, 0
+    %tmpfa = insertvalue { i64, { i64, i64 } } %yda, { i64, i64 } %tmpeb, 1
+    %yea = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %xha, 0
+    %x27 = insertvalue { i64*, { i64, { i64, i64 } } } %yea, { i64, { i64, i64 } } %tmpfa, 1
+    %x28 = call i64* @Sorting_Export_Code_ll_icmp_ult_f_09073862 ({ i64*, { i64, { i64, i64 } } } %x27)
+    br label %ctd_ifa
+
+  ctd_ifa:
+    %x29 = phi i64* [ %x28, %ctd_ifb ], [ %x1, %thena ]
+    br label %ctd_if
+
+  else:
+    br label %ctd_if
+
+  ctd_if:
+    %x30 = phi i64* [ %a1, %else ], [ %x29, %ctd_ifa ]
+    ret i64* %x30
+}
+
+define { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_09082218({ { i64, { i64, i8* } }*, { i64, i64 } } %x) {
+
+  start:
+    %a1 = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %x, 0
+    %xaaa = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %x, 1
+    %a1a = extractvalue { i64, i64 } %xaaa, 0
+    %a2a = extractvalue { i64, i64 } %xaaa, 1
+    %xba = icmp eq i64 %a2a, 0
+    %xcaa = icmp slt i64 %a1a, 100000
+    %xdaa = or i1 %xba, %xcaa
+    br i1 %xdaa, label %then, label %else
+
+  then:
+    %x1 = call { i64, { i64, i8* } }* @str_pdqsort ({ i64, { i64, i8* } }* %a1, i64 0, i64 %a1a)
+    br label %ctd_if
+
+  else:
+    %xeaa = call { { i64, { i64, i8* } }*, i64 } @Monadify_M_CONST_Sorting_Sample_Partition_sort_impl_context_partition_pivot_sample_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %a1, i64 %a1a)
+    %a1b = extractvalue { { i64, { i64, i8* } }*, i64 } %xeaa, 0
+    %a2b = extractvalue { { i64, { i64, i8* } }*, i64 } %xeaa, 1
+    %xfa = udiv i64 %a1a, 8
+    %xga = icmp slt i64 %a2b, %xfa
+    %xha = sub i64 %a1a, %a2b
+    %xia = udiv i64 %a1a, 8
+    %xja = icmp slt i64 %xha, %xia
+    %xka = or i1 %xga, %xja
+    %p_2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b, i64 %a2b
+    br i1 %xka, label %thena, label %elsea
+
+  thena:
+    %xla = sub i64 %a2a, 1
+    %xoa = insertvalue { i64, i64 } zeroinitializer, i64 %a2b, 0
+    %tmpac = insertvalue { i64, i64 } %xoa, i64 %xla, 1
+    %xpa = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } zeroinitializer, { i64, { i64, i8* } }* %a1b, 0
+    %xqa = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xpa, { i64, i64 } %tmpac, 1
+    %xma = call { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_09082218 ({ { i64, { i64, i8* } }*, { i64, i64 } } %xqa)
+    %xna = sub i64 %a1a, %a2b
+    %xoaa = sub i64 %a2a, 1
+    %xsa = insertvalue { i64, i64 } zeroinitializer, i64 %xna, 0
+    %tmpbb = insertvalue { i64, i64 } %xsa, i64 %xoaa, 1
+    %xta = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } zeroinitializer, { i64, { i64, i8* } }* %p_2, 0
+    %xua = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xta, { i64, i64 } %tmpbb, 1
+    %xpaa = call { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_09082218 ({ { i64, { i64, i8* } }*, { i64, i64 } } %xua)
+    %xqaa = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i8* } }* } zeroinitializer, { i64, { i64, i8* } }* %xma, 0
+    %x2 = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i8* } }* } %xqaa, { i64, { i64, i8* } }* %xpaa, 1
+    br label %ctd_ifa
+
+  elsea:
+    %xla1 = sub i64 %a2a, 1
+    %xma1 = sub i64 %a1a, %a2b
+    %xna1 = sub i64 %a2a, 1
+    %xpa1 = insertvalue { i64, i64 } zeroinitializer, i64 %a2b, 0
+    %tmpac1 = insertvalue { i64, i64 } %xpa1, i64 %xla1, 1
+    %xqa1 = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } zeroinitializer, { i64, { i64, i8* } }* %a1b, 0
+    %tmpba = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xqa1, { i64, i64 } %tmpac1, 1
+    %xra = insertvalue { i64, i64 } zeroinitializer, i64 %xma1, 0
+    %tmpaaa = insertvalue { i64, i64 } %xra, i64 %xna1, 1
+    %xsa1 = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } zeroinitializer, { i64, { i64, i8* } }* %p_2, 0
+    %x3 = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xsa1, { i64, i64 } %tmpaaa, 1
+    %x4 = call { { i64, { i64, i8* } }*, { i64, { i64, i8* } }* } @__isabelle_llvm_par_call_1 ({ { i64, { i64, i8* } }*, { i64, i64 } } %tmpba, { { i64, { i64, i8* } }*, { i64, i64 } } %x3)
+    br label %ctd_ifa
+
+  ctd_ifa:
+    %xla2 = phi { { i64, { i64, i8* } }*, { i64, { i64, i8* } }* } [ %x4, %elsea ], [ %x2, %thena ]
+    %a1c = extractvalue { { i64, { i64, i8* } }*, { i64, { i64, i8* } }* } %xla2, 0
+    %a2c = extractvalue { { i64, { i64, i8* } }*, { i64, { i64, i8* } }* } %xla2, 1
+    br label %ctd_if
+
+  ctd_if:
+    %x5 = phi { i64, { i64, i8* } }* [ %a1b, %ctd_ifa ], [ %x1, %then ]
+    ret { i64, { i64, i8* } }* %x5
+}
+
+define i64* @Sorting_Export_Code_strcmp_impl_f_09093332({ i64, { i64, i8* } }* %ai, { i64*, { i64, { i64, i64 } } } %x) {
+
+  start:
+    %a1 = extractvalue { i64*, { i64, { i64, i64 } } } %x, 0
+    %xaaa = extractvalue { i64*, { i64, { i64, i64 } } } %x, 1
+    %a1a = extractvalue { i64, { i64, i64 } } %xaaa, 0
+    %xbaa = extractvalue { i64, { i64, i64 } } %xaaa, 1
+    %a1b = extractvalue { i64, i64 } %xbaa, 0
+    %a2b = extractvalue { i64, i64 } %xbaa, 1
+    %xca = sub i64 %a1b, %a1a
+    %xdaa = icmp slt i64 16, %xca
+    br i1 %xdaa, label %then, label %else
+
+  then:
+    %xeaa = icmp eq i64 %a2b, 0
+    br i1 %xeaa, label %thena, label %elsea
+
+  thena:
+    %x1 = call i64* @Monadify_M_CONST_Sorting_Heapsort_parameterized_sort_impl_context_heapsort_param_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %ai, i64* %a1, i64 %a1a, i64 %a1b)
+    br label %ctd_ifa
+
+  elsea:
+    %xfaa = call { i64*, i64 } @Monadify_M_CONST_Sorting_Quicksort_Partition_parameterized_sort_impl_context_partition_pivot_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %ai, i64* %a1, i64 %a1a, i64 %a1b)
+    %a1c = extractvalue { i64*, i64 } %xfaa, 0
+    %a2c = extractvalue { i64*, i64 } %xfaa, 1
+    %xgaa = sub i64 %a2b, 1
+    %xoa = insertvalue { i64, i64 } zeroinitializer, i64 %a2c, 0
+    %tmpca = insertvalue { i64, i64 } %xoa, i64 %xgaa, 1
+    %xpa = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %a1a, 0
+    %tmpda = insertvalue { i64, { i64, i64 } } %xpa, { i64, i64 } %tmpca, 1
+    %xqa = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %a1c, 0
+    %xra = insertvalue { i64*, { i64, { i64, i64 } } } %xqa, { i64, { i64, i64 } } %tmpda, 1
+    %xha = call i64* @Sorting_Export_Code_strcmp_impl_f_09093332 ({ i64, { i64, i8* } }* %ai, { i64*, { i64, { i64, i64 } } } %xra)
+    %xia = sub i64 %a2b, 1
+    %xta = insertvalue { i64, i64 } zeroinitializer, i64 %a1b, 0
+    %tmpeb = insertvalue { i64, i64 } %xta, i64 %xia, 1
+    %xua = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %a2c, 0
+    %tmpfa = insertvalue { i64, { i64, i64 } } %xua, { i64, i64 } %tmpeb, 1
+    %xva = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %xha, 0
+    %x2 = insertvalue { i64*, { i64, { i64, i64 } } } %xva, { i64, { i64, i64 } } %tmpfa, 1
+    %x3 = call i64* @Sorting_Export_Code_strcmp_impl_f_09093332 ({ i64, { i64, i8* } }* %ai, { i64*, { i64, { i64, i64 } } } %x2)
+    br label %ctd_ifa
+
+  ctd_ifa:
+    %x4 = phi i64* [ %x3, %elsea ], [ %x1, %thena ]
+    br label %ctd_if
+
+  else:
+    br label %ctd_if
+
+  ctd_if:
+    %x5 = phi i64* [ %a1, %else ], [ %x4, %ctd_ifa ]
+    ret i64* %x5
+}
+
+define { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_09139148({ { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %x) {
+
+  start:
+    %a1 = extractvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %x, 0
+    %xaaa = extractvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %x, 1
+    %a1a = extractvalue { i64, { i64, i64 } } %xaaa, 0
+    %xbaa = extractvalue { i64, { i64, i64 } } %xaaa, 1
+    %a1b = extractvalue { i64, i64 } %xbaa, 0
+    %a2b = extractvalue { i64, i64 } %xbaa, 1
+    %xca = sub i64 %a1b, %a1a
+    %xdaa = icmp slt i64 16, %xca
+    br i1 %xdaa, label %then, label %else
+
+  then:
+    %xeaa = icmp eq i64 %a2b, 0
+    br i1 %xeaa, label %thena, label %elsea
+
+  thena:
+    %x1 = call { i64, { i64, i8* } }* @Monadify_M_CONST_Sorting_Heapsort_sort_impl_context_heapsort_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %a1, i64 %a1a, i64 %a1b)
+    br label %ctd_ifa
+
+  elsea:
+    %xl = sub i64 %a1b, %a1a
+    %xma = udiv i64 %xl, 2
+    %xn = add i64 %a1a, %xma
+    %xoa = add i64 %a1a, 1
+    %xpa = sub i64 %a1b, 1
+    %x2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xoa
+    %r = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x2
+    %x3 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xn
+    %r1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x3
+    %x4 = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r, { i64, { i64, i8* } } %r1)
+    %p = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xoa
+    store { i64, { i64, i8* } } %r, { i64, { i64, i8* } }* %p
+    %p1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xn
+    store { i64, { i64, i8* } } %r1, { i64, { i64, i8* } }* %p1
+    br i1 %x4, label %thenb, label %elseb
+
+  thenb:
+    %x5 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xn
+    %r2 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x5
+    %x6 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xpa
+    %r3 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x6
+    %x7 = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r2, { i64, { i64, i8* } } %r3)
+    %p2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xn
+    store { i64, { i64, i8* } } %r2, { i64, { i64, i8* } }* %p2
+    %p3 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xpa
+    store { i64, { i64, i8* } } %r3, { i64, { i64, i8* } }* %p3
+    br i1 %x7, label %thenc, label %elsec
+
+  thenc:
+    %x8 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %a1, i64 %a1a, i64 %xn)
+    br label %ctd_ifc
+
+  elsec:
+    %x9 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xoa
+    %r4 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x9
+    %x10 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xpa
+    %r5 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x10
+    %x11 = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r4, { i64, { i64, i8* } } %r5)
+    %p4 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xoa
+    store { i64, { i64, i8* } } %r4, { i64, { i64, i8* } }* %p4
+    %p5 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xpa
+    store { i64, { i64, i8* } } %r5, { i64, { i64, i8* } }* %p5
+    br i1 %x11, label %thend, label %elsed
+
+  thend:
+    %x12 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %a1, i64 %a1a, i64 %xpa)
+    br label %ctd_ifd
+
+  elsed:
+    %x13 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %a1, i64 %a1a, i64 %xoa)
+    br label %ctd_ifd
+
+  ctd_ifd:
+    %x14 = phi { i64, { i64, i8* } }* [ %x13, %elsed ], [ %x12, %thend ]
+    br label %ctd_ifc
+
+  ctd_ifc:
+    %x15 = phi { i64, { i64, i8* } }* [ %x14, %ctd_ifd ], [ %x8, %thenc ]
+    br label %ctd_ifb
+
+  elseb:
+    %x16 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xoa
+    %r6 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x16
+    %x17 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xpa
+    %r7 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x17
+    %x18 = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r6, { i64, { i64, i8* } } %r7)
+    %p6 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xoa
+    store { i64, { i64, i8* } } %r6, { i64, { i64, i8* } }* %p6
+    %p7 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xpa
+    store { i64, { i64, i8* } } %r7, { i64, { i64, i8* } }* %p7
+    br i1 %x18, label %thene, label %elsee
+
+  thene:
+    %x19 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %a1, i64 %a1a, i64 %xoa)
+    br label %ctd_ife
+
+  elsee:
+    %x20 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xn
+    %r8 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x20
+    %x21 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xpa
+    %r9 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x21
+    %x22 = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r8, { i64, { i64, i8* } } %r9)
+    %p8 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xn
+    store { i64, { i64, i8* } } %r8, { i64, { i64, i8* } }* %p8
+    %p9 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xpa
+    store { i64, { i64, i8* } } %r9, { i64, { i64, i8* } }* %p9
+    br i1 %x22, label %thenf, label %elsef
+
+  thenf:
+    %x23 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %a1, i64 %a1a, i64 %xpa)
+    br label %ctd_iff
+
+  elsef:
+    %x24 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %a1, i64 %a1a, i64 %xn)
+    br label %ctd_iff
+
+  ctd_iff:
+    %x25 = phi { i64, { i64, i8* } }* [ %x24, %elsef ], [ %x23, %thenf ]
+    br label %ctd_ife
+
+  ctd_ife:
+    %x26 = phi { i64, { i64, i8* } }* [ %x25, %ctd_iff ], [ %x19, %thene ]
+    br label %ctd_ifb
+
+  ctd_ifb:
+    %xqa = phi { i64, { i64, i8* } }* [ %x26, %ctd_ife ], [ %x15, %ctd_ifc ]
+    %xra = add i64 %a1a, 1
+    %xs = call { { i64, { i64, i8* } }*, i64 } @Monadify_M_CONST_Sorting_Quicksort_Partition_sort_impl_context_qs_partition_impl_Sorting_Strings_strcmp_impl (i64 %xra, i64 %a1b, i64 %a1a, { i64, { i64, i8* } }* %xqa)
+    %a = extractvalue { { i64, { i64, i8* } }*, i64 } %xs, 0
+    %b = extractvalue { { i64, { i64, i8* } }*, i64 } %xs, 1
+    %xta = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %a, 0
+    %xfaa = insertvalue { { i64, { i64, i8* } }*, i64 } %xta, i64 %b, 1
+    %a1c = extractvalue { { i64, { i64, i8* } }*, i64 } %xfaa, 0
+    %a2c = extractvalue { { i64, { i64, i8* } }*, i64 } %xfaa, 1
+    %xgaa = sub i64 %a2b, 1
+    %xxa = insertvalue { i64, i64 } zeroinitializer, i64 %a2c, 0
+    %tmpcb = insertvalue { i64, i64 } %xxa, i64 %xgaa, 1
+    %xya = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %a1a, 0
+    %tmpda = insertvalue { i64, { i64, i64 } } %xya, { i64, i64 } %tmpcb, 1
+    %xza = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } zeroinitializer, { i64, { i64, i8* } }* %a1c, 0
+    %yaa = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %xza, { i64, { i64, i64 } } %tmpda, 1
+    %xha = call { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_09139148 ({ { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %yaa)
+    %xia = sub i64 %a2b, 1
+    %yca = insertvalue { i64, i64 } zeroinitializer, i64 %a1b, 0
+    %tmpeb = insertvalue { i64, i64 } %yca, i64 %xia, 1
+    %yda = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %a2c, 0
+    %tmpfa = insertvalue { i64, { i64, i64 } } %yda, { i64, i64 } %tmpeb, 1
+    %yea = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } zeroinitializer, { i64, { i64, i8* } }* %xha, 0
+    %x27 = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %yea, { i64, { i64, i64 } } %tmpfa, 1
+    %x28 = call { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_09139148 ({ { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %x27)
+    br label %ctd_ifa
+
+  ctd_ifa:
+    %x29 = phi { i64, { i64, i8* } }* [ %x28, %ctd_ifb ], [ %x1, %thena ]
+    br label %ctd_if
+
+  else:
+    br label %ctd_if
+
+  ctd_if:
+    %x30 = phi { i64, { i64, i8* } }* [ %a1, %else ], [ %x29, %ctd_ifa ]
+    ret { i64, { i64, i8* } }* %x30
+}
+
+define { i64, { i64, i8* } }* @Sorting_Export_Code_str_pdqsort_impl_f_09115036({ i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %x) {
+
+  start:
+    %a1 = extractvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %x, 0
+    %xfaa = extractvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %x, 1
+    %a1a = extractvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %xfaa, 0
+    %xgaa = extractvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %xfaa, 1
+    %a1b = extractvalue { i64, { i64, i64 } } %xgaa, 0
+    %xhaa = extractvalue { i64, { i64, i64 } } %xgaa, 1
+    %a1c = extractvalue { i64, i64 } %xhaa, 0
+    %a2c = extractvalue { i64, i64 } %xhaa, 1
+    %xia = sub i64 %a1c, %a1b
+    %xjaa = icmp slt i64 %xia, 24
+    br i1 %xjaa, label %then, label %else
+
+  then:
+    br i1 %a1, label %thena, label %elsea
+
+  thena:
+    %x1 = call { i64, { i64, i8* } }* @Monadify_M_CONST_Sorting_Pdq_Insertion_Sort_sort_impl_context_pdq_guarded_insort_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %a1a, i64 %a1b, i64 %a1c)
+    br label %ctd_ifa
+
+  elsea:
+    %x2 = call { i64, { i64, i8* } }* @Monadify_M_CONST_Sorting_Pdq_Insertion_Sort_sort_impl_context_pdq_unguarded_insort_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %a1a, i64 %a1b, i64 %a1c)
+    br label %ctd_ifa
+
+  ctd_ifa:
+    %x3 = phi { i64, { i64, i8* } }* [ %x2, %elsea ], [ %x1, %thena ]
+    br label %ctd_if
+
+  else:
+    %xs = sub i64 %a1c, %a1b
+    %xta = udiv i64 %xs, 2
+    %xu = icmp slt i64 128, %xs
+    br i1 %xu, label %thenb, label %elseb
+
+  thenb:
+    %xv = add i64 %a1b, %xta
+    %xwa = sub i64 %a1c, 1
+    %xx = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a, i64 %xv
+    %r = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xx
+    %xy = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a, i64 %a1b
+    %ra = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xy
+    %xz = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r, { i64, { i64, i8* } } %ra)
+    %p = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a, i64 %xv
+    store { i64, { i64, i8* } } %r, { i64, { i64, i8* } }* %p
+    %pa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a, i64 %a1b
+    store { i64, { i64, i8* } } %ra, { i64, { i64, i8* } }* %pa
+    br i1 %xz, label %thenc, label %elsec
+
+  thenc:
+    %x4 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %a1a, i64 %a1b, i64 %xv)
+    br label %ctd_ifc
+
+  elsec:
+    br label %ctd_ifc
+
+  ctd_ifc:
+    %xya = phi { i64, { i64, i8* } }* [ %a1a, %elsec ], [ %x4, %thenc ]
+    %yc = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xya, i64 %xwa
+    %rb = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yc
+    %yd = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xya, i64 %xv
+    %rc = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yd
+    %ye = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %rb, { i64, { i64, i8* } } %rc)
+    %pb = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xya, i64 %xwa
+    store { i64, { i64, i8* } } %rb, { i64, { i64, i8* } }* %pb
+    %pc = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xya, i64 %xv
+    store { i64, { i64, i8* } } %rc, { i64, { i64, i8* } }* %pc
+    br i1 %ye, label %thend, label %elsed
+
+  thend:
+    %x5 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %xya, i64 %xv, i64 %xwa)
+    br label %ctd_ifd
+
+  elsed:
+    br label %ctd_ifd
+
+  ctd_ifd:
+    %yaa = phi { i64, { i64, i8* } }* [ %xya, %elsed ], [ %x5, %thend ]
+    %yh = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yaa, i64 %xv
+    %rd = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yh
+    %yi = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yaa, i64 %a1b
+    %re = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yi
+    %yj = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %rd, { i64, { i64, i8* } } %re)
+    %pd = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yaa, i64 %xv
+    store { i64, { i64, i8* } } %rd, { i64, { i64, i8* } }* %pd
+    %pe = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yaa, i64 %a1b
+    store { i64, { i64, i8* } } %re, { i64, { i64, i8* } }* %pe
+    br i1 %yj, label %thene, label %elsee
+
+  thene:
+    %x6 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %yaa, i64 %a1b, i64 %xv)
+    br label %ctd_ife
+
+  elsee:
+    br label %ctd_ife
+
+  ctd_ife:
+    %xxaa = phi { i64, { i64, i8* } }* [ %yaa, %elsee ], [ %x6, %thene ]
+    %xyaa = add i64 %a1b, 1
+    %xzaa = add i64 %a1b, %xta
+    %yaaa = sub i64 %xzaa, 1
+    %ybaa = sub i64 %a1c, 2
+    %ym = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xxaa, i64 %yaaa
+    %rf = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %ym
+    %yn = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xxaa, i64 %xyaa
+    %rg = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yn
+    %yo = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %rf, { i64, { i64, i8* } } %rg)
+    %pf = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xxaa, i64 %yaaa
+    store { i64, { i64, i8* } } %rf, { i64, { i64, i8* } }* %pf
+    %pg = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xxaa, i64 %xyaa
+    store { i64, { i64, i8* } } %rg, { i64, { i64, i8* } }* %pg
+    br i1 %yo, label %thenf, label %elsef
+
+  thenf:
+    %x7 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %xxaa, i64 %xyaa, i64 %yaaa)
+    br label %ctd_iff
+
+  elsef:
+    br label %ctd_iff
+
+  ctd_iff:
+    %yga = phi { i64, { i64, i8* } }* [ %xxaa, %elsef ], [ %x7, %thenf ]
+    %yr = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yga, i64 %ybaa
+    %rh = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yr
+    %ys = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yga, i64 %yaaa
+    %ri = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %ys
+    %yt = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %rh, { i64, { i64, i8* } } %ri)
+    %ph = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yga, i64 %ybaa
+    store { i64, { i64, i8* } } %rh, { i64, { i64, i8* } }* %ph
+    %pi = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yga, i64 %yaaa
+    store { i64, { i64, i8* } } %ri, { i64, { i64, i8* } }* %pi
+    br i1 %yt, label %theng, label %elseg
+
+  theng:
+    %x8 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %yga, i64 %yaaa, i64 %ybaa)
+    br label %ctd_ifg
+
+  elseg:
+    br label %ctd_ifg
+
+  ctd_ifg:
+    %yia = phi { i64, { i64, i8* } }* [ %yga, %elseg ], [ %x8, %theng ]
+    %yw = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yia, i64 %yaaa
+    %rj = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yw
+    %yx = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yia, i64 %xyaa
+    %rk = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yx
+    %yy = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %rj, { i64, { i64, i8* } } %rk)
+    %pj = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yia, i64 %yaaa
+    store { i64, { i64, i8* } } %rj, { i64, { i64, i8* } }* %pj
+    %pk = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yia, i64 %xyaa
+    store { i64, { i64, i8* } } %rk, { i64, { i64, i8* } }* %pk
+    br i1 %yy, label %thenh, label %elseh
+
+  thenh:
+    %x9 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %yia, i64 %xyaa, i64 %yaaa)
+    br label %ctd_ifh
+
+  elseh:
+    br label %ctd_ifh
+
+  ctd_ifh:
+    %ycaa = phi { i64, { i64, i8* } }* [ %yia, %elseh ], [ %x9, %thenh ]
+    %ydaa = add i64 %a1b, 2
+    %yeaa = add i64 %a1b, %xta
+    %yfaa = add i64 %yeaa, 1
+    %ygaa = sub i64 %a1c, 3
+    %zb = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %ycaa, i64 %yfaa
+    %rl = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %zb
+    %zc = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %ycaa, i64 %ydaa
+    %rm = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %zc
+    %zd = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %rl, { i64, { i64, i8* } } %rm)
+    %pl = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %ycaa, i64 %yfaa
+    store { i64, { i64, i8* } } %rl, { i64, { i64, i8* } }* %pl
+    %pm = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %ycaa, i64 %ydaa
+    store { i64, { i64, i8* } } %rm, { i64, { i64, i8* } }* %pm
+    br i1 %zd, label %theni, label %elsei
+
+  theni:
+    %x10 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %ycaa, i64 %ydaa, i64 %yfaa)
+    br label %ctd_ifi
+
+  elsei:
+    br label %ctd_ifi
+
+  ctd_ifi:
+    %yoa = phi { i64, { i64, i8* } }* [ %ycaa, %elsei ], [ %x10, %theni ]
+    %zg = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yoa, i64 %ygaa
+    %rn = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %zg
+    %zh = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yoa, i64 %yfaa
+    %ro = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %zh
+    %zi = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %rn, { i64, { i64, i8* } } %ro)
+    %pn = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yoa, i64 %ygaa
+    store { i64, { i64, i8* } } %rn, { i64, { i64, i8* } }* %pn
+    %po = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yoa, i64 %yfaa
+    store { i64, { i64, i8* } } %ro, { i64, { i64, i8* } }* %po
+    br i1 %zi, label %thenj, label %elsej
+
+  thenj:
+    %x11 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %yoa, i64 %yfaa, i64 %ygaa)
+    br label %ctd_ifj
+
+  elsej:
+    br label %ctd_ifj
+
+  ctd_ifj:
+    %yqa = phi { i64, { i64, i8* } }* [ %yoa, %elsej ], [ %x11, %thenj ]
+    %zl = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yqa, i64 %yfaa
+    %rp = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %zl
+    %zm = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yqa, i64 %ydaa
+    %rq = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %zm
+    %zn = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %rp, { i64, { i64, i8* } } %rq)
+    %pp = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yqa, i64 %yfaa
+    store { i64, { i64, i8* } } %rp, { i64, { i64, i8* } }* %pp
+    %pq = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yqa, i64 %ydaa
+    store { i64, { i64, i8* } } %rq, { i64, { i64, i8* } }* %pq
+    br i1 %zn, label %thenk, label %elsek
+
+  thenk:
+    %x12 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %yqa, i64 %ydaa, i64 %yfaa)
+    br label %ctd_ifk
+
+  elsek:
+    br label %ctd_ifk
+
+  ctd_ifk:
+    %yhaa = phi { i64, { i64, i8* } }* [ %yqa, %elsek ], [ %x12, %thenk ]
+    %yiaa = add i64 %a1b, %xta
+    %yjaa = sub i64 %yiaa, 1
+    %ykaa = add i64 %a1b, %xta
+    %ylaa = add i64 %a1b, %xta
+    %ymaa = add i64 %ylaa, 1
+    %zq = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yhaa, i64 %ykaa
+    %rr = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %zq
+    %zr = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yhaa, i64 %yjaa
+    %rs = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %zr
+    %zs = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %rr, { i64, { i64, i8* } } %rs)
+    %pr = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yhaa, i64 %ykaa
+    store { i64, { i64, i8* } } %rr, { i64, { i64, i8* } }* %pr
+    %ps = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yhaa, i64 %yjaa
+    store { i64, { i64, i8* } } %rs, { i64, { i64, i8* } }* %ps
+    br i1 %zs, label %thenl, label %elsel
+
+  thenl:
+    %x13 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %yhaa, i64 %yjaa, i64 %ykaa)
+    br label %ctd_ifl
+
+  elsel:
+    br label %ctd_ifl
+
+  ctd_ifl:
+    %yva = phi { i64, { i64, i8* } }* [ %yhaa, %elsel ], [ %x13, %thenl ]
+    %zv = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yva, i64 %ymaa
+    %rt = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %zv
+    %zw = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yva, i64 %ykaa
+    %ru = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %zw
+    %zx = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %rt, { i64, { i64, i8* } } %ru)
+    %pt = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yva, i64 %ymaa
+    store { i64, { i64, i8* } } %rt, { i64, { i64, i8* } }* %pt
+    %pu = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yva, i64 %ykaa
+    store { i64, { i64, i8* } } %ru, { i64, { i64, i8* } }* %pu
+    br i1 %zx, label %thenm, label %elsem
+
+  thenm:
+    %x14 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %yva, i64 %ykaa, i64 %ymaa)
+    br label %ctd_ifm
+
+  elsem:
+    br label %ctd_ifm
+
+  ctd_ifm:
+    %yxa = phi { i64, { i64, i8* } }* [ %yva, %elsem ], [ %x14, %thenm ]
+    %aaa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yxa, i64 %ykaa
+    %rv = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %aaa
+    %aab = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yxa, i64 %yjaa
+    %rw = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %aab
+    %aac = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %rv, { i64, { i64, i8* } } %rw)
+    %pv = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yxa, i64 %ykaa
+    store { i64, { i64, i8* } } %rv, { i64, { i64, i8* } }* %pv
+    %pw = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yxa, i64 %yjaa
+    store { i64, { i64, i8* } } %rw, { i64, { i64, i8* } }* %pw
+    br i1 %aac, label %thenn, label %elsen
+
+  thenn:
+    %x15 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %yxa, i64 %yjaa, i64 %ykaa)
+    br label %ctd_ifn
+
+  elsen:
+    br label %ctd_ifn
+
+  ctd_ifn:
+    %ynaa = phi { i64, { i64, i8* } }* [ %yxa, %elsen ], [ %x15, %thenn ]
+    %x16 = add i64 %a1b, %xta
+    %x17 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %ynaa, i64 %a1b, i64 %x16)
+    br label %ctd_ifb
+
+  elseb:
+    %xv1 = add i64 %a1b, %xta
+    %xwa1 = sub i64 %a1c, 1
+    %xx1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a, i64 %a1b
+    %r1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xx1
+    %xy1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a, i64 %xv1
+    %ra1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xy1
+    %xz1 = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r1, { i64, { i64, i8* } } %ra1)
+    %p1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a, i64 %a1b
+    store { i64, { i64, i8* } } %r1, { i64, { i64, i8* } }* %p1
+    %pa1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a, i64 %xv1
+    store { i64, { i64, i8* } } %ra1, { i64, { i64, i8* } }* %pa1
+    br i1 %xz1, label %theno, label %elseo
+
+  theno:
+    %x18 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %a1a, i64 %xv1, i64 %a1b)
+    br label %ctd_ifo
+
+  elseo:
+    br label %ctd_ifo
+
+  ctd_ifo:
+    %xya1 = phi { i64, { i64, i8* } }* [ %a1a, %elseo ], [ %x18, %theno ]
+    %yc1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xya1, i64 %xwa1
+    %rb1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yc1
+    %yd1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xya1, i64 %a1b
+    %rc1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yd1
+    %ye1 = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %rb1, { i64, { i64, i8* } } %rc1)
+    %pb1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xya1, i64 %xwa1
+    store { i64, { i64, i8* } } %rb1, { i64, { i64, i8* } }* %pb1
+    %pc1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xya1, i64 %a1b
+    store { i64, { i64, i8* } } %rc1, { i64, { i64, i8* } }* %pc1
+    br i1 %ye1, label %thenp, label %elsep
+
+  thenp:
+    %x19 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %xya1, i64 %a1b, i64 %xwa1)
+    br label %ctd_ifp
+
+  elsep:
+    br label %ctd_ifp
+
+  ctd_ifp:
+    %yaa1 = phi { i64, { i64, i8* } }* [ %xya1, %elsep ], [ %x19, %thenp ]
+    %yh1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yaa1, i64 %a1b
+    %rd1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yh1
+    %yi1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yaa1, i64 %xv1
+    %re1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yi1
+    %yj1 = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %rd1, { i64, { i64, i8* } } %re1)
+    %pd1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yaa1, i64 %a1b
+    store { i64, { i64, i8* } } %rd1, { i64, { i64, i8* } }* %pd1
+    %pe1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yaa1, i64 %xv1
+    store { i64, { i64, i8* } } %re1, { i64, { i64, i8* } }* %pe1
+    br i1 %yj1, label %thenq, label %elseq
+
+  thenq:
+    %x20 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %yaa1, i64 %xv1, i64 %a1b)
+    br label %ctd_ifq
+
+  elseq:
+    br label %ctd_ifq
+
+  ctd_ifq:
+    %x21 = phi { i64, { i64, i8* } }* [ %yaa1, %elseq ], [ %x20, %thenq ]
+    br label %ctd_ifb
+
+  ctd_ifb:
+    %xkaa = phi { i64, { i64, i8* } }* [ %x21, %ctd_ifq ], [ %x17, %ctd_ifn ]
+    br i1 %a1, label %thenr, label %elser
+
+  thenr:
+    br label %ctd_ifr
+
+  elser:
+    %xlaa = sub i64 %a1b, 1
+    %xw = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xkaa, i64 %xlaa
+    %r2 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xw
+    %xx2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xkaa, i64 %a1b
+    %ra2 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xx2
+    %xy2 = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r2, { i64, { i64, i8* } } %ra2)
+    %p2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xkaa, i64 %xlaa
+    store { i64, { i64, i8* } } %r2, { i64, { i64, i8* } }* %p2
+    %pa2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xkaa, i64 %a1b
+    store { i64, { i64, i8* } } %ra2, { i64, { i64, i8* } }* %pa2
+    %x22 = add i1 %xy2, 1
+    br label %ctd_ifr
+
+  ctd_ifr:
+    %xlaa1 = phi i1 [ %x22, %elser ], [ 0, %thenr ]
+    br i1 %xlaa1, label %thens, label %elses
+
+  thens:
+    %xmaa = call { i1, { i64, { i64, { i64, i8* } }* } } @Monadify_M_CONST_Sorting_PDQ_sort_impl_context_partition_left_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %xkaa, i64 %a1b, i64 %a1c)
+    %a1d = extractvalue { i1, { i64, { i64, { i64, i8* } }* } } %xmaa, 0
+    %xna = extractvalue { i1, { i64, { i64, { i64, i8* } }* } } %xmaa, 1
+    %a1e = extractvalue { i64, { i64, { i64, i8* } }* } %xna, 0
+    %a2e = extractvalue { i64, { i64, { i64, i8* } }* } %xna, 1
+    %xoa = add i64 %a1e, 1
+    %yaa2 = insertvalue { i64, i64 } zeroinitializer, i64 %a1c, 0
+    %tmpde = insertvalue { i64, i64 } %yaa2, i64 %a2c, 1
+    %yba = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %xoa, 0
+    %tmpdaa = insertvalue { i64, { i64, i64 } } %yba, { i64, i64 } %tmpde, 1
+    %yca = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } zeroinitializer, { i64, { i64, i8* } }* %a2e, 0
+    %tmpdba = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %yca, { i64, { i64, i64 } } %tmpdaa, 1
+    %yda = insertvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } zeroinitializer, i1 0, 0
+    %x23 = insertvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %yda, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %tmpdba, 1
+    %x24 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_pdqsort_impl_f_09115036 ({ i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %x23)
+    br label %ctd_ifs
+
+  elses:
+    %xva = add i64 %a1b, 1
+    br label %while_start
+
+  while_start:
+    %s = phi i64 [ %x25, %while_body ], [ %xva, %elses ]
+    %xw1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xkaa, i64 %s
+    %r3 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xw1
+    %xx3 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xkaa, i64 %a1b
+    %ra3 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xx3
+    %xy3 = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r3, { i64, { i64, i8* } } %ra3)
+    %p3 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xkaa, i64 %s
+    store { i64, { i64, i8* } } %r3, { i64, { i64, i8* } }* %p3
+    %pa3 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xkaa, i64 %a1b
+    store { i64, { i64, i8* } } %ra3, { i64, { i64, i8* } }* %pa3
+    br i1 %xy3, label %while_body, label %while_end
+
+  while_body:
+    %x25 = add i64 %s, 1
+    br label %while_start
+
+  while_end:
+    %xwa2 = add i64 %a1b, 1
+    %xx4 = icmp eq i64 %s, %xwa2
+    br i1 %xx4, label %thent, label %elset
+
+  thent:
+    %y = sub i64 %a1c, 1
+    br label %while_starta
+
+  while_starta:
+    %s1 = phi i64 [ %x31, %while_bodya ], [ %y, %thent ]
+    %xz2 = add i64 %a1b, 1
+    %ya = icmp slt i64 %xz2, %s1
+    br i1 %ya, label %thenu, label %elseu
+
+  thenu:
+    %x26 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xkaa, i64 %s1
+    %r4 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x26
+    %x27 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xkaa, i64 %a1b
+    %r5 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x27
+    %x28 = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r4, { i64, { i64, i8* } } %r5)
+    %p4 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xkaa, i64 %s1
+    store { i64, { i64, i8* } } %r4, { i64, { i64, i8* } }* %p4
+    %p5 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xkaa, i64 %a1b
+    store { i64, { i64, i8* } } %r5, { i64, { i64, i8* } }* %p5
+    %x29 = add i1 %x28, 1
+    br label %ctd_ifu
+
+  elseu:
+    br label %ctd_ifu
+
+  ctd_ifu:
+    %x30 = phi i1 [ 0, %elseu ], [ %x29, %thenu ]
+    br i1 %x30, label %while_bodya, label %while_enda
+
+  while_bodya:
+    %x31 = sub i64 %s1, 1
+    br label %while_starta
+
+  while_enda:
+    br label %ctd_ift
+
+  elset:
+    %y1 = sub i64 %a1c, 1
+    br label %while_startb
+
+  while_startb:
+    %s2 = phi i64 [ %x37, %while_bodyb ], [ %y1, %elset ]
+    %x33 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xkaa, i64 %s2
+    %r6 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x33
+    %x34 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xkaa, i64 %a1b
+    %r7 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x34
+    %x35 = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r6, { i64, { i64, i8* } } %r7)
+    %p6 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xkaa, i64 %s2
+    store { i64, { i64, i8* } } %r6, { i64, { i64, i8* } }* %p6
+    %p7 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xkaa, i64 %a1b
+    store { i64, { i64, i8* } } %r7, { i64, { i64, i8* } }* %p7
+    %x36 = add i1 %x35, 1
+    br i1 %x36, label %while_bodyb, label %while_endb
+
+  while_bodyb:
+    %x37 = sub i64 %s2, 1
+    br label %while_startb
+
+  while_endb:
+    br label %ctd_ift
+
+  ctd_ift:
+    %xwaa = phi i64 [ %s2, %while_endb ], [ %s1, %while_enda ]
+    %xxa = icmp sle i64 %xwaa, %s
+    %xya2 = insertvalue { i64, i64 } zeroinitializer, i64 %s, 0
+    %tmpdd = insertvalue { i64, i64 } %xya2, i64 %xwaa, 1
+    %xza = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } zeroinitializer, { i64, { i64, i8* } }* %xkaa, 0
+    %yaa3 = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xza, { i64, i64 } %tmpdd, 1
+    br label %while_startc
+
+  while_startc:
+    %xyaa1 = phi { { i64, { i64, i8* } }*, { i64, i64 } } [ %x44, %while_ende ], [ %yaa3, %ctd_ift ]
+    %a1d1 = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xyaa1, 0
+    %xzaa1 = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xyaa1, 1
+    %a = extractvalue { i64, i64 } %xzaa1, 0
+    %x39 = extractvalue { i64, i64 } %xzaa1, 1
+    %x40 = icmp slt i64 %a, %x39
+    br i1 %x40, label %while_bodyc, label %while_endc
+
+  while_bodyc:
+    %a1d2 = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xyaa1, 0
+    %xzaa2 = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xyaa1, 1
+    %a1aa = extractvalue { i64, i64 } %xzaa2, 0
+    %a2a = extractvalue { i64, i64 } %xzaa2, 1
+    %yaaa1 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %a1d2, i64 %a1aa, i64 %a2a)
+    %yfa = add i64 %a1aa, 1
+    br label %while_startd
+
+  while_startd:
+    %s3 = phi i64 [ %x41, %while_bodyd ], [ %yfa, %while_bodyc ]
+    %yg = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yaaa1, i64 %s3
+    %r8 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yg
+    %yh2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yaaa1, i64 %a1b
+    %ra4 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yh2
+    %yi2 = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r8, { i64, { i64, i8* } } %ra4)
+    %p8 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yaaa1, i64 %s3
+    store { i64, { i64, i8* } } %r8, { i64, { i64, i8* } }* %p8
+    %pa4 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yaaa1, i64 %a1b
+    store { i64, { i64, i8* } } %ra4, { i64, { i64, i8* } }* %pa4
+    br i1 %yi2, label %while_bodyd, label %while_endd
+
+  while_bodyd:
+    %x41 = add i64 %s3, 1
+    br label %while_startd
+
+  while_endd:
+    %yga1 = sub i64 %a2a, 1
+    br label %while_starte
+
+  while_starte:
+    %s4 = phi i64 [ %x43, %while_bodye ], [ %yga1, %while_endd ]
+    %yh3 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yaaa1, i64 %s4
+    %r9 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yh3
+    %yi3 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yaaa1, i64 %a1b
+    %ra5 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yi3
+    %yj2 = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r9, { i64, { i64, i8* } } %ra5)
+    %p9 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yaaa1, i64 %s4
+    store { i64, { i64, i8* } } %r9, { i64, { i64, i8* } }* %p9
+    %pa5 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yaaa1, i64 %a1b
+    store { i64, { i64, i8* } } %ra5, { i64, { i64, i8* } }* %pa5
+    %x42 = add i1 %yj2, 1
+    br i1 %x42, label %while_bodye, label %while_ende
+
+  while_bodye:
+    %x43 = sub i64 %s4, 1
+    br label %while_starte
+
+  while_ende:
+    %yda1 = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } zeroinitializer, { i64, { i64, i8* } }* %yaaa1, 0
+    %yia1 = insertvalue { i64, i64 } zeroinitializer, i64 %s3, 0
+    %tmpdf = insertvalue { i64, i64 } %yia1, i64 %s4, 1
+    %x44 = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } %yda1, { i64, i64 } %tmpdf, 1
+    br label %while_startc
+
+  while_endc:
+    %a1d3 = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xyaa1, 0
+    %xzaa3 = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xyaa1, 1
+    %a1aa1 = extractvalue { i64, i64 } %xzaa3, 0
+    %a2a1 = extractvalue { i64, i64 } %xzaa3, 1
+    %yaaa2 = sub i64 %a1aa1, 1
+    %ybaa2 = icmp ne i64 %a1b, %yaaa2
+    br i1 %ybaa2, label %thenv, label %elsev
+
+  thenv:
+    %x45 = sub i64 %a1aa1, 1
+    %x46 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %a1d3, i64 %a1b, i64 %x45)
+    br label %ctd_ifv
+
+  elsev:
+    br label %ctd_ifv
+
+  ctd_ifv:
+    %yca2 = phi { i64, { i64, i8* } }* [ %a1d3, %elsev ], [ %x46, %thenv ]
+    %yda2 = sub i64 %a1aa1, 1
+    %yea = insertvalue { i1, { i64, { i64, { i64, i8* } }* } } zeroinitializer, i1 %xxa, 0
+    %yia2 = insertvalue { i64, { i64, { i64, i8* } }* } zeroinitializer, i64 %yda2, 0
+    %tmpdf1 = insertvalue { i64, { i64, { i64, i8* } }* } %yia2, { i64, { i64, i8* } }* %yca2, 1
+    %xmaa1 = insertvalue { i1, { i64, { i64, { i64, i8* } }* } } %yea, { i64, { i64, { i64, i8* } }* } %tmpdf1, 1
+    %a1da = extractvalue { i1, { i64, { i64, { i64, i8* } }* } } %xmaa1, 0
+    %xna1 = extractvalue { i1, { i64, { i64, { i64, i8* } }* } } %xmaa1, 1
+    %a1e1 = extractvalue { i64, { i64, { i64, i8* } }* } %xna1, 0
+    %a2e1 = extractvalue { i64, { i64, { i64, i8* } }* } %xna1, 1
+    %xoa1 = sub i64 %a1c, %a1b
+    %xpa = sub i64 %a1e1, %a1b
+    %xqa = add i64 %a1e1, 1
+    %xra = sub i64 %a1c, %xqa
+    %xsa = udiv i64 %xoa1, 8
+    %xtaa = icmp slt i64 %xpa, %xsa
+    %xua = icmp slt i64 %xra, %xsa
+    %xvaaa = or i1 %xtaa, %xua
+    br i1 %xvaaa, label %thenw, label %elsew
+
+  thenw:
+    %xwaaa = icmp sle i64 16, %xpa
+    br i1 %xwaaa, label %thenx, label %elsex
+
+  thenx:
+    %xxaa1 = udiv i64 %xpa, 4
+    %xyaaa = add i64 %a1b, %xxaa1
+    %xzaaa = sub i64 %a1e1, 1
+    %yaaaa = sub i64 %a1e1, %xxaa1
+    %ybaaa = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %a2e1, i64 %a1b, i64 %xyaaa)
+    %ycaa1 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %ybaaa, i64 %xzaaa, i64 %yaaaa)
+    %ydaa1 = icmp slt i64 128, %xpa
+    br i1 %ydaa1, label %theny, label %elsey
+
+  theny:
+    %yeaa1 = add i64 %a1b, 1
+    %yfaa1 = add i64 %a1b, 2
+    %ygaa1 = sub i64 %a1e1, 2
+    %yhaa1 = sub i64 %a1e1, 3
+    %yiaaa = add i64 %xyaaa, 1
+    %yjaaa = add i64 %xyaaa, 2
+    %yka = sub i64 %yaaaa, 1
+    %yla = sub i64 %yaaaa, 2
+    %yma = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %ycaa1, i64 %yeaa1, i64 %yiaaa)
+    %yna = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %yma, i64 %yfaa1, i64 %yjaaa)
+    %yoa1 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %yna, i64 %ygaa1, i64 %yka)
+    %x47 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %yoa1, i64 %yhaa1, i64 %yla)
+    br label %ctd_ify
+
+  elsey:
+    br label %ctd_ify
+
+  ctd_ify:
+    %x48 = phi { i64, { i64, i8* } }* [ %ycaa1, %elsey ], [ %x47, %theny ]
+    br label %ctd_ifx
+
+  elsex:
+    br label %ctd_ifx
+
+  ctd_ifx:
+    %xxaa2 = phi { i64, { i64, i8* } }* [ %a2e1, %elsex ], [ %x48, %ctd_ify ]
+    %xyaaa1 = icmp sle i64 16, %xra
+    br i1 %xyaaa1, label %thenz, label %elsez
+
+  thenz:
+    %xzaaa1 = add i64 %a1e1, 1
+    %yaaaa1 = sub i64 %a1c, 1
+    %ybaaa1 = udiv i64 %xra, 4
+    %ycaa2 = add i64 %xzaaa1, %ybaaa1
+    %ydaa2 = sub i64 %a1c, %ybaaa1
+    %yeaa2 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %xxaa2, i64 %xzaaa1, i64 %ycaa2)
+    %yfaa2 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %yeaa2, i64 %yaaaa1, i64 %ydaa2)
+    %ygaa2 = icmp slt i64 128, %xra
+    br i1 %ygaa2, label %theoa, label %elsfa
+
+  theoa:
+    %yhaa2 = add i64 %a1e1, 2
+    %yiaaa1 = add i64 %a1e1, 3
+    %yjaaa1 = sub i64 %a1c, 2
+    %yka1 = sub i64 %a1c, 3
+    %yla1 = sub i64 %ydaa2, 1
+    %yma1 = sub i64 %ydaa2, 2
+    %yna1 = add i64 %ycaa2, 1
+    %yoa2 = add i64 %ycaa2, 2
+    %ypa = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %yfaa2, i64 %yhaa2, i64 %yna1)
+    %yqa1 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %ypa, i64 %yiaaa1, i64 %yoa2)
+    %yra = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %yqa1, i64 %yjaaa1, i64 %yla1)
+    %x49 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %yra, i64 %yka1, i64 %yma1)
+    br label %ctd_iga
+
+  elsfa:
+    br label %ctd_iga
+
+  ctd_iga:
+    %x50 = phi { i64, { i64, i8* } }* [ %yfaa2, %elsfa ], [ %x49, %theoa ]
+    br label %ctd_ifz
+
+  elsez:
+    br label %ctd_ifz
+
+  ctd_ifz:
+    %xzaaa2 = phi { i64, { i64, i8* } }* [ %xxaa2, %elsez ], [ %x50, %ctd_iga ]
+    %yaaaa2 = insertvalue { i1, { i64, { i64, i8* } }* } zeroinitializer, i1 1, 0
+    %x51 = insertvalue { i1, { i64, { i64, i8* } }* } %yaaaa2, { i64, { i64, i8* } }* %xzaaa2, 1
+    br label %ctd_ifw
+
+  elsew:
+    %xwaaa1 = insertvalue { i1, { i64, { i64, i8* } }* } zeroinitializer, i1 0, 0
+    %x52 = insertvalue { i1, { i64, { i64, i8* } }* } %xwaaa1, { i64, { i64, i8* } }* %a2e1, 1
+    br label %ctd_ifw
+
+  ctd_ifw:
+    %xwaaa2 = phi { i1, { i64, { i64, i8* } }* } [ %x52, %elsew ], [ %x51, %ctd_ifz ]
+    %a1f = extractvalue { i1, { i64, { i64, i8* } }* } %xwaaa2, 0
+    %a2f = extractvalue { i1, { i64, { i64, i8* } }* } %xwaaa2, 1
+    br i1 %a1f, label %theob, label %elsfb
+
+  theob:
+    %x53 = sub i64 %a2c, 1
+    br label %ctd_igb
+
+  elsfb:
+    br label %ctd_igb
+
+  ctd_igb:
+    %xxaa3 = phi i64 [ %a2c, %elsfb ], [ %x53, %theob ]
+    %xyaaa2 = icmp eq i64 %xxaa3, 0
+    br i1 %xyaaa2, label %theoc, label %elsfc
+
+  theoc:
+    %xzaaa3 = call { i64, { i64, i8* } }* @Monadify_M_CONST_Sorting_Heapsort_sort_impl_context_heapsort_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %a2f, i64 %a1b, i64 %a1c)
+    %yaaaa3 = insertvalue { i1, { i64, { i64, i8* } }* } zeroinitializer, i1 1, 0
+    %x54 = insertvalue { i1, { i64, { i64, i8* } }* } %yaaaa3, { i64, { i64, i8* } }* %xzaaa3, 1
+    br label %ctd_igc
+
+  elsfc:
+    %xzaaa4 = add i1 %a1f, 1
+    %yaaaa4 = and i1 %a1da, %xzaaa4
+    br i1 %yaaaa4, label %theod, label %elsfd
+
+  theod:
+    %ybaaa2 = call { i1, { i64, { i64, i8* } }* } @Monadify_M_CONST_Sorting_Pdq_Insertion_Sort_sort_impl_context_maybe_insort_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %a2f, i64 %a1b, i64 %a1e1)
+    %a1g = extractvalue { i1, { i64, { i64, i8* } }* } %ybaaa2, 0
+    %a2g = extractvalue { i1, { i64, { i64, i8* } }* } %ybaaa2, 1
+    br i1 %a1g, label %theoe, label %elsfe
+
+  theoe:
+    %ycaa3 = add i64 %a1e1, 1
+    %x55 = call { i1, { i64, { i64, i8* } }* } @Monadify_M_CONST_Sorting_Pdq_Insertion_Sort_sort_impl_context_maybe_insort_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %a2g, i64 %ycaa3, i64 %a1c)
+    br label %ctd_ige
+
+  elsfe:
+    %ycaa4 = insertvalue { i1, { i64, { i64, i8* } }* } zeroinitializer, i1 0, 0
+    %x56 = insertvalue { i1, { i64, { i64, i8* } }* } %ycaa4, { i64, { i64, i8* } }* %a2g, 1
+    br label %ctd_ige
+
+  ctd_ige:
+    %x57 = phi { i1, { i64, { i64, i8* } }* } [ %x56, %elsfe ], [ %x55, %theoe ]
+    br label %ctd_igd
+
+  elsfd:
+    %ybaaa3 = insertvalue { i1, { i64, { i64, i8* } }* } zeroinitializer, i1 0, 0
+    %x58 = insertvalue { i1, { i64, { i64, i8* } }* } %ybaaa3, { i64, { i64, i8* } }* %a2f, 1
+    br label %ctd_igd
+
+  ctd_igd:
+    %x59 = phi { i1, { i64, { i64, i8* } }* } [ %x58, %elsfd ], [ %x57, %ctd_ige ]
+    br label %ctd_igc
+
+  ctd_igc:
+    %xzaaa5 = phi { i1, { i64, { i64, i8* } }* } [ %x59, %ctd_igd ], [ %x54, %theoc ]
+    %a1g1 = extractvalue { i1, { i64, { i64, i8* } }* } %xzaaa5, 0
+    %a2g1 = extractvalue { i1, { i64, { i64, i8* } }* } %xzaaa5, 1
+    br i1 %a1g1, label %theof, label %elsff
+
+  theof:
+    br label %ctd_igf
+
+  elsff:
+    %yqa2 = insertvalue { i64, i64 } zeroinitializer, i64 %a1e1, 0
+    %tmpcc = insertvalue { i64, i64 } %yqa2, i64 %xxaa3, 1
+    %yra1 = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %a1b, 0
+    %tmpcd = insertvalue { i64, { i64, i64 } } %yra1, { i64, i64 } %tmpcc, 1
+    %ysa = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } zeroinitializer, { i64, { i64, i8* } }* %a2g1, 0
+    %tmpce = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %ysa, { i64, { i64, i64 } } %tmpcd, 1
+    %yta = insertvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } zeroinitializer, i1 %a1, 0
+    %yua = insertvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %yta, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %tmpce, 1
+    %yaaaa5 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_pdqsort_impl_f_09115036 ({ i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %yua)
+    %ybaaa4 = add i64 %a1e1, 1
+    %ywa = insertvalue { i64, i64 } zeroinitializer, i64 %a1c, 0
+    %tmpdl = insertvalue { i64, i64 } %ywa, i64 %xxaa3, 1
+    %yxa1 = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %ybaaa4, 0
+    %tmpdaa1 = insertvalue { i64, { i64, i64 } } %yxa1, { i64, i64 } %tmpdl, 1
+    %yya = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } zeroinitializer, { i64, { i64, i8* } }* %yaaaa5, 0
+    %tmpdba1 = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %yya, { i64, { i64, i64 } } %tmpdaa1, 1
+    %yza = insertvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } zeroinitializer, i1 0, 0
+    %x60 = insertvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %yza, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %tmpdba1, 1
+    %x61 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_pdqsort_impl_f_09115036 ({ i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %x60)
+    br label %ctd_igf
+
+  ctd_igf:
+    %x62 = phi { i64, { i64, i8* } }* [ %x61, %elsff ], [ %a2g1, %theof ]
+    br label %ctd_ifs
+
+  ctd_ifs:
+    %x63 = phi { i64, { i64, i8* } }* [ %x62, %ctd_igf ], [ %x24, %thens ]
+    br label %ctd_if
+
+  ctd_if:
+    %x64 = phi { i64, { i64, i8* } }* [ %x63, %ctd_ifs ], [ %x3, %ctd_ifa ]
+    ret { i64, { i64, i8* } }* %x64
+}
+
+define i64* @Sorting_Export_Code_unat_pdqsort_impl_f_09049750({ i1, { i64*, { i64, { i64, i64 } } } } %x) {
+
+  start:
+    %a1 = extractvalue { i1, { i64*, { i64, { i64, i64 } } } } %x, 0
+    %xfaa = extractvalue { i1, { i64*, { i64, { i64, i64 } } } } %x, 1
+    %a1a = extractvalue { i64*, { i64, { i64, i64 } } } %xfaa, 0
+    %xgaa = extractvalue { i64*, { i64, { i64, i64 } } } %xfaa, 1
+    %a1b = extractvalue { i64, { i64, i64 } } %xgaa, 0
+    %xhaa = extractvalue { i64, { i64, i64 } } %xgaa, 1
+    %a1c = extractvalue { i64, i64 } %xhaa, 0
+    %a2c = extractvalue { i64, i64 } %xhaa, 1
+    %xia = sub i64 %a1c, %a1b
+    %xjaa = icmp slt i64 %xia, 24
+    br i1 %xjaa, label %then, label %else
+
+  then:
+    br i1 %a1, label %thena, label %elsea
+
+  thena:
+    %x1 = call i64* @Monadify_M_CONST_Sorting_Pdq_Insertion_Sort_sort_impl_context_pdq_guarded_insort_impl_LLVM_Shallow_ll_icmp_ult (i64* %a1a, i64 %a1b, i64 %a1c)
+    br label %ctd_ifa
+
+  elsea:
+    %x2 = call i64* @Monadify_M_CONST_Sorting_Pdq_Insertion_Sort_sort_impl_context_pdq_unguarded_insort_impl_LLVM_Shallow_ll_icmp_ult (i64* %a1a, i64 %a1b, i64 %a1c)
+    br label %ctd_ifa
+
+  ctd_ifa:
+    %x3 = phi i64* [ %x2, %elsea ], [ %x1, %thena ]
+    br label %ctd_if
+
+  else:
+    %xs = sub i64 %a1c, %a1b
+    %xta = udiv i64 %xs, 2
+    %xu = icmp slt i64 128, %xs
+    br i1 %xu, label %thenb, label %elseb
+
+  thenb:
+    %xv = add i64 %a1b, %xta
+    %xwa = sub i64 %a1c, 1
+    %xx = getelementptr i64, i64* %a1a, i64 %xv
+    %r = load i64, i64* %xx
+    %xy = getelementptr i64, i64* %a1a, i64 %a1b
+    %ra = load i64, i64* %xy
+    %xz = icmp ult i64 %r, %ra
+    %p = getelementptr i64, i64* %a1a, i64 %xv
+    store i64 %r, i64* %p
+    %pa = getelementptr i64, i64* %a1a, i64 %a1b
+    store i64 %ra, i64* %pa
+    br i1 %xz, label %thenc, label %elsec
+
+  thenc:
+    %x4 = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %a1a, i64 %a1b, i64 %xv)
+    br label %ctd_ifc
+
+  elsec:
+    br label %ctd_ifc
+
+  ctd_ifc:
+    %xya = phi i64* [ %a1a, %elsec ], [ %x4, %thenc ]
+    %yc = getelementptr i64, i64* %xya, i64 %xwa
+    %rb = load i64, i64* %yc
+    %yd = getelementptr i64, i64* %xya, i64 %xv
+    %rc = load i64, i64* %yd
+    %ye = icmp ult i64 %rb, %rc
+    %pb = getelementptr i64, i64* %xya, i64 %xwa
+    store i64 %rb, i64* %pb
+    %pc = getelementptr i64, i64* %xya, i64 %xv
+    store i64 %rc, i64* %pc
+    br i1 %ye, label %thend, label %elsed
+
+  thend:
+    %x5 = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %xya, i64 %xv, i64 %xwa)
+    br label %ctd_ifd
+
+  elsed:
+    br label %ctd_ifd
+
+  ctd_ifd:
+    %yaa = phi i64* [ %xya, %elsed ], [ %x5, %thend ]
+    %yh = getelementptr i64, i64* %yaa, i64 %xv
+    %rd = load i64, i64* %yh
+    %yi = getelementptr i64, i64* %yaa, i64 %a1b
+    %re = load i64, i64* %yi
+    %yj = icmp ult i64 %rd, %re
+    %pd = getelementptr i64, i64* %yaa, i64 %xv
+    store i64 %rd, i64* %pd
+    %pe = getelementptr i64, i64* %yaa, i64 %a1b
+    store i64 %re, i64* %pe
+    br i1 %yj, label %thene, label %elsee
+
+  thene:
+    %x6 = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %yaa, i64 %a1b, i64 %xv)
+    br label %ctd_ife
+
+  elsee:
+    br label %ctd_ife
+
+  ctd_ife:
+    %xxaa = phi i64* [ %yaa, %elsee ], [ %x6, %thene ]
+    %xyaa = add i64 %a1b, 1
+    %xzaa = add i64 %a1b, %xta
+    %yaaa = sub i64 %xzaa, 1
+    %ybaa = sub i64 %a1c, 2
+    %ym = getelementptr i64, i64* %xxaa, i64 %yaaa
+    %rf = load i64, i64* %ym
+    %yn = getelementptr i64, i64* %xxaa, i64 %xyaa
+    %rg = load i64, i64* %yn
+    %yo = icmp ult i64 %rf, %rg
+    %pf = getelementptr i64, i64* %xxaa, i64 %yaaa
+    store i64 %rf, i64* %pf
+    %pg = getelementptr i64, i64* %xxaa, i64 %xyaa
+    store i64 %rg, i64* %pg
+    br i1 %yo, label %thenf, label %elsef
+
+  thenf:
+    %x7 = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %xxaa, i64 %xyaa, i64 %yaaa)
+    br label %ctd_iff
+
+  elsef:
+    br label %ctd_iff
+
+  ctd_iff:
+    %yga = phi i64* [ %xxaa, %elsef ], [ %x7, %thenf ]
+    %yr = getelementptr i64, i64* %yga, i64 %ybaa
+    %rh = load i64, i64* %yr
+    %ys = getelementptr i64, i64* %yga, i64 %yaaa
+    %ri = load i64, i64* %ys
+    %yt = icmp ult i64 %rh, %ri
+    %ph = getelementptr i64, i64* %yga, i64 %ybaa
+    store i64 %rh, i64* %ph
+    %pi = getelementptr i64, i64* %yga, i64 %yaaa
+    store i64 %ri, i64* %pi
+    br i1 %yt, label %theng, label %elseg
+
+  theng:
+    %x8 = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %yga, i64 %yaaa, i64 %ybaa)
+    br label %ctd_ifg
+
+  elseg:
+    br label %ctd_ifg
+
+  ctd_ifg:
+    %yia = phi i64* [ %yga, %elseg ], [ %x8, %theng ]
+    %yw = getelementptr i64, i64* %yia, i64 %yaaa
+    %rj = load i64, i64* %yw
+    %yx = getelementptr i64, i64* %yia, i64 %xyaa
+    %rk = load i64, i64* %yx
+    %yy = icmp ult i64 %rj, %rk
+    %pj = getelementptr i64, i64* %yia, i64 %yaaa
+    store i64 %rj, i64* %pj
+    %pk = getelementptr i64, i64* %yia, i64 %xyaa
+    store i64 %rk, i64* %pk
+    br i1 %yy, label %thenh, label %elseh
+
+  thenh:
+    %x9 = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %yia, i64 %xyaa, i64 %yaaa)
+    br label %ctd_ifh
+
+  elseh:
+    br label %ctd_ifh
+
+  ctd_ifh:
+    %ycaa = phi i64* [ %yia, %elseh ], [ %x9, %thenh ]
+    %ydaa = add i64 %a1b, 2
+    %yeaa = add i64 %a1b, %xta
+    %yfaa = add i64 %yeaa, 1
+    %ygaa = sub i64 %a1c, 3
+    %zb = getelementptr i64, i64* %ycaa, i64 %yfaa
+    %rl = load i64, i64* %zb
+    %zc = getelementptr i64, i64* %ycaa, i64 %ydaa
+    %rm = load i64, i64* %zc
+    %zd = icmp ult i64 %rl, %rm
+    %pl = getelementptr i64, i64* %ycaa, i64 %yfaa
+    store i64 %rl, i64* %pl
+    %pm = getelementptr i64, i64* %ycaa, i64 %ydaa
+    store i64 %rm, i64* %pm
+    br i1 %zd, label %theni, label %elsei
+
+  theni:
+    %x10 = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %ycaa, i64 %ydaa, i64 %yfaa)
+    br label %ctd_ifi
+
+  elsei:
+    br label %ctd_ifi
+
+  ctd_ifi:
+    %yoa = phi i64* [ %ycaa, %elsei ], [ %x10, %theni ]
+    %zg = getelementptr i64, i64* %yoa, i64 %ygaa
+    %rn = load i64, i64* %zg
+    %zh = getelementptr i64, i64* %yoa, i64 %yfaa
+    %ro = load i64, i64* %zh
+    %zi = icmp ult i64 %rn, %ro
+    %pn = getelementptr i64, i64* %yoa, i64 %ygaa
+    store i64 %rn, i64* %pn
+    %po = getelementptr i64, i64* %yoa, i64 %yfaa
+    store i64 %ro, i64* %po
+    br i1 %zi, label %thenj, label %elsej
+
+  thenj:
+    %x11 = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %yoa, i64 %yfaa, i64 %ygaa)
+    br label %ctd_ifj
+
+  elsej:
+    br label %ctd_ifj
+
+  ctd_ifj:
+    %yqa = phi i64* [ %yoa, %elsej ], [ %x11, %thenj ]
+    %zl = getelementptr i64, i64* %yqa, i64 %yfaa
+    %rp = load i64, i64* %zl
+    %zm = getelementptr i64, i64* %yqa, i64 %ydaa
+    %rq = load i64, i64* %zm
+    %zn = icmp ult i64 %rp, %rq
+    %pp = getelementptr i64, i64* %yqa, i64 %yfaa
+    store i64 %rp, i64* %pp
+    %pq = getelementptr i64, i64* %yqa, i64 %ydaa
+    store i64 %rq, i64* %pq
+    br i1 %zn, label %thenk, label %elsek
+
+  thenk:
+    %x12 = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %yqa, i64 %ydaa, i64 %yfaa)
+    br label %ctd_ifk
+
+  elsek:
+    br label %ctd_ifk
+
+  ctd_ifk:
+    %yhaa = phi i64* [ %yqa, %elsek ], [ %x12, %thenk ]
+    %yiaa = add i64 %a1b, %xta
+    %yjaa = sub i64 %yiaa, 1
+    %ykaa = add i64 %a1b, %xta
+    %ylaa = add i64 %a1b, %xta
+    %ymaa = add i64 %ylaa, 1
+    %zq = getelementptr i64, i64* %yhaa, i64 %ykaa
+    %rr = load i64, i64* %zq
+    %zr = getelementptr i64, i64* %yhaa, i64 %yjaa
+    %rs = load i64, i64* %zr
+    %zs = icmp ult i64 %rr, %rs
+    %pr = getelementptr i64, i64* %yhaa, i64 %ykaa
+    store i64 %rr, i64* %pr
+    %ps = getelementptr i64, i64* %yhaa, i64 %yjaa
+    store i64 %rs, i64* %ps
+    br i1 %zs, label %thenl, label %elsel
+
+  thenl:
+    %x13 = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %yhaa, i64 %yjaa, i64 %ykaa)
+    br label %ctd_ifl
+
+  elsel:
+    br label %ctd_ifl
+
+  ctd_ifl:
+    %yva = phi i64* [ %yhaa, %elsel ], [ %x13, %thenl ]
+    %zv = getelementptr i64, i64* %yva, i64 %ymaa
+    %rt = load i64, i64* %zv
+    %zw = getelementptr i64, i64* %yva, i64 %ykaa
+    %ru = load i64, i64* %zw
+    %zx = icmp ult i64 %rt, %ru
+    %pt = getelementptr i64, i64* %yva, i64 %ymaa
+    store i64 %rt, i64* %pt
+    %pu = getelementptr i64, i64* %yva, i64 %ykaa
+    store i64 %ru, i64* %pu
+    br i1 %zx, label %thenm, label %elsem
+
+  thenm:
+    %x14 = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %yva, i64 %ykaa, i64 %ymaa)
+    br label %ctd_ifm
+
+  elsem:
+    br label %ctd_ifm
+
+  ctd_ifm:
+    %yxa = phi i64* [ %yva, %elsem ], [ %x14, %thenm ]
+    %aaa = getelementptr i64, i64* %yxa, i64 %ykaa
+    %rv = load i64, i64* %aaa
+    %aab = getelementptr i64, i64* %yxa, i64 %yjaa
+    %rw = load i64, i64* %aab
+    %aac = icmp ult i64 %rv, %rw
+    %pv = getelementptr i64, i64* %yxa, i64 %ykaa
+    store i64 %rv, i64* %pv
+    %pw = getelementptr i64, i64* %yxa, i64 %yjaa
+    store i64 %rw, i64* %pw
+    br i1 %aac, label %thenn, label %elsen
+
+  thenn:
+    %x15 = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %yxa, i64 %yjaa, i64 %ykaa)
+    br label %ctd_ifn
+
+  elsen:
+    br label %ctd_ifn
+
+  ctd_ifn:
+    %ynaa = phi i64* [ %yxa, %elsen ], [ %x15, %thenn ]
+    %x16 = add i64 %a1b, %xta
+    %x17 = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %ynaa, i64 %a1b, i64 %x16)
+    br label %ctd_ifb
+
+  elseb:
+    %xv1 = add i64 %a1b, %xta
+    %xwa1 = sub i64 %a1c, 1
+    %xx1 = getelementptr i64, i64* %a1a, i64 %a1b
+    %r1 = load i64, i64* %xx1
+    %xy1 = getelementptr i64, i64* %a1a, i64 %xv1
+    %ra1 = load i64, i64* %xy1
+    %xz1 = icmp ult i64 %r1, %ra1
+    %p1 = getelementptr i64, i64* %a1a, i64 %a1b
+    store i64 %r1, i64* %p1
+    %pa1 = getelementptr i64, i64* %a1a, i64 %xv1
+    store i64 %ra1, i64* %pa1
+    br i1 %xz1, label %theno, label %elseo
+
+  theno:
+    %x18 = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %a1a, i64 %xv1, i64 %a1b)
+    br label %ctd_ifo
+
+  elseo:
+    br label %ctd_ifo
+
+  ctd_ifo:
+    %xya1 = phi i64* [ %a1a, %elseo ], [ %x18, %theno ]
+    %yc1 = getelementptr i64, i64* %xya1, i64 %xwa1
+    %rb1 = load i64, i64* %yc1
+    %yd1 = getelementptr i64, i64* %xya1, i64 %a1b
+    %rc1 = load i64, i64* %yd1
+    %ye1 = icmp ult i64 %rb1, %rc1
+    %pb1 = getelementptr i64, i64* %xya1, i64 %xwa1
+    store i64 %rb1, i64* %pb1
+    %pc1 = getelementptr i64, i64* %xya1, i64 %a1b
+    store i64 %rc1, i64* %pc1
+    br i1 %ye1, label %thenp, label %elsep
+
+  thenp:
+    %x19 = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %xya1, i64 %a1b, i64 %xwa1)
+    br label %ctd_ifp
+
+  elsep:
+    br label %ctd_ifp
+
+  ctd_ifp:
+    %yaa1 = phi i64* [ %xya1, %elsep ], [ %x19, %thenp ]
+    %yh1 = getelementptr i64, i64* %yaa1, i64 %a1b
+    %rd1 = load i64, i64* %yh1
+    %yi1 = getelementptr i64, i64* %yaa1, i64 %xv1
+    %re1 = load i64, i64* %yi1
+    %yj1 = icmp ult i64 %rd1, %re1
+    %pd1 = getelementptr i64, i64* %yaa1, i64 %a1b
+    store i64 %rd1, i64* %pd1
+    %pe1 = getelementptr i64, i64* %yaa1, i64 %xv1
+    store i64 %re1, i64* %pe1
+    br i1 %yj1, label %thenq, label %elseq
+
+  thenq:
+    %x20 = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %yaa1, i64 %xv1, i64 %a1b)
+    br label %ctd_ifq
+
+  elseq:
+    br label %ctd_ifq
+
+  ctd_ifq:
+    %x21 = phi i64* [ %yaa1, %elseq ], [ %x20, %thenq ]
+    br label %ctd_ifb
+
+  ctd_ifb:
+    %xkaa = phi i64* [ %x21, %ctd_ifq ], [ %x17, %ctd_ifn ]
+    br i1 %a1, label %thenr, label %elser
+
+  thenr:
+    br label %ctd_ifr
+
+  elser:
+    %xlaa = sub i64 %a1b, 1
+    %xw = getelementptr i64, i64* %xkaa, i64 %xlaa
+    %r2 = load i64, i64* %xw
+    %xx2 = getelementptr i64, i64* %xkaa, i64 %a1b
+    %ra2 = load i64, i64* %xx2
+    %xy2 = icmp ult i64 %r2, %ra2
+    %p2 = getelementptr i64, i64* %xkaa, i64 %xlaa
+    store i64 %r2, i64* %p2
+    %pa2 = getelementptr i64, i64* %xkaa, i64 %a1b
+    store i64 %ra2, i64* %pa2
+    %x22 = add i1 %xy2, 1
+    br label %ctd_ifr
+
+  ctd_ifr:
+    %xlaa1 = phi i1 [ %x22, %elser ], [ 0, %thenr ]
+    br i1 %xlaa1, label %thens, label %elses
+
+  thens:
+    %xmaa = call { i1, { i64, i64* } } @Monadify_M_CONST_Sorting_PDQ_sort_impl_context_partition_left_impl_LLVM_Shallow_ll_icmp_ult (i64* %xkaa, i64 %a1b, i64 %a1c)
+    %a1d = extractvalue { i1, { i64, i64* } } %xmaa, 0
+    %xna = extractvalue { i1, { i64, i64* } } %xmaa, 1
+    %a1e = extractvalue { i64, i64* } %xna, 0
+    %a2e = extractvalue { i64, i64* } %xna, 1
+    %xoa = add i64 %a1e, 1
+    %yaa2 = insertvalue { i64, i64 } zeroinitializer, i64 %a1c, 0
+    %tmpde = insertvalue { i64, i64 } %yaa2, i64 %a2c, 1
+    %yba = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %xoa, 0
+    %tmpdaa = insertvalue { i64, { i64, i64 } } %yba, { i64, i64 } %tmpde, 1
+    %yca = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %a2e, 0
+    %tmpdba = insertvalue { i64*, { i64, { i64, i64 } } } %yca, { i64, { i64, i64 } } %tmpdaa, 1
+    %yda = insertvalue { i1, { i64*, { i64, { i64, i64 } } } } zeroinitializer, i1 0, 0
+    %x23 = insertvalue { i1, { i64*, { i64, { i64, i64 } } } } %yda, { i64*, { i64, { i64, i64 } } } %tmpdba, 1
+    %x24 = call i64* @Sorting_Export_Code_unat_pdqsort_impl_f_09049750 ({ i1, { i64*, { i64, { i64, i64 } } } } %x23)
+    br label %ctd_ifs
+
+  elses:
+    %xva = add i64 %a1b, 1
+    br label %while_start
+
+  while_start:
+    %s = phi i64 [ %x25, %while_body ], [ %xva, %elses ]
+    %xw1 = getelementptr i64, i64* %xkaa, i64 %s
+    %r3 = load i64, i64* %xw1
+    %xx3 = getelementptr i64, i64* %xkaa, i64 %a1b
+    %ra3 = load i64, i64* %xx3
+    %xy3 = icmp ult i64 %r3, %ra3
+    %p3 = getelementptr i64, i64* %xkaa, i64 %s
+    store i64 %r3, i64* %p3
+    %pa3 = getelementptr i64, i64* %xkaa, i64 %a1b
+    store i64 %ra3, i64* %pa3
+    br i1 %xy3, label %while_body, label %while_end
+
+  while_body:
+    %x25 = add i64 %s, 1
+    br label %while_start
+
+  while_end:
+    %xwa2 = add i64 %a1b, 1
+    %xx4 = icmp eq i64 %s, %xwa2
+    br i1 %xx4, label %thent, label %elset
+
+  thent:
+    %y = sub i64 %a1c, 1
+    br label %while_starta
+
+  while_starta:
+    %s1 = phi i64 [ %x31, %while_bodya ], [ %y, %thent ]
+    %xz2 = add i64 %a1b, 1
+    %ya = icmp slt i64 %xz2, %s1
+    br i1 %ya, label %thenu, label %elseu
+
+  thenu:
+    %x26 = getelementptr i64, i64* %xkaa, i64 %s1
+    %r4 = load i64, i64* %x26
+    %x27 = getelementptr i64, i64* %xkaa, i64 %a1b
+    %r5 = load i64, i64* %x27
+    %x28 = icmp ult i64 %r4, %r5
+    %p4 = getelementptr i64, i64* %xkaa, i64 %s1
+    store i64 %r4, i64* %p4
+    %p5 = getelementptr i64, i64* %xkaa, i64 %a1b
+    store i64 %r5, i64* %p5
+    %x29 = add i1 %x28, 1
+    br label %ctd_ifu
+
+  elseu:
+    br label %ctd_ifu
+
+  ctd_ifu:
+    %x30 = phi i1 [ 0, %elseu ], [ %x29, %thenu ]
+    br i1 %x30, label %while_bodya, label %while_enda
+
+  while_bodya:
+    %x31 = sub i64 %s1, 1
+    br label %while_starta
+
+  while_enda:
+    br label %ctd_ift
+
+  elset:
+    %y1 = sub i64 %a1c, 1
+    br label %while_startb
+
+  while_startb:
+    %s2 = phi i64 [ %x37, %while_bodyb ], [ %y1, %elset ]
+    %x33 = getelementptr i64, i64* %xkaa, i64 %s2
+    %r6 = load i64, i64* %x33
+    %x34 = getelementptr i64, i64* %xkaa, i64 %a1b
+    %r7 = load i64, i64* %x34
+    %x35 = icmp ult i64 %r6, %r7
+    %p6 = getelementptr i64, i64* %xkaa, i64 %s2
+    store i64 %r6, i64* %p6
+    %p7 = getelementptr i64, i64* %xkaa, i64 %a1b
+    store i64 %r7, i64* %p7
+    %x36 = add i1 %x35, 1
+    br i1 %x36, label %while_bodyb, label %while_endb
+
+  while_bodyb:
+    %x37 = sub i64 %s2, 1
+    br label %while_startb
+
+  while_endb:
+    br label %ctd_ift
+
+  ctd_ift:
+    %xwaa = phi i64 [ %s2, %while_endb ], [ %s1, %while_enda ]
+    %xxa = icmp sle i64 %xwaa, %s
+    %xya2 = insertvalue { i64, i64 } zeroinitializer, i64 %s, 0
+    %tmpdd = insertvalue { i64, i64 } %xya2, i64 %xwaa, 1
+    %xza = insertvalue { i64*, { i64, i64 } } zeroinitializer, i64* %xkaa, 0
+    %yaa3 = insertvalue { i64*, { i64, i64 } } %xza, { i64, i64 } %tmpdd, 1
+    br label %while_startc
+
+  while_startc:
+    %xyaa1 = phi { i64*, { i64, i64 } } [ %x44, %while_ende ], [ %yaa3, %ctd_ift ]
+    %a1d1 = extractvalue { i64*, { i64, i64 } } %xyaa1, 0
+    %xzaa1 = extractvalue { i64*, { i64, i64 } } %xyaa1, 1
+    %a = extractvalue { i64, i64 } %xzaa1, 0
+    %x39 = extractvalue { i64, i64 } %xzaa1, 1
+    %x40 = icmp slt i64 %a, %x39
+    br i1 %x40, label %while_bodyc, label %while_endc
+
+  while_bodyc:
+    %a1d2 = extractvalue { i64*, { i64, i64 } } %xyaa1, 0
+    %xzaa2 = extractvalue { i64*, { i64, i64 } } %xyaa1, 1
+    %a1aa = extractvalue { i64, i64 } %xzaa2, 0
+    %a2a = extractvalue { i64, i64 } %xzaa2, 1
+    %yaaa1 = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %a1d2, i64 %a1aa, i64 %a2a)
+    %yfa = add i64 %a1aa, 1
+    br label %while_startd
+
+  while_startd:
+    %s3 = phi i64 [ %x41, %while_bodyd ], [ %yfa, %while_bodyc ]
+    %yg = getelementptr i64, i64* %yaaa1, i64 %s3
+    %r8 = load i64, i64* %yg
+    %yh2 = getelementptr i64, i64* %yaaa1, i64 %a1b
+    %ra4 = load i64, i64* %yh2
+    %yi2 = icmp ult i64 %r8, %ra4
+    %p8 = getelementptr i64, i64* %yaaa1, i64 %s3
+    store i64 %r8, i64* %p8
+    %pa4 = getelementptr i64, i64* %yaaa1, i64 %a1b
+    store i64 %ra4, i64* %pa4
+    br i1 %yi2, label %while_bodyd, label %while_endd
+
+  while_bodyd:
+    %x41 = add i64 %s3, 1
+    br label %while_startd
+
+  while_endd:
+    %yga1 = sub i64 %a2a, 1
+    br label %while_starte
+
+  while_starte:
+    %s4 = phi i64 [ %x43, %while_bodye ], [ %yga1, %while_endd ]
+    %yh3 = getelementptr i64, i64* %yaaa1, i64 %s4
+    %r9 = load i64, i64* %yh3
+    %yi3 = getelementptr i64, i64* %yaaa1, i64 %a1b
+    %ra5 = load i64, i64* %yi3
+    %yj2 = icmp ult i64 %r9, %ra5
+    %p9 = getelementptr i64, i64* %yaaa1, i64 %s4
+    store i64 %r9, i64* %p9
+    %pa5 = getelementptr i64, i64* %yaaa1, i64 %a1b
+    store i64 %ra5, i64* %pa5
+    %x42 = add i1 %yj2, 1
+    br i1 %x42, label %while_bodye, label %while_ende
+
+  while_bodye:
+    %x43 = sub i64 %s4, 1
+    br label %while_starte
+
+  while_ende:
+    %yda1 = insertvalue { i64*, { i64, i64 } } zeroinitializer, i64* %yaaa1, 0
+    %yia1 = insertvalue { i64, i64 } zeroinitializer, i64 %s3, 0
+    %tmpdf = insertvalue { i64, i64 } %yia1, i64 %s4, 1
+    %x44 = insertvalue { i64*, { i64, i64 } } %yda1, { i64, i64 } %tmpdf, 1
+    br label %while_startc
+
+  while_endc:
+    %a1d3 = extractvalue { i64*, { i64, i64 } } %xyaa1, 0
+    %xzaa3 = extractvalue { i64*, { i64, i64 } } %xyaa1, 1
+    %a1aa1 = extractvalue { i64, i64 } %xzaa3, 0
+    %a2a1 = extractvalue { i64, i64 } %xzaa3, 1
+    %yaaa2 = sub i64 %a1aa1, 1
+    %ybaa2 = icmp ne i64 %a1b, %yaaa2
+    br i1 %ybaa2, label %thenv, label %elsev
+
+  thenv:
+    %x45 = sub i64 %a1aa1, 1
+    %x46 = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %a1d3, i64 %a1b, i64 %x45)
+    br label %ctd_ifv
+
+  elsev:
+    br label %ctd_ifv
+
+  ctd_ifv:
+    %yca2 = phi i64* [ %a1d3, %elsev ], [ %x46, %thenv ]
+    %yda2 = sub i64 %a1aa1, 1
+    %yea = insertvalue { i1, { i64, i64* } } zeroinitializer, i1 %xxa, 0
+    %yia2 = insertvalue { i64, i64* } zeroinitializer, i64 %yda2, 0
+    %tmpdf1 = insertvalue { i64, i64* } %yia2, i64* %yca2, 1
+    %xmaa1 = insertvalue { i1, { i64, i64* } } %yea, { i64, i64* } %tmpdf1, 1
+    %a1da = extractvalue { i1, { i64, i64* } } %xmaa1, 0
+    %xna1 = extractvalue { i1, { i64, i64* } } %xmaa1, 1
+    %a1e1 = extractvalue { i64, i64* } %xna1, 0
+    %a2e1 = extractvalue { i64, i64* } %xna1, 1
+    %xoa1 = sub i64 %a1c, %a1b
+    %xpa = sub i64 %a1e1, %a1b
+    %xqa = add i64 %a1e1, 1
+    %xra = sub i64 %a1c, %xqa
+    %xsa = udiv i64 %xoa1, 8
+    %xtaa = icmp slt i64 %xpa, %xsa
+    %xua = icmp slt i64 %xra, %xsa
+    %xvaaa = or i1 %xtaa, %xua
+    br i1 %xvaaa, label %thenw, label %elsew
+
+  thenw:
+    %xwaaa = icmp sle i64 16, %xpa
+    br i1 %xwaaa, label %thenx, label %elsex
+
+  thenx:
+    %xxaa1 = udiv i64 %xpa, 4
+    %xyaaa = add i64 %a1b, %xxaa1
+    %xzaaa = sub i64 %a1e1, 1
+    %yaaaa = sub i64 %a1e1, %xxaa1
+    %ybaaa = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %a2e1, i64 %a1b, i64 %xyaaa)
+    %ycaa1 = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %ybaaa, i64 %xzaaa, i64 %yaaaa)
+    %ydaa1 = icmp slt i64 128, %xpa
+    br i1 %ydaa1, label %theny, label %elsey
+
+  theny:
+    %yeaa1 = add i64 %a1b, 1
+    %yfaa1 = add i64 %a1b, 2
+    %ygaa1 = sub i64 %a1e1, 2
+    %yhaa1 = sub i64 %a1e1, 3
+    %yiaaa = add i64 %xyaaa, 1
+    %yjaaa = add i64 %xyaaa, 2
+    %yka = sub i64 %yaaaa, 1
+    %yla = sub i64 %yaaaa, 2
+    %yma = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %ycaa1, i64 %yeaa1, i64 %yiaaa)
+    %yna = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %yma, i64 %yfaa1, i64 %yjaaa)
+    %yoa1 = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %yna, i64 %ygaa1, i64 %yka)
+    %x47 = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %yoa1, i64 %yhaa1, i64 %yla)
+    br label %ctd_ify
+
+  elsey:
+    br label %ctd_ify
+
+  ctd_ify:
+    %x48 = phi i64* [ %ycaa1, %elsey ], [ %x47, %theny ]
+    br label %ctd_ifx
+
+  elsex:
+    br label %ctd_ifx
+
+  ctd_ifx:
+    %xxaa2 = phi i64* [ %a2e1, %elsex ], [ %x48, %ctd_ify ]
+    %xyaaa1 = icmp sle i64 16, %xra
+    br i1 %xyaaa1, label %thenz, label %elsez
+
+  thenz:
+    %xzaaa1 = add i64 %a1e1, 1
+    %yaaaa1 = sub i64 %a1c, 1
+    %ybaaa1 = udiv i64 %xra, 4
+    %ycaa2 = add i64 %xzaaa1, %ybaaa1
+    %ydaa2 = sub i64 %a1c, %ybaaa1
+    %yeaa2 = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %xxaa2, i64 %xzaaa1, i64 %ycaa2)
+    %yfaa2 = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %yeaa2, i64 %yaaaa1, i64 %ydaa2)
+    %ygaa2 = icmp slt i64 128, %xra
+    br i1 %ygaa2, label %theoa, label %elsfa
+
+  theoa:
+    %yhaa2 = add i64 %a1e1, 2
+    %yiaaa1 = add i64 %a1e1, 3
+    %yjaaa1 = sub i64 %a1c, 2
+    %yka1 = sub i64 %a1c, 3
+    %yla1 = sub i64 %ydaa2, 1
+    %yma1 = sub i64 %ydaa2, 2
+    %yna1 = add i64 %ycaa2, 1
+    %yoa2 = add i64 %ycaa2, 2
+    %ypa = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %yfaa2, i64 %yhaa2, i64 %yna1)
+    %yqa1 = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %ypa, i64 %yiaaa1, i64 %yoa2)
+    %yra = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %yqa1, i64 %yjaaa1, i64 %yla1)
+    %x49 = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %yra, i64 %yka1, i64 %yma1)
+    br label %ctd_iga
+
+  elsfa:
+    br label %ctd_iga
+
+  ctd_iga:
+    %x50 = phi i64* [ %yfaa2, %elsfa ], [ %x49, %theoa ]
+    br label %ctd_ifz
+
+  elsez:
+    br label %ctd_ifz
+
+  ctd_ifz:
+    %xzaaa2 = phi i64* [ %xxaa2, %elsez ], [ %x50, %ctd_iga ]
+    %yaaaa2 = insertvalue { i1, i64* } zeroinitializer, i1 1, 0
+    %x51 = insertvalue { i1, i64* } %yaaaa2, i64* %xzaaa2, 1
+    br label %ctd_ifw
+
+  elsew:
+    %xwaaa1 = insertvalue { i1, i64* } zeroinitializer, i1 0, 0
+    %x52 = insertvalue { i1, i64* } %xwaaa1, i64* %a2e1, 1
+    br label %ctd_ifw
+
+  ctd_ifw:
+    %xwaaa2 = phi { i1, i64* } [ %x52, %elsew ], [ %x51, %ctd_ifz ]
+    %a1f = extractvalue { i1, i64* } %xwaaa2, 0
+    %a2f = extractvalue { i1, i64* } %xwaaa2, 1
+    br i1 %a1f, label %theob, label %elsfb
+
+  theob:
+    %x53 = sub i64 %a2c, 1
+    br label %ctd_igb
+
+  elsfb:
+    br label %ctd_igb
+
+  ctd_igb:
+    %xxaa3 = phi i64 [ %a2c, %elsfb ], [ %x53, %theob ]
+    %xyaaa2 = icmp eq i64 %xxaa3, 0
+    br i1 %xyaaa2, label %theoc, label %elsfc
+
+  theoc:
+    %xzaaa3 = call i64* @Monadify_M_CONST_Sorting_Heapsort_sort_impl_context_heapsort_impl_LLVM_Shallow_ll_icmp_ult (i64* %a2f, i64 %a1b, i64 %a1c)
+    %yaaaa3 = insertvalue { i1, i64* } zeroinitializer, i1 1, 0
+    %x54 = insertvalue { i1, i64* } %yaaaa3, i64* %xzaaa3, 1
+    br label %ctd_igc
+
+  elsfc:
+    %xzaaa4 = add i1 %a1f, 1
+    %yaaaa4 = and i1 %a1da, %xzaaa4
+    br i1 %yaaaa4, label %theod, label %elsfd
+
+  theod:
+    %ybaaa2 = call { i1, i64* } @Monadify_M_CONST_Sorting_Pdq_Insertion_Sort_sort_impl_context_maybe_insort_impl_LLVM_Shallow_ll_icmp_ult (i64* %a2f, i64 %a1b, i64 %a1e1)
+    %a1g = extractvalue { i1, i64* } %ybaaa2, 0
+    %a2g = extractvalue { i1, i64* } %ybaaa2, 1
+    br i1 %a1g, label %theoe, label %elsfe
+
+  theoe:
+    %ycaa3 = add i64 %a1e1, 1
+    %x55 = call { i1, i64* } @Monadify_M_CONST_Sorting_Pdq_Insertion_Sort_sort_impl_context_maybe_insort_impl_LLVM_Shallow_ll_icmp_ult (i64* %a2g, i64 %ycaa3, i64 %a1c)
+    br label %ctd_ige
+
+  elsfe:
+    %ycaa4 = insertvalue { i1, i64* } zeroinitializer, i1 0, 0
+    %x56 = insertvalue { i1, i64* } %ycaa4, i64* %a2g, 1
+    br label %ctd_ige
+
+  ctd_ige:
+    %x57 = phi { i1, i64* } [ %x56, %elsfe ], [ %x55, %theoe ]
+    br label %ctd_igd
+
+  elsfd:
+    %ybaaa3 = insertvalue { i1, i64* } zeroinitializer, i1 0, 0
+    %x58 = insertvalue { i1, i64* } %ybaaa3, i64* %a2f, 1
+    br label %ctd_igd
+
+  ctd_igd:
+    %x59 = phi { i1, i64* } [ %x58, %elsfd ], [ %x57, %ctd_ige ]
+    br label %ctd_igc
+
+  ctd_igc:
+    %xzaaa5 = phi { i1, i64* } [ %x59, %ctd_igd ], [ %x54, %theoc ]
+    %a1g1 = extractvalue { i1, i64* } %xzaaa5, 0
+    %a2g1 = extractvalue { i1, i64* } %xzaaa5, 1
+    br i1 %a1g1, label %theof, label %elsff
+
+  theof:
+    br label %ctd_igf
+
+  elsff:
+    %yqa2 = insertvalue { i64, i64 } zeroinitializer, i64 %a1e1, 0
+    %tmpcc = insertvalue { i64, i64 } %yqa2, i64 %xxaa3, 1
+    %yra1 = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %a1b, 0
+    %tmpcd = insertvalue { i64, { i64, i64 } } %yra1, { i64, i64 } %tmpcc, 1
+    %ysa = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %a2g1, 0
+    %tmpce = insertvalue { i64*, { i64, { i64, i64 } } } %ysa, { i64, { i64, i64 } } %tmpcd, 1
+    %yta = insertvalue { i1, { i64*, { i64, { i64, i64 } } } } zeroinitializer, i1 %a1, 0
+    %yua = insertvalue { i1, { i64*, { i64, { i64, i64 } } } } %yta, { i64*, { i64, { i64, i64 } } } %tmpce, 1
+    %yaaaa5 = call i64* @Sorting_Export_Code_unat_pdqsort_impl_f_09049750 ({ i1, { i64*, { i64, { i64, i64 } } } } %yua)
+    %ybaaa4 = add i64 %a1e1, 1
+    %ywa = insertvalue { i64, i64 } zeroinitializer, i64 %a1c, 0
+    %tmpdl = insertvalue { i64, i64 } %ywa, i64 %xxaa3, 1
+    %yxa1 = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %ybaaa4, 0
+    %tmpdaa1 = insertvalue { i64, { i64, i64 } } %yxa1, { i64, i64 } %tmpdl, 1
+    %yya = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %yaaaa5, 0
+    %tmpdba1 = insertvalue { i64*, { i64, { i64, i64 } } } %yya, { i64, { i64, i64 } } %tmpdaa1, 1
+    %yza = insertvalue { i1, { i64*, { i64, { i64, i64 } } } } zeroinitializer, i1 0, 0
+    %x60 = insertvalue { i1, { i64*, { i64, { i64, i64 } } } } %yza, { i64*, { i64, { i64, i64 } } } %tmpdba1, 1
+    %x61 = call i64* @Sorting_Export_Code_unat_pdqsort_impl_f_09049750 ({ i1, { i64*, { i64, { i64, i64 } } } } %x60)
+    br label %ctd_igf
+
+  ctd_igf:
+    %x62 = phi i64* [ %x61, %elsff ], [ %a2g1, %theof ]
+    br label %ctd_ifs
+
+  ctd_ifs:
+    %x63 = phi i64* [ %x62, %ctd_igf ], [ %x24, %thens ]
+    br label %ctd_if
+
+  ctd_if:
+    %x64 = phi i64* [ %x63, %ctd_ifs ], [ %x3, %ctd_ifa ]
+    ret i64* %x64
+}
+
+define i1 @Monadify_M_CONST_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult(i64* %x, i64 %x1, i64 %x2) {
+
+  start:
+    %x3 = icmp eq i64 %x1, %x2
+    br i1 %x3, label %then, label %else
+
+  then:
+    br label %ctd_if
+
+  else:
+    %x4 = getelementptr i64, i64* %x, i64 %x1
+    %r = load i64, i64* %x4
+    %x5 = getelementptr i64, i64* %x, i64 %x2
+    %r1 = load i64, i64* %x5
+    %x6 = icmp ult i64 %r, %r1
+    %p = getelementptr i64, i64* %x, i64 %x1
+    store i64 %r, i64* %p
+    %p1 = getelementptr i64, i64* %x, i64 %x2
+    store i64 %r1, i64* %p1
+    br label %ctd_if
+
+  ctd_if:
+    %x7 = phi i1 [ %x6, %else ], [ 0, %then ]
+    ret i1 %x7
+}
+
+define i1 @Monadify_M_CONST_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2) {
+
+  start:
+    %x3 = icmp eq i64 %x1, %x2
+    br i1 %x3, label %then, label %else
+
+  then:
+    br label %ctd_if
+
+  else:
+    %x4 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x, i64 %x1
+    %r = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x4
+    %x5 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x, i64 %x2
+    %r1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x5
+    %x6 = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r, { i64, { i64, i8* } } %r1)
+    %p = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x, i64 %x1
+    store { i64, { i64, i8* } } %r, { i64, { i64, i8* } }* %p
+    %p1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x, i64 %x2
+    store { i64, { i64, i8* } } %r1, { i64, { i64, i8* } }* %p1
+    br label %ctd_if
+
+  ctd_if:
+    %x7 = phi i1 [ %x6, %else ], [ 0, %then ]
+    ret i1 %x7
+}
+
+define i64* @Monadify_M_CONST_Sorting_Heapsort_sort_impl_context_heapsort_impl_LLVM_Shallow_ll_icmp_ult(i64* %x, i64 %x1, i64 %x2) {
+
+  start:
+    %x3 = sub i64 %x2, %x1
+    %xa = icmp slt i64 1, %x3
+    br i1 %xa, label %then, label %else
+
+  then:
+    %xb = call i64* @Monadify_M_CONST_Sorting_Heapsort_sort_impl_context_heapify_btu_impl_LLVM_Shallow_ll_icmp_ult (i64 %x1, i64 %x2, i64* %x)
     %xc = insertvalue { i64*, i64 } zeroinitializer, i64* %xb, 0
     %xd = insertvalue { i64*, i64 } %xc, i64 %x2, 1
     br label %while_start
@@ -713,9 +2971,9 @@ define i64* @heapsort(i64* %x, i64 %x1, i64 %x2) {
     %a11 = extractvalue { i64*, i64 } %xca, 0
     %a21 = extractvalue { i64*, i64 } %xca, 1
     %xda1 = sub i64 %a21, 1
-    %xea = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %a11, i64 %x1, i64 %xda1)
+    %xea = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %a11, i64 %x1, i64 %xda1)
     %xfa = sub i64 %a21, 1
-    %xga = call i64* @Sorting_Export_Code_unat_sort_sift_down_impl (i64 %x1, i64 %xfa, i64 %x1, i64* %xea)
+    %xga = call i64* @Monadify_M_CONST_Sorting_Heapsort_sort_impl_context_sift_down_impl_LLVM_Shallow_ll_icmp_ult (i64 %x1, i64 %xfa, i64 %x1, i64* %xea)
     %xha = sub i64 %a21, 1
     %xia = insertvalue { i64*, i64 } zeroinitializer, i64* %xga, 0
     %x5 = insertvalue { i64*, i64 } %xia, i64 %xha, 1
@@ -734,7 +2992,7 @@ define i64* @heapsort(i64* %x, i64 %x1, i64 %x2) {
     ret i64* %x6
 }
 
-define i64* @introsort(i64* %x, i64 %x1, i64 %x2) {
+define { i64, { i64, i8* } }* @Monadify_M_CONST_Sorting_Heapsort_sort_impl_context_heapsort_impl_Sorting_Strings_strcmp_impl({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2) {
 
   start:
     %x3 = sub i64 %x2, %x1
@@ -742,24 +3000,45 @@ define i64* @introsort(i64* %x, i64 %x1, i64 %x2) {
     br i1 %xa, label %then, label %else
 
   then:
-    %xb = sub i64 %x2, %x1
-    %xc = sub i64 64, 1
-    %xd = call i64 @Sorting_Log2_word_clz_impl (i64 %xb)
-    %xe = sub i64 %xc, %xd
-    %xf = mul i64 %xe, 2
-    %xg = call i64* @introsort_aux (i64* %x, i64 %x1, i64 %x2, i64 %xf)
-    %x4 = call i64* @insertion_sort (i64* %xg, i64 %x1, i64 %x2)
+    %xb = call { i64, { i64, i8* } }* @Monadify_M_CONST_Sorting_Heapsort_sort_impl_context_heapify_btu_impl_Sorting_Strings_strcmp_impl (i64 %x1, i64 %x2, { i64, { i64, i8* } }* %x)
+    %xc = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %xb, 0
+    %xd = insertvalue { { i64, { i64, i8* } }*, i64 } %xc, i64 %x2, 1
+    br label %while_start
+
+  while_start:
+    %xca = phi { { i64, { i64, i8* } }*, i64 } [ %x5, %while_body ], [ %xd, %then ]
+    %a1 = extractvalue { { i64, { i64, i8* } }*, i64 } %xca, 0
+    %a2 = extractvalue { { i64, { i64, i8* } }*, i64 } %xca, 1
+    %xda = add i64 %x1, 1
+    %x4 = icmp slt i64 %xda, %a2
+    br i1 %x4, label %while_body, label %while_end
+
+  while_body:
+    %a11 = extractvalue { { i64, { i64, i8* } }*, i64 } %xca, 0
+    %a21 = extractvalue { { i64, { i64, i8* } }*, i64 } %xca, 1
+    %xda1 = sub i64 %a21, 1
+    %xea = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %a11, i64 %x1, i64 %xda1)
+    %xfa = sub i64 %a21, 1
+    %xga = call { i64, { i64, i8* } }* @Monadify_M_CONST_Sorting_Heapsort_sort_impl_context_sift_down_impl_Sorting_Strings_strcmp_impl (i64 %x1, i64 %xfa, i64 %x1, { i64, { i64, i8* } }* %xea)
+    %xha = sub i64 %a21, 1
+    %xia = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %xga, 0
+    %x5 = insertvalue { { i64, { i64, i8* } }*, i64 } %xia, i64 %xha, 1
+    br label %while_start
+
+  while_end:
+    %a12 = extractvalue { { i64, { i64, i8* } }*, i64 } %xca, 0
+    %a22 = extractvalue { { i64, { i64, i8* } }*, i64 } %xca, 1
     br label %ctd_if
 
   else:
     br label %ctd_if
 
   ctd_if:
-    %x5 = phi i64* [ %x, %else ], [ %x4, %then ]
-    ret i64* %x5
+    %x6 = phi { i64, { i64, i8* } }* [ %x, %else ], [ %a12, %while_end ]
+    ret { i64, { i64, i8* } }* %x6
 }
 
-define i64* @Sorting_Export_Code_unat_sort_sift_down_impl(i64 %x, i64 %x1, i64 %x2, i64* %x3) {
+define i64* @Monadify_M_CONST_Sorting_Heapsort_sort_impl_context_sift_down_impl_LLVM_Shallow_ll_icmp_ult(i64 %x, i64 %x1, i64 %x2, i64* %x3) {
 
   start:
     %x4 = sub i64 %x2, %x
@@ -796,44 +3075,44 @@ define i64* @Sorting_Export_Code_unat_sort_sift_down_impl(i64 %x, i64 %x1, i64 %
     %xha1 = add i64 %xga1, 2
     %xia = add i64 %x, %xfa1
     %xja = add i64 %x, %xha1
-    %xka = getelementptr i64, i64* %a1a1, i64 %xia
-    %ra = load i64, i64* %xka
-    %xl = getelementptr i64, i64* %a1a1, i64 %xja
-    %rb = load i64, i64* %xl
-    %xm = icmp ult i64 %ra, %rb
+    %xl = getelementptr i64, i64* %a1a1, i64 %xia
+    %ra = load i64, i64* %xl
+    %xm = getelementptr i64, i64* %a1a1, i64 %xja
+    %rb = load i64, i64* %xm
+    %xn = icmp ult i64 %ra, %rb
     %p = getelementptr i64, i64* %a1a1, i64 %xia
     store i64 %ra, i64* %p
     %pa = getelementptr i64, i64* %a1a1, i64 %xja
     store i64 %rb, i64* %pa
-    br i1 %xm, label %then, label %else
+    br i1 %xn, label %then, label %else
 
   then:
-    %xq = add i64 %x, %xha1
-    %xr = getelementptr i64, i64* %a1a1, i64 %xq
-    %rc = load i64, i64* %xr
-    %xs = icmp ult i64 %r, %rc
-    %pb = getelementptr i64, i64* %a1a1, i64 %xq
+    %xla = add i64 %x, %xha1
+    %xq = getelementptr i64, i64* %a1a1, i64 %xla
+    %rc = load i64, i64* %xq
+    %xr = icmp ult i64 %r, %rc
+    %pb = getelementptr i64, i64* %a1a1, i64 %xla
     store i64 %rc, i64* %pb
-    br i1 %xs, label %thena, label %elsea
+    br i1 %xr, label %thena, label %elsea
 
   thena:
-    %xv = add i64 %x, %xha1
-    %xw = getelementptr i64, i64* %a1a1, i64 %xv
-    %rd = load i64, i64* %xw
-    %xx = add i64 %x, %a1b1
-    %pc = getelementptr i64, i64* %a1a1, i64 %xx
-    store i64 %rd, i64* %pc
-    %xza = insertvalue { i64*, { i64, i1 } } zeroinitializer, i64* %a1a1, 0
-    %ya = insertvalue { i64, i1 } zeroinitializer, i64 %xha1, 0
-    %tmpf = insertvalue { i64, i1 } %ya, i1 1, 1
-    %x6 = insertvalue { i64*, { i64, i1 } } %xza, { i64, i1 } %tmpf, 1
+    %xna = add i64 %x, %xha1
+    %xoa = getelementptr i64, i64* %a1a1, i64 %xna
+    %raa = load i64, i64* %xoa
+    %xpa = add i64 %x, %a1b1
+    %pc = getelementptr i64, i64* %a1a1, i64 %xpa
+    store i64 %raa, i64* %pc
+    %xra = insertvalue { i64*, { i64, i1 } } zeroinitializer, i64* %a1a1, 0
+    %xu = insertvalue { i64, i1 } zeroinitializer, i64 %xha1, 0
+    %tmpf = insertvalue { i64, i1 } %xu, i1 1, 1
+    %x6 = insertvalue { i64*, { i64, i1 } } %xra, { i64, i1 } %tmpf, 1
     br label %ctd_ifa
 
   elsea:
-    %xva = insertvalue { i64*, { i64, i1 } } zeroinitializer, i64* %a1a1, 0
-    %xw1 = insertvalue { i64, i1 } zeroinitializer, i64 %a1b1, 0
-    %tmpf1 = insertvalue { i64, i1 } %xw1, i1 0, 1
-    %x7 = insertvalue { i64*, { i64, i1 } } %xva, { i64, i1 } %tmpf1, 1
+    %xna1 = insertvalue { i64*, { i64, i1 } } zeroinitializer, i64* %a1a1, 0
+    %xu1 = insertvalue { i64, i1 } zeroinitializer, i64 %a1b1, 0
+    %tmpf1 = insertvalue { i64, i1 } %xu1, i1 0, 1
+    %x7 = insertvalue { i64*, { i64, i1 } } %xna1, { i64, i1 } %tmpf1, 1
     br label %ctd_ifa
 
   ctd_ifa:
@@ -841,32 +3120,32 @@ define i64* @Sorting_Export_Code_unat_sort_sift_down_impl(i64 %x, i64 %x1, i64 %
     br label %ctd_if
 
   else:
-    %xq1 = add i64 %x, %xfa1
-    %xr1 = getelementptr i64, i64* %a1a1, i64 %xq1
-    %rc1 = load i64, i64* %xr1
-    %xs1 = icmp ult i64 %r, %rc1
-    %pb1 = getelementptr i64, i64* %a1a1, i64 %xq1
+    %xla1 = add i64 %x, %xfa1
+    %xq1 = getelementptr i64, i64* %a1a1, i64 %xla1
+    %rc1 = load i64, i64* %xq1
+    %xr1 = icmp ult i64 %r, %rc1
+    %pb1 = getelementptr i64, i64* %a1a1, i64 %xla1
     store i64 %rc1, i64* %pb1
-    br i1 %xs1, label %thenb, label %elseb
+    br i1 %xr1, label %thenb, label %elseb
 
   thenb:
-    %xv1 = add i64 %x, %xfa1
-    %xw2 = getelementptr i64, i64* %a1a1, i64 %xv1
-    %rd1 = load i64, i64* %xw2
-    %xx1 = add i64 %x, %a1b1
-    %pc1 = getelementptr i64, i64* %a1a1, i64 %xx1
-    store i64 %rd1, i64* %pc1
-    %xza1 = insertvalue { i64*, { i64, i1 } } zeroinitializer, i64* %a1a1, 0
-    %ya1 = insertvalue { i64, i1 } zeroinitializer, i64 %xfa1, 0
-    %tmpf2 = insertvalue { i64, i1 } %ya1, i1 1, 1
-    %x9 = insertvalue { i64*, { i64, i1 } } %xza1, { i64, i1 } %tmpf2, 1
+    %xna2 = add i64 %x, %xfa1
+    %xoa1 = getelementptr i64, i64* %a1a1, i64 %xna2
+    %raa1 = load i64, i64* %xoa1
+    %xpa1 = add i64 %x, %a1b1
+    %pc1 = getelementptr i64, i64* %a1a1, i64 %xpa1
+    store i64 %raa1, i64* %pc1
+    %xra1 = insertvalue { i64*, { i64, i1 } } zeroinitializer, i64* %a1a1, 0
+    %xu2 = insertvalue { i64, i1 } zeroinitializer, i64 %xfa1, 0
+    %tmpf2 = insertvalue { i64, i1 } %xu2, i1 1, 1
+    %x9 = insertvalue { i64*, { i64, i1 } } %xra1, { i64, i1 } %tmpf2, 1
     br label %ctd_ifb
 
   elseb:
-    %xva1 = insertvalue { i64*, { i64, i1 } } zeroinitializer, i64* %a1a1, 0
-    %xw3 = insertvalue { i64, i1 } zeroinitializer, i64 %a1b1, 0
-    %tmpf3 = insertvalue { i64, i1 } %xw3, i1 0, 1
-    %x10 = insertvalue { i64*, { i64, i1 } } %xva1, { i64, i1 } %tmpf3, 1
+    %xna3 = insertvalue { i64*, { i64, i1 } } zeroinitializer, i64* %a1a1, 0
+    %xu3 = insertvalue { i64, i1 } zeroinitializer, i64 %a1b1, 0
+    %tmpf3 = insertvalue { i64, i1 } %xu3, i1 0, 1
+    %x10 = insertvalue { i64*, { i64, i1 } } %xna3, { i64, i1 } %tmpf3, 1
     br label %ctd_ifb
 
   ctd_ifb:
@@ -891,28 +3170,28 @@ define i64* @Sorting_Export_Code_unat_sort_sift_down_impl(i64 %x, i64 %x1, i64 %
     %xha2 = mul i64 2, %a1b2
     %xia1 = add i64 %xha2, 1
     %xja1 = add i64 %x, %xia1
-    %xka1 = getelementptr i64, i64* %a1a2, i64 %xja1
-    %ra1 = load i64, i64* %xka1
-    %xl1 = icmp ult i64 %r, %ra1
+    %xl1 = getelementptr i64, i64* %a1a2, i64 %xja1
+    %ra1 = load i64, i64* %xl1
+    %xm1 = icmp ult i64 %r, %ra1
     %p1 = getelementptr i64, i64* %a1a2, i64 %xja1
     store i64 %ra1, i64* %p1
-    br i1 %xl1, label %thend, label %elsed
+    br i1 %xm1, label %thend, label %elsed
 
   thend:
-    %xo = add i64 %x, %xia1
-    %xp = getelementptr i64, i64* %a1a2, i64 %xo
-    %rb1 = load i64, i64* %xp
-    %xq2 = add i64 %x, %a1b2
-    %pa1 = getelementptr i64, i64* %a1a2, i64 %xq2
-    store i64 %rb1, i64* %pa1
-    %xs2 = add i64 %x, %xia1
-    %pb2 = getelementptr i64, i64* %a1a2, i64 %xs2
-    store i64 %r, i64* %pb2
+    %xla2 = add i64 %x, %xia1
+    %xma = getelementptr i64, i64* %a1a2, i64 %xla2
+    %raa2 = load i64, i64* %xma
+    %xna4 = add i64 %x, %a1b2
+    %pa1 = getelementptr i64, i64* %a1a2, i64 %xna4
+    store i64 %raa2, i64* %pa1
+    %xp = add i64 %x, %xia1
+    %paa = getelementptr i64, i64* %a1a2, i64 %xp
+    store i64 %r, i64* %paa
     br label %ctd_ifd
 
   elsed:
-    %xo1 = add i64 %x, %a1b2
-    %pa2 = getelementptr i64, i64* %a1a2, i64 %xo1
+    %xla3 = add i64 %x, %a1b2
+    %pa2 = getelementptr i64, i64* %a1a2, i64 %xla3
     store i64 %r, i64* %pa2
     br label %ctd_ifd
 
@@ -931,321 +3210,529 @@ define i64* @Sorting_Export_Code_unat_sort_sift_down_impl(i64 %x, i64 %x1, i64 %
     ret i64* %x14
 }
 
-define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_heapify_btu_impl(i64 %x, i64 %x1, { i64, { i64, i8* } }* %x2) {
+define { i64, { i64, i8* } }* @Monadify_M_CONST_Sorting_Heapsort_sort_impl_context_sift_down_impl_Sorting_Strings_strcmp_impl(i64 %x, i64 %x1, i64 %x2, { i64, { i64, i8* } }* %x3) {
 
   start:
-    %xa = sub i64 %x1, 1
-    %xba = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %x2, 0
-    %xca = insertvalue { { i64, { i64, i8* } }*, i64 } %xba, i64 %xa, 1
+    %x4 = sub i64 %x2, %x
+    %xa = add i64 %x, %x4
+    %xb = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x3, i64 %xa
+    %r = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xb
+    %xc = insertvalue { i64, i1 } zeroinitializer, i64 %x4, 0
+    %tmpa = insertvalue { i64, i1 } %xc, i1 1, 1
+    %xd = insertvalue { { i64, { i64, i8* } }*, { i64, i1 } } zeroinitializer, { i64, { i64, i8* } }* %x3, 0
+    %xe = insertvalue { { i64, { i64, i8* } }*, { i64, i1 } } %xd, { i64, i1 } %tmpa, 1
     br label %while_start
 
   while_start:
-    %xaa = phi { { i64, { i64, i8* } }*, i64 } [ %x5, %while_body ], [ %xca, %start ]
-    %a1 = extractvalue { { i64, { i64, i8* } }*, i64 } %xaa, 0
-    %x3 = extractvalue { { i64, { i64, i8* } }*, i64 } %xaa, 1
-    %x4 = icmp slt i64 %x, %x3
-    br i1 %x4, label %while_body, label %while_end
-
-  while_body:
-    %a11 = extractvalue { { i64, { i64, i8* } }*, i64 } %xaa, 0
-    %a2 = extractvalue { { i64, { i64, i8* } }*, i64 } %xaa, 1
-    %xbaa = sub i64 %a2, 1
-    %xcaa = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_sift_down_impl (i64 %x, i64 %x1, i64 %xbaa, { i64, { i64, i8* } }* %a11)
-    %xda = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %xcaa, 0
-    %x5 = insertvalue { { i64, { i64, i8* } }*, i64 } %xda, i64 %xbaa, 1
-    br label %while_start
-
-  while_end:
-    %a12 = extractvalue { { i64, { i64, i8* } }*, i64 } %xaa, 0
-    %a21 = extractvalue { { i64, { i64, i8* } }*, i64 } %xaa, 1
-    ret { i64, { i64, i8* } }* %a12
-}
-
-define { i1, { i64, { i64, i8* } }* } @Sorting_Export_Code_str_sort_maybe_insort_impl({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2) {
-
-  start:
-    %x3 = icmp ne i64 %x1, %x2
-    br i1 %x3, label %then, label %else
-
-  then:
-    %xaa = add i64 %x1, 1
-    %xba = add i64 8, 1
-    %xc = insertvalue { i64, { i64, { i64, i8* } }* } zeroinitializer, i64 %xba, 0
-    %tmpa = insertvalue { i64, { i64, { i64, i8* } }* } %xc, { i64, { i64, i8* } }* %x, 1
-    %xd = insertvalue { i64, { i64, { i64, { i64, i8* } }* } } zeroinitializer, i64 %xaa, 0
-    %xe = insertvalue { i64, { i64, { i64, { i64, i8* } }* } } %xd, { i64, { i64, { i64, i8* } }* } %tmpa, 1
-    br label %while_start
-
-  while_start:
-    %xca = phi { i64, { i64, { i64, { i64, i8* } }* } } [ %x11, %ctd_ifd ], [ %xe, %then ]
-    %a1 = extractvalue { i64, { i64, { i64, { i64, i8* } }* } } %xca, 0
-    %xda = extractvalue { i64, { i64, { i64, { i64, i8* } }* } } %xca, 1
-    %a1a = extractvalue { i64, { i64, { i64, i8* } }* } %xda, 0
-    %a2a = extractvalue { i64, { i64, { i64, i8* } }* } %xda, 1
-    %xea = icmp slt i64 %a1, %x2
-    %x4 = icmp slt i64 0, %a1a
-    %x5 = and i1 %xea, %x4
+    %xca = phi { { i64, { i64, i8* } }*, { i64, i1 } } [ %x12, %ctd_if ], [ %xe, %start ]
+    %a1a = extractvalue { { i64, { i64, i8* } }*, { i64, i1 } } %xca, 0
+    %xda = extractvalue { { i64, { i64, i8* } }*, { i64, i1 } } %xca, 1
+    %a1b = extractvalue { i64, i1 } %xda, 0
+    %a2b = extractvalue { i64, i1 } %xda, 1
+    %xea = sub i64 %x1, %x
+    %xfa = sub i64 %xea, 1
+    %xga = udiv i64 %xfa, 2
+    %xha = icmp slt i64 %a1b, %xga
+    %x5 = and i1 %xha, %a2b
     br i1 %x5, label %while_body, label %while_end
 
   while_body:
-    %a11 = extractvalue { i64, { i64, { i64, { i64, i8* } }* } } %xca, 0
-    %xda1 = extractvalue { i64, { i64, { i64, { i64, i8* } }* } } %xca, 1
-    %a1a1 = extractvalue { i64, { i64, { i64, i8* } }* } %xda1, 0
-    %a2a1 = extractvalue { i64, { i64, { i64, i8* } }* } %xda1, 1
-    %xea1 = icmp slt i64 %x1, %a11
-    br i1 %xea1, label %thena, label %elsea
+    %a1a1 = extractvalue { { i64, { i64, i8* } }*, { i64, i1 } } %xca, 0
+    %xda1 = extractvalue { { i64, { i64, i8* } }*, { i64, i1 } } %xca, 1
+    %a1b1 = extractvalue { i64, i1 } %xda1, 0
+    %a2b1 = extractvalue { i64, i1 } %xda1, 1
+    %xea1 = mul i64 2, %a1b1
+    %xfa1 = add i64 %xea1, 1
+    %xga1 = mul i64 2, %a1b1
+    %xha1 = add i64 %xga1, 2
+    %xia = add i64 %x, %xfa1
+    %xja = add i64 %x, %xha1
+    %xl = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a1, i64 %xia
+    %ra = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xl
+    %xm = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a1, i64 %xja
+    %rb = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xm
+    %xn = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %ra, { i64, { i64, i8* } } %rb)
+    %p = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a1, i64 %xia
+    store { i64, { i64, i8* } } %ra, { i64, { i64, i8* } }* %p
+    %pa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a1, i64 %xja
+    store { i64, { i64, i8* } } %rb, { i64, { i64, i8* } }* %pa
+    br i1 %xn, label %then, label %else
+
+  then:
+    %xla = add i64 %x, %xha1
+    %xq = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a1, i64 %xla
+    %rc = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xq
+    %xr = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r, { i64, { i64, i8* } } %rc)
+    %pb = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a1, i64 %xla
+    store { i64, { i64, i8* } } %rc, { i64, { i64, i8* } }* %pb
+    br i1 %xr, label %thena, label %elsea
 
   thena:
-    %bib = sub i64 %a11, 1
-    %xfa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a2a1, i64 %a11
-    %r = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xfa
-    %xga = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a2a1, i64 %bib
-    %ra = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xga
-    %xha = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r, { i64, { i64, i8* } } %ra)
-    %p = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a2a1, i64 %a11
-    store { i64, { i64, i8* } } %r, { i64, { i64, i8* } }* %p
-    %pa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a2a1, i64 %bib
-    store { i64, { i64, i8* } } %ra, { i64, { i64, i8* } }* %pa
+    %xna = add i64 %x, %xha1
+    %xoa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a1, i64 %xna
+    %raa = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xoa
+    %xpa = add i64 %x, %a1b1
+    %pc = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a1, i64 %xpa
+    store { i64, { i64, i8* } } %raa, { i64, { i64, i8* } }* %pc
+    %xra = insertvalue { { i64, { i64, i8* } }*, { i64, i1 } } zeroinitializer, { i64, { i64, i8* } }* %a1a1, 0
+    %xu = insertvalue { i64, i1 } zeroinitializer, i64 %xha1, 0
+    %tmpf = insertvalue { i64, i1 } %xu, i1 1, 1
+    %x6 = insertvalue { { i64, { i64, i8* } }*, { i64, i1 } } %xra, { i64, i1 } %tmpf, 1
+    br label %ctd_ifa
+
+  elsea:
+    %xna1 = insertvalue { { i64, { i64, i8* } }*, { i64, i1 } } zeroinitializer, { i64, { i64, i8* } }* %a1a1, 0
+    %xu1 = insertvalue { i64, i1 } zeroinitializer, i64 %a1b1, 0
+    %tmpf1 = insertvalue { i64, i1 } %xu1, i1 0, 1
+    %x7 = insertvalue { { i64, { i64, i8* } }*, { i64, i1 } } %xna1, { i64, i1 } %tmpf1, 1
+    br label %ctd_ifa
+
+  ctd_ifa:
+    %x8 = phi { { i64, { i64, i8* } }*, { i64, i1 } } [ %x7, %elsea ], [ %x6, %thena ]
+    br label %ctd_if
+
+  else:
+    %xla1 = add i64 %x, %xfa1
+    %xq1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a1, i64 %xla1
+    %rc1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xq1
+    %xr1 = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r, { i64, { i64, i8* } } %rc1)
+    %pb1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a1, i64 %xla1
+    store { i64, { i64, i8* } } %rc1, { i64, { i64, i8* } }* %pb1
+    br i1 %xr1, label %thenb, label %elseb
+
+  thenb:
+    %xna2 = add i64 %x, %xfa1
+    %xoa1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a1, i64 %xna2
+    %raa1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xoa1
+    %xpa1 = add i64 %x, %a1b1
+    %pc1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a1, i64 %xpa1
+    store { i64, { i64, i8* } } %raa1, { i64, { i64, i8* } }* %pc1
+    %xra1 = insertvalue { { i64, { i64, i8* } }*, { i64, i1 } } zeroinitializer, { i64, { i64, i8* } }* %a1a1, 0
+    %xu2 = insertvalue { i64, i1 } zeroinitializer, i64 %xfa1, 0
+    %tmpf2 = insertvalue { i64, i1 } %xu2, i1 1, 1
+    %x9 = insertvalue { { i64, { i64, i8* } }*, { i64, i1 } } %xra1, { i64, i1 } %tmpf2, 1
+    br label %ctd_ifb
+
+  elseb:
+    %xna3 = insertvalue { { i64, { i64, i8* } }*, { i64, i1 } } zeroinitializer, { i64, { i64, i8* } }* %a1a1, 0
+    %xu3 = insertvalue { i64, i1 } zeroinitializer, i64 %a1b1, 0
+    %tmpf3 = insertvalue { i64, i1 } %xu3, i1 0, 1
+    %x10 = insertvalue { { i64, { i64, i8* } }*, { i64, i1 } } %xna3, { i64, i1 } %tmpf3, 1
+    br label %ctd_ifb
+
+  ctd_ifb:
+    %x11 = phi { { i64, { i64, i8* } }*, { i64, i1 } } [ %x10, %elseb ], [ %x9, %thenb ]
+    br label %ctd_if
+
+  ctd_if:
+    %x12 = phi { { i64, { i64, i8* } }*, { i64, i1 } } [ %x11, %ctd_ifb ], [ %x8, %ctd_ifa ]
+    br label %while_start
+
+  while_end:
+    %a1a2 = extractvalue { { i64, { i64, i8* } }*, { i64, i1 } } %xca, 0
+    %xda2 = extractvalue { { i64, { i64, i8* } }*, { i64, i1 } } %xca, 1
+    %a1b2 = extractvalue { i64, i1 } %xda2, 0
+    %a2b2 = extractvalue { i64, i1 } %xda2, 1
+    %xea2 = sub i64 %x1, %x
+    %xfa2 = udiv i64 %xea2, 2
+    %xga2 = icmp slt i64 %a1b2, %xfa2
+    br i1 %xga2, label %thenc, label %elsec
+
+  thenc:
+    %xha2 = mul i64 2, %a1b2
+    %xia1 = add i64 %xha2, 1
+    %xja1 = add i64 %x, %xia1
+    %xl1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a2, i64 %xja1
+    %ra1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xl1
+    %xm1 = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r, { i64, { i64, i8* } } %ra1)
+    %p1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a2, i64 %xja1
+    store { i64, { i64, i8* } } %ra1, { i64, { i64, i8* } }* %p1
+    br i1 %xm1, label %thend, label %elsed
+
+  thend:
+    %xla2 = add i64 %x, %xia1
+    %xma = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a2, i64 %xla2
+    %raa2 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xma
+    %xna4 = add i64 %x, %a1b2
+    %pa1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a2, i64 %xna4
+    store { i64, { i64, i8* } } %raa2, { i64, { i64, i8* } }* %pa1
+    %xp = add i64 %x, %xia1
+    %paa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a2, i64 %xp
+    store { i64, { i64, i8* } } %r, { i64, { i64, i8* } }* %paa
+    br label %ctd_ifd
+
+  elsed:
+    %xla3 = add i64 %x, %a1b2
+    %pa2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a2, i64 %xla3
+    store { i64, { i64, i8* } } %r, { i64, { i64, i8* } }* %pa2
+    br label %ctd_ifd
+
+  ctd_ifd:
+    %x13 = phi { i64, { i64, i8* } }* [ %a1a2, %elsed ], [ %a1a2, %thend ]
+    br label %ctd_ifc
+
+  elsec:
+    %xha3 = add i64 %x, %a1b2
+    %p2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a2, i64 %xha3
+    store { i64, { i64, i8* } } %r, { i64, { i64, i8* } }* %p2
+    br label %ctd_ifc
+
+  ctd_ifc:
+    %x14 = phi { i64, { i64, i8* } }* [ %a1a2, %elsec ], [ %x13, %ctd_ifd ]
+    ret { i64, { i64, i8* } }* %x14
+}
+
+define { i1, { i64, i64* } } @Monadify_M_CONST_Sorting_PDQ_sort_impl_context_partition_left_impl_LLVM_Shallow_ll_icmp_ult(i64* %x, i64 %x1, i64 %x2) {
+
+  start:
+    %xa = sub i64 %x2, 1
+    br label %while_start
+
+  while_start:
+    %s = phi i64 [ %x3, %while_body ], [ %xa, %start ]
+    %xb = getelementptr i64, i64* %x, i64 %x1
+    %r = load i64, i64* %xb
+    %xc = getelementptr i64, i64* %x, i64 %s
+    %ra = load i64, i64* %xc
+    %xd = icmp ult i64 %r, %ra
+    %p = getelementptr i64, i64* %x, i64 %x1
+    store i64 %r, i64* %p
+    %pa = getelementptr i64, i64* %x, i64 %s
+    store i64 %ra, i64* %pa
+    br i1 %xd, label %while_body, label %while_end
+
+  while_body:
+    %x3 = sub i64 %s, 1
+    br label %while_start
+
+  while_end:
+    %xba = add i64 %s, 1
+    %xc1 = icmp eq i64 %xba, %x2
+    br i1 %xc1, label %then, label %else
+
+  then:
+    %x4 = add i64 %x1, 1
+    br label %while_starta
+
+  while_starta:
+    %s1 = phi i64 [ %x7, %while_bodya ], [ %x4, %then ]
+    %xea = sub i64 %x2, 1
+    %xfa = icmp slt i64 %s1, %xea
+    br i1 %xfa, label %thena, label %elsea
+
+  thena:
+    %xg = getelementptr i64, i64* %x, i64 %x1
+    %r1 = load i64, i64* %xg
+    %xh = getelementptr i64, i64* %x, i64 %s1
+    %ra1 = load i64, i64* %xh
+    %xi = icmp ult i64 %r1, %ra1
+    %p1 = getelementptr i64, i64* %x, i64 %x1
+    store i64 %r1, i64* %p1
+    %pa1 = getelementptr i64, i64* %x, i64 %s1
+    store i64 %ra1, i64* %pa1
+    %x5 = add i1 %xi, 1
     br label %ctd_ifa
 
   elsea:
     br label %ctd_ifa
 
   ctd_ifa:
-    %xfa1 = phi i1 [ 0, %elsea ], [ %xha, %thena ]
-    br i1 %xfa1, label %thenb, label %elseb
-
-  thenb:
-    %xga1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a2a1, i64 %a11
-    %r1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xga1
-    %xha1 = sub i64 %a11, 1
-    %xia = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a2a1, i64 %xha1
-    %ra1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xia
-    %p1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a2a1, i64 %a11
-    store { i64, { i64, i8* } } %ra1, { i64, { i64, i8* } }* %p1
-    %xka = sub i64 %a11, 1
-    %xl = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %a2a1, 0
-    %xm = insertvalue { { i64, { i64, i8* } }*, i64 } %xl, i64 %xka, 1
-    br label %while_starta
-
-  while_starta:
-    %xla = phi { { i64, { i64, i8* } }*, i64 } [ %x7, %while_bodya ], [ %xm, %thenb ]
-    %a1b = extractvalue { { i64, { i64, i8* } }*, i64 } %xla, 0
-    %a2b = extractvalue { { i64, { i64, i8* } }*, i64 } %xla, 1
-    %xma = icmp slt i64 %x1, %a2b
-    br i1 %xma, label %thenc, label %elsec
-
-  thenc:
-    %bib1 = sub i64 %a2b, 1
-    %xna = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b, i64 %bib1
-    %rb = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xna
-    %xoa = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r1, { i64, { i64, i8* } } %rb)
-    %pa1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b, i64 %bib1
-    store { i64, { i64, i8* } } %rb, { i64, { i64, i8* } }* %pa1
-    br label %ctd_ifc
-
-  elsec:
-    br label %ctd_ifc
-
-  ctd_ifc:
-    %x6 = phi i1 [ 0, %elsec ], [ %xoa, %thenc ]
+    %x6 = phi i1 [ 0, %elsea ], [ %x5, %thena ]
     br i1 %x6, label %while_bodya, label %while_enda
 
   while_bodya:
-    %a1b1 = extractvalue { { i64, { i64, i8* } }*, i64 } %xla, 0
-    %a2b1 = extractvalue { { i64, { i64, i8* } }*, i64 } %xla, 1
-    %xma1 = sub i64 %a2b1, 1
-    %xna1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b1, i64 %xma1
-    %rb1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xna1
-    %pa2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b1, i64 %a2b1
-    store { i64, { i64, i8* } } %rb1, { i64, { i64, i8* } }* %pa2
-    %xpa = sub i64 %a2b1, 1
-    %xqa = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %a1b1, 0
-    %x7 = insertvalue { { i64, { i64, i8* } }*, i64 } %xqa, i64 %xpa, 1
+    %x7 = add i64 %s1, 1
     br label %while_starta
 
   while_enda:
-    %a1b2 = extractvalue { { i64, { i64, i8* } }*, i64 } %xla, 0
-    %a2b2 = extractvalue { { i64, { i64, i8* } }*, i64 } %xla, 1
-    %pa3 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b2, i64 %a2b2
-    store { i64, { i64, i8* } } %r1, { i64, { i64, i8* } }* %pa3
-    %xna2 = sub i64 %a11, %a2b2
-    %xoa1 = insertvalue { i64, { i64, { i64, i8* } }* } zeroinitializer, i64 %xna2, 0
-    %x8 = insertvalue { i64, { i64, { i64, i8* } }* } %xoa1, { i64, { i64, i8* } }* %a1b2, 1
-    br label %ctd_ifb
-
-  elseb:
-    %xga2 = insertvalue { i64, { i64, { i64, i8* } }* } zeroinitializer, i64 0, 0
-    %x9 = insertvalue { i64, { i64, { i64, i8* } }* } %xga2, { i64, { i64, i8* } }* %a2a1, 1
-    br label %ctd_ifb
-
-  ctd_ifb:
-    %xga3 = phi { i64, { i64, { i64, i8* } }* } [ %x9, %elseb ], [ %x8, %while_enda ]
-    %a1b3 = extractvalue { i64, { i64, { i64, i8* } }* } %xga3, 0
-    %a2b3 = extractvalue { i64, { i64, { i64, i8* } }* } %xga3, 1
-    %xha2 = add i64 %a11, 1
-    %xia1 = icmp slt i64 %a1b3, %a1a1
-    br i1 %xia1, label %thend, label %elsed
-
-  thend:
-    %x10 = sub i64 %a1a1, %a1b3
-    br label %ctd_ifd
-
-  elsed:
-    br label %ctd_ifd
-
-  ctd_ifd:
-    %xja = phi i64 [ 0, %elsed ], [ %x10, %thend ]
-    %xka1 = insertvalue { i64, { i64, { i64, { i64, i8* } }* } } zeroinitializer, i64 %xha2, 0
-    %xn = insertvalue { i64, { i64, { i64, i8* } }* } zeroinitializer, i64 %xja, 0
-    %tmpc = insertvalue { i64, { i64, { i64, i8* } }* } %xn, { i64, { i64, i8* } }* %a2b3, 1
-    %x11 = insertvalue { i64, { i64, { i64, { i64, i8* } }* } } %xka1, { i64, { i64, { i64, i8* } }* } %tmpc, 1
-    br label %while_start
-
-  while_end:
-    %a12 = extractvalue { i64, { i64, { i64, { i64, i8* } }* } } %xca, 0
-    %xda2 = extractvalue { i64, { i64, { i64, { i64, i8* } }* } } %xca, 1
-    %a1a2 = extractvalue { i64, { i64, { i64, i8* } }* } %xda2, 0
-    %a2a2 = extractvalue { i64, { i64, { i64, i8* } }* } %xda2, 1
-    %xea2 = icmp eq i64 %a12, %x2
-    %xfa2 = insertvalue { i1, { i64, { i64, i8* } }* } zeroinitializer, i1 %xea2, 0
-    %x12 = insertvalue { i1, { i64, { i64, i8* } }* } %xfa2, { i64, { i64, i8* } }* %a2a2, 1
     br label %ctd_if
 
   else:
-    %xaa1 = insertvalue { i1, { i64, { i64, i8* } }* } zeroinitializer, i1 1, 0
-    %x13 = insertvalue { i1, { i64, { i64, i8* } }* } %xaa1, { i64, { i64, i8* } }* %x, 1
-    br label %ctd_if
-
-  ctd_if:
-    %x14 = phi { i1, { i64, { i64, i8* } }* } [ %x13, %else ], [ %x12, %while_end ]
-    ret { i1, { i64, { i64, i8* } }* } %x14
-}
-
-define { { i64, { i64, i8* } }*, i64 } @Sorting_Export_Code_str_sort_qs_partition_impl(i64 %x, i64 %x1, i64 %x2, { i64, { i64, i8* } }* %x3) {
-
-  start:
-    br label %while_start
-
-  while_start:
-    %s = phi i64 [ %x5, %while_body ], [ %x, %start ]
-    %x4 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x3, i64 %s
-    %r = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x4
-    %xa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x3, i64 %x2
-    %ra = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xa
-    %xb = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r, { i64, { i64, i8* } } %ra)
-    %p = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x3, i64 %s
-    store { i64, { i64, i8* } } %r, { i64, { i64, i8* } }* %p
-    %pa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x3, i64 %x2
-    store { i64, { i64, i8* } } %ra, { i64, { i64, i8* } }* %pa
-    br i1 %xb, label %while_body, label %while_end
-
-  while_body:
-    %x5 = add i64 %s, 1
-    br label %while_start
-
-  while_end:
-    %xaa = sub i64 %x1, 1
-    br label %while_starta
-
-  while_starta:
-    %s1 = phi i64 [ %x7, %while_bodya ], [ %xaa, %while_end ]
-    %xb1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x3, i64 %x2
-    %r1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xb1
-    %xc = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x3, i64 %s1
-    %ra1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xc
-    %xd = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r1, { i64, { i64, i8* } } %ra1)
-    %p1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x3, i64 %x2
-    store { i64, { i64, i8* } } %r1, { i64, { i64, i8* } }* %p1
-    %pa1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x3, i64 %s1
-    store { i64, { i64, i8* } } %ra1, { i64, { i64, i8* } }* %pa1
-    br i1 %xd, label %while_bodya, label %while_enda
-
-  while_bodya:
-    %x7 = sub i64 %s1, 1
-    br label %while_starta
-
-  while_enda:
-    %xca = insertvalue { i64, i64 } zeroinitializer, i64 %s, 0
-    %tmpa = insertvalue { i64, i64 } %xca, i64 %s1, 1
-    %xda = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } zeroinitializer, { i64, { i64, i8* } }* %x3, 0
-    %xea = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xda, { i64, i64 } %tmpa, 1
+    %x9 = add i64 %x1, 1
     br label %while_startb
 
   while_startb:
-    %xcaa = phi { { i64, { i64, i8* } }*, { i64, i64 } } [ %x12, %while_endd ], [ %xea, %while_enda ]
-    %a1 = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xcaa, 0
-    %xdaa = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xcaa, 1
-    %a = extractvalue { i64, i64 } %xdaa, 0
-    %x8 = extractvalue { i64, i64 } %xdaa, 1
-    %x9 = icmp slt i64 %a, %x8
-    br i1 %x9, label %while_bodyb, label %while_endb
+    %s2 = phi i64 [ %x11, %while_bodyb ], [ %x9, %else ]
+    %xf = getelementptr i64, i64* %x, i64 %x1
+    %r2 = load i64, i64* %xf
+    %xg1 = getelementptr i64, i64* %x, i64 %s2
+    %ra2 = load i64, i64* %xg1
+    %xh1 = icmp ult i64 %r2, %ra2
+    %p2 = getelementptr i64, i64* %x, i64 %x1
+    store i64 %r2, i64* %p2
+    %pa2 = getelementptr i64, i64* %x, i64 %s2
+    store i64 %ra2, i64* %pa2
+    %x10 = add i1 %xh1, 1
+    br i1 %x10, label %while_bodyb, label %while_endb
 
   while_bodyb:
-    %a11 = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xcaa, 0
-    %xdaa1 = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xcaa, 1
-    %a1a = extractvalue { i64, i64 } %xdaa1, 0
-    %a2a = extractvalue { i64, i64 } %xdaa1, 1
-    %xeaa = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %a11, i64 %a1a, i64 %a2a)
-    %xfaa = add i64 %a1a, 1
-    br label %while_startc
-
-  while_startc:
-    %s2 = phi i64 [ %x10, %while_bodyc ], [ %xfaa, %while_bodyb ]
-    %xga = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xeaa, i64 %s2
-    %r2 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xga
-    %xha = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xeaa, i64 %x2
-    %ra2 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xha
-    %xia = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r2, { i64, { i64, i8* } } %ra2)
-    %p2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xeaa, i64 %s2
-    store { i64, { i64, i8* } } %r2, { i64, { i64, i8* } }* %p2
-    %pa2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xeaa, i64 %x2
-    store { i64, { i64, i8* } } %ra2, { i64, { i64, i8* } }* %pa2
-    br i1 %xia, label %while_bodyc, label %while_endc
-
-  while_bodyc:
-    %x10 = add i64 %s2, 1
-    br label %while_startc
-
-  while_endc:
-    %xha1 = sub i64 %a2a, 1
-    br label %while_startd
-
-  while_startd:
-    %s3 = phi i64 [ %x11, %while_bodyd ], [ %xha1, %while_endc ]
-    %xia1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xeaa, i64 %x2
-    %r3 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xia1
-    %xja = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xeaa, i64 %s3
-    %ra3 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xja
-    %xka = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r3, { i64, { i64, i8* } } %ra3)
-    %p3 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xeaa, i64 %x2
-    store { i64, { i64, i8* } } %r3, { i64, { i64, i8* } }* %p3
-    %pa3 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xeaa, i64 %s3
-    store { i64, { i64, i8* } } %ra3, { i64, { i64, i8* } }* %pa3
-    br i1 %xka, label %while_bodyd, label %while_endd
-
-  while_bodyd:
-    %x11 = sub i64 %s3, 1
-    br label %while_startd
-
-  while_endd:
-    %xja1 = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } zeroinitializer, { i64, { i64, i8* } }* %xeaa, 0
-    %xma = insertvalue { i64, i64 } zeroinitializer, i64 %s2, 0
-    %tmpba = insertvalue { i64, i64 } %xma, i64 %s3, 1
-    %x12 = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xja1, { i64, i64 } %tmpba, 1
+    %x11 = add i64 %s2, 1
     br label %while_startb
 
   while_endb:
-    %a12 = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xcaa, 0
-    %xdaa2 = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xcaa, 1
-    %a1a1 = extractvalue { i64, i64 } %xdaa2, 0
-    %a2a1 = extractvalue { i64, i64 } %xdaa2, 1
-    %xeaa1 = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %a12, 0
-    %x13 = insertvalue { { i64, { i64, i8* } }*, i64 } %xeaa1, i64 %a1a1, 1
-    ret { { i64, { i64, i8* } }*, i64 } %x13
+    br label %ctd_if
+
+  ctd_if:
+    %xaaa = phi i64 [ %s2, %while_endb ], [ %s1, %while_enda ]
+    %xda = insertvalue { i64, i64 } zeroinitializer, i64 %xaaa, 0
+    %tmpa = insertvalue { i64, i64 } %xda, i64 %s, 1
+    %xea1 = insertvalue { i64*, { i64, i64 } } zeroinitializer, i64* %x, 0
+    %xfa1 = insertvalue { i64*, { i64, i64 } } %xea1, { i64, i64 } %tmpa, 1
+    br label %while_startc
+
+  while_startc:
+    %xbaa = phi { i64*, { i64, i64 } } [ %x18, %while_ende ], [ %xfa1, %ctd_if ]
+    %a1 = extractvalue { i64*, { i64, i64 } } %xbaa, 0
+    %xca = extractvalue { i64*, { i64, i64 } } %xbaa, 1
+    %a = extractvalue { i64, i64 } %xca, 0
+    %x13 = extractvalue { i64, i64 } %xca, 1
+    %x14 = icmp slt i64 %a, %x13
+    br i1 %x14, label %while_bodyc, label %while_endc
+
+  while_bodyc:
+    %a11 = extractvalue { i64*, { i64, i64 } } %xbaa, 0
+    %xca1 = extractvalue { i64*, { i64, i64 } } %xbaa, 1
+    %a1a = extractvalue { i64, i64 } %xca1, 0
+    %a2a = extractvalue { i64, i64 } %xca1, 1
+    %xdaa = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %a11, i64 %a1a, i64 %a2a)
+    %xka = sub i64 %a2a, 1
+    br label %while_startd
+
+  while_startd:
+    %s3 = phi i64 [ %x15, %while_bodyd ], [ %xka, %while_bodyc ]
+    %xm = getelementptr i64, i64* %xdaa, i64 %x1
+    %r3 = load i64, i64* %xm
+    %xn = getelementptr i64, i64* %xdaa, i64 %s3
+    %ra3 = load i64, i64* %xn
+    %xo = icmp ult i64 %r3, %ra3
+    %p3 = getelementptr i64, i64* %xdaa, i64 %x1
+    store i64 %r3, i64* %p3
+    %pa3 = getelementptr i64, i64* %xdaa, i64 %s3
+    store i64 %ra3, i64* %pa3
+    br i1 %xo, label %while_bodyd, label %while_endd
+
+  while_bodyd:
+    %x15 = sub i64 %s3, 1
+    br label %while_startd
+
+  while_endd:
+    %xla = add i64 %a1a, 1
+    br label %while_starte
+
+  while_starte:
+    %s4 = phi i64 [ %x17, %while_bodye ], [ %xla, %while_endd ]
+    %xm1 = getelementptr i64, i64* %xdaa, i64 %x1
+    %r4 = load i64, i64* %xm1
+    %xn1 = getelementptr i64, i64* %xdaa, i64 %s4
+    %ra4 = load i64, i64* %xn1
+    %xo1 = icmp ult i64 %r4, %ra4
+    %p4 = getelementptr i64, i64* %xdaa, i64 %x1
+    store i64 %r4, i64* %p4
+    %pa4 = getelementptr i64, i64* %xdaa, i64 %s4
+    store i64 %ra4, i64* %pa4
+    %x16 = add i1 %xo1, 1
+    br i1 %x16, label %while_bodye, label %while_ende
+
+  while_bodye:
+    %x17 = add i64 %s4, 1
+    br label %while_starte
+
+  while_ende:
+    %xgaa = insertvalue { i64*, { i64, i64 } } zeroinitializer, i64* %xdaa, 0
+    %xna = insertvalue { i64, i64 } zeroinitializer, i64 %s4, 0
+    %tmpba = insertvalue { i64, i64 } %xna, i64 %s3, 1
+    %x18 = insertvalue { i64*, { i64, i64 } } %xgaa, { i64, i64 } %tmpba, 1
+    br label %while_startc
+
+  while_endc:
+    %a12 = extractvalue { i64*, { i64, i64 } } %xbaa, 0
+    %xca2 = extractvalue { i64*, { i64, i64 } } %xbaa, 1
+    %a1a1 = extractvalue { i64, i64 } %xca2, 0
+    %a2a1 = extractvalue { i64, i64 } %xca2, 1
+    %xdaa1 = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %a12, i64 %x1, i64 %a2a1)
+    %xeaa1 = insertvalue { i1, { i64, i64* } } zeroinitializer, i1 0, 0
+    %xla1 = insertvalue { i64, i64* } zeroinitializer, i64 %a2a1, 0
+    %tmpba1 = insertvalue { i64, i64* } %xla1, i64* %xdaa1, 1
+    %x19 = insertvalue { i1, { i64, i64* } } %xeaa1, { i64, i64* } %tmpba1, 1
+    ret { i1, { i64, i64* } } %x19
 }
 
-define i64* @Sorting_Export_Code_unat_sort_heapify_btu_impl(i64 %x, i64 %x1, i64* %x2) {
+define { i1, { i64, { i64, { i64, i8* } }* } } @Monadify_M_CONST_Sorting_PDQ_sort_impl_context_partition_left_impl_Sorting_Strings_strcmp_impl({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2) {
+
+  start:
+    %xa = sub i64 %x2, 1
+    br label %while_start
+
+  while_start:
+    %s = phi i64 [ %x3, %while_body ], [ %xa, %start ]
+    %xb = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x, i64 %x1
+    %r = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xb
+    %xc = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x, i64 %s
+    %ra = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xc
+    %xd = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r, { i64, { i64, i8* } } %ra)
+    %p = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x, i64 %x1
+    store { i64, { i64, i8* } } %r, { i64, { i64, i8* } }* %p
+    %pa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x, i64 %s
+    store { i64, { i64, i8* } } %ra, { i64, { i64, i8* } }* %pa
+    br i1 %xd, label %while_body, label %while_end
+
+  while_body:
+    %x3 = sub i64 %s, 1
+    br label %while_start
+
+  while_end:
+    %xba = add i64 %s, 1
+    %xc1 = icmp eq i64 %xba, %x2
+    br i1 %xc1, label %then, label %else
+
+  then:
+    %x4 = add i64 %x1, 1
+    br label %while_starta
+
+  while_starta:
+    %s1 = phi i64 [ %x7, %while_bodya ], [ %x4, %then ]
+    %xea = sub i64 %x2, 1
+    %xfa = icmp slt i64 %s1, %xea
+    br i1 %xfa, label %thena, label %elsea
+
+  thena:
+    %xg = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x, i64 %x1
+    %r1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xg
+    %xh = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x, i64 %s1
+    %ra1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xh
+    %xi = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r1, { i64, { i64, i8* } } %ra1)
+    %p1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x, i64 %x1
+    store { i64, { i64, i8* } } %r1, { i64, { i64, i8* } }* %p1
+    %pa1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x, i64 %s1
+    store { i64, { i64, i8* } } %ra1, { i64, { i64, i8* } }* %pa1
+    %x5 = add i1 %xi, 1
+    br label %ctd_ifa
+
+  elsea:
+    br label %ctd_ifa
+
+  ctd_ifa:
+    %x6 = phi i1 [ 0, %elsea ], [ %x5, %thena ]
+    br i1 %x6, label %while_bodya, label %while_enda
+
+  while_bodya:
+    %x7 = add i64 %s1, 1
+    br label %while_starta
+
+  while_enda:
+    br label %ctd_if
+
+  else:
+    %x9 = add i64 %x1, 1
+    br label %while_startb
+
+  while_startb:
+    %s2 = phi i64 [ %x11, %while_bodyb ], [ %x9, %else ]
+    %xf = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x, i64 %x1
+    %r2 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xf
+    %xg1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x, i64 %s2
+    %ra2 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xg1
+    %xh1 = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r2, { i64, { i64, i8* } } %ra2)
+    %p2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x, i64 %x1
+    store { i64, { i64, i8* } } %r2, { i64, { i64, i8* } }* %p2
+    %pa2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x, i64 %s2
+    store { i64, { i64, i8* } } %ra2, { i64, { i64, i8* } }* %pa2
+    %x10 = add i1 %xh1, 1
+    br i1 %x10, label %while_bodyb, label %while_endb
+
+  while_bodyb:
+    %x11 = add i64 %s2, 1
+    br label %while_startb
+
+  while_endb:
+    br label %ctd_if
+
+  ctd_if:
+    %xaaa = phi i64 [ %s2, %while_endb ], [ %s1, %while_enda ]
+    %xda = insertvalue { i64, i64 } zeroinitializer, i64 %xaaa, 0
+    %tmpa = insertvalue { i64, i64 } %xda, i64 %s, 1
+    %xea1 = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } zeroinitializer, { i64, { i64, i8* } }* %x, 0
+    %xfa1 = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xea1, { i64, i64 } %tmpa, 1
+    br label %while_startc
+
+  while_startc:
+    %xbaa = phi { { i64, { i64, i8* } }*, { i64, i64 } } [ %x18, %while_ende ], [ %xfa1, %ctd_if ]
+    %a1 = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xbaa, 0
+    %xca = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xbaa, 1
+    %a = extractvalue { i64, i64 } %xca, 0
+    %x13 = extractvalue { i64, i64 } %xca, 1
+    %x14 = icmp slt i64 %a, %x13
+    br i1 %x14, label %while_bodyc, label %while_endc
+
+  while_bodyc:
+    %a11 = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xbaa, 0
+    %xca1 = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xbaa, 1
+    %a1a = extractvalue { i64, i64 } %xca1, 0
+    %a2a = extractvalue { i64, i64 } %xca1, 1
+    %xdaa = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %a11, i64 %a1a, i64 %a2a)
+    %xka = sub i64 %a2a, 1
+    br label %while_startd
+
+  while_startd:
+    %s3 = phi i64 [ %x15, %while_bodyd ], [ %xka, %while_bodyc ]
+    %xm = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xdaa, i64 %x1
+    %r3 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xm
+    %xn = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xdaa, i64 %s3
+    %ra3 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xn
+    %xo = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r3, { i64, { i64, i8* } } %ra3)
+    %p3 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xdaa, i64 %x1
+    store { i64, { i64, i8* } } %r3, { i64, { i64, i8* } }* %p3
+    %pa3 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xdaa, i64 %s3
+    store { i64, { i64, i8* } } %ra3, { i64, { i64, i8* } }* %pa3
+    br i1 %xo, label %while_bodyd, label %while_endd
+
+  while_bodyd:
+    %x15 = sub i64 %s3, 1
+    br label %while_startd
+
+  while_endd:
+    %xla = add i64 %a1a, 1
+    br label %while_starte
+
+  while_starte:
+    %s4 = phi i64 [ %x17, %while_bodye ], [ %xla, %while_endd ]
+    %xm1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xdaa, i64 %x1
+    %r4 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xm1
+    %xn1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xdaa, i64 %s4
+    %ra4 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xn1
+    %xo1 = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r4, { i64, { i64, i8* } } %ra4)
+    %p4 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xdaa, i64 %x1
+    store { i64, { i64, i8* } } %r4, { i64, { i64, i8* } }* %p4
+    %pa4 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xdaa, i64 %s4
+    store { i64, { i64, i8* } } %ra4, { i64, { i64, i8* } }* %pa4
+    %x16 = add i1 %xo1, 1
+    br i1 %x16, label %while_bodye, label %while_ende
+
+  while_bodye:
+    %x17 = add i64 %s4, 1
+    br label %while_starte
+
+  while_ende:
+    %xgaa = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } zeroinitializer, { i64, { i64, i8* } }* %xdaa, 0
+    %xna = insertvalue { i64, i64 } zeroinitializer, i64 %s4, 0
+    %tmpba = insertvalue { i64, i64 } %xna, i64 %s3, 1
+    %x18 = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xgaa, { i64, i64 } %tmpba, 1
+    br label %while_startc
+
+  while_endc:
+    %a12 = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xbaa, 0
+    %xca2 = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xbaa, 1
+    %a1a1 = extractvalue { i64, i64 } %xca2, 0
+    %a2a1 = extractvalue { i64, i64 } %xca2, 1
+    %xdaa1 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %a12, i64 %x1, i64 %a2a1)
+    %xeaa1 = insertvalue { i1, { i64, { i64, { i64, i8* } }* } } zeroinitializer, i1 0, 0
+    %xla1 = insertvalue { i64, { i64, { i64, i8* } }* } zeroinitializer, i64 %a2a1, 0
+    %tmpba1 = insertvalue { i64, { i64, { i64, i8* } }* } %xla1, { i64, { i64, i8* } }* %xdaa1, 1
+    %x19 = insertvalue { i1, { i64, { i64, { i64, i8* } }* } } %xeaa1, { i64, { i64, { i64, i8* } }* } %tmpba1, 1
+    ret { i1, { i64, { i64, { i64, i8* } }* } } %x19
+}
+
+define i64* @Monadify_M_CONST_Sorting_Heapsort_sort_impl_context_heapify_btu_impl_LLVM_Shallow_ll_icmp_ult(i64 %x, i64 %x1, i64* %x2) {
 
   start:
     %xa = sub i64 %x1, 1
@@ -1264,7 +3751,7 @@ define i64* @Sorting_Export_Code_unat_sort_heapify_btu_impl(i64 %x, i64 %x1, i64
     %a11 = extractvalue { i64*, i64 } %xaa, 0
     %a2 = extractvalue { i64*, i64 } %xaa, 1
     %xbaa = sub i64 %a2, 1
-    %xcaa = call i64* @Sorting_Export_Code_unat_sort_sift_down_impl (i64 %x, i64 %x1, i64 %xbaa, i64* %a11)
+    %xcaa = call i64* @Monadify_M_CONST_Sorting_Heapsort_sort_impl_context_sift_down_impl_LLVM_Shallow_ll_icmp_ult (i64 %x, i64 %x1, i64 %xbaa, i64* %a11)
     %xda = insertvalue { i64*, i64 } zeroinitializer, i64* %xcaa, 0
     %x5 = insertvalue { i64*, i64 } %xda, i64 %xbaa, 1
     br label %while_start
@@ -1275,7 +3762,72 @@ define i64* @Sorting_Export_Code_unat_sort_heapify_btu_impl(i64 %x, i64 %x1, i64
     ret i64* %a12
 }
 
-define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_introsort_aux_impl({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2, i64 %x3) {
+define { i64, { i64, i8* } }* @Monadify_M_CONST_Sorting_Heapsort_sort_impl_context_heapify_btu_impl_Sorting_Strings_strcmp_impl(i64 %x, i64 %x1, { i64, { i64, i8* } }* %x2) {
+
+  start:
+    %xa = sub i64 %x1, 1
+    %xba = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %x2, 0
+    %xca = insertvalue { { i64, { i64, i8* } }*, i64 } %xba, i64 %xa, 1
+    br label %while_start
+
+  while_start:
+    %xaa = phi { { i64, { i64, i8* } }*, i64 } [ %x5, %while_body ], [ %xca, %start ]
+    %a1 = extractvalue { { i64, { i64, i8* } }*, i64 } %xaa, 0
+    %x3 = extractvalue { { i64, { i64, i8* } }*, i64 } %xaa, 1
+    %x4 = icmp slt i64 %x, %x3
+    br i1 %x4, label %while_body, label %while_end
+
+  while_body:
+    %a11 = extractvalue { { i64, { i64, i8* } }*, i64 } %xaa, 0
+    %a2 = extractvalue { { i64, { i64, i8* } }*, i64 } %xaa, 1
+    %xbaa = sub i64 %a2, 1
+    %xcaa = call { i64, { i64, i8* } }* @Monadify_M_CONST_Sorting_Heapsort_sort_impl_context_sift_down_impl_Sorting_Strings_strcmp_impl (i64 %x, i64 %x1, i64 %xbaa, { i64, { i64, i8* } }* %a11)
+    %xda = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %xcaa, 0
+    %x5 = insertvalue { { i64, { i64, i8* } }*, i64 } %xda, i64 %xbaa, 1
+    br label %while_start
+
+  while_end:
+    %a12 = extractvalue { { i64, { i64, i8* } }*, i64 } %xaa, 0
+    %a21 = extractvalue { { i64, { i64, i8* } }*, i64 } %xaa, 1
+    ret { i64, { i64, i8* } }* %a12
+}
+
+define i64* @Monadify_M_CONST_Sorting_Parsort_sort_impl_context_par_sort_aux_impl_LLVM_Shallow_ll_icmp_ult(i64* %x, i64 %x1, i64 %x2) {
+
+  start:
+    %xa = insertvalue { i64, i64 } zeroinitializer, i64 %x1, 0
+    %tmpa = insertvalue { i64, i64 } %xa, i64 %x2, 1
+    %xaa = insertvalue { i64*, { i64, i64 } } zeroinitializer, i64* %x, 0
+    %x3 = insertvalue { i64*, { i64, i64 } } %xaa, { i64, i64 } %tmpa, 1
+    %x4 = call i64* @Sorting_Export_Code_ll_icmp_ult_f_09016136 ({ i64*, { i64, i64 } } %x3)
+    ret i64* %x4
+}
+
+define { i64, { i64, i8* } }* @Monadify_M_CONST_Sorting_Parsort_sort_impl_context_par_sort_aux_impl_Sorting_Strings_strcmp_impl({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2) {
+
+  start:
+    %xa = insertvalue { i64, i64 } zeroinitializer, i64 %x1, 0
+    %tmpa = insertvalue { i64, i64 } %xa, i64 %x2, 1
+    %xaa = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } zeroinitializer, { i64, { i64, i8* } }* %x, 0
+    %x3 = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xaa, { i64, i64 } %tmpa, 1
+    %x4 = call { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_09082218 ({ { i64, { i64, i8* } }*, { i64, i64 } } %x3)
+    ret { i64, { i64, i8* } }* %x4
+}
+
+define i64* @Monadify_M_CONST_Sorting_Introsort_sort_impl_context_introsort_aux_impl_LLVM_Shallow_ll_icmp_ult(i64* %x, i64 %x1, i64 %x2, i64 %x3) {
+
+  start:
+    %xa = insertvalue { i64, i64 } zeroinitializer, i64 %x2, 0
+    %tmpa = insertvalue { i64, i64 } %xa, i64 %x3, 1
+    %xaa = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %x1, 0
+    %tmpab = insertvalue { i64, { i64, i64 } } %xaa, { i64, i64 } %tmpa, 1
+    %xba = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %x, 0
+    %x4 = insertvalue { i64*, { i64, { i64, i64 } } } %xba, { i64, { i64, i64 } } %tmpab, 1
+    %x5 = call i64* @Sorting_Export_Code_ll_icmp_ult_f_09073862 ({ i64*, { i64, { i64, i64 } } } %x4)
+    ret i64* %x5
+}
+
+define { i64, { i64, i8* } }* @Monadify_M_CONST_Sorting_Introsort_sort_impl_context_introsort_aux_impl_Sorting_Strings_strcmp_impl({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2, i64 %x3) {
 
   start:
     %xa = insertvalue { i64, i64 } zeroinitializer, i64 %x2, 0
@@ -1284,11 +3836,55 @@ define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_introsort_aux_impl({
     %tmpab = insertvalue { i64, { i64, i64 } } %xaa, { i64, i64 } %tmpa, 1
     %xba = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } zeroinitializer, { i64, { i64, i8* } }* %x, 0
     %x4 = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %xba, { i64, { i64, i64 } } %tmpab, 1
-    %x5 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_introsort_aux_impl_f_08015050 ({ { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %x4)
+    %x5 = call { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_09139148 ({ { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %x4)
     ret { i64, { i64, i8* } }* %x5
 }
 
-define { i1, i64* } @Sorting_Export_Code_unat_sort_maybe_insort_impl(i64* %x, i64 %x1, i64 %x2) {
+define i64 @Monadify_M_CONST_Sorting_Sample_Partition_sort_impl_context_sample_pivot_impl_LLVM_Shallow_ll_icmp_ult(i64* %x, i64 %x1) {
+
+  start:
+    %x2 = icmp sle i64 %x1, 64
+    br i1 %x2, label %then, label %else
+
+  then:
+    br label %ctd_if
+
+  else:
+    br label %ctd_if
+
+  ctd_if:
+    %xa = phi i64 [ 64, %else ], [ %x1, %then ]
+    %xb = call i64* @Monadify_M_CONST_Sorting_Sample_Partition_sort_impl_context_sorted_samples_impl_LLVM_Shallow_ll_icmp_ult (i64* %x, i64 %x1, i64 %xa)
+    %xc = udiv i64 %xa, 2
+    %xd = getelementptr i64, i64* %xb, i64 %xc
+    %r = load i64, i64* %xd
+    call void @LLVM_DS_NArray_narray_free (i64* %xb)
+    ret i64 %r
+}
+
+define i64 @Monadify_M_CONST_Sorting_Sample_Partition_sort_impl_context_sample_pivot_impl_Sorting_Strings_strcmp_impl({ i64, { i64, i8* } }* %x, i64 %x1) {
+
+  start:
+    %x2 = icmp sle i64 %x1, 64
+    br i1 %x2, label %then, label %else
+
+  then:
+    br label %ctd_if
+
+  else:
+    br label %ctd_if
+
+  ctd_if:
+    %xa = phi i64 [ 64, %else ], [ %x1, %then ]
+    %xb = call i64* @Monadify_M_CONST_Sorting_Sample_Partition_sort_impl_context_sorted_samples_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %x, i64 %x1, i64 %xa)
+    %xc = udiv i64 %xa, 2
+    %xd = getelementptr i64, i64* %xb, i64 %xc
+    %r = load i64, i64* %xd
+    call void @LLVM_DS_NArray_narray_free (i64* %xb)
+    ret i64 %r
+}
+
+define { i1, i64* } @Monadify_M_CONST_Sorting_Pdq_Insertion_Sort_sort_impl_context_maybe_insort_impl_LLVM_Shallow_ll_icmp_ult(i64* %x, i64 %x1, i64 %x2) {
 
   start:
     %x3 = icmp ne i64 %x1, %x2
@@ -1297,41 +3893,41 @@ define { i1, i64* } @Sorting_Export_Code_unat_sort_maybe_insort_impl(i64* %x, i6
   then:
     %xaa = add i64 %x1, 1
     %xba = add i64 8, 1
-    %xc = insertvalue { i64, i64* } zeroinitializer, i64 %xba, 0
-    %tmpa = insertvalue { i64, i64* } %xc, i64* %x, 1
-    %xd = insertvalue { i64, { i64, i64* } } zeroinitializer, i64 %xaa, 0
-    %xe = insertvalue { i64, { i64, i64* } } %xd, { i64, i64* } %tmpa, 1
+    %xca = insertvalue { i64, i64* } zeroinitializer, i64 %xba, 0
+    %tmpaa = insertvalue { i64, i64* } %xca, i64* %x, 1
+    %xda = insertvalue { i64, { i64, i64* } } zeroinitializer, i64 %xaa, 0
+    %xea = insertvalue { i64, { i64, i64* } } %xda, { i64, i64* } %tmpaa, 1
     br label %while_start
 
   while_start:
-    %xca = phi { i64, { i64, i64* } } [ %x11, %ctd_ifd ], [ %xe, %then ]
-    %a1 = extractvalue { i64, { i64, i64* } } %xca, 0
-    %xda = extractvalue { i64, { i64, i64* } } %xca, 1
-    %a1a = extractvalue { i64, i64* } %xda, 0
-    %a2a = extractvalue { i64, i64* } %xda, 1
-    %xea = icmp slt i64 %a1, %x2
+    %xcaa = phi { i64, { i64, i64* } } [ %x11, %ctd_ifd ], [ %xea, %then ]
+    %a1 = extractvalue { i64, { i64, i64* } } %xcaa, 0
+    %xdaa = extractvalue { i64, { i64, i64* } } %xcaa, 1
+    %a1a = extractvalue { i64, i64* } %xdaa, 0
+    %a2a = extractvalue { i64, i64* } %xdaa, 1
+    %xeaa = icmp slt i64 %a1, %x2
     %x4 = icmp slt i64 0, %a1a
-    %x5 = and i1 %xea, %x4
+    %x5 = and i1 %xeaa, %x4
     br i1 %x5, label %while_body, label %while_end
 
   while_body:
-    %a11 = extractvalue { i64, { i64, i64* } } %xca, 0
-    %xda1 = extractvalue { i64, { i64, i64* } } %xca, 1
-    %a1a1 = extractvalue { i64, i64* } %xda1, 0
-    %a2a1 = extractvalue { i64, i64* } %xda1, 1
-    %xea1 = icmp slt i64 %x1, %a11
-    br i1 %xea1, label %thena, label %elsea
+    %a11 = extractvalue { i64, { i64, i64* } } %xcaa, 0
+    %xdaa1 = extractvalue { i64, { i64, i64* } } %xcaa, 1
+    %a1a1 = extractvalue { i64, i64* } %xdaa1, 0
+    %a2a1 = extractvalue { i64, i64* } %xdaa1, 1
+    %xj = icmp slt i64 %x1, %a11
+    br i1 %xj, label %thena, label %elsea
 
   thena:
-    %bib = sub i64 %a11, 1
-    %xfa = getelementptr i64, i64* %a2a1, i64 %a11
-    %r = load i64, i64* %xfa
-    %xga = getelementptr i64, i64* %a2a1, i64 %bib
-    %ra = load i64, i64* %xga
-    %xha = icmp ult i64 %r, %ra
+    %xka = sub i64 %a11, 1
+    %xl = getelementptr i64, i64* %a2a1, i64 %a11
+    %r = load i64, i64* %xl
+    %xm = getelementptr i64, i64* %a2a1, i64 %xka
+    %ra = load i64, i64* %xm
+    %xn = icmp ult i64 %r, %ra
     %p = getelementptr i64, i64* %a2a1, i64 %a11
     store i64 %r, i64* %p
-    %pa = getelementptr i64, i64* %a2a1, i64 %bib
+    %pa = getelementptr i64, i64* %a2a1, i64 %xka
     store i64 %ra, i64* %pa
     br label %ctd_ifa
 
@@ -1339,35 +3935,35 @@ define { i1, i64* } @Sorting_Export_Code_unat_sort_maybe_insort_impl(i64* %x, i6
     br label %ctd_ifa
 
   ctd_ifa:
-    %xfa1 = phi i1 [ 0, %elsea ], [ %xha, %thena ]
-    br i1 %xfa1, label %thenb, label %elseb
+    %xk = phi i1 [ 0, %elsea ], [ %xn, %thena ]
+    br i1 %xk, label %thenb, label %elseb
 
   thenb:
-    %xga1 = getelementptr i64, i64* %a2a1, i64 %a11
-    %r1 = load i64, i64* %xga1
-    %xha1 = sub i64 %a11, 1
-    %xia = getelementptr i64, i64* %a2a1, i64 %xha1
-    %ra1 = load i64, i64* %xia
+    %xl1 = getelementptr i64, i64* %a2a1, i64 %a11
+    %r1 = load i64, i64* %xl1
+    %xma = sub i64 %a11, 1
+    %xn1 = getelementptr i64, i64* %a2a1, i64 %xma
+    %ra1 = load i64, i64* %xn1
     %p1 = getelementptr i64, i64* %a2a1, i64 %a11
     store i64 %ra1, i64* %p1
-    %xka = sub i64 %a11, 1
-    %xl = insertvalue { i64*, i64 } zeroinitializer, i64* %a2a1, 0
-    %xm = insertvalue { i64*, i64 } %xl, i64 %xka, 1
+    %xpa = sub i64 %a11, 1
+    %xq = insertvalue { i64*, i64 } zeroinitializer, i64* %a2a1, 0
+    %xr = insertvalue { i64*, i64 } %xq, i64 %xpa, 1
     br label %while_starta
 
   while_starta:
-    %xla = phi { i64*, i64 } [ %x7, %while_bodya ], [ %xm, %thenb ]
-    %a1b = extractvalue { i64*, i64 } %xla, 0
-    %a2b = extractvalue { i64*, i64 } %xla, 1
-    %xma = icmp slt i64 %x1, %a2b
-    br i1 %xma, label %thenc, label %elsec
+    %xqa = phi { i64*, i64 } [ %x7, %while_bodya ], [ %xr, %thenb ]
+    %a1b = extractvalue { i64*, i64 } %xqa, 0
+    %a2b = extractvalue { i64*, i64 } %xqa, 1
+    %xra = icmp slt i64 %x1, %a2b
+    br i1 %xra, label %thenc, label %elsec
 
   thenc:
-    %bib1 = sub i64 %a2b, 1
-    %xna = getelementptr i64, i64* %a1b, i64 %bib1
-    %rb = load i64, i64* %xna
-    %xoa = icmp ult i64 %r1, %rb
-    %pa1 = getelementptr i64, i64* %a1b, i64 %bib1
+    %xsa = sub i64 %a2b, 1
+    %xv = getelementptr i64, i64* %a1b, i64 %xsa
+    %rb = load i64, i64* %xv
+    %xw = icmp ult i64 %r1, %rb
+    %pa1 = getelementptr i64, i64* %a1b, i64 %xsa
     store i64 %rb, i64* %pa1
     br label %ctd_ifc
 
@@ -1375,44 +3971,44 @@ define { i1, i64* } @Sorting_Export_Code_unat_sort_maybe_insort_impl(i64* %x, i6
     br label %ctd_ifc
 
   ctd_ifc:
-    %x6 = phi i1 [ 0, %elsec ], [ %xoa, %thenc ]
+    %x6 = phi i1 [ 0, %elsec ], [ %xw, %thenc ]
     br i1 %x6, label %while_bodya, label %while_enda
 
   while_bodya:
-    %a1b1 = extractvalue { i64*, i64 } %xla, 0
-    %a2b1 = extractvalue { i64*, i64 } %xla, 1
-    %xma1 = sub i64 %a2b1, 1
-    %xna1 = getelementptr i64, i64* %a1b1, i64 %xma1
-    %rb1 = load i64, i64* %xna1
+    %a1b1 = extractvalue { i64*, i64 } %xqa, 0
+    %a2b1 = extractvalue { i64*, i64 } %xqa, 1
+    %xra1 = sub i64 %a2b1, 1
+    %xsa1 = getelementptr i64, i64* %a1b1, i64 %xra1
+    %rb1 = load i64, i64* %xsa1
     %pa2 = getelementptr i64, i64* %a1b1, i64 %a2b1
     store i64 %rb1, i64* %pa2
-    %xpa = sub i64 %a2b1, 1
-    %xqa = insertvalue { i64*, i64 } zeroinitializer, i64* %a1b1, 0
-    %x7 = insertvalue { i64*, i64 } %xqa, i64 %xpa, 1
+    %xua = sub i64 %a2b1, 1
+    %xva = insertvalue { i64*, i64 } zeroinitializer, i64* %a1b1, 0
+    %x7 = insertvalue { i64*, i64 } %xva, i64 %xua, 1
     br label %while_starta
 
   while_enda:
-    %a1b2 = extractvalue { i64*, i64 } %xla, 0
-    %a2b2 = extractvalue { i64*, i64 } %xla, 1
+    %a1b2 = extractvalue { i64*, i64 } %xqa, 0
+    %a2b2 = extractvalue { i64*, i64 } %xqa, 1
     %pa3 = getelementptr i64, i64* %a1b2, i64 %a2b2
     store i64 %r1, i64* %pa3
-    %xna2 = sub i64 %a11, %a2b2
-    %xoa1 = insertvalue { i64, i64* } zeroinitializer, i64 %xna2, 0
-    %x8 = insertvalue { i64, i64* } %xoa1, i64* %a1b2, 1
+    %xsa2 = sub i64 %a11, %a2b2
+    %xta = insertvalue { i64, i64* } zeroinitializer, i64 %xsa2, 0
+    %x8 = insertvalue { i64, i64* } %xta, i64* %a1b2, 1
     br label %ctd_ifb
 
   elseb:
-    %xga2 = insertvalue { i64, i64* } zeroinitializer, i64 0, 0
-    %x9 = insertvalue { i64, i64* } %xga2, i64* %a2a1, 1
+    %xla = insertvalue { i64, i64* } zeroinitializer, i64 0, 0
+    %x9 = insertvalue { i64, i64* } %xla, i64* %a2a1, 1
     br label %ctd_ifb
 
   ctd_ifb:
-    %xga3 = phi { i64, i64* } [ %x9, %elseb ], [ %x8, %while_enda ]
-    %a1b3 = extractvalue { i64, i64* } %xga3, 0
-    %a2b3 = extractvalue { i64, i64* } %xga3, 1
-    %xha2 = add i64 %a11, 1
-    %xia1 = icmp slt i64 %a1b3, %a1a1
-    br i1 %xia1, label %thend, label %elsed
+    %xeaa1 = phi { i64, i64* } [ %x9, %elseb ], [ %x8, %while_enda ]
+    %a1b3 = extractvalue { i64, i64* } %xeaa1, 0
+    %a2b3 = extractvalue { i64, i64* } %xeaa1, 1
+    %xfaa = add i64 %a11, 1
+    %xga = icmp slt i64 %a1b3, %a1a1
+    br i1 %xga, label %thend, label %elsed
 
   thend:
     %x10 = sub i64 %a1a1, %a1b3
@@ -1422,21 +4018,21 @@ define { i1, i64* } @Sorting_Export_Code_unat_sort_maybe_insort_impl(i64* %x, i6
     br label %ctd_ifd
 
   ctd_ifd:
-    %xja = phi i64 [ 0, %elsed ], [ %x10, %thend ]
-    %xka1 = insertvalue { i64, { i64, i64* } } zeroinitializer, i64 %xha2, 0
-    %xn = insertvalue { i64, i64* } zeroinitializer, i64 %xja, 0
-    %tmpc = insertvalue { i64, i64* } %xn, i64* %a2b3, 1
-    %x11 = insertvalue { i64, { i64, i64* } } %xka1, { i64, i64* } %tmpc, 1
+    %xha = phi i64 [ 0, %elsed ], [ %x10, %thend ]
+    %xia = insertvalue { i64, { i64, i64* } } zeroinitializer, i64 %xfaa, 0
+    %xpa1 = insertvalue { i64, i64* } zeroinitializer, i64 %xha, 0
+    %tmpca = insertvalue { i64, i64* } %xpa1, i64* %a2b3, 1
+    %x11 = insertvalue { i64, { i64, i64* } } %xia, { i64, i64* } %tmpca, 1
     br label %while_start
 
   while_end:
-    %a12 = extractvalue { i64, { i64, i64* } } %xca, 0
-    %xda2 = extractvalue { i64, { i64, i64* } } %xca, 1
-    %a1a2 = extractvalue { i64, i64* } %xda2, 0
-    %a2a2 = extractvalue { i64, i64* } %xda2, 1
-    %xea2 = icmp eq i64 %a12, %x2
-    %xfa2 = insertvalue { i1, i64* } zeroinitializer, i1 %xea2, 0
-    %x12 = insertvalue { i1, i64* } %xfa2, i64* %a2a2, 1
+    %a12 = extractvalue { i64, { i64, i64* } } %xcaa, 0
+    %xdaa2 = extractvalue { i64, { i64, i64* } } %xcaa, 1
+    %a1a2 = extractvalue { i64, i64* } %xdaa2, 0
+    %a2a2 = extractvalue { i64, i64* } %xdaa2, 1
+    %xeaa2 = icmp eq i64 %a12, %x2
+    %xfaa1 = insertvalue { i1, i64* } zeroinitializer, i1 %xeaa2, 0
+    %x12 = insertvalue { i1, i64* } %xfaa1, i64* %a2a2, 1
     br label %ctd_if
 
   else:
@@ -1449,7 +4045,344 @@ define { i1, i64* } @Sorting_Export_Code_unat_sort_maybe_insort_impl(i64* %x, i6
     ret { i1, i64* } %x14
 }
 
-define { i64*, i64 } @Sorting_Export_Code_unat_sort_qs_partition_impl(i64 %x, i64 %x1, i64 %x2, i64* %x3) {
+define { i1, { i64, { i64, i8* } }* } @Monadify_M_CONST_Sorting_Pdq_Insertion_Sort_sort_impl_context_maybe_insort_impl_Sorting_Strings_strcmp_impl({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2) {
+
+  start:
+    %x3 = icmp ne i64 %x1, %x2
+    br i1 %x3, label %then, label %else
+
+  then:
+    %xaa = add i64 %x1, 1
+    %xba = add i64 8, 1
+    %xca = insertvalue { i64, { i64, { i64, i8* } }* } zeroinitializer, i64 %xba, 0
+    %tmpaa = insertvalue { i64, { i64, { i64, i8* } }* } %xca, { i64, { i64, i8* } }* %x, 1
+    %xda = insertvalue { i64, { i64, { i64, { i64, i8* } }* } } zeroinitializer, i64 %xaa, 0
+    %xea = insertvalue { i64, { i64, { i64, { i64, i8* } }* } } %xda, { i64, { i64, { i64, i8* } }* } %tmpaa, 1
+    br label %while_start
+
+  while_start:
+    %xcaa = phi { i64, { i64, { i64, { i64, i8* } }* } } [ %x11, %ctd_ifd ], [ %xea, %then ]
+    %a1 = extractvalue { i64, { i64, { i64, { i64, i8* } }* } } %xcaa, 0
+    %xdaa = extractvalue { i64, { i64, { i64, { i64, i8* } }* } } %xcaa, 1
+    %a1a = extractvalue { i64, { i64, { i64, i8* } }* } %xdaa, 0
+    %a2a = extractvalue { i64, { i64, { i64, i8* } }* } %xdaa, 1
+    %xeaa = icmp slt i64 %a1, %x2
+    %x4 = icmp slt i64 0, %a1a
+    %x5 = and i1 %xeaa, %x4
+    br i1 %x5, label %while_body, label %while_end
+
+  while_body:
+    %a11 = extractvalue { i64, { i64, { i64, { i64, i8* } }* } } %xcaa, 0
+    %xdaa1 = extractvalue { i64, { i64, { i64, { i64, i8* } }* } } %xcaa, 1
+    %a1a1 = extractvalue { i64, { i64, { i64, i8* } }* } %xdaa1, 0
+    %a2a1 = extractvalue { i64, { i64, { i64, i8* } }* } %xdaa1, 1
+    %xj = icmp slt i64 %x1, %a11
+    br i1 %xj, label %thena, label %elsea
+
+  thena:
+    %xka = sub i64 %a11, 1
+    %xl = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a2a1, i64 %a11
+    %r = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xl
+    %xm = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a2a1, i64 %xka
+    %ra = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xm
+    %xn = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r, { i64, { i64, i8* } } %ra)
+    %p = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a2a1, i64 %a11
+    store { i64, { i64, i8* } } %r, { i64, { i64, i8* } }* %p
+    %pa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a2a1, i64 %xka
+    store { i64, { i64, i8* } } %ra, { i64, { i64, i8* } }* %pa
+    br label %ctd_ifa
+
+  elsea:
+    br label %ctd_ifa
+
+  ctd_ifa:
+    %xk = phi i1 [ 0, %elsea ], [ %xn, %thena ]
+    br i1 %xk, label %thenb, label %elseb
+
+  thenb:
+    %xl1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a2a1, i64 %a11
+    %r1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xl1
+    %xma = sub i64 %a11, 1
+    %xn1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a2a1, i64 %xma
+    %ra1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xn1
+    %p1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a2a1, i64 %a11
+    store { i64, { i64, i8* } } %ra1, { i64, { i64, i8* } }* %p1
+    %xpa = sub i64 %a11, 1
+    %xq = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %a2a1, 0
+    %xr = insertvalue { { i64, { i64, i8* } }*, i64 } %xq, i64 %xpa, 1
+    br label %while_starta
+
+  while_starta:
+    %xqa = phi { { i64, { i64, i8* } }*, i64 } [ %x7, %while_bodya ], [ %xr, %thenb ]
+    %a1b = extractvalue { { i64, { i64, i8* } }*, i64 } %xqa, 0
+    %a2b = extractvalue { { i64, { i64, i8* } }*, i64 } %xqa, 1
+    %xra = icmp slt i64 %x1, %a2b
+    br i1 %xra, label %thenc, label %elsec
+
+  thenc:
+    %xsa = sub i64 %a2b, 1
+    %xv = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b, i64 %xsa
+    %rb = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xv
+    %xw = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r1, { i64, { i64, i8* } } %rb)
+    %pa1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b, i64 %xsa
+    store { i64, { i64, i8* } } %rb, { i64, { i64, i8* } }* %pa1
+    br label %ctd_ifc
+
+  elsec:
+    br label %ctd_ifc
+
+  ctd_ifc:
+    %x6 = phi i1 [ 0, %elsec ], [ %xw, %thenc ]
+    br i1 %x6, label %while_bodya, label %while_enda
+
+  while_bodya:
+    %a1b1 = extractvalue { { i64, { i64, i8* } }*, i64 } %xqa, 0
+    %a2b1 = extractvalue { { i64, { i64, i8* } }*, i64 } %xqa, 1
+    %xra1 = sub i64 %a2b1, 1
+    %xsa1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b1, i64 %xra1
+    %rb1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xsa1
+    %pa2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b1, i64 %a2b1
+    store { i64, { i64, i8* } } %rb1, { i64, { i64, i8* } }* %pa2
+    %xua = sub i64 %a2b1, 1
+    %xva = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %a1b1, 0
+    %x7 = insertvalue { { i64, { i64, i8* } }*, i64 } %xva, i64 %xua, 1
+    br label %while_starta
+
+  while_enda:
+    %a1b2 = extractvalue { { i64, { i64, i8* } }*, i64 } %xqa, 0
+    %a2b2 = extractvalue { { i64, { i64, i8* } }*, i64 } %xqa, 1
+    %pa3 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b2, i64 %a2b2
+    store { i64, { i64, i8* } } %r1, { i64, { i64, i8* } }* %pa3
+    %xsa2 = sub i64 %a11, %a2b2
+    %xta = insertvalue { i64, { i64, { i64, i8* } }* } zeroinitializer, i64 %xsa2, 0
+    %x8 = insertvalue { i64, { i64, { i64, i8* } }* } %xta, { i64, { i64, i8* } }* %a1b2, 1
+    br label %ctd_ifb
+
+  elseb:
+    %xla = insertvalue { i64, { i64, { i64, i8* } }* } zeroinitializer, i64 0, 0
+    %x9 = insertvalue { i64, { i64, { i64, i8* } }* } %xla, { i64, { i64, i8* } }* %a2a1, 1
+    br label %ctd_ifb
+
+  ctd_ifb:
+    %xeaa1 = phi { i64, { i64, { i64, i8* } }* } [ %x9, %elseb ], [ %x8, %while_enda ]
+    %a1b3 = extractvalue { i64, { i64, { i64, i8* } }* } %xeaa1, 0
+    %a2b3 = extractvalue { i64, { i64, { i64, i8* } }* } %xeaa1, 1
+    %xfaa = add i64 %a11, 1
+    %xga = icmp slt i64 %a1b3, %a1a1
+    br i1 %xga, label %thend, label %elsed
+
+  thend:
+    %x10 = sub i64 %a1a1, %a1b3
+    br label %ctd_ifd
+
+  elsed:
+    br label %ctd_ifd
+
+  ctd_ifd:
+    %xha = phi i64 [ 0, %elsed ], [ %x10, %thend ]
+    %xia = insertvalue { i64, { i64, { i64, { i64, i8* } }* } } zeroinitializer, i64 %xfaa, 0
+    %xpa1 = insertvalue { i64, { i64, { i64, i8* } }* } zeroinitializer, i64 %xha, 0
+    %tmpca = insertvalue { i64, { i64, { i64, i8* } }* } %xpa1, { i64, { i64, i8* } }* %a2b3, 1
+    %x11 = insertvalue { i64, { i64, { i64, { i64, i8* } }* } } %xia, { i64, { i64, { i64, i8* } }* } %tmpca, 1
+    br label %while_start
+
+  while_end:
+    %a12 = extractvalue { i64, { i64, { i64, { i64, i8* } }* } } %xcaa, 0
+    %xdaa2 = extractvalue { i64, { i64, { i64, { i64, i8* } }* } } %xcaa, 1
+    %a1a2 = extractvalue { i64, { i64, { i64, i8* } }* } %xdaa2, 0
+    %a2a2 = extractvalue { i64, { i64, { i64, i8* } }* } %xdaa2, 1
+    %xeaa2 = icmp eq i64 %a12, %x2
+    %xfaa1 = insertvalue { i1, { i64, { i64, i8* } }* } zeroinitializer, i1 %xeaa2, 0
+    %x12 = insertvalue { i1, { i64, { i64, i8* } }* } %xfaa1, { i64, { i64, i8* } }* %a2a2, 1
+    br label %ctd_if
+
+  else:
+    %xaa1 = insertvalue { i1, { i64, { i64, i8* } }* } zeroinitializer, i1 1, 0
+    %x13 = insertvalue { i1, { i64, { i64, i8* } }* } %xaa1, { i64, { i64, i8* } }* %x, 1
+    br label %ctd_if
+
+  ctd_if:
+    %x14 = phi { i1, { i64, { i64, i8* } }* } [ %x13, %else ], [ %x12, %while_end ]
+    ret { i1, { i64, { i64, i8* } }* } %x14
+}
+
+define i64* @Monadify_M_CONST_Sorting_Sample_Partition_sort_impl_context_sorted_samples_impl_LLVM_Shallow_ll_icmp_ult(i64* %x, i64 %x1, i64 %x2) {
+
+  start:
+    %tmp = icmp eq i64 %x2, 0
+    br i1 %tmp, label %then, label %else
+
+  then:
+    br label %ctd_if
+
+  else:
+    %t = getelementptr i64, i64* null, i64 1
+    %a = ptrtoint i64* %t to i64
+    %b = call i8* @isabelle_llvm_calloc (i64 %x2, i64 %a)
+    %x3 = bitcast i8* %b to i64*
+    br label %ctd_if
+
+  ctd_if:
+    %xa = phi i64* [ %x3, %else ], [ null, %then ]
+    %xaa = udiv i64 %x1, %x2
+    %xb = urem i64 %x1, %x2
+    %xca = insertvalue { i64, i64* } zeroinitializer, i64 %xb, 0
+    %tmpba = insertvalue { i64, i64* } %xca, i64* %xa, 1
+    %xda = insertvalue { i64, { i64, i64* } } zeroinitializer, i64 0, 0
+    %tmpab = insertvalue { i64, { i64, i64* } } %xda, { i64, i64* } %tmpba, 1
+    %xea = insertvalue { i64, { i64, { i64, i64* } } } zeroinitializer, i64 0, 0
+    %xfa = insertvalue { i64, { i64, { i64, i64* } } } %xea, { i64, { i64, i64* } } %tmpab, 1
+    br label %while_start
+
+  while_start:
+    %xcaa = phi { i64, { i64, { i64, i64* } } } [ %x7, %ctd_ifa ], [ %xfa, %ctd_if ]
+    %a1 = extractvalue { i64, { i64, { i64, i64* } } } %xcaa, 0
+    %xdaa = extractvalue { i64, { i64, { i64, i64* } } } %xcaa, 1
+    %a1a = extractvalue { i64, { i64, i64* } } %xdaa, 0
+    %xeaa = extractvalue { i64, { i64, i64* } } %xdaa, 1
+    %a1b = extractvalue { i64, i64* } %xeaa, 0
+    %a2b = extractvalue { i64, i64* } %xeaa, 1
+    %x4 = icmp slt i64 %a1, %x2
+    br i1 %x4, label %while_body, label %while_end
+
+  while_body:
+    %a11 = extractvalue { i64, { i64, { i64, i64* } } } %xcaa, 0
+    %xdaa1 = extractvalue { i64, { i64, { i64, i64* } } } %xcaa, 1
+    %a1a1 = extractvalue { i64, { i64, i64* } } %xdaa1, 0
+    %xeaa1 = extractvalue { i64, { i64, i64* } } %xdaa1, 1
+    %a1b1 = extractvalue { i64, i64* } %xeaa1, 0
+    %a2b1 = extractvalue { i64, i64* } %xeaa1, 1
+    %p = getelementptr i64, i64* %a2b1, i64 %a11
+    store i64 %a1a1, i64* %p
+    %xgaa = add i64 %a11, 1
+    %xhaa = add i64 %a1a1, %xaa
+    %xia = icmp slt i64 0, %a1b1
+    br i1 %xia, label %thena, label %elsea
+
+  thena:
+    %xja = add i64 %xhaa, 1
+    %xka = sub i64 %a1b1, 1
+    %xla = insertvalue { i64, i64 } zeroinitializer, i64 %xja, 0
+    %x5 = insertvalue { i64, i64 } %xla, i64 %xka, 1
+    br label %ctd_ifa
+
+  elsea:
+    %xja1 = insertvalue { i64, i64 } zeroinitializer, i64 %xhaa, 0
+    %x6 = insertvalue { i64, i64 } %xja1, i64 %a1b1, 1
+    br label %ctd_ifa
+
+  ctd_ifa:
+    %xja2 = phi { i64, i64 } [ %x6, %elsea ], [ %x5, %thena ]
+    %a1c = extractvalue { i64, i64 } %xja2, 0
+    %a2c = extractvalue { i64, i64 } %xja2, 1
+    %xka1 = insertvalue { i64, { i64, { i64, i64* } } } zeroinitializer, i64 %xgaa, 0
+    %xqa = insertvalue { i64, i64* } zeroinitializer, i64 %a2c, 0
+    %tmpea = insertvalue { i64, i64* } %xqa, i64* %a2b1, 1
+    %xra = insertvalue { i64, { i64, i64* } } zeroinitializer, i64 %a1c, 0
+    %tmpfa = insertvalue { i64, { i64, i64* } } %xra, { i64, i64* } %tmpea, 1
+    %x7 = insertvalue { i64, { i64, { i64, i64* } } } %xka1, { i64, { i64, i64* } } %tmpfa, 1
+    br label %while_start
+
+  while_end:
+    %a12 = extractvalue { i64, { i64, { i64, i64* } } } %xcaa, 0
+    %xdaa2 = extractvalue { i64, { i64, { i64, i64* } } } %xcaa, 1
+    %a1a2 = extractvalue { i64, { i64, i64* } } %xdaa2, 0
+    %xeaa2 = extractvalue { i64, { i64, i64* } } %xdaa2, 1
+    %a1b2 = extractvalue { i64, i64* } %xeaa2, 0
+    %xfaa = extractvalue { i64, i64* } %xeaa2, 1
+    %x8 = call i64* @Monadify_M_CONST_Sorting_Introsort_parameterized_sort_impl_context_introsort_param_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult (i64* %x, i64* %xfaa, i64 0, i64 %x2)
+    ret i64* %x8
+}
+
+define i64* @Monadify_M_CONST_Sorting_Sample_Partition_sort_impl_context_sorted_samples_impl_Sorting_Strings_strcmp_impl({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2) {
+
+  start:
+    %tmp = icmp eq i64 %x2, 0
+    br i1 %tmp, label %then, label %else
+
+  then:
+    br label %ctd_if
+
+  else:
+    %t = getelementptr i64, i64* null, i64 1
+    %a = ptrtoint i64* %t to i64
+    %b = call i8* @isabelle_llvm_calloc (i64 %x2, i64 %a)
+    %x3 = bitcast i8* %b to i64*
+    br label %ctd_if
+
+  ctd_if:
+    %xa = phi i64* [ %x3, %else ], [ null, %then ]
+    %xaa = udiv i64 %x1, %x2
+    %xb = urem i64 %x1, %x2
+    %xca = insertvalue { i64, i64* } zeroinitializer, i64 %xb, 0
+    %tmpba = insertvalue { i64, i64* } %xca, i64* %xa, 1
+    %xda = insertvalue { i64, { i64, i64* } } zeroinitializer, i64 0, 0
+    %tmpab = insertvalue { i64, { i64, i64* } } %xda, { i64, i64* } %tmpba, 1
+    %xea = insertvalue { i64, { i64, { i64, i64* } } } zeroinitializer, i64 0, 0
+    %xfa = insertvalue { i64, { i64, { i64, i64* } } } %xea, { i64, { i64, i64* } } %tmpab, 1
+    br label %while_start
+
+  while_start:
+    %xcaa = phi { i64, { i64, { i64, i64* } } } [ %x7, %ctd_ifa ], [ %xfa, %ctd_if ]
+    %a1 = extractvalue { i64, { i64, { i64, i64* } } } %xcaa, 0
+    %xdaa = extractvalue { i64, { i64, { i64, i64* } } } %xcaa, 1
+    %a1a = extractvalue { i64, { i64, i64* } } %xdaa, 0
+    %xeaa = extractvalue { i64, { i64, i64* } } %xdaa, 1
+    %a1b = extractvalue { i64, i64* } %xeaa, 0
+    %a2b = extractvalue { i64, i64* } %xeaa, 1
+    %x4 = icmp slt i64 %a1, %x2
+    br i1 %x4, label %while_body, label %while_end
+
+  while_body:
+    %a11 = extractvalue { i64, { i64, { i64, i64* } } } %xcaa, 0
+    %xdaa1 = extractvalue { i64, { i64, { i64, i64* } } } %xcaa, 1
+    %a1a1 = extractvalue { i64, { i64, i64* } } %xdaa1, 0
+    %xeaa1 = extractvalue { i64, { i64, i64* } } %xdaa1, 1
+    %a1b1 = extractvalue { i64, i64* } %xeaa1, 0
+    %a2b1 = extractvalue { i64, i64* } %xeaa1, 1
+    %p = getelementptr i64, i64* %a2b1, i64 %a11
+    store i64 %a1a1, i64* %p
+    %xgaa = add i64 %a11, 1
+    %xhaa = add i64 %a1a1, %xaa
+    %xia = icmp slt i64 0, %a1b1
+    br i1 %xia, label %thena, label %elsea
+
+  thena:
+    %xja = add i64 %xhaa, 1
+    %xka = sub i64 %a1b1, 1
+    %xla = insertvalue { i64, i64 } zeroinitializer, i64 %xja, 0
+    %x5 = insertvalue { i64, i64 } %xla, i64 %xka, 1
+    br label %ctd_ifa
+
+  elsea:
+    %xja1 = insertvalue { i64, i64 } zeroinitializer, i64 %xhaa, 0
+    %x6 = insertvalue { i64, i64 } %xja1, i64 %a1b1, 1
+    br label %ctd_ifa
+
+  ctd_ifa:
+    %xja2 = phi { i64, i64 } [ %x6, %elsea ], [ %x5, %thena ]
+    %a1c = extractvalue { i64, i64 } %xja2, 0
+    %a2c = extractvalue { i64, i64 } %xja2, 1
+    %xka1 = insertvalue { i64, { i64, { i64, i64* } } } zeroinitializer, i64 %xgaa, 0
+    %xqa = insertvalue { i64, i64* } zeroinitializer, i64 %a2c, 0
+    %tmpea = insertvalue { i64, i64* } %xqa, i64* %a2b1, 1
+    %xra = insertvalue { i64, { i64, i64* } } zeroinitializer, i64 %a1c, 0
+    %tmpfa = insertvalue { i64, { i64, i64* } } %xra, { i64, i64* } %tmpea, 1
+    %x7 = insertvalue { i64, { i64, { i64, i64* } } } %xka1, { i64, { i64, i64* } } %tmpfa, 1
+    br label %while_start
+
+  while_end:
+    %a12 = extractvalue { i64, { i64, { i64, i64* } } } %xcaa, 0
+    %xdaa2 = extractvalue { i64, { i64, { i64, i64* } } } %xcaa, 1
+    %a1a2 = extractvalue { i64, { i64, i64* } } %xdaa2, 0
+    %xeaa2 = extractvalue { i64, { i64, i64* } } %xdaa2, 1
+    %a1b2 = extractvalue { i64, i64* } %xeaa2, 0
+    %xfaa = extractvalue { i64, i64* } %xeaa2, 1
+    %x8 = call i64* @Monadify_M_CONST_Sorting_Introsort_parameterized_sort_impl_context_introsort_param_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %x, i64* %xfaa, i64 0, i64 %x2)
+    ret i64* %x8
+}
+
+define { i64*, i64 } @Monadify_M_CONST_Sorting_Quicksort_Partition_sort_impl_context_qs_partition_impl_LLVM_Shallow_ll_icmp_ult(i64 %x, i64 %x1, i64 %x2, i64* %x3) {
 
   start:
     br label %while_start
@@ -1477,518 +4410,225 @@ define { i64*, i64 } @Sorting_Export_Code_unat_sort_qs_partition_impl(i64 %x, i6
 
   while_starta:
     %s1 = phi i64 [ %x7, %while_bodya ], [ %xaa, %while_end ]
-    %xb1 = getelementptr i64, i64* %x3, i64 %x2
-    %r1 = load i64, i64* %xb1
-    %xc = getelementptr i64, i64* %x3, i64 %s1
-    %ra1 = load i64, i64* %xc
-    %xd = icmp ult i64 %r1, %ra1
+    %xc = getelementptr i64, i64* %x3, i64 %x2
+    %r1 = load i64, i64* %xc
+    %xd = getelementptr i64, i64* %x3, i64 %s1
+    %ra1 = load i64, i64* %xd
+    %xe = icmp ult i64 %r1, %ra1
     %p1 = getelementptr i64, i64* %x3, i64 %x2
     store i64 %r1, i64* %p1
     %pa1 = getelementptr i64, i64* %x3, i64 %s1
     store i64 %ra1, i64* %pa1
-    br i1 %xd, label %while_bodya, label %while_enda
+    br i1 %xe, label %while_bodya, label %while_enda
 
   while_bodya:
     %x7 = sub i64 %s1, 1
     br label %while_starta
 
   while_enda:
-    %xca = insertvalue { i64, i64 } zeroinitializer, i64 %s, 0
-    %tmpa = insertvalue { i64, i64 } %xca, i64 %s1, 1
-    %xda = insertvalue { i64*, { i64, i64 } } zeroinitializer, i64* %x3, 0
-    %xea = insertvalue { i64*, { i64, i64 } } %xda, { i64, i64 } %tmpa, 1
+    %xba = insertvalue { i64, i64 } zeroinitializer, i64 %s, 0
+    %tmpa = insertvalue { i64, i64 } %xba, i64 %s1, 1
+    %xca = insertvalue { i64*, { i64, i64 } } zeroinitializer, i64* %x3, 0
+    %xda = insertvalue { i64*, { i64, i64 } } %xca, { i64, i64 } %tmpa, 1
     br label %while_startb
 
   while_startb:
-    %xcaa = phi { i64*, { i64, i64 } } [ %x12, %while_endd ], [ %xea, %while_enda ]
-    %a1 = extractvalue { i64*, { i64, i64 } } %xcaa, 0
-    %xdaa = extractvalue { i64*, { i64, i64 } } %xcaa, 1
-    %a = extractvalue { i64, i64 } %xdaa, 0
-    %x8 = extractvalue { i64, i64 } %xdaa, 1
+    %xbaa = phi { i64*, { i64, i64 } } [ %x12, %while_endd ], [ %xda, %while_enda ]
+    %a1 = extractvalue { i64*, { i64, i64 } } %xbaa, 0
+    %xcaa = extractvalue { i64*, { i64, i64 } } %xbaa, 1
+    %a = extractvalue { i64, i64 } %xcaa, 0
+    %x8 = extractvalue { i64, i64 } %xcaa, 1
     %x9 = icmp slt i64 %a, %x8
     br i1 %x9, label %while_bodyb, label %while_endb
 
   while_bodyb:
-    %a11 = extractvalue { i64*, { i64, i64 } } %xcaa, 0
-    %xdaa1 = extractvalue { i64*, { i64, i64 } } %xcaa, 1
-    %a1a = extractvalue { i64, i64 } %xdaa1, 0
-    %a2a = extractvalue { i64, i64 } %xdaa1, 1
-    %xeaa = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %a11, i64 %a1a, i64 %a2a)
-    %xfaa = add i64 %a1a, 1
+    %a11 = extractvalue { i64*, { i64, i64 } } %xbaa, 0
+    %xcaa1 = extractvalue { i64*, { i64, i64 } } %xbaa, 1
+    %a1a = extractvalue { i64, i64 } %xcaa1, 0
+    %a2a = extractvalue { i64, i64 } %xcaa1, 1
+    %xdaa = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %a11, i64 %a1a, i64 %a2a)
+    %xeaa = add i64 %a1a, 1
     br label %while_startc
 
   while_startc:
-    %s2 = phi i64 [ %x10, %while_bodyc ], [ %xfaa, %while_bodyb ]
-    %xga = getelementptr i64, i64* %xeaa, i64 %s2
-    %r2 = load i64, i64* %xga
-    %xha = getelementptr i64, i64* %xeaa, i64 %x2
-    %ra2 = load i64, i64* %xha
-    %xia = icmp ult i64 %r2, %ra2
-    %p2 = getelementptr i64, i64* %xeaa, i64 %s2
+    %s2 = phi i64 [ %x10, %while_bodyc ], [ %xeaa, %while_bodyb ]
+    %xj = getelementptr i64, i64* %xdaa, i64 %s2
+    %r2 = load i64, i64* %xj
+    %xk = getelementptr i64, i64* %xdaa, i64 %x2
+    %ra2 = load i64, i64* %xk
+    %xl = icmp ult i64 %r2, %ra2
+    %p2 = getelementptr i64, i64* %xdaa, i64 %s2
     store i64 %r2, i64* %p2
-    %pa2 = getelementptr i64, i64* %xeaa, i64 %x2
+    %pa2 = getelementptr i64, i64* %xdaa, i64 %x2
     store i64 %ra2, i64* %pa2
-    br i1 %xia, label %while_bodyc, label %while_endc
+    br i1 %xl, label %while_bodyc, label %while_endc
 
   while_bodyc:
     %x10 = add i64 %s2, 1
     br label %while_startc
 
   while_endc:
-    %xha1 = sub i64 %a2a, 1
+    %xja = sub i64 %a2a, 1
     br label %while_startd
 
   while_startd:
-    %s3 = phi i64 [ %x11, %while_bodyd ], [ %xha1, %while_endc ]
-    %xia1 = getelementptr i64, i64* %xeaa, i64 %x2
-    %r3 = load i64, i64* %xia1
-    %xja = getelementptr i64, i64* %xeaa, i64 %s3
-    %ra3 = load i64, i64* %xja
-    %xka = icmp ult i64 %r3, %ra3
-    %p3 = getelementptr i64, i64* %xeaa, i64 %x2
+    %s3 = phi i64 [ %x11, %while_bodyd ], [ %xja, %while_endc ]
+    %xl1 = getelementptr i64, i64* %xdaa, i64 %x2
+    %r3 = load i64, i64* %xl1
+    %xm = getelementptr i64, i64* %xdaa, i64 %s3
+    %ra3 = load i64, i64* %xm
+    %xn = icmp ult i64 %r3, %ra3
+    %p3 = getelementptr i64, i64* %xdaa, i64 %x2
     store i64 %r3, i64* %p3
-    %pa3 = getelementptr i64, i64* %xeaa, i64 %s3
+    %pa3 = getelementptr i64, i64* %xdaa, i64 %s3
     store i64 %ra3, i64* %pa3
-    br i1 %xka, label %while_bodyd, label %while_endd
+    br i1 %xn, label %while_bodyd, label %while_endd
 
   while_bodyd:
     %x11 = sub i64 %s3, 1
     br label %while_startd
 
   while_endd:
-    %xja1 = insertvalue { i64*, { i64, i64 } } zeroinitializer, i64* %xeaa, 0
-    %xma = insertvalue { i64, i64 } zeroinitializer, i64 %s2, 0
-    %tmpba = insertvalue { i64, i64 } %xma, i64 %s3, 1
-    %x12 = insertvalue { i64*, { i64, i64 } } %xja1, { i64, i64 } %tmpba, 1
+    %xha = insertvalue { i64*, { i64, i64 } } zeroinitializer, i64* %xdaa, 0
+    %xla = insertvalue { i64, i64 } zeroinitializer, i64 %s2, 0
+    %tmpba = insertvalue { i64, i64 } %xla, i64 %s3, 1
+    %x12 = insertvalue { i64*, { i64, i64 } } %xha, { i64, i64 } %tmpba, 1
     br label %while_startb
 
   while_endb:
-    %a12 = extractvalue { i64*, { i64, i64 } } %xcaa, 0
-    %xdaa2 = extractvalue { i64*, { i64, i64 } } %xcaa, 1
-    %a1a1 = extractvalue { i64, i64 } %xdaa2, 0
-    %a2a1 = extractvalue { i64, i64 } %xdaa2, 1
-    %xeaa1 = insertvalue { i64*, i64 } zeroinitializer, i64* %a12, 0
-    %x13 = insertvalue { i64*, i64 } %xeaa1, i64 %a1a1, 1
+    %a12 = extractvalue { i64*, { i64, i64 } } %xbaa, 0
+    %xcaa2 = extractvalue { i64*, { i64, i64 } } %xbaa, 1
+    %a1a1 = extractvalue { i64, i64 } %xcaa2, 0
+    %a2a1 = extractvalue { i64, i64 } %xcaa2, 1
+    %xdaa1 = insertvalue { i64*, i64 } zeroinitializer, i64* %a12, 0
+    %x13 = insertvalue { i64*, i64 } %xdaa1, i64 %a1a1, 1
     ret { i64*, i64 } %x13
 }
 
-define { i1, { i64, { i64, { i64, i8* } }* } } @Sorting_Export_Code_str_sort_partition_left_impl({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2) {
+define { { i64, { i64, i8* } }*, i64 } @Monadify_M_CONST_Sorting_Quicksort_Partition_sort_impl_context_qs_partition_impl_Sorting_Strings_strcmp_impl(i64 %x, i64 %x1, i64 %x2, { i64, { i64, i8* } }* %x3) {
 
   start:
-    %xa = sub i64 %x2, 1
     br label %while_start
 
   while_start:
-    %s = phi i64 [ %x3, %while_body ], [ %xa, %start ]
-    %xaa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x, i64 %x1
-    %r = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xaa
-    %xb = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x, i64 %s
-    %ra = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xb
-    %xc = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r, { i64, { i64, i8* } } %ra)
-    %p = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x, i64 %x1
+    %s = phi i64 [ %x5, %while_body ], [ %x, %start ]
+    %x4 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x3, i64 %s
+    %r = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x4
+    %xa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x3, i64 %x2
+    %ra = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xa
+    %xb = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r, { i64, { i64, i8* } } %ra)
+    %p = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x3, i64 %s
     store { i64, { i64, i8* } } %r, { i64, { i64, i8* } }* %p
-    %pa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x, i64 %s
+    %pa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x3, i64 %x2
     store { i64, { i64, i8* } } %ra, { i64, { i64, i8* } }* %pa
-    br i1 %xc, label %while_body, label %while_end
+    br i1 %xb, label %while_body, label %while_end
 
   while_body:
-    %x3 = sub i64 %s, 1
+    %x5 = add i64 %s, 1
     br label %while_start
 
   while_end:
-    %xba = add i64 %s, 1
-    %xc1 = icmp eq i64 %xba, %x2
-    br i1 %xc1, label %then, label %else
-
-  then:
-    %x4 = add i64 %x1, 1
+    %xaa = sub i64 %x1, 1
     br label %while_starta
 
   while_starta:
-    %s1 = phi i64 [ %x7, %while_bodya ], [ %x4, %then ]
-    %xda = sub i64 %x2, 1
-    %xeaa = icmp slt i64 %s1, %xda
-    br i1 %xeaa, label %thena, label %elsea
-
-  thena:
-    %xf = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x, i64 %x1
-    %r1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xf
-    %xg = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x, i64 %s1
-    %ra1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xg
-    %xh = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r1, { i64, { i64, i8* } } %ra1)
-    %p1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x, i64 %x1
+    %s1 = phi i64 [ %x7, %while_bodya ], [ %xaa, %while_end ]
+    %xc = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x3, i64 %x2
+    %r1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xc
+    %xd = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x3, i64 %s1
+    %ra1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xd
+    %xe = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r1, { i64, { i64, i8* } } %ra1)
+    %p1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x3, i64 %x2
     store { i64, { i64, i8* } } %r1, { i64, { i64, i8* } }* %p1
-    %pa1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x, i64 %s1
+    %pa1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x3, i64 %s1
     store { i64, { i64, i8* } } %ra1, { i64, { i64, i8* } }* %pa1
-    %x5 = add i1 %xh, 1
-    br label %ctd_ifa
-
-  elsea:
-    br label %ctd_ifa
-
-  ctd_ifa:
-    %x6 = phi i1 [ 0, %elsea ], [ %x5, %thena ]
-    br i1 %x6, label %while_bodya, label %while_enda
+    br i1 %xe, label %while_bodya, label %while_enda
 
   while_bodya:
-    %x7 = add i64 %s1, 1
+    %x7 = sub i64 %s1, 1
     br label %while_starta
 
   while_enda:
-    br label %ctd_if
-
-  else:
-    %x9 = add i64 %x1, 1
+    %xba = insertvalue { i64, i64 } zeroinitializer, i64 %s, 0
+    %tmpa = insertvalue { i64, i64 } %xba, i64 %s1, 1
+    %xca = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } zeroinitializer, { i64, { i64, i8* } }* %x3, 0
+    %xda = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xca, { i64, i64 } %tmpa, 1
     br label %while_startb
 
   while_startb:
-    %s2 = phi i64 [ %x11, %while_bodyb ], [ %x9, %else ]
-    %xda1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x, i64 %x1
-    %r2 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xda1
-    %xea = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x, i64 %s2
-    %ra2 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xea
-    %xf1 = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r2, { i64, { i64, i8* } } %ra2)
-    %p2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x, i64 %x1
+    %xbaa = phi { { i64, { i64, i8* } }*, { i64, i64 } } [ %x12, %while_endd ], [ %xda, %while_enda ]
+    %a1 = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xbaa, 0
+    %xcaa = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xbaa, 1
+    %a = extractvalue { i64, i64 } %xcaa, 0
+    %x8 = extractvalue { i64, i64 } %xcaa, 1
+    %x9 = icmp slt i64 %a, %x8
+    br i1 %x9, label %while_bodyb, label %while_endb
+
+  while_bodyb:
+    %a11 = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xbaa, 0
+    %xcaa1 = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xbaa, 1
+    %a1a = extractvalue { i64, i64 } %xcaa1, 0
+    %a2a = extractvalue { i64, i64 } %xcaa1, 1
+    %xdaa = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %a11, i64 %a1a, i64 %a2a)
+    %xeaa = add i64 %a1a, 1
+    br label %while_startc
+
+  while_startc:
+    %s2 = phi i64 [ %x10, %while_bodyc ], [ %xeaa, %while_bodyb ]
+    %xj = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xdaa, i64 %s2
+    %r2 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xj
+    %xk = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xdaa, i64 %x2
+    %ra2 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xk
+    %xl = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r2, { i64, { i64, i8* } } %ra2)
+    %p2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xdaa, i64 %s2
     store { i64, { i64, i8* } } %r2, { i64, { i64, i8* } }* %p2
-    %pa2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x, i64 %s2
+    %pa2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xdaa, i64 %x2
     store { i64, { i64, i8* } } %ra2, { i64, { i64, i8* } }* %pa2
-    %x10 = add i1 %xf1, 1
-    br i1 %x10, label %while_bodyb, label %while_endb
-
-  while_bodyb:
-    %x11 = add i64 %s2, 1
-    br label %while_startb
-
-  while_endb:
-    br label %ctd_if
-
-  ctd_if:
-    %xd = phi i64 [ %s2, %while_endb ], [ %s1, %while_enda ]
-    %xea1 = insertvalue { i64, i64 } zeroinitializer, i64 %xd, 0
-    %tmpa = insertvalue { i64, i64 } %xea1, i64 %s, 1
-    %xfa = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } zeroinitializer, { i64, { i64, i8* } }* %x, 0
-    %xga = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xfa, { i64, i64 } %tmpa, 1
-    br label %while_startc
-
-  while_startc:
-    %xeaa1 = phi { { i64, { i64, i8* } }*, { i64, i64 } } [ %x18, %while_ende ], [ %xga, %ctd_if ]
-    %a1 = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xeaa1, 0
-    %xfaa = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xeaa1, 1
-    %a = extractvalue { i64, i64 } %xfaa, 0
-    %x13 = extractvalue { i64, i64 } %xfaa, 1
-    %x14 = icmp slt i64 %a, %x13
-    br i1 %x14, label %while_bodyc, label %while_endc
+    br i1 %xl, label %while_bodyc, label %while_endc
 
   while_bodyc:
-    %a11 = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xeaa1, 0
-    %xfaa1 = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xeaa1, 1
-    %a1a = extractvalue { i64, i64 } %xfaa1, 0
-    %a2a = extractvalue { i64, i64 } %xfaa1, 1
-    %xgaa = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %a11, i64 %a1a, i64 %a2a)
-    %xhaa = sub i64 %a2a, 1
+    %x10 = add i64 %s2, 1
+    br label %while_startc
+
+  while_endc:
+    %xja = sub i64 %a2a, 1
     br label %while_startd
 
   while_startd:
-    %s3 = phi i64 [ %x15, %while_bodyd ], [ %xhaa, %while_bodyc ]
-    %xia = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xgaa, i64 %x1
-    %r3 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xia
-    %xja = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xgaa, i64 %s3
-    %ra3 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xja
-    %xka = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r3, { i64, { i64, i8* } } %ra3)
-    %p3 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xgaa, i64 %x1
+    %s3 = phi i64 [ %x11, %while_bodyd ], [ %xja, %while_endc ]
+    %xl1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xdaa, i64 %x2
+    %r3 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xl1
+    %xm = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xdaa, i64 %s3
+    %ra3 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xm
+    %xn = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r3, { i64, { i64, i8* } } %ra3)
+    %p3 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xdaa, i64 %x2
     store { i64, { i64, i8* } } %r3, { i64, { i64, i8* } }* %p3
-    %pa3 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xgaa, i64 %s3
+    %pa3 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xdaa, i64 %s3
     store { i64, { i64, i8* } } %ra3, { i64, { i64, i8* } }* %pa3
-    br i1 %xka, label %while_bodyd, label %while_endd
+    br i1 %xn, label %while_bodyd, label %while_endd
 
   while_bodyd:
-    %x15 = sub i64 %s3, 1
+    %x11 = sub i64 %s3, 1
     br label %while_startd
 
   while_endd:
-    %xja1 = add i64 %a1a, 1
-    br label %while_starte
-
-  while_starte:
-    %s4 = phi i64 [ %x17, %while_bodye ], [ %xja1, %while_endd ]
-    %xka1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xgaa, i64 %x1
-    %r4 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xka1
-    %xla = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xgaa, i64 %s4
-    %ra4 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xla
-    %xma = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r4, { i64, { i64, i8* } } %ra4)
-    %p4 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xgaa, i64 %x1
-    store { i64, { i64, i8* } } %r4, { i64, { i64, i8* } }* %p4
-    %pa4 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xgaa, i64 %s4
-    store { i64, { i64, i8* } } %ra4, { i64, { i64, i8* } }* %pa4
-    %x16 = add i1 %xma, 1
-    br i1 %x16, label %while_bodye, label %while_ende
-
-  while_bodye:
-    %x17 = add i64 %s4, 1
-    br label %while_starte
-
-  while_ende:
-    %xla1 = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } zeroinitializer, { i64, { i64, i8* } }* %xgaa, 0
-    %xoa = insertvalue { i64, i64 } zeroinitializer, i64 %s4, 0
-    %tmpba = insertvalue { i64, i64 } %xoa, i64 %s3, 1
-    %x18 = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xla1, { i64, i64 } %tmpba, 1
-    br label %while_startc
-
-  while_endc:
-    %a12 = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xeaa1, 0
-    %xfaa2 = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xeaa1, 1
-    %a1a1 = extractvalue { i64, i64 } %xfaa2, 0
-    %a2a1 = extractvalue { i64, i64 } %xfaa2, 1
-    %xgaa1 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %a12, i64 %x1, i64 %a2a1)
-    %xhaa1 = insertvalue { i1, { i64, { i64, { i64, i8* } }* } } zeroinitializer, i1 0, 0
-    %xma1 = insertvalue { i64, { i64, { i64, i8* } }* } zeroinitializer, i64 %a2a1, 0
-    %tmpba1 = insertvalue { i64, { i64, { i64, i8* } }* } %xma1, { i64, { i64, i8* } }* %xgaa1, 1
-    %x19 = insertvalue { i1, { i64, { i64, { i64, i8* } }* } } %xhaa1, { i64, { i64, { i64, i8* } }* } %tmpba1, 1
-    ret { i1, { i64, { i64, { i64, i8* } }* } } %x19
-}
-
-define i64* @introsort_aux(i64* %x, i64 %x1, i64 %x2, i64 %x3) {
-
-  start:
-    %xa = insertvalue { i64, i64 } zeroinitializer, i64 %x2, 0
-    %tmpa = insertvalue { i64, i64 } %xa, i64 %x3, 1
-    %xaa = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %x1, 0
-    %tmpab = insertvalue { i64, { i64, i64 } } %xaa, { i64, i64 } %tmpa, 1
-    %xba = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %x, 0
-    %x4 = insertvalue { i64*, { i64, { i64, i64 } } } %xba, { i64, { i64, i64 } } %tmpab, 1
-    %x5 = call i64* @Sorting_Export_Code_unat_sort_introsort_aux_impl_f_07972740 ({ i64*, { i64, { i64, i64 } } } %x4)
-    ret i64* %x5
-}
-
-define { i1, { i64, i64* } } @Sorting_Export_Code_unat_sort_partition_left_impl(i64* %x, i64 %x1, i64 %x2) {
-
-  start:
-    %xa = sub i64 %x2, 1
-    br label %while_start
-
-  while_start:
-    %s = phi i64 [ %x3, %while_body ], [ %xa, %start ]
-    %xaa = getelementptr i64, i64* %x, i64 %x1
-    %r = load i64, i64* %xaa
-    %xb = getelementptr i64, i64* %x, i64 %s
-    %ra = load i64, i64* %xb
-    %xc = icmp ult i64 %r, %ra
-    %p = getelementptr i64, i64* %x, i64 %x1
-    store i64 %r, i64* %p
-    %pa = getelementptr i64, i64* %x, i64 %s
-    store i64 %ra, i64* %pa
-    br i1 %xc, label %while_body, label %while_end
-
-  while_body:
-    %x3 = sub i64 %s, 1
-    br label %while_start
-
-  while_end:
-    %xba = add i64 %s, 1
-    %xc1 = icmp eq i64 %xba, %x2
-    br i1 %xc1, label %then, label %else
-
-  then:
-    %x4 = add i64 %x1, 1
-    br label %while_starta
-
-  while_starta:
-    %s1 = phi i64 [ %x7, %while_bodya ], [ %x4, %then ]
-    %xda = sub i64 %x2, 1
-    %xeaa = icmp slt i64 %s1, %xda
-    br i1 %xeaa, label %thena, label %elsea
-
-  thena:
-    %xf = getelementptr i64, i64* %x, i64 %x1
-    %r1 = load i64, i64* %xf
-    %xg = getelementptr i64, i64* %x, i64 %s1
-    %ra1 = load i64, i64* %xg
-    %xh = icmp ult i64 %r1, %ra1
-    %p1 = getelementptr i64, i64* %x, i64 %x1
-    store i64 %r1, i64* %p1
-    %pa1 = getelementptr i64, i64* %x, i64 %s1
-    store i64 %ra1, i64* %pa1
-    %x5 = add i1 %xh, 1
-    br label %ctd_ifa
-
-  elsea:
-    br label %ctd_ifa
-
-  ctd_ifa:
-    %x6 = phi i1 [ 0, %elsea ], [ %x5, %thena ]
-    br i1 %x6, label %while_bodya, label %while_enda
-
-  while_bodya:
-    %x7 = add i64 %s1, 1
-    br label %while_starta
-
-  while_enda:
-    br label %ctd_if
-
-  else:
-    %x9 = add i64 %x1, 1
-    br label %while_startb
-
-  while_startb:
-    %s2 = phi i64 [ %x11, %while_bodyb ], [ %x9, %else ]
-    %xda1 = getelementptr i64, i64* %x, i64 %x1
-    %r2 = load i64, i64* %xda1
-    %xea = getelementptr i64, i64* %x, i64 %s2
-    %ra2 = load i64, i64* %xea
-    %xf1 = icmp ult i64 %r2, %ra2
-    %p2 = getelementptr i64, i64* %x, i64 %x1
-    store i64 %r2, i64* %p2
-    %pa2 = getelementptr i64, i64* %x, i64 %s2
-    store i64 %ra2, i64* %pa2
-    %x10 = add i1 %xf1, 1
-    br i1 %x10, label %while_bodyb, label %while_endb
-
-  while_bodyb:
-    %x11 = add i64 %s2, 1
+    %xha = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } zeroinitializer, { i64, { i64, i8* } }* %xdaa, 0
+    %xla = insertvalue { i64, i64 } zeroinitializer, i64 %s2, 0
+    %tmpba = insertvalue { i64, i64 } %xla, i64 %s3, 1
+    %x12 = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xha, { i64, i64 } %tmpba, 1
     br label %while_startb
 
   while_endb:
-    br label %ctd_if
-
-  ctd_if:
-    %xd = phi i64 [ %s2, %while_endb ], [ %s1, %while_enda ]
-    %xea1 = insertvalue { i64, i64 } zeroinitializer, i64 %xd, 0
-    %tmpa = insertvalue { i64, i64 } %xea1, i64 %s, 1
-    %xfa = insertvalue { i64*, { i64, i64 } } zeroinitializer, i64* %x, 0
-    %xga = insertvalue { i64*, { i64, i64 } } %xfa, { i64, i64 } %tmpa, 1
-    br label %while_startc
-
-  while_startc:
-    %xeaa1 = phi { i64*, { i64, i64 } } [ %x18, %while_ende ], [ %xga, %ctd_if ]
-    %a1 = extractvalue { i64*, { i64, i64 } } %xeaa1, 0
-    %xfaa = extractvalue { i64*, { i64, i64 } } %xeaa1, 1
-    %a = extractvalue { i64, i64 } %xfaa, 0
-    %x13 = extractvalue { i64, i64 } %xfaa, 1
-    %x14 = icmp slt i64 %a, %x13
-    br i1 %x14, label %while_bodyc, label %while_endc
-
-  while_bodyc:
-    %a11 = extractvalue { i64*, { i64, i64 } } %xeaa1, 0
-    %xfaa1 = extractvalue { i64*, { i64, i64 } } %xeaa1, 1
-    %a1a = extractvalue { i64, i64 } %xfaa1, 0
-    %a2a = extractvalue { i64, i64 } %xfaa1, 1
-    %xgaa = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %a11, i64 %a1a, i64 %a2a)
-    %xhaa = sub i64 %a2a, 1
-    br label %while_startd
-
-  while_startd:
-    %s3 = phi i64 [ %x15, %while_bodyd ], [ %xhaa, %while_bodyc ]
-    %xia = getelementptr i64, i64* %xgaa, i64 %x1
-    %r3 = load i64, i64* %xia
-    %xja = getelementptr i64, i64* %xgaa, i64 %s3
-    %ra3 = load i64, i64* %xja
-    %xka = icmp ult i64 %r3, %ra3
-    %p3 = getelementptr i64, i64* %xgaa, i64 %x1
-    store i64 %r3, i64* %p3
-    %pa3 = getelementptr i64, i64* %xgaa, i64 %s3
-    store i64 %ra3, i64* %pa3
-    br i1 %xka, label %while_bodyd, label %while_endd
-
-  while_bodyd:
-    %x15 = sub i64 %s3, 1
-    br label %while_startd
-
-  while_endd:
-    %xja1 = add i64 %a1a, 1
-    br label %while_starte
-
-  while_starte:
-    %s4 = phi i64 [ %x17, %while_bodye ], [ %xja1, %while_endd ]
-    %xka1 = getelementptr i64, i64* %xgaa, i64 %x1
-    %r4 = load i64, i64* %xka1
-    %xla = getelementptr i64, i64* %xgaa, i64 %s4
-    %ra4 = load i64, i64* %xla
-    %xma = icmp ult i64 %r4, %ra4
-    %p4 = getelementptr i64, i64* %xgaa, i64 %x1
-    store i64 %r4, i64* %p4
-    %pa4 = getelementptr i64, i64* %xgaa, i64 %s4
-    store i64 %ra4, i64* %pa4
-    %x16 = add i1 %xma, 1
-    br i1 %x16, label %while_bodye, label %while_ende
-
-  while_bodye:
-    %x17 = add i64 %s4, 1
-    br label %while_starte
-
-  while_ende:
-    %xla1 = insertvalue { i64*, { i64, i64 } } zeroinitializer, i64* %xgaa, 0
-    %xoa = insertvalue { i64, i64 } zeroinitializer, i64 %s4, 0
-    %tmpba = insertvalue { i64, i64 } %xoa, i64 %s3, 1
-    %x18 = insertvalue { i64*, { i64, i64 } } %xla1, { i64, i64 } %tmpba, 1
-    br label %while_startc
-
-  while_endc:
-    %a12 = extractvalue { i64*, { i64, i64 } } %xeaa1, 0
-    %xfaa2 = extractvalue { i64*, { i64, i64 } } %xeaa1, 1
-    %a1a1 = extractvalue { i64, i64 } %xfaa2, 0
-    %a2a1 = extractvalue { i64, i64 } %xfaa2, 1
-    %xgaa1 = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %a12, i64 %x1, i64 %a2a1)
-    %xhaa1 = insertvalue { i1, { i64, i64* } } zeroinitializer, i1 0, 0
-    %xma1 = insertvalue { i64, i64* } zeroinitializer, i64 %a2a1, 0
-    %tmpba1 = insertvalue { i64, i64* } %xma1, i64* %xgaa1, 1
-    %x19 = insertvalue { i1, { i64, i64* } } %xhaa1, { i64, i64* } %tmpba1, 1
-    ret { i1, { i64, i64* } } %x19
+    %a12 = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xbaa, 0
+    %xcaa2 = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xbaa, 1
+    %a1a1 = extractvalue { i64, i64 } %xcaa2, 0
+    %a2a1 = extractvalue { i64, i64 } %xcaa2, 1
+    %xdaa1 = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %a12, 0
+    %x13 = insertvalue { { i64, { i64, i8* } }*, i64 } %xdaa1, i64 %a1a1, 1
+    ret { { i64, { i64, i8* } }*, i64 } %x13
 }
 
-define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_is_guarded_insert_impl({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2) {
-
-  start:
-    %x3 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x, i64 %x2
-    %r = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x3
-    %xaa = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %x, 0
-    %xba = insertvalue { { i64, { i64, i8* } }*, i64 } %xaa, i64 %x2, 1
-    br label %while_start
-
-  while_start:
-    %xaaa = phi { { i64, { i64, i8* } }*, i64 } [ %x5, %while_body ], [ %xba, %start ]
-    %a1a = extractvalue { { i64, { i64, i8* } }*, i64 } %xaaa, 0
-    %a2a = extractvalue { { i64, { i64, i8* } }*, i64 } %xaaa, 1
-    %xbaa = icmp slt i64 %x1, %a2a
-    br i1 %xbaa, label %then, label %else
-
-  then:
-    %bib = sub i64 %a2a, 1
-    %xca = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a, i64 %bib
-    %ra = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xca
-    %xda = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r, { i64, { i64, i8* } } %ra)
-    %p = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a, i64 %bib
-    store { i64, { i64, i8* } } %ra, { i64, { i64, i8* } }* %p
-    br label %ctd_if
-
-  else:
-    br label %ctd_if
-
-  ctd_if:
-    %x4 = phi i1 [ 0, %else ], [ %xda, %then ]
-    br i1 %x4, label %while_body, label %while_end
-
-  while_body:
-    %a1a1 = extractvalue { { i64, { i64, i8* } }*, i64 } %xaaa, 0
-    %a2a1 = extractvalue { { i64, { i64, i8* } }*, i64 } %xaaa, 1
-    %xbaa1 = sub i64 %a2a1, 1
-    %xca1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a1, i64 %xbaa1
-    %ra1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xca1
-    %p1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a1, i64 %a2a1
-    store { i64, { i64, i8* } } %ra1, { i64, { i64, i8* } }* %p1
-    %xea = sub i64 %a2a1, 1
-    %xfa = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %a1a1, 0
-    %x5 = insertvalue { { i64, { i64, i8* } }*, i64 } %xfa, i64 %xea, 1
-    br label %while_start
-
-  while_end:
-    %a1a2 = extractvalue { { i64, { i64, i8* } }*, i64 } %xaaa, 0
-    %a2a2 = extractvalue { { i64, { i64, i8* } }*, i64 } %xaaa, 1
-    %p2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a2, i64 %a2a2
-    store { i64, { i64, i8* } } %r, { i64, { i64, i8* } }* %p2
-    ret { i64, { i64, i8* } }* %a1a2
-}
-
-define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_pdq_guarded_insort_impl({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2) {
+define i64* @Monadify_M_CONST_Sorting_Pdq_Insertion_Sort_sort_impl_context_pdq_guarded_insort_impl_LLVM_Shallow_ll_icmp_ult(i64* %x, i64 %x1, i64 %x2) {
 
   start:
     %x3 = icmp ne i64 %x1, %x2
@@ -1996,33 +4636,157 @@ define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_pdq_guarded_insort_i
 
   then:
     %xaa = add i64 %x1, 1
-    %xb = insertvalue { i64, { i64, { i64, i8* } }* } zeroinitializer, i64 %xaa, 0
-    %xc = insertvalue { i64, { i64, { i64, i8* } }* } %xb, { i64, { i64, i8* } }* %x, 1
+    %xba = insertvalue { i64, i64* } zeroinitializer, i64 %xaa, 0
+    %xca = insertvalue { i64, i64* } %xba, i64* %x, 1
     br label %while_start
 
   while_start:
-    %xba = phi { i64, { i64, { i64, i8* } }* } [ %x7, %ctd_ifb ], [ %xc, %then ]
-    %a1 = extractvalue { i64, { i64, { i64, i8* } }* } %xba, 0
-    %a2 = extractvalue { i64, { i64, { i64, i8* } }* } %xba, 1
+    %xbaa = phi { i64, i64* } [ %x7, %ctd_ifb ], [ %xca, %then ]
+    %a1 = extractvalue { i64, i64* } %xbaa, 0
+    %a2 = extractvalue { i64, i64* } %xbaa, 1
     %x4 = icmp slt i64 %a1, %x2
     br i1 %x4, label %while_body, label %while_end
 
   while_body:
-    %a11 = extractvalue { i64, { i64, { i64, i8* } }* } %xba, 0
-    %a21 = extractvalue { i64, { i64, { i64, i8* } }* } %xba, 1
-    %xca = icmp slt i64 %x1, %a11
-    br i1 %xca, label %thena, label %elsea
+    %a11 = extractvalue { i64, i64* } %xbaa, 0
+    %a21 = extractvalue { i64, i64* } %xbaa, 1
+    %xf = icmp slt i64 %x1, %a11
+    br i1 %xf, label %thena, label %elsea
 
   thena:
-    %bib = sub i64 %a11, 1
-    %xda = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %a11
-    %r = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xda
-    %xea = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %bib
-    %ra = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xea
-    %xfa = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r, { i64, { i64, i8* } } %ra)
+    %xga = sub i64 %a11, 1
+    %xh = getelementptr i64, i64* %a21, i64 %a11
+    %r = load i64, i64* %xh
+    %xi = getelementptr i64, i64* %a21, i64 %xga
+    %ra = load i64, i64* %xi
+    %xj = icmp ult i64 %r, %ra
+    %p = getelementptr i64, i64* %a21, i64 %a11
+    store i64 %r, i64* %p
+    %pa = getelementptr i64, i64* %a21, i64 %xga
+    store i64 %ra, i64* %pa
+    br label %ctd_ifa
+
+  elsea:
+    br label %ctd_ifa
+
+  ctd_ifa:
+    %xg = phi i1 [ 0, %elsea ], [ %xj, %thena ]
+    br i1 %xg, label %thenb, label %elseb
+
+  thenb:
+    %xh1 = getelementptr i64, i64* %a21, i64 %a11
+    %r1 = load i64, i64* %xh1
+    %xia = sub i64 %a11, 1
+    %xj1 = getelementptr i64, i64* %a21, i64 %xia
+    %ra1 = load i64, i64* %xj1
+    %p1 = getelementptr i64, i64* %a21, i64 %a11
+    store i64 %ra1, i64* %p1
+    %xla = sub i64 %a11, 1
+    %xm = insertvalue { i64*, i64 } zeroinitializer, i64* %a21, 0
+    %xn = insertvalue { i64*, i64 } %xm, i64 %xla, 1
+    br label %while_starta
+
+  while_starta:
+    %xma = phi { i64*, i64 } [ %x6, %while_bodya ], [ %xn, %thenb ]
+    %a1b = extractvalue { i64*, i64 } %xma, 0
+    %a2b = extractvalue { i64*, i64 } %xma, 1
+    %xna = icmp slt i64 %x1, %a2b
+    br i1 %xna, label %thenc, label %elsec
+
+  thenc:
+    %xoa = sub i64 %a2b, 1
+    %xr = getelementptr i64, i64* %a1b, i64 %xoa
+    %rb = load i64, i64* %xr
+    %xs = icmp ult i64 %r1, %rb
+    %pa1 = getelementptr i64, i64* %a1b, i64 %xoa
+    store i64 %rb, i64* %pa1
+    br label %ctd_ifc
+
+  elsec:
+    br label %ctd_ifc
+
+  ctd_ifc:
+    %x5 = phi i1 [ 0, %elsec ], [ %xs, %thenc ]
+    br i1 %x5, label %while_bodya, label %while_enda
+
+  while_bodya:
+    %a1b1 = extractvalue { i64*, i64 } %xma, 0
+    %a2b1 = extractvalue { i64*, i64 } %xma, 1
+    %xna1 = sub i64 %a2b1, 1
+    %xoa1 = getelementptr i64, i64* %a1b1, i64 %xna1
+    %rb1 = load i64, i64* %xoa1
+    %pa2 = getelementptr i64, i64* %a1b1, i64 %a2b1
+    store i64 %rb1, i64* %pa2
+    %xqa = sub i64 %a2b1, 1
+    %xra = insertvalue { i64*, i64 } zeroinitializer, i64* %a1b1, 0
+    %x6 = insertvalue { i64*, i64 } %xra, i64 %xqa, 1
+    br label %while_starta
+
+  while_enda:
+    %a1b2 = extractvalue { i64*, i64 } %xma, 0
+    %a2b2 = extractvalue { i64*, i64 } %xma, 1
+    %pa3 = getelementptr i64, i64* %a1b2, i64 %a2b2
+    store i64 %r1, i64* %pa3
+    br label %ctd_ifb
+
+  elseb:
+    br label %ctd_ifb
+
+  ctd_ifb:
+    %xcaa = phi i64* [ %a21, %elseb ], [ %a1b2, %while_enda ]
+    %xda = add i64 %a11, 1
+    %xea = insertvalue { i64, i64* } zeroinitializer, i64 %xda, 0
+    %x7 = insertvalue { i64, i64* } %xea, i64* %xcaa, 1
+    br label %while_start
+
+  while_end:
+    %a12 = extractvalue { i64, i64* } %xbaa, 0
+    %x8 = extractvalue { i64, i64* } %xbaa, 1
+    br label %ctd_if
+
+  else:
+    br label %ctd_if
+
+  ctd_if:
+    %x9 = phi i64* [ %x, %else ], [ %x8, %while_end ]
+    ret i64* %x9
+}
+
+define { i64, { i64, i8* } }* @Monadify_M_CONST_Sorting_Pdq_Insertion_Sort_sort_impl_context_pdq_guarded_insort_impl_Sorting_Strings_strcmp_impl({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2) {
+
+  start:
+    %x3 = icmp ne i64 %x1, %x2
+    br i1 %x3, label %then, label %else
+
+  then:
+    %xaa = add i64 %x1, 1
+    %xba = insertvalue { i64, { i64, { i64, i8* } }* } zeroinitializer, i64 %xaa, 0
+    %xca = insertvalue { i64, { i64, { i64, i8* } }* } %xba, { i64, { i64, i8* } }* %x, 1
+    br label %while_start
+
+  while_start:
+    %xbaa = phi { i64, { i64, { i64, i8* } }* } [ %x7, %ctd_ifb ], [ %xca, %then ]
+    %a1 = extractvalue { i64, { i64, { i64, i8* } }* } %xbaa, 0
+    %a2 = extractvalue { i64, { i64, { i64, i8* } }* } %xbaa, 1
+    %x4 = icmp slt i64 %a1, %x2
+    br i1 %x4, label %while_body, label %while_end
+
+  while_body:
+    %a11 = extractvalue { i64, { i64, { i64, i8* } }* } %xbaa, 0
+    %a21 = extractvalue { i64, { i64, { i64, i8* } }* } %xbaa, 1
+    %xf = icmp slt i64 %x1, %a11
+    br i1 %xf, label %thena, label %elsea
+
+  thena:
+    %xga = sub i64 %a11, 1
+    %xh = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %a11
+    %r = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xh
+    %xi = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %xga
+    %ra = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xi
+    %xj = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r, { i64, { i64, i8* } } %ra)
     %p = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %a11
     store { i64, { i64, i8* } } %r, { i64, { i64, i8* } }* %p
-    %pa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %bib
+    %pa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %xga
     store { i64, { i64, i8* } } %ra, { i64, { i64, i8* } }* %pa
     br label %ctd_ifa
 
@@ -2030,35 +4794,35 @@ define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_pdq_guarded_insort_i
     br label %ctd_ifa
 
   ctd_ifa:
-    %xda1 = phi i1 [ 0, %elsea ], [ %xfa, %thena ]
-    br i1 %xda1, label %thenb, label %elseb
+    %xg = phi i1 [ 0, %elsea ], [ %xj, %thena ]
+    br i1 %xg, label %thenb, label %elseb
 
   thenb:
-    %xea1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %a11
-    %r1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xea1
-    %xfa1 = sub i64 %a11, 1
-    %xg = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %xfa1
-    %ra1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xg
+    %xh1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %a11
+    %r1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xh1
+    %xia = sub i64 %a11, 1
+    %xj1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %xia
+    %ra1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xj1
     %p1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %a11
     store { i64, { i64, i8* } } %ra1, { i64, { i64, i8* } }* %p1
-    %xia = sub i64 %a11, 1
-    %xj = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %a21, 0
-    %xk = insertvalue { { i64, { i64, i8* } }*, i64 } %xj, i64 %xia, 1
+    %xla = sub i64 %a11, 1
+    %xm = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %a21, 0
+    %xn = insertvalue { { i64, { i64, i8* } }*, i64 } %xm, i64 %xla, 1
     br label %while_starta
 
   while_starta:
-    %xja = phi { { i64, { i64, i8* } }*, i64 } [ %x6, %while_bodya ], [ %xk, %thenb ]
-    %a1b = extractvalue { { i64, { i64, i8* } }*, i64 } %xja, 0
-    %a2b = extractvalue { { i64, { i64, i8* } }*, i64 } %xja, 1
-    %xka = icmp slt i64 %x1, %a2b
-    br i1 %xka, label %thenc, label %elsec
+    %xma = phi { { i64, { i64, i8* } }*, i64 } [ %x6, %while_bodya ], [ %xn, %thenb ]
+    %a1b = extractvalue { { i64, { i64, i8* } }*, i64 } %xma, 0
+    %a2b = extractvalue { { i64, { i64, i8* } }*, i64 } %xma, 1
+    %xna = icmp slt i64 %x1, %a2b
+    br i1 %xna, label %thenc, label %elsec
 
   thenc:
-    %bib1 = sub i64 %a2b, 1
-    %xla = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b, i64 %bib1
-    %rb = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xla
-    %xma = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r1, { i64, { i64, i8* } } %rb)
-    %pa1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b, i64 %bib1
+    %xoa = sub i64 %a2b, 1
+    %xr = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b, i64 %xoa
+    %rb = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xr
+    %xs = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r1, { i64, { i64, i8* } } %rb)
+    %pa1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b, i64 %xoa
     store { i64, { i64, i8* } } %rb, { i64, { i64, i8* } }* %pa1
     br label %ctd_ifc
 
@@ -2066,25 +4830,25 @@ define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_pdq_guarded_insort_i
     br label %ctd_ifc
 
   ctd_ifc:
-    %x5 = phi i1 [ 0, %elsec ], [ %xma, %thenc ]
+    %x5 = phi i1 [ 0, %elsec ], [ %xs, %thenc ]
     br i1 %x5, label %while_bodya, label %while_enda
 
   while_bodya:
-    %a1b1 = extractvalue { { i64, { i64, i8* } }*, i64 } %xja, 0
-    %a2b1 = extractvalue { { i64, { i64, i8* } }*, i64 } %xja, 1
-    %xka1 = sub i64 %a2b1, 1
-    %xla1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b1, i64 %xka1
-    %rb1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xla1
+    %a1b1 = extractvalue { { i64, { i64, i8* } }*, i64 } %xma, 0
+    %a2b1 = extractvalue { { i64, { i64, i8* } }*, i64 } %xma, 1
+    %xna1 = sub i64 %a2b1, 1
+    %xoa1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b1, i64 %xna1
+    %rb1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xoa1
     %pa2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b1, i64 %a2b1
     store { i64, { i64, i8* } } %rb1, { i64, { i64, i8* } }* %pa2
-    %xna = sub i64 %a2b1, 1
-    %xoa = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %a1b1, 0
-    %x6 = insertvalue { { i64, { i64, i8* } }*, i64 } %xoa, i64 %xna, 1
+    %xqa = sub i64 %a2b1, 1
+    %xra = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %a1b1, 0
+    %x6 = insertvalue { { i64, { i64, i8* } }*, i64 } %xra, i64 %xqa, 1
     br label %while_starta
 
   while_enda:
-    %a1b2 = extractvalue { { i64, { i64, i8* } }*, i64 } %xja, 0
-    %a2b2 = extractvalue { { i64, { i64, i8* } }*, i64 } %xja, 1
+    %a1b2 = extractvalue { { i64, { i64, i8* } }*, i64 } %xma, 0
+    %a2b2 = extractvalue { { i64, { i64, i8* } }*, i64 } %xma, 1
     %pa3 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b2, i64 %a2b2
     store { i64, { i64, i8* } } %r1, { i64, { i64, i8* } }* %pa3
     br label %ctd_ifb
@@ -2093,15 +4857,15 @@ define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_pdq_guarded_insort_i
     br label %ctd_ifb
 
   ctd_ifb:
-    %xea2 = phi { i64, { i64, i8* } }* [ %a21, %elseb ], [ %a1b2, %while_enda ]
-    %xfa2 = add i64 %a11, 1
-    %xga = insertvalue { i64, { i64, { i64, i8* } }* } zeroinitializer, i64 %xfa2, 0
-    %x7 = insertvalue { i64, { i64, { i64, i8* } }* } %xga, { i64, { i64, i8* } }* %xea2, 1
+    %xcaa = phi { i64, { i64, i8* } }* [ %a21, %elseb ], [ %a1b2, %while_enda ]
+    %xda = add i64 %a11, 1
+    %xea = insertvalue { i64, { i64, { i64, i8* } }* } zeroinitializer, i64 %xda, 0
+    %x7 = insertvalue { i64, { i64, { i64, i8* } }* } %xea, { i64, { i64, i8* } }* %xcaa, 1
     br label %while_start
 
   while_end:
-    %a12 = extractvalue { i64, { i64, { i64, i8* } }* } %xba, 0
-    %x8 = extractvalue { i64, { i64, { i64, i8* } }* } %xba, 1
+    %a12 = extractvalue { i64, { i64, { i64, i8* } }* } %xbaa, 0
+    %x8 = extractvalue { i64, { i64, { i64, i8* } }* } %xbaa, 1
     br label %ctd_if
 
   else:
@@ -2112,801 +4876,309 @@ define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_pdq_guarded_insort_i
     ret { i64, { i64, i8* } }* %x9
 }
 
-define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_pdqsort_impl_f_08031364({ i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %x) {
+define i64* @Monadify_M_CONST_Sorting_Pdq_Insertion_Sort_sort_impl_context_pdq_unguarded_insort_impl_LLVM_Shallow_ll_icmp_ult(i64* %x, i64 %x1, i64 %x2) {
 
   start:
-    %a1 = extractvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %x, 0
-    %xea = extractvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %x, 1
-    %a1a = extractvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %xea, 0
-    %xfa = extractvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %xea, 1
-    %a1b = extractvalue { i64, { i64, i64 } } %xfa, 0
-    %xga = extractvalue { i64, { i64, i64 } } %xfa, 1
-    %a1c = extractvalue { i64, i64 } %xga, 0
-    %a2c = extractvalue { i64, i64 } %xga, 1
-    %xha = sub i64 %a1c, %a1b
-    %xia = icmp slt i64 %xha, 24
-    br i1 %xia, label %then, label %else
+    %x3 = icmp ne i64 %x1, %x2
+    br i1 %x3, label %then, label %else
 
   then:
-    br i1 %a1, label %thena, label %elsea
-
-  thena:
-    %x1 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_pdq_guarded_insort_impl ({ i64, { i64, i8* } }* %a1a, i64 %a1b, i64 %a1c)
-    br label %ctd_ifa
-
-  elsea:
-    %x2 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_pdq_unguarded_insort_impl ({ i64, { i64, i8* } }* %a1a, i64 %a1b, i64 %a1c)
-    br label %ctd_ifa
-
-  ctd_ifa:
-    %x3 = phi { i64, { i64, i8* } }* [ %x2, %elsea ], [ %x1, %thena ]
-    br label %ctd_if
-
-  else:
-    %xja = sub i64 %a1c, %a1b
-    %xka = udiv i64 %xja, 2
-    %xla = icmp slt i64 128, %xja
-    br i1 %xla, label %thenb, label %elseb
-
-  thenb:
-    %xma = add i64 %a1b, %xka
-    %xna = sub i64 %a1c, 1
-    %xoa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a, i64 %xma
-    %r = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xoa
-    %xpa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a, i64 %a1b
-    %ra = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xpa
-    %xqa = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r, { i64, { i64, i8* } } %ra)
-    %p = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a, i64 %xma
-    store { i64, { i64, i8* } } %r, { i64, { i64, i8* } }* %p
-    %pa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a, i64 %a1b
-    store { i64, { i64, i8* } } %ra, { i64, { i64, i8* } }* %pa
-    br i1 %xqa, label %thenc, label %elsec
-
-  thenc:
-    %x4 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %a1a, i64 %a1b, i64 %xma)
-    br label %ctd_ifc
-
-  elsec:
-    br label %ctd_ifc
-
-  ctd_ifc:
-    %xu = phi { i64, { i64, i8* } }* [ %a1a, %elsec ], [ %x4, %thenc ]
-    %xv = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xu, i64 %xna
-    %rb = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xv
-    %xw = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xu, i64 %xma
-    %rc = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xw
-    %xx = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %rb, { i64, { i64, i8* } } %rc)
-    %pb = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xu, i64 %xna
-    store { i64, { i64, i8* } } %rb, { i64, { i64, i8* } }* %pb
-    %pc = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xu, i64 %xma
-    store { i64, { i64, i8* } } %rc, { i64, { i64, i8* } }* %pc
-    br i1 %xx, label %thend, label %elsed
-
-  thend:
-    %x5 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %xu, i64 %xma, i64 %xna)
-    br label %ctd_ifd
-
-  elsed:
-    br label %ctd_ifd
-
-  ctd_ifd:
-    %yb = phi { i64, { i64, i8* } }* [ %xu, %elsed ], [ %x5, %thend ]
-    %yc = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yb, i64 %xma
-    %rd = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yc
-    %yd = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yb, i64 %a1b
-    %re = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yd
-    %ye = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %rd, { i64, { i64, i8* } } %re)
-    %pd = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yb, i64 %xma
-    store { i64, { i64, i8* } } %rd, { i64, { i64, i8* } }* %pd
-    %pe = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yb, i64 %a1b
-    store { i64, { i64, i8* } } %re, { i64, { i64, i8* } }* %pe
-    br i1 %ye, label %thene, label %elsee
-
-  thene:
-    %x6 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %yb, i64 %a1b, i64 %xma)
-    br label %ctd_ife
-
-  elsee:
-    br label %ctd_ife
-
-  ctd_ife:
-    %yi = phi { i64, { i64, i8* } }* [ %yb, %elsee ], [ %x6, %thene ]
-    %yja = add i64 %a1b, 1
-    %yk = add i64 %a1b, %xka
-    %yla = sub i64 %yk, 1
-    %yma = sub i64 %a1c, 2
-    %yn = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yi, i64 %yla
-    %rf = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yn
-    %yo = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yi, i64 %yja
-    %rg = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yo
-    %yp = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %rf, { i64, { i64, i8* } } %rg)
-    %pf = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yi, i64 %yla
-    store { i64, { i64, i8* } } %rf, { i64, { i64, i8* } }* %pf
-    %pg = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yi, i64 %yja
-    store { i64, { i64, i8* } } %rg, { i64, { i64, i8* } }* %pg
-    br i1 %yp, label %thenf, label %elsef
-
-  thenf:
-    %x7 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %yi, i64 %yja, i64 %yla)
-    br label %ctd_iff
-
-  elsef:
-    br label %ctd_iff
-
-  ctd_iff:
-    %yt = phi { i64, { i64, i8* } }* [ %yi, %elsef ], [ %x7, %thenf ]
-    %yu = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yt, i64 %yma
-    %rh = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yu
-    %yv = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yt, i64 %yla
-    %ri = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yv
-    %yw = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %rh, { i64, { i64, i8* } } %ri)
-    %ph = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yt, i64 %yma
-    store { i64, { i64, i8* } } %rh, { i64, { i64, i8* } }* %ph
-    %pi = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yt, i64 %yla
-    store { i64, { i64, i8* } } %ri, { i64, { i64, i8* } }* %pi
-    br i1 %yw, label %theng, label %elseg
-
-  theng:
-    %x8 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %yt, i64 %yla, i64 %yma)
-    br label %ctd_ifg
-
-  elseg:
-    br label %ctd_ifg
-
-  ctd_ifg:
-    %za = phi { i64, { i64, i8* } }* [ %yt, %elseg ], [ %x8, %theng ]
-    %zb = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %za, i64 %yla
-    %rj = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %zb
-    %zc = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %za, i64 %yja
-    %rk = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %zc
-    %zd = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %rj, { i64, { i64, i8* } } %rk)
-    %pj = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %za, i64 %yla
-    store { i64, { i64, i8* } } %rj, { i64, { i64, i8* } }* %pj
-    %pk = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %za, i64 %yja
-    store { i64, { i64, i8* } } %rk, { i64, { i64, i8* } }* %pk
-    br i1 %zd, label %thenh, label %elseh
-
-  thenh:
-    %x9 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %za, i64 %yja, i64 %yla)
-    br label %ctd_ifh
-
-  elseh:
-    br label %ctd_ifh
-
-  ctd_ifh:
-    %zh = phi { i64, { i64, i8* } }* [ %za, %elseh ], [ %x9, %thenh ]
-    %zia = add i64 %a1b, 2
-    %zj = add i64 %a1b, %xka
-    %zka = add i64 %zj, 1
-    %zla = sub i64 %a1c, 3
-    %zm = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %zh, i64 %zka
-    %rl = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %zm
-    %zn = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %zh, i64 %zia
-    %rm = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %zn
-    %zo = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %rl, { i64, { i64, i8* } } %rm)
-    %pl = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %zh, i64 %zka
-    store { i64, { i64, i8* } } %rl, { i64, { i64, i8* } }* %pl
-    %pm = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %zh, i64 %zia
-    store { i64, { i64, i8* } } %rm, { i64, { i64, i8* } }* %pm
-    br i1 %zo, label %theni, label %elsei
-
-  theni:
-    %x10 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %zh, i64 %zia, i64 %zka)
-    br label %ctd_ifi
-
-  elsei:
-    br label %ctd_ifi
-
-  ctd_ifi:
-    %zs = phi { i64, { i64, i8* } }* [ %zh, %elsei ], [ %x10, %theni ]
-    %zt = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %zs, i64 %zla
-    %rn = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %zt
-    %zu = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %zs, i64 %zka
-    %ro = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %zu
-    %zv = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %rn, { i64, { i64, i8* } } %ro)
-    %pn = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %zs, i64 %zla
-    store { i64, { i64, i8* } } %rn, { i64, { i64, i8* } }* %pn
-    %po = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %zs, i64 %zka
-    store { i64, { i64, i8* } } %ro, { i64, { i64, i8* } }* %po
-    br i1 %zv, label %thenj, label %elsej
-
-  thenj:
-    %x11 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %zs, i64 %zka, i64 %zla)
-    br label %ctd_ifj
-
-  elsej:
-    br label %ctd_ifj
-
-  ctd_ifj:
-    %zz = phi { i64, { i64, i8* } }* [ %zs, %elsej ], [ %x11, %thenj ]
-    %aaa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %zz, i64 %zka
-    %rp = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %aaa
-    %aab = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %zz, i64 %zia
-    %rq = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %aab
-    %aac = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %rp, { i64, { i64, i8* } } %rq)
-    %pp = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %zz, i64 %zka
-    store { i64, { i64, i8* } } %rp, { i64, { i64, i8* } }* %pp
-    %pq = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %zz, i64 %zia
-    store { i64, { i64, i8* } } %rq, { i64, { i64, i8* } }* %pq
-    br i1 %aac, label %thenk, label %elsek
-
-  thenk:
-    %x12 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %zz, i64 %zia, i64 %zka)
-    br label %ctd_ifk
-
-  elsek:
-    br label %ctd_ifk
-
-  ctd_ifk:
-    %aag = phi { i64, { i64, i8* } }* [ %zz, %elsek ], [ %x12, %thenk ]
-    %aah = add i64 %a1b, %xka
-    %aaia = sub i64 %aah, 1
-    %aaj = add i64 %a1b, %xka
-    %aak = add i64 %a1b, %xka
-    %aala = add i64 %aak, 1
-    %aam = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %aag, i64 %aaj
-    %rr = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %aam
-    %aan = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %aag, i64 %aaia
-    %rs = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %aan
-    %aao = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %rr, { i64, { i64, i8* } } %rs)
-    %pr = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %aag, i64 %aaj
-    store { i64, { i64, i8* } } %rr, { i64, { i64, i8* } }* %pr
-    %ps = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %aag, i64 %aaia
-    store { i64, { i64, i8* } } %rs, { i64, { i64, i8* } }* %ps
-    br i1 %aao, label %thenl, label %elsel
-
-  thenl:
-    %x13 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %aag, i64 %aaia, i64 %aaj)
-    br label %ctd_ifl
-
-  elsel:
-    br label %ctd_ifl
-
-  ctd_ifl:
-    %aas = phi { i64, { i64, i8* } }* [ %aag, %elsel ], [ %x13, %thenl ]
-    %aat = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %aas, i64 %aala
-    %rt = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %aat
-    %aau = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %aas, i64 %aaj
-    %ru = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %aau
-    %aav = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %rt, { i64, { i64, i8* } } %ru)
-    %pt = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %aas, i64 %aala
-    store { i64, { i64, i8* } } %rt, { i64, { i64, i8* } }* %pt
-    %pu = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %aas, i64 %aaj
-    store { i64, { i64, i8* } } %ru, { i64, { i64, i8* } }* %pu
-    br i1 %aav, label %thenm, label %elsem
-
-  thenm:
-    %x14 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %aas, i64 %aaj, i64 %aala)
-    br label %ctd_ifm
-
-  elsem:
-    br label %ctd_ifm
-
-  ctd_ifm:
-    %aaz = phi { i64, { i64, i8* } }* [ %aas, %elsem ], [ %x14, %thenm ]
-    %aba = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %aaz, i64 %aaj
-    %rv = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %aba
-    %abb = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %aaz, i64 %aaia
-    %rw = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %abb
-    %abc = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %rv, { i64, { i64, i8* } } %rw)
-    %pv = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %aaz, i64 %aaj
-    store { i64, { i64, i8* } } %rv, { i64, { i64, i8* } }* %pv
-    %pw = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %aaz, i64 %aaia
-    store { i64, { i64, i8* } } %rw, { i64, { i64, i8* } }* %pw
-    br i1 %abc, label %thenn, label %elsen
-
-  thenn:
-    %x15 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %aaz, i64 %aaia, i64 %aaj)
-    br label %ctd_ifn
-
-  elsen:
-    br label %ctd_ifn
-
-  ctd_ifn:
-    %abg = phi { i64, { i64, i8* } }* [ %aaz, %elsen ], [ %x15, %thenn ]
-    %x16 = add i64 %a1b, %xka
-    %x17 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %abg, i64 %a1b, i64 %x16)
-    br label %ctd_ifb
-
-  elseb:
-    %xma1 = add i64 %a1b, %xka
-    %bic = sub i64 %a1c, 1
-    %xna1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a, i64 %a1b
-    %r1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xna1
-    %xoa1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a, i64 %xma1
-    %ra1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xoa1
-    %xpa1 = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r1, { i64, { i64, i8* } } %ra1)
-    %p1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a, i64 %a1b
-    store { i64, { i64, i8* } } %r1, { i64, { i64, i8* } }* %p1
-    %pa1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a, i64 %xma1
-    store { i64, { i64, i8* } } %ra1, { i64, { i64, i8* } }* %pa1
-    br i1 %xpa1, label %theno, label %elseo
-
-  theno:
-    %x18 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %a1a, i64 %xma1, i64 %a1b)
-    br label %ctd_ifo
-
-  elseo:
-    br label %ctd_ifo
-
-  ctd_ifo:
-    %xt = phi { i64, { i64, i8* } }* [ %a1a, %elseo ], [ %x18, %theno ]
-    %xu1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xt, i64 %bic
-    %rb1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xu1
-    %xv1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xt, i64 %a1b
-    %rc1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xv1
-    %xw1 = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %rb1, { i64, { i64, i8* } } %rc1)
-    %pb1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xt, i64 %bic
-    store { i64, { i64, i8* } } %rb1, { i64, { i64, i8* } }* %pb1
-    %pc1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xt, i64 %a1b
-    store { i64, { i64, i8* } } %rc1, { i64, { i64, i8* } }* %pc1
-    br i1 %xw1, label %thenp, label %elsep
-
-  thenp:
-    %x19 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %xt, i64 %a1b, i64 %bic)
-    br label %ctd_ifp
-
-  elsep:
-    br label %ctd_ifp
-
-  ctd_ifp:
-    %ya = phi { i64, { i64, i8* } }* [ %xt, %elsep ], [ %x19, %thenp ]
-    %yb1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %ya, i64 %a1b
-    %rd1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yb1
-    %yc1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %ya, i64 %xma1
-    %re1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yc1
-    %yd1 = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %rd1, { i64, { i64, i8* } } %re1)
-    %pd1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %ya, i64 %a1b
-    store { i64, { i64, i8* } } %rd1, { i64, { i64, i8* } }* %pd1
-    %pe1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %ya, i64 %xma1
-    store { i64, { i64, i8* } } %re1, { i64, { i64, i8* } }* %pe1
-    br i1 %yd1, label %thenq, label %elseq
-
-  thenq:
-    %x20 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %ya, i64 %xma1, i64 %a1b)
-    br label %ctd_ifq
-
-  elseq:
-    br label %ctd_ifq
-
-  ctd_ifq:
-    %x21 = phi { i64, { i64, i8* } }* [ %ya, %elseq ], [ %x20, %thenq ]
-    br label %ctd_ifb
-
-  ctd_ifb:
-    %xma2 = phi { i64, { i64, i8* } }* [ %x21, %ctd_ifq ], [ %x17, %ctd_ifn ]
-    br i1 %a1, label %thenr, label %elser
-
-  thenr:
-    br label %ctd_ifr
-
-  elser:
-    %xna2 = sub i64 %a1b, 1
-    %xoa2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xma2, i64 %xna2
-    %r2 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xoa2
-    %xpa2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xma2, i64 %a1b
-    %ra2 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xpa2
-    %xqa1 = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r2, { i64, { i64, i8* } } %ra2)
-    %p2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xma2, i64 %xna2
-    store { i64, { i64, i8* } } %r2, { i64, { i64, i8* } }* %p2
-    %pa2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xma2, i64 %a1b
-    store { i64, { i64, i8* } } %ra2, { i64, { i64, i8* } }* %pa2
-    %x22 = add i1 %xqa1, 1
-    br label %ctd_ifr
-
-  ctd_ifr:
-    %xna3 = phi i1 [ %x22, %elser ], [ 0, %thenr ]
-    br i1 %xna3, label %thens, label %elses
-
-  thens:
-    %xoa3 = call { i1, { i64, { i64, { i64, i8* } }* } } @Sorting_Export_Code_str_sort_partition_left_impl ({ i64, { i64, i8* } }* %xma2, i64 %a1b, i64 %a1c)
-    %a1d = extractvalue { i1, { i64, { i64, { i64, i8* } }* } } %xoa3, 0
-    %xpa3 = extractvalue { i1, { i64, { i64, { i64, i8* } }* } } %xoa3, 1
-    %a1e = extractvalue { i64, { i64, { i64, i8* } }* } %xpa3, 0
-    %a2e = extractvalue { i64, { i64, { i64, i8* } }* } %xpa3, 1
-    %xqa2 = add i64 %a1e, 1
-    %xw2 = insertvalue { i64, i64 } zeroinitializer, i64 %a1c, 0
-    %tmpad = insertvalue { i64, i64 } %xw2, i64 %a2c, 1
-    %xx1 = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %xqa2, 0
-    %tmpae = insertvalue { i64, { i64, i64 } } %xx1, { i64, i64 } %tmpad, 1
-    %xy = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } zeroinitializer, { i64, { i64, i8* } }* %a2e, 0
-    %tmpaf = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %xy, { i64, { i64, i64 } } %tmpae, 1
-    %xz = insertvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } zeroinitializer, i1 0, 0
-    %x23 = insertvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %xz, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %tmpaf, 1
-    %x24 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_pdqsort_impl_f_08031364 ({ i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %x23)
-    br label %ctd_ifs
-
-  elses:
-    %xoa4 = add i64 %a1b, 1
+    %xaa = add i64 %x1, 1
+    %xba = insertvalue { i64, i64* } zeroinitializer, i64 %xaa, 0
+    %xca = insertvalue { i64, i64* } %xba, i64* %x, 1
     br label %while_start
 
   while_start:
-    %s = phi i64 [ %x25, %while_body ], [ %xoa4, %elses ]
-    %xpa4 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xma2, i64 %s
-    %r3 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xpa4
-    %xqa3 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xma2, i64 %a1b
-    %ra3 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xqa3
-    %xra = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r3, { i64, { i64, i8* } } %ra3)
-    %p3 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xma2, i64 %s
-    store { i64, { i64, i8* } } %r3, { i64, { i64, i8* } }* %p3
-    %pa3 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xma2, i64 %a1b
-    store { i64, { i64, i8* } } %ra3, { i64, { i64, i8* } }* %pa3
-    br i1 %xra, label %while_body, label %while_end
+    %xbaa = phi { i64, i64* } [ %x6, %ctd_ifa ], [ %xca, %then ]
+    %a1 = extractvalue { i64, i64* } %xbaa, 0
+    %a2 = extractvalue { i64, i64* } %xbaa, 1
+    %x4 = icmp slt i64 %a1, %x2
+    br i1 %x4, label %while_body, label %while_end
 
   while_body:
-    %x25 = add i64 %s, 1
-    br label %while_start
+    %a11 = extractvalue { i64, i64* } %xbaa, 0
+    %a21 = extractvalue { i64, i64* } %xbaa, 1
+    %xfa = sub i64 %a11, 1
+    %xg = getelementptr i64, i64* %a21, i64 %a11
+    %r = load i64, i64* %xg
+    %xh = getelementptr i64, i64* %a21, i64 %xfa
+    %ra = load i64, i64* %xh
+    %xi = icmp ult i64 %r, %ra
+    %p = getelementptr i64, i64* %a21, i64 %a11
+    store i64 %r, i64* %p
+    %pa = getelementptr i64, i64* %a21, i64 %xfa
+    store i64 %ra, i64* %pa
+    br i1 %xi, label %thena, label %elsea
 
-  while_end:
-    %xqa4 = add i64 %a1b, 1
-    %xra1 = icmp eq i64 %s, %xqa4
-    br i1 %xra1, label %thent, label %elset
-
-  thent:
-    %x26 = sub i64 %a1c, 1
+  thena:
+    %xha = getelementptr i64, i64* %a21, i64 %a11
+    %rb = load i64, i64* %xha
+    %xia = sub i64 %a11, 1
+    %xja = getelementptr i64, i64* %a21, i64 %xia
+    %raa = load i64, i64* %xja
+    %pb = getelementptr i64, i64* %a21, i64 %a11
+    store i64 %raa, i64* %pb
+    %xla = sub i64 %a11, 1
+    %xn = insertvalue { i64*, i64 } zeroinitializer, i64* %a21, 0
+    %xo = insertvalue { i64*, i64 } %xn, i64 %xla, 1
     br label %while_starta
 
   while_starta:
-    %s1 = phi i64 [ %x29, %while_bodya ], [ %x26, %thent ]
-    %xsa = add i64 %a1b, 1
-    %xta = icmp slt i64 %xsa, %s1
-    br i1 %xta, label %thenu, label %elseu
-
-  thenu:
-    %xua = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xma2, i64 %s1
-    %r4 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xua
-    %xv2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xma2, i64 %a1b
-    %ra4 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xv2
-    %xw3 = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r4, { i64, { i64, i8* } } %ra4)
-    %p4 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xma2, i64 %s1
-    store { i64, { i64, i8* } } %r4, { i64, { i64, i8* } }* %p4
-    %pa4 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xma2, i64 %a1b
-    store { i64, { i64, i8* } } %ra4, { i64, { i64, i8* } }* %pa4
-    %x27 = add i1 %xw3, 1
-    br label %ctd_ifu
-
-  elseu:
-    br label %ctd_ifu
-
-  ctd_ifu:
-    %x28 = phi i1 [ 0, %elseu ], [ %x27, %thenu ]
-    br i1 %x28, label %while_bodya, label %while_enda
+    %xma = phi { i64*, i64 } [ %x5, %while_bodya ], [ %xo, %thena ]
+    %a1b = extractvalue { i64*, i64 } %xma, 0
+    %a2b = extractvalue { i64*, i64 } %xma, 1
+    %xna = sub i64 %a2b, 1
+    %xs = getelementptr i64, i64* %a1b, i64 %xna
+    %rc = load i64, i64* %xs
+    %xt = icmp ult i64 %rb, %rc
+    %pc = getelementptr i64, i64* %a1b, i64 %xna
+    store i64 %rc, i64* %pc
+    br i1 %xt, label %while_bodya, label %while_enda
 
   while_bodya:
-    %x29 = sub i64 %s1, 1
+    %a1b1 = extractvalue { i64*, i64 } %xma, 0
+    %a2b1 = extractvalue { i64*, i64 } %xma, 1
+    %xna1 = sub i64 %a2b1, 1
+    %xoa = getelementptr i64, i64* %a1b1, i64 %xna1
+    %rba = load i64, i64* %xoa
+    %paa = getelementptr i64, i64* %a1b1, i64 %a2b1
+    store i64 %rba, i64* %paa
+    %xqa = sub i64 %a2b1, 1
+    %xra = insertvalue { i64*, i64 } zeroinitializer, i64* %a1b1, 0
+    %x5 = insertvalue { i64*, i64 } %xra, i64 %xqa, 1
     br label %while_starta
 
   while_enda:
-    br label %ctd_ift
+    %a1b2 = extractvalue { i64*, i64 } %xma, 0
+    %a2b2 = extractvalue { i64*, i64 } %xma, 1
+    %paa1 = getelementptr i64, i64* %a1b2, i64 %a2b2
+    store i64 %rb, i64* %paa1
+    br label %ctd_ifa
 
-  elset:
-    %x31 = sub i64 %a1c, 1
-    br label %while_startb
+  elsea:
+    br label %ctd_ifa
 
-  while_startb:
-    %s2 = phi i64 [ %x33, %while_bodyb ], [ %x31, %elset ]
-    %xsa1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xma2, i64 %s2
-    %r5 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xsa1
-    %xta1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xma2, i64 %a1b
-    %ra5 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xta1
-    %xu2 = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r5, { i64, { i64, i8* } } %ra5)
-    %p5 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xma2, i64 %s2
-    store { i64, { i64, i8* } } %r5, { i64, { i64, i8* } }* %p5
-    %pa5 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xma2, i64 %a1b
-    store { i64, { i64, i8* } } %ra5, { i64, { i64, i8* } }* %pa5
-    %x32 = add i1 %xu2, 1
-    br i1 %x32, label %while_bodyb, label %while_endb
+  ctd_ifa:
+    %xcaa = phi i64* [ %a21, %elsea ], [ %a1b2, %while_enda ]
+    %xda = add i64 %a11, 1
+    %xea = insertvalue { i64, i64* } zeroinitializer, i64 %xda, 0
+    %x6 = insertvalue { i64, i64* } %xea, i64* %xcaa, 1
+    br label %while_start
 
-  while_bodyb:
-    %x33 = sub i64 %s2, 1
-    br label %while_startb
+  while_end:
+    %a12 = extractvalue { i64, i64* } %xbaa, 0
+    %x7 = extractvalue { i64, i64* } %xbaa, 1
+    br label %ctd_if
 
-  while_endb:
-    br label %ctd_ift
-
-  ctd_ift:
-    %xsa2 = phi i64 [ %s2, %while_endb ], [ %s1, %while_enda ]
-    %xt1 = icmp sle i64 %xsa2, %s
-    %xu3 = insertvalue { i64, i64 } zeroinitializer, i64 %s, 0
-    %tmpd = insertvalue { i64, i64 } %xu3, i64 %xsa2, 1
-    %xv3 = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } zeroinitializer, { i64, { i64, i8* } }* %xma2, 0
-    %xw4 = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xv3, { i64, i64 } %tmpd, 1
-    br label %while_startc
-
-  while_startc:
-    %xua1 = phi { { i64, { i64, i8* } }*, { i64, i64 } } [ %x40, %while_ende ], [ %xw4, %ctd_ift ]
-    %a1d1 = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xua1, 0
-    %xva = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xua1, 1
-    %a = extractvalue { i64, i64 } %xva, 0
-    %x35 = extractvalue { i64, i64 } %xva, 1
-    %x36 = icmp slt i64 %a, %x35
-    br i1 %x36, label %while_bodyc, label %while_endc
-
-  while_bodyc:
-    %a1d2 = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xua1, 0
-    %xva1 = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xua1, 1
-    %a1aa = extractvalue { i64, i64 } %xva1, 0
-    %a2a = extractvalue { i64, i64 } %xva1, 1
-    %xwa = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %a1d2, i64 %a1aa, i64 %a2a)
-    %xxa = add i64 %a1aa, 1
-    br label %while_startd
-
-  while_startd:
-    %s3 = phi i64 [ %x37, %while_bodyd ], [ %xxa, %while_bodyc ]
-    %xya = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xwa, i64 %s3
-    %r6 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xya
-    %xza = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xwa, i64 %a1b
-    %ra6 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xza
-    %yaa = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r6, { i64, { i64, i8* } } %ra6)
-    %p6 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xwa, i64 %s3
-    store { i64, { i64, i8* } } %r6, { i64, { i64, i8* } }* %p6
-    %pa6 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xwa, i64 %a1b
-    store { i64, { i64, i8* } } %ra6, { i64, { i64, i8* } }* %pa6
-    br i1 %yaa, label %while_bodyd, label %while_endd
-
-  while_bodyd:
-    %x37 = add i64 %s3, 1
-    br label %while_startd
-
-  while_endd:
-    %xza1 = sub i64 %a2a, 1
-    br label %while_starte
-
-  while_starte:
-    %s4 = phi i64 [ %x39, %while_bodye ], [ %xza1, %while_endd ]
-    %yaa1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xwa, i64 %s4
-    %r7 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yaa1
-    %yba = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xwa, i64 %a1b
-    %ra7 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %yba
-    %yca = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r7, { i64, { i64, i8* } } %ra7)
-    %p7 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xwa, i64 %s4
-    store { i64, { i64, i8* } } %r7, { i64, { i64, i8* } }* %p7
-    %pa7 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xwa, i64 %a1b
-    store { i64, { i64, i8* } } %ra7, { i64, { i64, i8* } }* %pa7
-    %x38 = add i1 %yca, 1
-    br i1 %x38, label %while_bodye, label %while_ende
-
-  while_bodye:
-    %x39 = sub i64 %s4, 1
-    br label %while_starte
-
-  while_ende:
-    %yba1 = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } zeroinitializer, { i64, { i64, i8* } }* %xwa, 0
-    %ye1 = insertvalue { i64, i64 } zeroinitializer, i64 %s3, 0
-    %tmpf = insertvalue { i64, i64 } %ye1, i64 %s4, 1
-    %x40 = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } %yba1, { i64, i64 } %tmpf, 1
-    br label %while_startc
-
-  while_endc:
-    %a1d3 = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xua1, 0
-    %xva2 = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xua1, 1
-    %a1aa1 = extractvalue { i64, i64 } %xva2, 0
-    %a2a1 = extractvalue { i64, i64 } %xva2, 1
-    %xwa1 = sub i64 %a1aa1, 1
-    %xxa1 = icmp ne i64 %a1b, %xwa1
-    br i1 %xxa1, label %thenv, label %elsev
-
-  thenv:
-    %x41 = sub i64 %a1aa1, 1
-    %x42 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %a1d3, i64 %a1b, i64 %x41)
-    br label %ctd_ifv
-
-  elsev:
-    br label %ctd_ifv
-
-  ctd_ifv:
-    %xya2 = phi { i64, { i64, i8* } }* [ %a1d3, %elsev ], [ %x42, %thenv ]
-    %xza2 = sub i64 %a1aa1, 1
-    %yd2 = insertvalue { i64, { i64, { i64, i8* } }* } zeroinitializer, i64 %xza2, 0
-    %tmpe = insertvalue { i64, { i64, { i64, i8* } }* } %yd2, { i64, { i64, i8* } }* %xya2, 1
-    %a1e1 = extractvalue { i64, { i64, { i64, i8* } }* } %tmpe, 0
-    %yf = insertvalue { i64, { i64, { i64, i8* } }* } zeroinitializer, i64 %xza2, 0
-    %tmpf1 = insertvalue { i64, { i64, { i64, i8* } }* } %yf, { i64, { i64, i8* } }* %xya2, 1
-    %a2e1 = extractvalue { i64, { i64, { i64, i8* } }* } %tmpf1, 1
-    %yaa3 = sub i64 %a1c, %a1b
-    %yba2 = sub i64 %a1e1, %a1b
-    %yca1 = add i64 %a1e1, 1
-    %yda = sub i64 %a1c, %yca1
-    %yea = udiv i64 %yaa3, 8
-    %yfa = icmp slt i64 %yba2, %yea
-    %yga = icmp slt i64 %yda, %yea
-    %yha = or i1 %yfa, %yga
-    br i1 %yha, label %thenw, label %elsew
-
-  thenw:
-    %yia = icmp sle i64 16, %yba2
-    br i1 %yia, label %thenx, label %elsex
-
-  thenx:
-    %yja1 = udiv i64 %yba2, 4
-    %yk1 = add i64 %a1b, %yja1
-    %yla1 = sub i64 %a1e1, 1
-    %ym = sub i64 %a1e1, %yja1
-    %yn1 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %a2e1, i64 %a1b, i64 %yk1)
-    %yo1 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %yn1, i64 %yla1, i64 %ym)
-    %yp1 = icmp slt i64 128, %yba2
-    br i1 %yp1, label %theny, label %elsey
-
-  theny:
-    %yqa = add i64 %a1b, 1
-    %yra = add i64 %a1b, 2
-    %ysa = sub i64 %a1e1, 2
-    %yta = sub i64 %a1e1, 3
-    %yua = add i64 %yk1, 1
-    %yva = add i64 %yk1, 2
-    %ywa = sub i64 %ym, 1
-    %yxa = sub i64 %ym, 2
-    %yy = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %yo1, i64 %yqa, i64 %yua)
-    %yz = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %yy, i64 %yra, i64 %yva)
-    %za1 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %yz, i64 %ysa, i64 %ywa)
-    %x43 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %za1, i64 %yta, i64 %yxa)
-    br label %ctd_ify
-
-  elsey:
-    br label %ctd_ify
-
-  ctd_ify:
-    %x44 = phi { i64, { i64, i8* } }* [ %yo1, %elsey ], [ %x43, %theny ]
-    br label %ctd_ifx
-
-  elsex:
-    br label %ctd_ifx
-
-  ctd_ifx:
-    %yj = phi { i64, { i64, i8* } }* [ %a2e1, %elsex ], [ %x44, %ctd_ify ]
-    %yk2 = icmp sle i64 16, %yda
-    br i1 %yk2, label %thenz, label %elsez
-
-  thenz:
-    %yla2 = add i64 %a1e1, 1
-    %yma1 = sub i64 %a1c, 1
-    %yna = udiv i64 %yda, 4
-    %yo2 = add i64 %yla2, %yna
-    %yp2 = sub i64 %a1c, %yna
-    %yq = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %yj, i64 %yla2, i64 %yo2)
-    %yr = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %yq, i64 %yma1, i64 %yp2)
-    %ys = icmp slt i64 128, %yda
-    br i1 %ys, label %theoa, label %elsfa
-
-  theoa:
-    %yta1 = add i64 %a1e1, 2
-    %yua1 = add i64 %a1e1, 3
-    %yva1 = sub i64 %a1c, 2
-    %ywa1 = sub i64 %a1c, 3
-    %yxa1 = sub i64 %yp2, 1
-    %yya = sub i64 %yp2, 2
-    %yza = add i64 %yo2, 1
-    %zaa = add i64 %yo2, 2
-    %zb1 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %yr, i64 %yta1, i64 %yza)
-    %zc1 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %zb1, i64 %yua1, i64 %zaa)
-    %zd1 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %zc1, i64 %yva1, i64 %yxa1)
-    %x45 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %zd1, i64 %ywa1, i64 %yya)
-    br label %ctd_iga
-
-  elsfa:
-    br label %ctd_iga
-
-  ctd_iga:
-    %x46 = phi { i64, { i64, i8* } }* [ %yr, %elsfa ], [ %x45, %theoa ]
-    br label %ctd_ifz
-
-  elsez:
-    br label %ctd_ifz
-
-  ctd_ifz:
-    %yl = phi { i64, { i64, i8* } }* [ %yj, %elsez ], [ %x46, %ctd_iga ]
-    %yma2 = insertvalue { i1, { i64, { i64, i8* } }* } zeroinitializer, i1 1, 0
-    %x47 = insertvalue { i1, { i64, { i64, i8* } }* } %yma2, { i64, { i64, i8* } }* %yl, 1
-    br label %ctd_ifw
-
-  elsew:
-    %yia1 = insertvalue { i1, { i64, { i64, i8* } }* } zeroinitializer, i1 0, 0
-    %x48 = insertvalue { i1, { i64, { i64, i8* } }* } %yia1, { i64, { i64, i8* } }* %a2e1, 1
-    br label %ctd_ifw
-
-  ctd_ifw:
-    %yia2 = phi { i1, { i64, { i64, i8* } }* } [ %x48, %elsew ], [ %x47, %ctd_ifz ]
-    %a1f = extractvalue { i1, { i64, { i64, i8* } }* } %yia2, 0
-    %a2f = extractvalue { i1, { i64, { i64, i8* } }* } %yia2, 1
-    br i1 %a1f, label %theob, label %elsfb
-
-  theob:
-    %x49 = sub i64 %a2c, 1
-    br label %ctd_igb
-
-  elsfb:
-    br label %ctd_igb
-
-  ctd_igb:
-    %yja2 = phi i64 [ %a2c, %elsfb ], [ %x49, %theob ]
-    %yka = icmp eq i64 %yja2, 0
-    br i1 %yka, label %theoc, label %elsfc
-
-  theoc:
-    %yla3 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_heapsort_impl ({ i64, { i64, i8* } }* %a2f, i64 %a1b, i64 %a1c)
-    %yma3 = insertvalue { i1, { i64, { i64, i8* } }* } zeroinitializer, i1 1, 0
-    %x50 = insertvalue { i1, { i64, { i64, i8* } }* } %yma3, { i64, { i64, i8* } }* %yla3, 1
-    br label %ctd_igc
-
-  elsfc:
-    %yla4 = add i1 %a1f, 1
-    %yma4 = and i1 %xt1, %yla4
-    br i1 %yma4, label %theod, label %elsfd
-
-  theod:
-    %yn2 = call { i1, { i64, { i64, i8* } }* } @Sorting_Export_Code_str_sort_maybe_insort_impl ({ i64, { i64, i8* } }* %a2f, i64 %a1b, i64 %a1e1)
-    %a1g = extractvalue { i1, { i64, { i64, i8* } }* } %yn2, 0
-    %a2g = extractvalue { i1, { i64, { i64, i8* } }* } %yn2, 1
-    br i1 %a1g, label %theoe, label %elsfe
-
-  theoe:
-    %yoa = add i64 %a1e1, 1
-    %x51 = call { i1, { i64, { i64, i8* } }* } @Sorting_Export_Code_str_sort_maybe_insort_impl ({ i64, { i64, i8* } }* %a2g, i64 %yoa, i64 %a1c)
-    br label %ctd_ige
-
-  elsfe:
-    %yoa1 = insertvalue { i1, { i64, { i64, i8* } }* } zeroinitializer, i1 0, 0
-    %x52 = insertvalue { i1, { i64, { i64, i8* } }* } %yoa1, { i64, { i64, i8* } }* %a2g, 1
-    br label %ctd_ige
-
-  ctd_ige:
-    %x53 = phi { i1, { i64, { i64, i8* } }* } [ %x52, %elsfe ], [ %x51, %theoe ]
-    br label %ctd_igd
-
-  elsfd:
-    %yna1 = insertvalue { i1, { i64, { i64, i8* } }* } zeroinitializer, i1 0, 0
-    %x54 = insertvalue { i1, { i64, { i64, i8* } }* } %yna1, { i64, { i64, i8* } }* %a2f, 1
-    br label %ctd_igd
-
-  ctd_igd:
-    %x55 = phi { i1, { i64, { i64, i8* } }* } [ %x54, %elsfd ], [ %x53, %ctd_ige ]
-    br label %ctd_igc
-
-  ctd_igc:
-    %yla5 = phi { i1, { i64, { i64, i8* } }* } [ %x55, %ctd_igd ], [ %x50, %theoc ]
-    %a1g1 = extractvalue { i1, { i64, { i64, i8* } }* } %yla5, 0
-    %a2g1 = extractvalue { i1, { i64, { i64, i8* } }* } %yla5, 1
-    br i1 %a1g1, label %theof, label %elsff
-
-  theof:
-    br label %ctd_igf
-
-  elsff:
-    %yo3 = insertvalue { i64, i64 } zeroinitializer, i64 %a1e1, 0
-    %tmpg = insertvalue { i64, i64 } %yo3, i64 %yja2, 1
-    %yp3 = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %a1b, 0
-    %tmph = insertvalue { i64, { i64, i64 } } %yp3, { i64, i64 } %tmpg, 1
-    %yq1 = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } zeroinitializer, { i64, { i64, i8* } }* %a2g1, 0
-    %tmpi = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %yq1, { i64, { i64, i64 } } %tmph, 1
-    %yr1 = insertvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } zeroinitializer, i1 %a1, 0
-    %ys1 = insertvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %yr1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %tmpi, 1
-    %yma5 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_pdqsort_impl_f_08031364 ({ i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %ys1)
-    %yna2 = add i64 %a1e1, 1
-    %yu1 = insertvalue { i64, i64 } zeroinitializer, i64 %a1c, 0
-    %tmpad1 = insertvalue { i64, i64 } %yu1, i64 %yja2, 1
-    %yv1 = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %yna2, 0
-    %tmpae1 = insertvalue { i64, { i64, i64 } } %yv1, { i64, i64 } %tmpad1, 1
-    %yw1 = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } zeroinitializer, { i64, { i64, i8* } }* %yma5, 0
-    %tmpaf1 = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %yw1, { i64, { i64, i64 } } %tmpae1, 1
-    %yx = insertvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } zeroinitializer, i1 0, 0
-    %x56 = insertvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %yx, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %tmpaf1, 1
-    %x57 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_pdqsort_impl_f_08031364 ({ i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %x56)
-    br label %ctd_igf
-
-  ctd_igf:
-    %x58 = phi { i64, { i64, i8* } }* [ %x57, %elsff ], [ %a2g1, %theof ]
-    br label %ctd_ifs
-
-  ctd_ifs:
-    %x59 = phi { i64, { i64, i8* } }* [ %x58, %ctd_igf ], [ %x24, %thens ]
+  else:
     br label %ctd_if
 
   ctd_if:
-    %x60 = phi { i64, { i64, i8* } }* [ %x59, %ctd_ifs ], [ %x3, %ctd_ifa ]
-    ret { i64, { i64, i8* } }* %x60
+    %x8 = phi i64* [ %x, %else ], [ %x7, %while_end ]
+    ret i64* %x8
 }
 
-define i64* @Sorting_Export_Code_unat_sort_is_guarded_insert_impl(i64* %x, i64 %x1, i64 %x2) {
+define { i64, { i64, i8* } }* @Monadify_M_CONST_Sorting_Pdq_Insertion_Sort_sort_impl_context_pdq_unguarded_insort_impl_Sorting_Strings_strcmp_impl({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2) {
+
+  start:
+    %x3 = icmp ne i64 %x1, %x2
+    br i1 %x3, label %then, label %else
+
+  then:
+    %xaa = add i64 %x1, 1
+    %xba = insertvalue { i64, { i64, { i64, i8* } }* } zeroinitializer, i64 %xaa, 0
+    %xca = insertvalue { i64, { i64, { i64, i8* } }* } %xba, { i64, { i64, i8* } }* %x, 1
+    br label %while_start
+
+  while_start:
+    %xbaa = phi { i64, { i64, { i64, i8* } }* } [ %x6, %ctd_ifa ], [ %xca, %then ]
+    %a1 = extractvalue { i64, { i64, { i64, i8* } }* } %xbaa, 0
+    %a2 = extractvalue { i64, { i64, { i64, i8* } }* } %xbaa, 1
+    %x4 = icmp slt i64 %a1, %x2
+    br i1 %x4, label %while_body, label %while_end
+
+  while_body:
+    %a11 = extractvalue { i64, { i64, { i64, i8* } }* } %xbaa, 0
+    %a21 = extractvalue { i64, { i64, { i64, i8* } }* } %xbaa, 1
+    %xfa = sub i64 %a11, 1
+    %xg = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %a11
+    %r = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xg
+    %xh = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %xfa
+    %ra = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xh
+    %xi = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r, { i64, { i64, i8* } } %ra)
+    %p = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %a11
+    store { i64, { i64, i8* } } %r, { i64, { i64, i8* } }* %p
+    %pa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %xfa
+    store { i64, { i64, i8* } } %ra, { i64, { i64, i8* } }* %pa
+    br i1 %xi, label %thena, label %elsea
+
+  thena:
+    %xha = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %a11
+    %rb = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xha
+    %xia = sub i64 %a11, 1
+    %xja = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %xia
+    %raa = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xja
+    %pb = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %a11
+    store { i64, { i64, i8* } } %raa, { i64, { i64, i8* } }* %pb
+    %xla = sub i64 %a11, 1
+    %xn = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %a21, 0
+    %xo = insertvalue { { i64, { i64, i8* } }*, i64 } %xn, i64 %xla, 1
+    br label %while_starta
+
+  while_starta:
+    %xma = phi { { i64, { i64, i8* } }*, i64 } [ %x5, %while_bodya ], [ %xo, %thena ]
+    %a1b = extractvalue { { i64, { i64, i8* } }*, i64 } %xma, 0
+    %a2b = extractvalue { { i64, { i64, i8* } }*, i64 } %xma, 1
+    %xna = sub i64 %a2b, 1
+    %xs = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b, i64 %xna
+    %rc = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xs
+    %xt = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %rb, { i64, { i64, i8* } } %rc)
+    %pc = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b, i64 %xna
+    store { i64, { i64, i8* } } %rc, { i64, { i64, i8* } }* %pc
+    br i1 %xt, label %while_bodya, label %while_enda
+
+  while_bodya:
+    %a1b1 = extractvalue { { i64, { i64, i8* } }*, i64 } %xma, 0
+    %a2b1 = extractvalue { { i64, { i64, i8* } }*, i64 } %xma, 1
+    %xna1 = sub i64 %a2b1, 1
+    %xoa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b1, i64 %xna1
+    %rba = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xoa
+    %paa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b1, i64 %a2b1
+    store { i64, { i64, i8* } } %rba, { i64, { i64, i8* } }* %paa
+    %xqa = sub i64 %a2b1, 1
+    %xra = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %a1b1, 0
+    %x5 = insertvalue { { i64, { i64, i8* } }*, i64 } %xra, i64 %xqa, 1
+    br label %while_starta
+
+  while_enda:
+    %a1b2 = extractvalue { { i64, { i64, i8* } }*, i64 } %xma, 0
+    %a2b2 = extractvalue { { i64, { i64, i8* } }*, i64 } %xma, 1
+    %paa1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b2, i64 %a2b2
+    store { i64, { i64, i8* } } %rb, { i64, { i64, i8* } }* %paa1
+    br label %ctd_ifa
+
+  elsea:
+    br label %ctd_ifa
+
+  ctd_ifa:
+    %xcaa = phi { i64, { i64, i8* } }* [ %a21, %elsea ], [ %a1b2, %while_enda ]
+    %xda = add i64 %a11, 1
+    %xea = insertvalue { i64, { i64, { i64, i8* } }* } zeroinitializer, i64 %xda, 0
+    %x6 = insertvalue { i64, { i64, { i64, i8* } }* } %xea, { i64, { i64, i8* } }* %xcaa, 1
+    br label %while_start
+
+  while_end:
+    %a12 = extractvalue { i64, { i64, { i64, i8* } }* } %xbaa, 0
+    %x7 = extractvalue { i64, { i64, { i64, i8* } }* } %xbaa, 1
+    br label %ctd_if
+
+  else:
+    br label %ctd_if
+
+  ctd_if:
+    %x8 = phi { i64, { i64, i8* } }* [ %x, %else ], [ %x7, %while_end ]
+    ret { i64, { i64, i8* } }* %x8
+}
+
+define { i64*, i64 } @Monadify_M_CONST_Sorting_Sample_Partition_sort_impl_context_partition_pivot_sample_impl_LLVM_Shallow_ll_icmp_ult(i64* %x, i64 %x1) {
+
+  start:
+    %x2 = call i64 @Monadify_M_CONST_Sorting_Sample_Partition_sort_impl_context_sample_pivot_impl_LLVM_Shallow_ll_icmp_ult (i64* %x, i64 %x1)
+    %xaa = icmp ne i64 %x2, 0
+    br i1 %xaa, label %then, label %else
+
+  then:
+    %x3 = call i64* @Proto_IICF_EOArray_swap_eos_impl (i64* %x, i64 0, i64 %x2)
+    br label %ctd_if
+
+  else:
+    br label %ctd_if
+
+  ctd_if:
+    %xb = phi i64* [ %x, %else ], [ %x3, %then ]
+    %xc = call { i64*, i64 } @Monadify_M_CONST_Sorting_Quicksort_Partition_sort_impl_context_qs_partition_impl_LLVM_Shallow_ll_icmp_ult (i64 1, i64 %x1, i64 0, i64* %xb)
+    %a = extractvalue { i64*, i64 } %xc, 0
+    %b = extractvalue { i64*, i64 } %xc, 1
+    %xda = insertvalue { i64*, i64 } zeroinitializer, i64* %a, 0
+    %x4 = insertvalue { i64*, i64 } %xda, i64 %b, 1
+    ret { i64*, i64 } %x4
+}
+
+define { { i64, { i64, i8* } }*, i64 } @Monadify_M_CONST_Sorting_Sample_Partition_sort_impl_context_partition_pivot_sample_impl_Sorting_Strings_strcmp_impl({ i64, { i64, i8* } }* %x, i64 %x1) {
+
+  start:
+    %x2 = call i64 @Monadify_M_CONST_Sorting_Sample_Partition_sort_impl_context_sample_pivot_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %x, i64 %x1)
+    %xaa = icmp ne i64 %x2, 0
+    br i1 %xaa, label %then, label %else
+
+  then:
+    %x3 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eos_impl1 ({ i64, { i64, i8* } }* %x, i64 0, i64 %x2)
+    br label %ctd_if
+
+  else:
+    br label %ctd_if
+
+  ctd_if:
+    %xb = phi { i64, { i64, i8* } }* [ %x, %else ], [ %x3, %then ]
+    %xc = call { { i64, { i64, i8* } }*, i64 } @Monadify_M_CONST_Sorting_Quicksort_Partition_sort_impl_context_qs_partition_impl_Sorting_Strings_strcmp_impl (i64 1, i64 %x1, i64 0, { i64, { i64, i8* } }* %xb)
+    %a = extractvalue { { i64, { i64, i8* } }*, i64 } %xc, 0
+    %b = extractvalue { { i64, { i64, i8* } }*, i64 } %xc, 1
+    %xda = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %a, 0
+    %x4 = insertvalue { { i64, { i64, i8* } }*, i64 } %xda, i64 %b, 1
+    ret { { i64, { i64, i8* } }*, i64 } %x4
+}
+
+define i64* @Monadify_M_CONST_Sorting_Final_insertion_Sort_sort_impl_context_final_insertion_sort_impl_LLVM_Shallow_ll_icmp_ult(i64* %x, i64 %x1, i64 %x2) {
+
+  start:
+    %x3 = sub i64 %x2, %x1
+    %xa = icmp sle i64 %x3, 16
+    br i1 %xa, label %then, label %else
+
+  then:
+    %xb = add i64 %x1, 1
+    %x4 = call i64* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_sort_impl_context_guarded_insertion_sort_impl_LLVM_Shallow_ll_icmp_ult (i64 %x1, i64 %xb, i64 %x2, i64* %x)
+    br label %ctd_if
+
+  else:
+    %xb1 = add i64 %x1, 1
+    %xc = add i64 %x1, 16
+    %xd = call i64* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_sort_impl_context_guarded_insertion_sort_impl_LLVM_Shallow_ll_icmp_ult (i64 %x1, i64 %xb1, i64 %xc, i64* %x)
+    %xe = add i64 %x1, 16
+    %x5 = call i64* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_sort_impl_context_unguarded_insertion_sort_impl_LLVM_Shallow_ll_icmp_ult (i64 %x1, i64 %xe, i64 %x2, i64* %xd)
+    br label %ctd_if
+
+  ctd_if:
+    %x6 = phi i64* [ %x5, %else ], [ %x4, %then ]
+    ret i64* %x6
+}
+
+define { i64, { i64, i8* } }* @Monadify_M_CONST_Sorting_Final_insertion_Sort_sort_impl_context_final_insertion_sort_impl_Sorting_Strings_strcmp_impl({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2) {
+
+  start:
+    %x3 = sub i64 %x2, %x1
+    %xa = icmp sle i64 %x3, 16
+    br i1 %xa, label %then, label %else
+
+  then:
+    %xb = add i64 %x1, 1
+    %x4 = call { i64, { i64, i8* } }* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_sort_impl_context_guarded_insertion_sort_impl_Sorting_Strings_strcmp_impl (i64 %x1, i64 %xb, i64 %x2, { i64, { i64, i8* } }* %x)
+    br label %ctd_if
+
+  else:
+    %xb1 = add i64 %x1, 1
+    %xc = add i64 %x1, 16
+    %xd = call { i64, { i64, i8* } }* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_sort_impl_context_guarded_insertion_sort_impl_Sorting_Strings_strcmp_impl (i64 %x1, i64 %xb1, i64 %xc, { i64, { i64, i8* } }* %x)
+    %xe = add i64 %x1, 16
+    %x5 = call { i64, { i64, i8* } }* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_sort_impl_context_unguarded_insertion_sort_impl_Sorting_Strings_strcmp_impl (i64 %x1, i64 %xe, i64 %x2, { i64, { i64, i8* } }* %xd)
+    br label %ctd_if
+
+  ctd_if:
+    %x6 = phi { i64, { i64, i8* } }* [ %x5, %else ], [ %x4, %then ]
+    ret { i64, { i64, i8* } }* %x6
+}
+
+define i64* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_sort_impl_context_is_guarded_insert_impl_LLVM_Shallow_ll_icmp_ult(i64* %x, i64 %x1, i64 %x2) {
 
   start:
     %x3 = getelementptr i64, i64* %x, i64 %x2
@@ -2923,11 +5195,11 @@ define i64* @Sorting_Export_Code_unat_sort_is_guarded_insert_impl(i64* %x, i64 %
     br i1 %xbaa, label %then, label %else
 
   then:
-    %bib = sub i64 %a2a, 1
-    %xca = getelementptr i64, i64* %a1a, i64 %bib
-    %ra = load i64, i64* %xca
-    %xda = icmp ult i64 %r, %ra
-    %p = getelementptr i64, i64* %a1a, i64 %bib
+    %xca = sub i64 %a2a, 1
+    %xf = getelementptr i64, i64* %a1a, i64 %xca
+    %ra = load i64, i64* %xf
+    %xg = icmp ult i64 %r, %ra
+    %p = getelementptr i64, i64* %a1a, i64 %xca
     store i64 %ra, i64* %p
     br label %ctd_if
 
@@ -2935,7 +5207,7 @@ define i64* @Sorting_Export_Code_unat_sort_is_guarded_insert_impl(i64* %x, i64 %
     br label %ctd_if
 
   ctd_if:
-    %x4 = phi i1 [ 0, %else ], [ %xda, %then ]
+    %x4 = phi i1 [ 0, %else ], [ %xg, %then ]
     br i1 %x4, label %while_body, label %while_end
 
   while_body:
@@ -2959,7 +5231,7 @@ define i64* @Sorting_Export_Code_unat_sort_is_guarded_insert_impl(i64* %x, i64 %
     ret i64* %a1a2
 }
 
-define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_is_unguarded_insert_impl({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2) {
+define { i64, { i64, i8* } }* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_sort_impl_context_is_guarded_insert_impl_Sorting_Strings_strcmp_impl({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2) {
 
   start:
     %x3 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x, i64 %x2
@@ -2969,16 +5241,27 @@ define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_is_unguarded_insert_
     br label %while_start
 
   while_start:
-    %xaaa = phi { { i64, { i64, i8* } }*, i64 } [ %x4, %while_body ], [ %xba, %start ]
+    %xaaa = phi { { i64, { i64, i8* } }*, i64 } [ %x5, %while_body ], [ %xba, %start ]
     %a1a = extractvalue { { i64, { i64, i8* } }*, i64 } %xaaa, 0
     %a2a = extractvalue { { i64, { i64, i8* } }*, i64 } %xaaa, 1
-    %bib = sub i64 %a2a, 1
-    %xbaa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a, i64 %bib
-    %ra = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xbaa
-    %xca = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r, { i64, { i64, i8* } } %ra)
-    %p = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a, i64 %bib
+    %xbaa = icmp slt i64 %x1, %a2a
+    br i1 %xbaa, label %then, label %else
+
+  then:
+    %xca = sub i64 %a2a, 1
+    %xf = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a, i64 %xca
+    %ra = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xf
+    %xg = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r, { i64, { i64, i8* } } %ra)
+    %p = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a, i64 %xca
     store { i64, { i64, i8* } } %ra, { i64, { i64, i8* } }* %p
-    br i1 %xca, label %while_body, label %while_end
+    br label %ctd_if
+
+  else:
+    br label %ctd_if
+
+  ctd_if:
+    %x4 = phi i1 [ 0, %else ], [ %xg, %then ]
+    br i1 %x4, label %while_body, label %while_end
 
   while_body:
     %a1a1 = extractvalue { { i64, { i64, i8* } }*, i64 } %xaaa, 0
@@ -2990,7 +5273,7 @@ define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_is_unguarded_insert_
     store { i64, { i64, i8* } } %ra1, { i64, { i64, i8* } }* %p1
     %xea = sub i64 %a2a1, 1
     %xfa = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %a1a1, 0
-    %x4 = insertvalue { { i64, { i64, i8* } }*, i64 } %xfa, i64 %xea, 1
+    %x5 = insertvalue { { i64, { i64, i8* } }*, i64 } %xfa, i64 %xea, 1
     br label %while_start
 
   while_end:
@@ -3001,1052 +5284,7 @@ define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_is_unguarded_insert_
     ret { i64, { i64, i8* } }* %a1a2
 }
 
-define i64* @Sorting_Export_Code_unat_sort_pdq_guarded_insort_impl(i64* %x, i64 %x1, i64 %x2) {
-
-  start:
-    %x3 = icmp ne i64 %x1, %x2
-    br i1 %x3, label %then, label %else
-
-  then:
-    %xaa = add i64 %x1, 1
-    %xb = insertvalue { i64, i64* } zeroinitializer, i64 %xaa, 0
-    %xc = insertvalue { i64, i64* } %xb, i64* %x, 1
-    br label %while_start
-
-  while_start:
-    %xba = phi { i64, i64* } [ %x7, %ctd_ifb ], [ %xc, %then ]
-    %a1 = extractvalue { i64, i64* } %xba, 0
-    %a2 = extractvalue { i64, i64* } %xba, 1
-    %x4 = icmp slt i64 %a1, %x2
-    br i1 %x4, label %while_body, label %while_end
-
-  while_body:
-    %a11 = extractvalue { i64, i64* } %xba, 0
-    %a21 = extractvalue { i64, i64* } %xba, 1
-    %xca = icmp slt i64 %x1, %a11
-    br i1 %xca, label %thena, label %elsea
-
-  thena:
-    %bib = sub i64 %a11, 1
-    %xda = getelementptr i64, i64* %a21, i64 %a11
-    %r = load i64, i64* %xda
-    %xea = getelementptr i64, i64* %a21, i64 %bib
-    %ra = load i64, i64* %xea
-    %xfa = icmp ult i64 %r, %ra
-    %p = getelementptr i64, i64* %a21, i64 %a11
-    store i64 %r, i64* %p
-    %pa = getelementptr i64, i64* %a21, i64 %bib
-    store i64 %ra, i64* %pa
-    br label %ctd_ifa
-
-  elsea:
-    br label %ctd_ifa
-
-  ctd_ifa:
-    %xda1 = phi i1 [ 0, %elsea ], [ %xfa, %thena ]
-    br i1 %xda1, label %thenb, label %elseb
-
-  thenb:
-    %xea1 = getelementptr i64, i64* %a21, i64 %a11
-    %r1 = load i64, i64* %xea1
-    %xfa1 = sub i64 %a11, 1
-    %xg = getelementptr i64, i64* %a21, i64 %xfa1
-    %ra1 = load i64, i64* %xg
-    %p1 = getelementptr i64, i64* %a21, i64 %a11
-    store i64 %ra1, i64* %p1
-    %xia = sub i64 %a11, 1
-    %xj = insertvalue { i64*, i64 } zeroinitializer, i64* %a21, 0
-    %xk = insertvalue { i64*, i64 } %xj, i64 %xia, 1
-    br label %while_starta
-
-  while_starta:
-    %xja = phi { i64*, i64 } [ %x6, %while_bodya ], [ %xk, %thenb ]
-    %a1b = extractvalue { i64*, i64 } %xja, 0
-    %a2b = extractvalue { i64*, i64 } %xja, 1
-    %xka = icmp slt i64 %x1, %a2b
-    br i1 %xka, label %thenc, label %elsec
-
-  thenc:
-    %bib1 = sub i64 %a2b, 1
-    %xla = getelementptr i64, i64* %a1b, i64 %bib1
-    %rb = load i64, i64* %xla
-    %xma = icmp ult i64 %r1, %rb
-    %pa1 = getelementptr i64, i64* %a1b, i64 %bib1
-    store i64 %rb, i64* %pa1
-    br label %ctd_ifc
-
-  elsec:
-    br label %ctd_ifc
-
-  ctd_ifc:
-    %x5 = phi i1 [ 0, %elsec ], [ %xma, %thenc ]
-    br i1 %x5, label %while_bodya, label %while_enda
-
-  while_bodya:
-    %a1b1 = extractvalue { i64*, i64 } %xja, 0
-    %a2b1 = extractvalue { i64*, i64 } %xja, 1
-    %xka1 = sub i64 %a2b1, 1
-    %xla1 = getelementptr i64, i64* %a1b1, i64 %xka1
-    %rb1 = load i64, i64* %xla1
-    %pa2 = getelementptr i64, i64* %a1b1, i64 %a2b1
-    store i64 %rb1, i64* %pa2
-    %xna = sub i64 %a2b1, 1
-    %xoa = insertvalue { i64*, i64 } zeroinitializer, i64* %a1b1, 0
-    %x6 = insertvalue { i64*, i64 } %xoa, i64 %xna, 1
-    br label %while_starta
-
-  while_enda:
-    %a1b2 = extractvalue { i64*, i64 } %xja, 0
-    %a2b2 = extractvalue { i64*, i64 } %xja, 1
-    %pa3 = getelementptr i64, i64* %a1b2, i64 %a2b2
-    store i64 %r1, i64* %pa3
-    br label %ctd_ifb
-
-  elseb:
-    br label %ctd_ifb
-
-  ctd_ifb:
-    %xea2 = phi i64* [ %a21, %elseb ], [ %a1b2, %while_enda ]
-    %xfa2 = add i64 %a11, 1
-    %xga = insertvalue { i64, i64* } zeroinitializer, i64 %xfa2, 0
-    %x7 = insertvalue { i64, i64* } %xga, i64* %xea2, 1
-    br label %while_start
-
-  while_end:
-    %a12 = extractvalue { i64, i64* } %xba, 0
-    %x8 = extractvalue { i64, i64* } %xba, 1
-    br label %ctd_if
-
-  else:
-    br label %ctd_if
-
-  ctd_if:
-    %x9 = phi i64* [ %x, %else ], [ %x8, %while_end ]
-    ret i64* %x9
-}
-
-define i64* @Sorting_Export_Code_unat_sort_pdqsort_impl_f_07989790({ i1, { i64*, { i64, { i64, i64 } } } } %x) {
-
-  start:
-    %a1 = extractvalue { i1, { i64*, { i64, { i64, i64 } } } } %x, 0
-    %xea = extractvalue { i1, { i64*, { i64, { i64, i64 } } } } %x, 1
-    %a1a = extractvalue { i64*, { i64, { i64, i64 } } } %xea, 0
-    %xfa = extractvalue { i64*, { i64, { i64, i64 } } } %xea, 1
-    %a1b = extractvalue { i64, { i64, i64 } } %xfa, 0
-    %xga = extractvalue { i64, { i64, i64 } } %xfa, 1
-    %a1c = extractvalue { i64, i64 } %xga, 0
-    %a2c = extractvalue { i64, i64 } %xga, 1
-    %xha = sub i64 %a1c, %a1b
-    %xia = icmp slt i64 %xha, 24
-    br i1 %xia, label %then, label %else
-
-  then:
-    br i1 %a1, label %thena, label %elsea
-
-  thena:
-    %x1 = call i64* @Sorting_Export_Code_unat_sort_pdq_guarded_insort_impl (i64* %a1a, i64 %a1b, i64 %a1c)
-    br label %ctd_ifa
-
-  elsea:
-    %x2 = call i64* @Sorting_Export_Code_unat_sort_pdq_unguarded_insort_impl (i64* %a1a, i64 %a1b, i64 %a1c)
-    br label %ctd_ifa
-
-  ctd_ifa:
-    %x3 = phi i64* [ %x2, %elsea ], [ %x1, %thena ]
-    br label %ctd_if
-
-  else:
-    %xja = sub i64 %a1c, %a1b
-    %xka = udiv i64 %xja, 2
-    %xla = icmp slt i64 128, %xja
-    br i1 %xla, label %thenb, label %elseb
-
-  thenb:
-    %xma = add i64 %a1b, %xka
-    %xna = sub i64 %a1c, 1
-    %xoa = getelementptr i64, i64* %a1a, i64 %xma
-    %r = load i64, i64* %xoa
-    %xpa = getelementptr i64, i64* %a1a, i64 %a1b
-    %ra = load i64, i64* %xpa
-    %xqa = icmp ult i64 %r, %ra
-    %p = getelementptr i64, i64* %a1a, i64 %xma
-    store i64 %r, i64* %p
-    %pa = getelementptr i64, i64* %a1a, i64 %a1b
-    store i64 %ra, i64* %pa
-    br i1 %xqa, label %thenc, label %elsec
-
-  thenc:
-    %x4 = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %a1a, i64 %a1b, i64 %xma)
-    br label %ctd_ifc
-
-  elsec:
-    br label %ctd_ifc
-
-  ctd_ifc:
-    %xu = phi i64* [ %a1a, %elsec ], [ %x4, %thenc ]
-    %xv = getelementptr i64, i64* %xu, i64 %xna
-    %rb = load i64, i64* %xv
-    %xw = getelementptr i64, i64* %xu, i64 %xma
-    %rc = load i64, i64* %xw
-    %xx = icmp ult i64 %rb, %rc
-    %pb = getelementptr i64, i64* %xu, i64 %xna
-    store i64 %rb, i64* %pb
-    %pc = getelementptr i64, i64* %xu, i64 %xma
-    store i64 %rc, i64* %pc
-    br i1 %xx, label %thend, label %elsed
-
-  thend:
-    %x5 = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %xu, i64 %xma, i64 %xna)
-    br label %ctd_ifd
-
-  elsed:
-    br label %ctd_ifd
-
-  ctd_ifd:
-    %yb = phi i64* [ %xu, %elsed ], [ %x5, %thend ]
-    %yc = getelementptr i64, i64* %yb, i64 %xma
-    %rd = load i64, i64* %yc
-    %yd = getelementptr i64, i64* %yb, i64 %a1b
-    %re = load i64, i64* %yd
-    %ye = icmp ult i64 %rd, %re
-    %pd = getelementptr i64, i64* %yb, i64 %xma
-    store i64 %rd, i64* %pd
-    %pe = getelementptr i64, i64* %yb, i64 %a1b
-    store i64 %re, i64* %pe
-    br i1 %ye, label %thene, label %elsee
-
-  thene:
-    %x6 = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %yb, i64 %a1b, i64 %xma)
-    br label %ctd_ife
-
-  elsee:
-    br label %ctd_ife
-
-  ctd_ife:
-    %yi = phi i64* [ %yb, %elsee ], [ %x6, %thene ]
-    %yja = add i64 %a1b, 1
-    %yk = add i64 %a1b, %xka
-    %yla = sub i64 %yk, 1
-    %yma = sub i64 %a1c, 2
-    %yn = getelementptr i64, i64* %yi, i64 %yla
-    %rf = load i64, i64* %yn
-    %yo = getelementptr i64, i64* %yi, i64 %yja
-    %rg = load i64, i64* %yo
-    %yp = icmp ult i64 %rf, %rg
-    %pf = getelementptr i64, i64* %yi, i64 %yla
-    store i64 %rf, i64* %pf
-    %pg = getelementptr i64, i64* %yi, i64 %yja
-    store i64 %rg, i64* %pg
-    br i1 %yp, label %thenf, label %elsef
-
-  thenf:
-    %x7 = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %yi, i64 %yja, i64 %yla)
-    br label %ctd_iff
-
-  elsef:
-    br label %ctd_iff
-
-  ctd_iff:
-    %yt = phi i64* [ %yi, %elsef ], [ %x7, %thenf ]
-    %yu = getelementptr i64, i64* %yt, i64 %yma
-    %rh = load i64, i64* %yu
-    %yv = getelementptr i64, i64* %yt, i64 %yla
-    %ri = load i64, i64* %yv
-    %yw = icmp ult i64 %rh, %ri
-    %ph = getelementptr i64, i64* %yt, i64 %yma
-    store i64 %rh, i64* %ph
-    %pi = getelementptr i64, i64* %yt, i64 %yla
-    store i64 %ri, i64* %pi
-    br i1 %yw, label %theng, label %elseg
-
-  theng:
-    %x8 = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %yt, i64 %yla, i64 %yma)
-    br label %ctd_ifg
-
-  elseg:
-    br label %ctd_ifg
-
-  ctd_ifg:
-    %za = phi i64* [ %yt, %elseg ], [ %x8, %theng ]
-    %zb = getelementptr i64, i64* %za, i64 %yla
-    %rj = load i64, i64* %zb
-    %zc = getelementptr i64, i64* %za, i64 %yja
-    %rk = load i64, i64* %zc
-    %zd = icmp ult i64 %rj, %rk
-    %pj = getelementptr i64, i64* %za, i64 %yla
-    store i64 %rj, i64* %pj
-    %pk = getelementptr i64, i64* %za, i64 %yja
-    store i64 %rk, i64* %pk
-    br i1 %zd, label %thenh, label %elseh
-
-  thenh:
-    %x9 = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %za, i64 %yja, i64 %yla)
-    br label %ctd_ifh
-
-  elseh:
-    br label %ctd_ifh
-
-  ctd_ifh:
-    %zh = phi i64* [ %za, %elseh ], [ %x9, %thenh ]
-    %zia = add i64 %a1b, 2
-    %zj = add i64 %a1b, %xka
-    %zka = add i64 %zj, 1
-    %zla = sub i64 %a1c, 3
-    %zm = getelementptr i64, i64* %zh, i64 %zka
-    %rl = load i64, i64* %zm
-    %zn = getelementptr i64, i64* %zh, i64 %zia
-    %rm = load i64, i64* %zn
-    %zo = icmp ult i64 %rl, %rm
-    %pl = getelementptr i64, i64* %zh, i64 %zka
-    store i64 %rl, i64* %pl
-    %pm = getelementptr i64, i64* %zh, i64 %zia
-    store i64 %rm, i64* %pm
-    br i1 %zo, label %theni, label %elsei
-
-  theni:
-    %x10 = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %zh, i64 %zia, i64 %zka)
-    br label %ctd_ifi
-
-  elsei:
-    br label %ctd_ifi
-
-  ctd_ifi:
-    %zs = phi i64* [ %zh, %elsei ], [ %x10, %theni ]
-    %zt = getelementptr i64, i64* %zs, i64 %zla
-    %rn = load i64, i64* %zt
-    %zu = getelementptr i64, i64* %zs, i64 %zka
-    %ro = load i64, i64* %zu
-    %zv = icmp ult i64 %rn, %ro
-    %pn = getelementptr i64, i64* %zs, i64 %zla
-    store i64 %rn, i64* %pn
-    %po = getelementptr i64, i64* %zs, i64 %zka
-    store i64 %ro, i64* %po
-    br i1 %zv, label %thenj, label %elsej
-
-  thenj:
-    %x11 = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %zs, i64 %zka, i64 %zla)
-    br label %ctd_ifj
-
-  elsej:
-    br label %ctd_ifj
-
-  ctd_ifj:
-    %zz = phi i64* [ %zs, %elsej ], [ %x11, %thenj ]
-    %aaa = getelementptr i64, i64* %zz, i64 %zka
-    %rp = load i64, i64* %aaa
-    %aab = getelementptr i64, i64* %zz, i64 %zia
-    %rq = load i64, i64* %aab
-    %aac = icmp ult i64 %rp, %rq
-    %pp = getelementptr i64, i64* %zz, i64 %zka
-    store i64 %rp, i64* %pp
-    %pq = getelementptr i64, i64* %zz, i64 %zia
-    store i64 %rq, i64* %pq
-    br i1 %aac, label %thenk, label %elsek
-
-  thenk:
-    %x12 = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %zz, i64 %zia, i64 %zka)
-    br label %ctd_ifk
-
-  elsek:
-    br label %ctd_ifk
-
-  ctd_ifk:
-    %aag = phi i64* [ %zz, %elsek ], [ %x12, %thenk ]
-    %aah = add i64 %a1b, %xka
-    %aaia = sub i64 %aah, 1
-    %aaj = add i64 %a1b, %xka
-    %aak = add i64 %a1b, %xka
-    %aala = add i64 %aak, 1
-    %aam = getelementptr i64, i64* %aag, i64 %aaj
-    %rr = load i64, i64* %aam
-    %aan = getelementptr i64, i64* %aag, i64 %aaia
-    %rs = load i64, i64* %aan
-    %aao = icmp ult i64 %rr, %rs
-    %pr = getelementptr i64, i64* %aag, i64 %aaj
-    store i64 %rr, i64* %pr
-    %ps = getelementptr i64, i64* %aag, i64 %aaia
-    store i64 %rs, i64* %ps
-    br i1 %aao, label %thenl, label %elsel
-
-  thenl:
-    %x13 = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %aag, i64 %aaia, i64 %aaj)
-    br label %ctd_ifl
-
-  elsel:
-    br label %ctd_ifl
-
-  ctd_ifl:
-    %aas = phi i64* [ %aag, %elsel ], [ %x13, %thenl ]
-    %aat = getelementptr i64, i64* %aas, i64 %aala
-    %rt = load i64, i64* %aat
-    %aau = getelementptr i64, i64* %aas, i64 %aaj
-    %ru = load i64, i64* %aau
-    %aav = icmp ult i64 %rt, %ru
-    %pt = getelementptr i64, i64* %aas, i64 %aala
-    store i64 %rt, i64* %pt
-    %pu = getelementptr i64, i64* %aas, i64 %aaj
-    store i64 %ru, i64* %pu
-    br i1 %aav, label %thenm, label %elsem
-
-  thenm:
-    %x14 = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %aas, i64 %aaj, i64 %aala)
-    br label %ctd_ifm
-
-  elsem:
-    br label %ctd_ifm
-
-  ctd_ifm:
-    %aaz = phi i64* [ %aas, %elsem ], [ %x14, %thenm ]
-    %aba = getelementptr i64, i64* %aaz, i64 %aaj
-    %rv = load i64, i64* %aba
-    %abb = getelementptr i64, i64* %aaz, i64 %aaia
-    %rw = load i64, i64* %abb
-    %abc = icmp ult i64 %rv, %rw
-    %pv = getelementptr i64, i64* %aaz, i64 %aaj
-    store i64 %rv, i64* %pv
-    %pw = getelementptr i64, i64* %aaz, i64 %aaia
-    store i64 %rw, i64* %pw
-    br i1 %abc, label %thenn, label %elsen
-
-  thenn:
-    %x15 = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %aaz, i64 %aaia, i64 %aaj)
-    br label %ctd_ifn
-
-  elsen:
-    br label %ctd_ifn
-
-  ctd_ifn:
-    %abg = phi i64* [ %aaz, %elsen ], [ %x15, %thenn ]
-    %x16 = add i64 %a1b, %xka
-    %x17 = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %abg, i64 %a1b, i64 %x16)
-    br label %ctd_ifb
-
-  elseb:
-    %xma1 = add i64 %a1b, %xka
-    %bic = sub i64 %a1c, 1
-    %xna1 = getelementptr i64, i64* %a1a, i64 %a1b
-    %r1 = load i64, i64* %xna1
-    %xoa1 = getelementptr i64, i64* %a1a, i64 %xma1
-    %ra1 = load i64, i64* %xoa1
-    %xpa1 = icmp ult i64 %r1, %ra1
-    %p1 = getelementptr i64, i64* %a1a, i64 %a1b
-    store i64 %r1, i64* %p1
-    %pa1 = getelementptr i64, i64* %a1a, i64 %xma1
-    store i64 %ra1, i64* %pa1
-    br i1 %xpa1, label %theno, label %elseo
-
-  theno:
-    %x18 = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %a1a, i64 %xma1, i64 %a1b)
-    br label %ctd_ifo
-
-  elseo:
-    br label %ctd_ifo
-
-  ctd_ifo:
-    %xt = phi i64* [ %a1a, %elseo ], [ %x18, %theno ]
-    %xu1 = getelementptr i64, i64* %xt, i64 %bic
-    %rb1 = load i64, i64* %xu1
-    %xv1 = getelementptr i64, i64* %xt, i64 %a1b
-    %rc1 = load i64, i64* %xv1
-    %xw1 = icmp ult i64 %rb1, %rc1
-    %pb1 = getelementptr i64, i64* %xt, i64 %bic
-    store i64 %rb1, i64* %pb1
-    %pc1 = getelementptr i64, i64* %xt, i64 %a1b
-    store i64 %rc1, i64* %pc1
-    br i1 %xw1, label %thenp, label %elsep
-
-  thenp:
-    %x19 = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %xt, i64 %a1b, i64 %bic)
-    br label %ctd_ifp
-
-  elsep:
-    br label %ctd_ifp
-
-  ctd_ifp:
-    %ya = phi i64* [ %xt, %elsep ], [ %x19, %thenp ]
-    %yb1 = getelementptr i64, i64* %ya, i64 %a1b
-    %rd1 = load i64, i64* %yb1
-    %yc1 = getelementptr i64, i64* %ya, i64 %xma1
-    %re1 = load i64, i64* %yc1
-    %yd1 = icmp ult i64 %rd1, %re1
-    %pd1 = getelementptr i64, i64* %ya, i64 %a1b
-    store i64 %rd1, i64* %pd1
-    %pe1 = getelementptr i64, i64* %ya, i64 %xma1
-    store i64 %re1, i64* %pe1
-    br i1 %yd1, label %thenq, label %elseq
-
-  thenq:
-    %x20 = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %ya, i64 %xma1, i64 %a1b)
-    br label %ctd_ifq
-
-  elseq:
-    br label %ctd_ifq
-
-  ctd_ifq:
-    %x21 = phi i64* [ %ya, %elseq ], [ %x20, %thenq ]
-    br label %ctd_ifb
-
-  ctd_ifb:
-    %xma2 = phi i64* [ %x21, %ctd_ifq ], [ %x17, %ctd_ifn ]
-    br i1 %a1, label %thenr, label %elser
-
-  thenr:
-    br label %ctd_ifr
-
-  elser:
-    %xna2 = sub i64 %a1b, 1
-    %xoa2 = getelementptr i64, i64* %xma2, i64 %xna2
-    %r2 = load i64, i64* %xoa2
-    %xpa2 = getelementptr i64, i64* %xma2, i64 %a1b
-    %ra2 = load i64, i64* %xpa2
-    %xqa1 = icmp ult i64 %r2, %ra2
-    %p2 = getelementptr i64, i64* %xma2, i64 %xna2
-    store i64 %r2, i64* %p2
-    %pa2 = getelementptr i64, i64* %xma2, i64 %a1b
-    store i64 %ra2, i64* %pa2
-    %x22 = add i1 %xqa1, 1
-    br label %ctd_ifr
-
-  ctd_ifr:
-    %xna3 = phi i1 [ %x22, %elser ], [ 0, %thenr ]
-    br i1 %xna3, label %thens, label %elses
-
-  thens:
-    %xoa3 = call { i1, { i64, i64* } } @Sorting_Export_Code_unat_sort_partition_left_impl (i64* %xma2, i64 %a1b, i64 %a1c)
-    %a1d = extractvalue { i1, { i64, i64* } } %xoa3, 0
-    %xpa3 = extractvalue { i1, { i64, i64* } } %xoa3, 1
-    %a1e = extractvalue { i64, i64* } %xpa3, 0
-    %a2e = extractvalue { i64, i64* } %xpa3, 1
-    %xqa2 = add i64 %a1e, 1
-    %xw2 = insertvalue { i64, i64 } zeroinitializer, i64 %a1c, 0
-    %tmpad = insertvalue { i64, i64 } %xw2, i64 %a2c, 1
-    %xx1 = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %xqa2, 0
-    %tmpae = insertvalue { i64, { i64, i64 } } %xx1, { i64, i64 } %tmpad, 1
-    %xy = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %a2e, 0
-    %tmpaf = insertvalue { i64*, { i64, { i64, i64 } } } %xy, { i64, { i64, i64 } } %tmpae, 1
-    %xz = insertvalue { i1, { i64*, { i64, { i64, i64 } } } } zeroinitializer, i1 0, 0
-    %x23 = insertvalue { i1, { i64*, { i64, { i64, i64 } } } } %xz, { i64*, { i64, { i64, i64 } } } %tmpaf, 1
-    %x24 = call i64* @Sorting_Export_Code_unat_sort_pdqsort_impl_f_07989790 ({ i1, { i64*, { i64, { i64, i64 } } } } %x23)
-    br label %ctd_ifs
-
-  elses:
-    %xoa4 = add i64 %a1b, 1
-    br label %while_start
-
-  while_start:
-    %s = phi i64 [ %x25, %while_body ], [ %xoa4, %elses ]
-    %xpa4 = getelementptr i64, i64* %xma2, i64 %s
-    %r3 = load i64, i64* %xpa4
-    %xqa3 = getelementptr i64, i64* %xma2, i64 %a1b
-    %ra3 = load i64, i64* %xqa3
-    %xra = icmp ult i64 %r3, %ra3
-    %p3 = getelementptr i64, i64* %xma2, i64 %s
-    store i64 %r3, i64* %p3
-    %pa3 = getelementptr i64, i64* %xma2, i64 %a1b
-    store i64 %ra3, i64* %pa3
-    br i1 %xra, label %while_body, label %while_end
-
-  while_body:
-    %x25 = add i64 %s, 1
-    br label %while_start
-
-  while_end:
-    %xqa4 = add i64 %a1b, 1
-    %xra1 = icmp eq i64 %s, %xqa4
-    br i1 %xra1, label %thent, label %elset
-
-  thent:
-    %x26 = sub i64 %a1c, 1
-    br label %while_starta
-
-  while_starta:
-    %s1 = phi i64 [ %x29, %while_bodya ], [ %x26, %thent ]
-    %xsa = add i64 %a1b, 1
-    %xta = icmp slt i64 %xsa, %s1
-    br i1 %xta, label %thenu, label %elseu
-
-  thenu:
-    %xua = getelementptr i64, i64* %xma2, i64 %s1
-    %r4 = load i64, i64* %xua
-    %xv2 = getelementptr i64, i64* %xma2, i64 %a1b
-    %ra4 = load i64, i64* %xv2
-    %xw3 = icmp ult i64 %r4, %ra4
-    %p4 = getelementptr i64, i64* %xma2, i64 %s1
-    store i64 %r4, i64* %p4
-    %pa4 = getelementptr i64, i64* %xma2, i64 %a1b
-    store i64 %ra4, i64* %pa4
-    %x27 = add i1 %xw3, 1
-    br label %ctd_ifu
-
-  elseu:
-    br label %ctd_ifu
-
-  ctd_ifu:
-    %x28 = phi i1 [ 0, %elseu ], [ %x27, %thenu ]
-    br i1 %x28, label %while_bodya, label %while_enda
-
-  while_bodya:
-    %x29 = sub i64 %s1, 1
-    br label %while_starta
-
-  while_enda:
-    br label %ctd_ift
-
-  elset:
-    %x31 = sub i64 %a1c, 1
-    br label %while_startb
-
-  while_startb:
-    %s2 = phi i64 [ %x33, %while_bodyb ], [ %x31, %elset ]
-    %xsa1 = getelementptr i64, i64* %xma2, i64 %s2
-    %r5 = load i64, i64* %xsa1
-    %xta1 = getelementptr i64, i64* %xma2, i64 %a1b
-    %ra5 = load i64, i64* %xta1
-    %xu2 = icmp ult i64 %r5, %ra5
-    %p5 = getelementptr i64, i64* %xma2, i64 %s2
-    store i64 %r5, i64* %p5
-    %pa5 = getelementptr i64, i64* %xma2, i64 %a1b
-    store i64 %ra5, i64* %pa5
-    %x32 = add i1 %xu2, 1
-    br i1 %x32, label %while_bodyb, label %while_endb
-
-  while_bodyb:
-    %x33 = sub i64 %s2, 1
-    br label %while_startb
-
-  while_endb:
-    br label %ctd_ift
-
-  ctd_ift:
-    %xsa2 = phi i64 [ %s2, %while_endb ], [ %s1, %while_enda ]
-    %xt1 = icmp sle i64 %xsa2, %s
-    %xu3 = insertvalue { i64, i64 } zeroinitializer, i64 %s, 0
-    %tmpd = insertvalue { i64, i64 } %xu3, i64 %xsa2, 1
-    %xv3 = insertvalue { i64*, { i64, i64 } } zeroinitializer, i64* %xma2, 0
-    %xw4 = insertvalue { i64*, { i64, i64 } } %xv3, { i64, i64 } %tmpd, 1
-    br label %while_startc
-
-  while_startc:
-    %xua1 = phi { i64*, { i64, i64 } } [ %x40, %while_ende ], [ %xw4, %ctd_ift ]
-    %a1d1 = extractvalue { i64*, { i64, i64 } } %xua1, 0
-    %xva = extractvalue { i64*, { i64, i64 } } %xua1, 1
-    %a = extractvalue { i64, i64 } %xva, 0
-    %x35 = extractvalue { i64, i64 } %xva, 1
-    %x36 = icmp slt i64 %a, %x35
-    br i1 %x36, label %while_bodyc, label %while_endc
-
-  while_bodyc:
-    %a1d2 = extractvalue { i64*, { i64, i64 } } %xua1, 0
-    %xva1 = extractvalue { i64*, { i64, i64 } } %xua1, 1
-    %a1aa = extractvalue { i64, i64 } %xva1, 0
-    %a2a = extractvalue { i64, i64 } %xva1, 1
-    %xwa = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %a1d2, i64 %a1aa, i64 %a2a)
-    %xxa = add i64 %a1aa, 1
-    br label %while_startd
-
-  while_startd:
-    %s3 = phi i64 [ %x37, %while_bodyd ], [ %xxa, %while_bodyc ]
-    %xya = getelementptr i64, i64* %xwa, i64 %s3
-    %r6 = load i64, i64* %xya
-    %xza = getelementptr i64, i64* %xwa, i64 %a1b
-    %ra6 = load i64, i64* %xza
-    %yaa = icmp ult i64 %r6, %ra6
-    %p6 = getelementptr i64, i64* %xwa, i64 %s3
-    store i64 %r6, i64* %p6
-    %pa6 = getelementptr i64, i64* %xwa, i64 %a1b
-    store i64 %ra6, i64* %pa6
-    br i1 %yaa, label %while_bodyd, label %while_endd
-
-  while_bodyd:
-    %x37 = add i64 %s3, 1
-    br label %while_startd
-
-  while_endd:
-    %xza1 = sub i64 %a2a, 1
-    br label %while_starte
-
-  while_starte:
-    %s4 = phi i64 [ %x39, %while_bodye ], [ %xza1, %while_endd ]
-    %yaa1 = getelementptr i64, i64* %xwa, i64 %s4
-    %r7 = load i64, i64* %yaa1
-    %yba = getelementptr i64, i64* %xwa, i64 %a1b
-    %ra7 = load i64, i64* %yba
-    %yca = icmp ult i64 %r7, %ra7
-    %p7 = getelementptr i64, i64* %xwa, i64 %s4
-    store i64 %r7, i64* %p7
-    %pa7 = getelementptr i64, i64* %xwa, i64 %a1b
-    store i64 %ra7, i64* %pa7
-    %x38 = add i1 %yca, 1
-    br i1 %x38, label %while_bodye, label %while_ende
-
-  while_bodye:
-    %x39 = sub i64 %s4, 1
-    br label %while_starte
-
-  while_ende:
-    %yba1 = insertvalue { i64*, { i64, i64 } } zeroinitializer, i64* %xwa, 0
-    %ye1 = insertvalue { i64, i64 } zeroinitializer, i64 %s3, 0
-    %tmpf = insertvalue { i64, i64 } %ye1, i64 %s4, 1
-    %x40 = insertvalue { i64*, { i64, i64 } } %yba1, { i64, i64 } %tmpf, 1
-    br label %while_startc
-
-  while_endc:
-    %a1d3 = extractvalue { i64*, { i64, i64 } } %xua1, 0
-    %xva2 = extractvalue { i64*, { i64, i64 } } %xua1, 1
-    %a1aa1 = extractvalue { i64, i64 } %xva2, 0
-    %a2a1 = extractvalue { i64, i64 } %xva2, 1
-    %xwa1 = sub i64 %a1aa1, 1
-    %xxa1 = icmp ne i64 %a1b, %xwa1
-    br i1 %xxa1, label %thenv, label %elsev
-
-  thenv:
-    %x41 = sub i64 %a1aa1, 1
-    %x42 = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %a1d3, i64 %a1b, i64 %x41)
-    br label %ctd_ifv
-
-  elsev:
-    br label %ctd_ifv
-
-  ctd_ifv:
-    %xya2 = phi i64* [ %a1d3, %elsev ], [ %x42, %thenv ]
-    %xza2 = sub i64 %a1aa1, 1
-    %yd2 = insertvalue { i64, i64* } zeroinitializer, i64 %xza2, 0
-    %tmpe = insertvalue { i64, i64* } %yd2, i64* %xya2, 1
-    %a1e1 = extractvalue { i64, i64* } %tmpe, 0
-    %yf = insertvalue { i64, i64* } zeroinitializer, i64 %xza2, 0
-    %tmpf1 = insertvalue { i64, i64* } %yf, i64* %xya2, 1
-    %a2e1 = extractvalue { i64, i64* } %tmpf1, 1
-    %yaa3 = sub i64 %a1c, %a1b
-    %yba2 = sub i64 %a1e1, %a1b
-    %yca1 = add i64 %a1e1, 1
-    %yda = sub i64 %a1c, %yca1
-    %yea = udiv i64 %yaa3, 8
-    %yfa = icmp slt i64 %yba2, %yea
-    %yga = icmp slt i64 %yda, %yea
-    %yha = or i1 %yfa, %yga
-    br i1 %yha, label %thenw, label %elsew
-
-  thenw:
-    %yia = icmp sle i64 16, %yba2
-    br i1 %yia, label %thenx, label %elsex
-
-  thenx:
-    %yja1 = udiv i64 %yba2, 4
-    %yk1 = add i64 %a1b, %yja1
-    %yla1 = sub i64 %a1e1, 1
-    %ym = sub i64 %a1e1, %yja1
-    %yn1 = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %a2e1, i64 %a1b, i64 %yk1)
-    %yo1 = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %yn1, i64 %yla1, i64 %ym)
-    %yp1 = icmp slt i64 128, %yba2
-    br i1 %yp1, label %theny, label %elsey
-
-  theny:
-    %yqa = add i64 %a1b, 1
-    %yra = add i64 %a1b, 2
-    %ysa = sub i64 %a1e1, 2
-    %yta = sub i64 %a1e1, 3
-    %yua = add i64 %yk1, 1
-    %yva = add i64 %yk1, 2
-    %ywa = sub i64 %ym, 1
-    %yxa = sub i64 %ym, 2
-    %yy = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %yo1, i64 %yqa, i64 %yua)
-    %yz = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %yy, i64 %yra, i64 %yva)
-    %za1 = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %yz, i64 %ysa, i64 %ywa)
-    %x43 = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %za1, i64 %yta, i64 %yxa)
-    br label %ctd_ify
-
-  elsey:
-    br label %ctd_ify
-
-  ctd_ify:
-    %x44 = phi i64* [ %yo1, %elsey ], [ %x43, %theny ]
-    br label %ctd_ifx
-
-  elsex:
-    br label %ctd_ifx
-
-  ctd_ifx:
-    %yj = phi i64* [ %a2e1, %elsex ], [ %x44, %ctd_ify ]
-    %yk2 = icmp sle i64 16, %yda
-    br i1 %yk2, label %thenz, label %elsez
-
-  thenz:
-    %yla2 = add i64 %a1e1, 1
-    %yma1 = sub i64 %a1c, 1
-    %yna = udiv i64 %yda, 4
-    %yo2 = add i64 %yla2, %yna
-    %yp2 = sub i64 %a1c, %yna
-    %yq = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %yj, i64 %yla2, i64 %yo2)
-    %yr = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %yq, i64 %yma1, i64 %yp2)
-    %ys = icmp slt i64 128, %yda
-    br i1 %ys, label %theoa, label %elsfa
-
-  theoa:
-    %yta1 = add i64 %a1e1, 2
-    %yua1 = add i64 %a1e1, 3
-    %yva1 = sub i64 %a1c, 2
-    %ywa1 = sub i64 %a1c, 3
-    %yxa1 = sub i64 %yp2, 1
-    %yya = sub i64 %yp2, 2
-    %yza = add i64 %yo2, 1
-    %zaa = add i64 %yo2, 2
-    %zb1 = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %yr, i64 %yta1, i64 %yza)
-    %zc1 = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %zb1, i64 %yua1, i64 %zaa)
-    %zd1 = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %zc1, i64 %yva1, i64 %yxa1)
-    %x45 = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %zd1, i64 %ywa1, i64 %yya)
-    br label %ctd_iga
-
-  elsfa:
-    br label %ctd_iga
-
-  ctd_iga:
-    %x46 = phi i64* [ %yr, %elsfa ], [ %x45, %theoa ]
-    br label %ctd_ifz
-
-  elsez:
-    br label %ctd_ifz
-
-  ctd_ifz:
-    %yl = phi i64* [ %yj, %elsez ], [ %x46, %ctd_iga ]
-    %yma2 = insertvalue { i1, i64* } zeroinitializer, i1 1, 0
-    %x47 = insertvalue { i1, i64* } %yma2, i64* %yl, 1
-    br label %ctd_ifw
-
-  elsew:
-    %yia1 = insertvalue { i1, i64* } zeroinitializer, i1 0, 0
-    %x48 = insertvalue { i1, i64* } %yia1, i64* %a2e1, 1
-    br label %ctd_ifw
-
-  ctd_ifw:
-    %yia2 = phi { i1, i64* } [ %x48, %elsew ], [ %x47, %ctd_ifz ]
-    %a1f = extractvalue { i1, i64* } %yia2, 0
-    %a2f = extractvalue { i1, i64* } %yia2, 1
-    br i1 %a1f, label %theob, label %elsfb
-
-  theob:
-    %x49 = sub i64 %a2c, 1
-    br label %ctd_igb
-
-  elsfb:
-    br label %ctd_igb
-
-  ctd_igb:
-    %yja2 = phi i64 [ %a2c, %elsfb ], [ %x49, %theob ]
-    %yka = icmp eq i64 %yja2, 0
-    br i1 %yka, label %theoc, label %elsfc
-
-  theoc:
-    %yla3 = call i64* @heapsort (i64* %a2f, i64 %a1b, i64 %a1c)
-    %yma3 = insertvalue { i1, i64* } zeroinitializer, i1 1, 0
-    %x50 = insertvalue { i1, i64* } %yma3, i64* %yla3, 1
-    br label %ctd_igc
-
-  elsfc:
-    %yla4 = add i1 %a1f, 1
-    %yma4 = and i1 %xt1, %yla4
-    br i1 %yma4, label %theod, label %elsfd
-
-  theod:
-    %yn2 = call { i1, i64* } @Sorting_Export_Code_unat_sort_maybe_insort_impl (i64* %a2f, i64 %a1b, i64 %a1e1)
-    %a1g = extractvalue { i1, i64* } %yn2, 0
-    %a2g = extractvalue { i1, i64* } %yn2, 1
-    br i1 %a1g, label %theoe, label %elsfe
-
-  theoe:
-    %yoa = add i64 %a1e1, 1
-    %x51 = call { i1, i64* } @Sorting_Export_Code_unat_sort_maybe_insort_impl (i64* %a2g, i64 %yoa, i64 %a1c)
-    br label %ctd_ige
-
-  elsfe:
-    %yoa1 = insertvalue { i1, i64* } zeroinitializer, i1 0, 0
-    %x52 = insertvalue { i1, i64* } %yoa1, i64* %a2g, 1
-    br label %ctd_ige
-
-  ctd_ige:
-    %x53 = phi { i1, i64* } [ %x52, %elsfe ], [ %x51, %theoe ]
-    br label %ctd_igd
-
-  elsfd:
-    %yna1 = insertvalue { i1, i64* } zeroinitializer, i1 0, 0
-    %x54 = insertvalue { i1, i64* } %yna1, i64* %a2f, 1
-    br label %ctd_igd
-
-  ctd_igd:
-    %x55 = phi { i1, i64* } [ %x54, %elsfd ], [ %x53, %ctd_ige ]
-    br label %ctd_igc
-
-  ctd_igc:
-    %yla5 = phi { i1, i64* } [ %x55, %ctd_igd ], [ %x50, %theoc ]
-    %a1g1 = extractvalue { i1, i64* } %yla5, 0
-    %a2g1 = extractvalue { i1, i64* } %yla5, 1
-    br i1 %a1g1, label %theof, label %elsff
-
-  theof:
-    br label %ctd_igf
-
-  elsff:
-    %yo3 = insertvalue { i64, i64 } zeroinitializer, i64 %a1e1, 0
-    %tmpg = insertvalue { i64, i64 } %yo3, i64 %yja2, 1
-    %yp3 = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %a1b, 0
-    %tmph = insertvalue { i64, { i64, i64 } } %yp3, { i64, i64 } %tmpg, 1
-    %yq1 = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %a2g1, 0
-    %tmpi = insertvalue { i64*, { i64, { i64, i64 } } } %yq1, { i64, { i64, i64 } } %tmph, 1
-    %yr1 = insertvalue { i1, { i64*, { i64, { i64, i64 } } } } zeroinitializer, i1 %a1, 0
-    %ys1 = insertvalue { i1, { i64*, { i64, { i64, i64 } } } } %yr1, { i64*, { i64, { i64, i64 } } } %tmpi, 1
-    %yma5 = call i64* @Sorting_Export_Code_unat_sort_pdqsort_impl_f_07989790 ({ i1, { i64*, { i64, { i64, i64 } } } } %ys1)
-    %yna2 = add i64 %a1e1, 1
-    %yu1 = insertvalue { i64, i64 } zeroinitializer, i64 %a1c, 0
-    %tmpad1 = insertvalue { i64, i64 } %yu1, i64 %yja2, 1
-    %yv1 = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %yna2, 0
-    %tmpae1 = insertvalue { i64, { i64, i64 } } %yv1, { i64, i64 } %tmpad1, 1
-    %yw1 = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %yma5, 0
-    %tmpaf1 = insertvalue { i64*, { i64, { i64, i64 } } } %yw1, { i64, { i64, i64 } } %tmpae1, 1
-    %yx = insertvalue { i1, { i64*, { i64, { i64, i64 } } } } zeroinitializer, i1 0, 0
-    %x56 = insertvalue { i1, { i64*, { i64, { i64, i64 } } } } %yx, { i64*, { i64, { i64, i64 } } } %tmpaf1, 1
-    %x57 = call i64* @Sorting_Export_Code_unat_sort_pdqsort_impl_f_07989790 ({ i1, { i64*, { i64, { i64, i64 } } } } %x56)
-    br label %ctd_igf
-
-  ctd_igf:
-    %x58 = phi i64* [ %x57, %elsff ], [ %a2g1, %theof ]
-    br label %ctd_ifs
-
-  ctd_ifs:
-    %x59 = phi i64* [ %x58, %ctd_igf ], [ %x24, %thens ]
-    br label %ctd_if
-
-  ctd_if:
-    %x60 = phi i64* [ %x59, %ctd_ifs ], [ %x3, %ctd_ifa ]
-    ret i64* %x60
-}
-
-define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_final_insertion_sort_impl({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2) {
-
-  start:
-    %x3 = sub i64 %x2, %x1
-    %xa = icmp sle i64 %x3, 16
-    br i1 %xa, label %then, label %else
-
-  then:
-    %xb = add i64 %x1, 1
-    %x4 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_guarded_insertion_sort_impl (i64 %x1, i64 %xb, i64 %x2, { i64, { i64, i8* } }* %x)
-    br label %ctd_if
-
-  else:
-    %xb1 = add i64 %x1, 1
-    %xc = add i64 %x1, 16
-    %xd = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_guarded_insertion_sort_impl (i64 %x1, i64 %xb1, i64 %xc, { i64, { i64, i8* } }* %x)
-    %xe = add i64 %x1, 16
-    %x5 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_unguarded_insertion_sort_impl (i64 %x1, i64 %xe, i64 %x2, { i64, { i64, i8* } }* %xd)
-    br label %ctd_if
-
-  ctd_if:
-    %x6 = phi { i64, { i64, i8* } }* [ %x5, %else ], [ %x4, %then ]
-    ret { i64, { i64, i8* } }* %x6
-}
-
-define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_pdq_unguarded_insort_impl({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2) {
-
-  start:
-    %x3 = icmp ne i64 %x1, %x2
-    br i1 %x3, label %then, label %else
-
-  then:
-    %xaa = add i64 %x1, 1
-    %xb = insertvalue { i64, { i64, { i64, i8* } }* } zeroinitializer, i64 %xaa, 0
-    %xc = insertvalue { i64, { i64, { i64, i8* } }* } %xb, { i64, { i64, i8* } }* %x, 1
-    br label %while_start
-
-  while_start:
-    %xba = phi { i64, { i64, { i64, i8* } }* } [ %x6, %ctd_ifa ], [ %xc, %then ]
-    %a1 = extractvalue { i64, { i64, { i64, i8* } }* } %xba, 0
-    %a2 = extractvalue { i64, { i64, { i64, i8* } }* } %xba, 1
-    %x4 = icmp slt i64 %a1, %x2
-    br i1 %x4, label %while_body, label %while_end
-
-  while_body:
-    %a11 = extractvalue { i64, { i64, { i64, i8* } }* } %xba, 0
-    %a21 = extractvalue { i64, { i64, { i64, i8* } }* } %xba, 1
-    %xca = sub i64 %a11, 1
-    %xda = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %a11
-    %r = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xda
-    %xea = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %xca
-    %ra = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xea
-    %xfa = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r, { i64, { i64, i8* } } %ra)
-    %p = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %a11
-    store { i64, { i64, i8* } } %r, { i64, { i64, i8* } }* %p
-    %pa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %xca
-    store { i64, { i64, i8* } } %ra, { i64, { i64, i8* } }* %pa
-    br i1 %xfa, label %thena, label %elsea
-
-  thena:
-    %xj = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %a11
-    %rb = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xj
-    %xka = sub i64 %a11, 1
-    %xl = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %xka
-    %rc = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xl
-    %pb = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a21, i64 %a11
-    store { i64, { i64, i8* } } %rc, { i64, { i64, i8* } }* %pb
-    %xna = sub i64 %a11, 1
-    %xo = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %a21, 0
-    %xp = insertvalue { { i64, { i64, i8* } }*, i64 } %xo, i64 %xna, 1
-    br label %while_starta
-
-  while_starta:
-    %xoa = phi { { i64, { i64, i8* } }*, i64 } [ %x5, %while_bodya ], [ %xp, %thena ]
-    %a1b = extractvalue { { i64, { i64, i8* } }*, i64 } %xoa, 0
-    %a2b = extractvalue { { i64, { i64, i8* } }*, i64 } %xoa, 1
-    %bib = sub i64 %a2b, 1
-    %xpa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b, i64 %bib
-    %rd = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xpa
-    %xqa = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %rb, { i64, { i64, i8* } } %rd)
-    %pc = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b, i64 %bib
-    store { i64, { i64, i8* } } %rd, { i64, { i64, i8* } }* %pc
-    br i1 %xqa, label %while_bodya, label %while_enda
-
-  while_bodya:
-    %a1b1 = extractvalue { { i64, { i64, i8* } }*, i64 } %xoa, 0
-    %a2b1 = extractvalue { { i64, { i64, i8* } }*, i64 } %xoa, 1
-    %xpa1 = sub i64 %a2b1, 1
-    %xqa1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b1, i64 %xpa1
-    %rd1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xqa1
-    %pc1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b1, i64 %a2b1
-    store { i64, { i64, i8* } } %rd1, { i64, { i64, i8* } }* %pc1
-    %xsa = sub i64 %a2b1, 1
-    %xta = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %a1b1, 0
-    %x5 = insertvalue { { i64, { i64, i8* } }*, i64 } %xta, i64 %xsa, 1
-    br label %while_starta
-
-  while_enda:
-    %a1b2 = extractvalue { { i64, { i64, i8* } }*, i64 } %xoa, 0
-    %a2b2 = extractvalue { { i64, { i64, i8* } }*, i64 } %xoa, 1
-    %pc2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1b2, i64 %a2b2
-    store { i64, { i64, i8* } } %rb, { i64, { i64, i8* } }* %pc2
-    br label %ctd_ifa
-
-  elsea:
-    br label %ctd_ifa
-
-  ctd_ifa:
-    %xj1 = phi { i64, { i64, i8* } }* [ %a21, %elsea ], [ %a1b2, %while_enda ]
-    %xka1 = add i64 %a11, 1
-    %xla = insertvalue { i64, { i64, { i64, i8* } }* } zeroinitializer, i64 %xka1, 0
-    %x6 = insertvalue { i64, { i64, { i64, i8* } }* } %xla, { i64, { i64, i8* } }* %xj1, 1
-    br label %while_start
-
-  while_end:
-    %a12 = extractvalue { i64, { i64, { i64, i8* } }* } %xba, 0
-    %x7 = extractvalue { i64, { i64, { i64, i8* } }* } %xba, 1
-    br label %ctd_if
-
-  else:
-    br label %ctd_if
-
-  ctd_if:
-    %x8 = phi { i64, { i64, i8* } }* [ %x, %else ], [ %x7, %while_end ]
-    ret { i64, { i64, i8* } }* %x8
-}
-
-define i64* @Sorting_Export_Code_unat_sort_is_unguarded_insert_impl(i64* %x, i64 %x1, i64 %x2) {
+define i64* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_sort_impl_context_is_unguarded_insert_impl_LLVM_Shallow_ll_icmp_ult(i64* %x, i64 %x1, i64 %x2) {
 
   start:
     %x3 = getelementptr i64, i64* %x, i64 %x2
@@ -4059,20 +5297,20 @@ define i64* @Sorting_Export_Code_unat_sort_is_unguarded_insert_impl(i64* %x, i64
     %xaaa = phi { i64*, i64 } [ %x4, %while_body ], [ %xba, %start ]
     %a1a = extractvalue { i64*, i64 } %xaaa, 0
     %a2a = extractvalue { i64*, i64 } %xaaa, 1
-    %bib = sub i64 %a2a, 1
-    %xbaa = getelementptr i64, i64* %a1a, i64 %bib
-    %ra = load i64, i64* %xbaa
-    %xca = icmp ult i64 %r, %ra
-    %p = getelementptr i64, i64* %a1a, i64 %bib
+    %xbaa = sub i64 %a2a, 1
+    %xf = getelementptr i64, i64* %a1a, i64 %xbaa
+    %ra = load i64, i64* %xf
+    %xg = icmp ult i64 %r, %ra
+    %p = getelementptr i64, i64* %a1a, i64 %xbaa
     store i64 %ra, i64* %p
-    br i1 %xca, label %while_body, label %while_end
+    br i1 %xg, label %while_body, label %while_end
 
   while_body:
     %a1a1 = extractvalue { i64*, i64 } %xaaa, 0
     %a2a1 = extractvalue { i64*, i64 } %xaaa, 1
     %xbaa1 = sub i64 %a2a1, 1
-    %xca1 = getelementptr i64, i64* %a1a1, i64 %xbaa1
-    %ra1 = load i64, i64* %xca1
+    %xca = getelementptr i64, i64* %a1a1, i64 %xbaa1
+    %ra1 = load i64, i64* %xca
     %p1 = getelementptr i64, i64* %a1a1, i64 %a2a1
     store i64 %ra1, i64* %p1
     %xea = sub i64 %a2a1, 1
@@ -4088,163 +5326,49 @@ define i64* @Sorting_Export_Code_unat_sort_is_unguarded_insert_impl(i64* %x, i64
     ret i64* %a1a2
 }
 
-define i64* @insertion_sort(i64* %x, i64 %x1, i64 %x2) {
+define { i64, { i64, i8* } }* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_sort_impl_context_is_unguarded_insert_impl_Sorting_Strings_strcmp_impl({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2) {
 
   start:
-    %x3 = sub i64 %x2, %x1
-    %xa = icmp sle i64 %x3, 16
-    br i1 %xa, label %then, label %else
-
-  then:
-    %xb = add i64 %x1, 1
-    %x4 = call i64* @Sorting_Export_Code_unat_sort_guarded_insertion_sort_impl (i64 %x1, i64 %xb, i64 %x2, i64* %x)
-    br label %ctd_if
-
-  else:
-    %xb1 = add i64 %x1, 1
-    %xc = add i64 %x1, 16
-    %xd = call i64* @Sorting_Export_Code_unat_sort_guarded_insertion_sort_impl (i64 %x1, i64 %xb1, i64 %xc, i64* %x)
-    %xe = add i64 %x1, 16
-    %x5 = call i64* @Sorting_Export_Code_unat_sort_unguarded_insertion_sort_impl (i64 %x1, i64 %xe, i64 %x2, i64* %xd)
-    br label %ctd_if
-
-  ctd_if:
-    %x6 = phi i64* [ %x5, %else ], [ %x4, %then ]
-    ret i64* %x6
-}
-
-define i64* @Sorting_Export_Code_unat_sort_pdq_unguarded_insort_impl(i64* %x, i64 %x1, i64 %x2) {
-
-  start:
-    %x3 = icmp ne i64 %x1, %x2
-    br i1 %x3, label %then, label %else
-
-  then:
-    %xaa = add i64 %x1, 1
-    %xb = insertvalue { i64, i64* } zeroinitializer, i64 %xaa, 0
-    %xc = insertvalue { i64, i64* } %xb, i64* %x, 1
+    %x3 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x, i64 %x2
+    %r = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %x3
+    %xaa = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %x, 0
+    %xba = insertvalue { { i64, { i64, i8* } }*, i64 } %xaa, i64 %x2, 1
     br label %while_start
 
   while_start:
-    %xba = phi { i64, i64* } [ %x6, %ctd_ifa ], [ %xc, %then ]
-    %a1 = extractvalue { i64, i64* } %xba, 0
-    %a2 = extractvalue { i64, i64* } %xba, 1
-    %x4 = icmp slt i64 %a1, %x2
-    br i1 %x4, label %while_body, label %while_end
+    %xaaa = phi { { i64, { i64, i8* } }*, i64 } [ %x4, %while_body ], [ %xba, %start ]
+    %a1a = extractvalue { { i64, { i64, i8* } }*, i64 } %xaaa, 0
+    %a2a = extractvalue { { i64, { i64, i8* } }*, i64 } %xaaa, 1
+    %xbaa = sub i64 %a2a, 1
+    %xf = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a, i64 %xbaa
+    %ra = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xf
+    %xg = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r, { i64, { i64, i8* } } %ra)
+    %p = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a, i64 %xbaa
+    store { i64, { i64, i8* } } %ra, { i64, { i64, i8* } }* %p
+    br i1 %xg, label %while_body, label %while_end
 
   while_body:
-    %a11 = extractvalue { i64, i64* } %xba, 0
-    %a21 = extractvalue { i64, i64* } %xba, 1
-    %xca = sub i64 %a11, 1
-    %xda = getelementptr i64, i64* %a21, i64 %a11
-    %r = load i64, i64* %xda
-    %xea = getelementptr i64, i64* %a21, i64 %xca
-    %ra = load i64, i64* %xea
-    %xfa = icmp ult i64 %r, %ra
-    %p = getelementptr i64, i64* %a21, i64 %a11
-    store i64 %r, i64* %p
-    %pa = getelementptr i64, i64* %a21, i64 %xca
-    store i64 %ra, i64* %pa
-    br i1 %xfa, label %thena, label %elsea
-
-  thena:
-    %xj = getelementptr i64, i64* %a21, i64 %a11
-    %rb = load i64, i64* %xj
-    %xka = sub i64 %a11, 1
-    %xl = getelementptr i64, i64* %a21, i64 %xka
-    %rc = load i64, i64* %xl
-    %pb = getelementptr i64, i64* %a21, i64 %a11
-    store i64 %rc, i64* %pb
-    %xna = sub i64 %a11, 1
-    %xo = insertvalue { i64*, i64 } zeroinitializer, i64* %a21, 0
-    %xp = insertvalue { i64*, i64 } %xo, i64 %xna, 1
-    br label %while_starta
-
-  while_starta:
-    %xoa = phi { i64*, i64 } [ %x5, %while_bodya ], [ %xp, %thena ]
-    %a1b = extractvalue { i64*, i64 } %xoa, 0
-    %a2b = extractvalue { i64*, i64 } %xoa, 1
-    %bib = sub i64 %a2b, 1
-    %xpa = getelementptr i64, i64* %a1b, i64 %bib
-    %rd = load i64, i64* %xpa
-    %xqa = icmp ult i64 %rb, %rd
-    %pc = getelementptr i64, i64* %a1b, i64 %bib
-    store i64 %rd, i64* %pc
-    br i1 %xqa, label %while_bodya, label %while_enda
-
-  while_bodya:
-    %a1b1 = extractvalue { i64*, i64 } %xoa, 0
-    %a2b1 = extractvalue { i64*, i64 } %xoa, 1
-    %xpa1 = sub i64 %a2b1, 1
-    %xqa1 = getelementptr i64, i64* %a1b1, i64 %xpa1
-    %rd1 = load i64, i64* %xqa1
-    %pc1 = getelementptr i64, i64* %a1b1, i64 %a2b1
-    store i64 %rd1, i64* %pc1
-    %xsa = sub i64 %a2b1, 1
-    %xta = insertvalue { i64*, i64 } zeroinitializer, i64* %a1b1, 0
-    %x5 = insertvalue { i64*, i64 } %xta, i64 %xsa, 1
-    br label %while_starta
-
-  while_enda:
-    %a1b2 = extractvalue { i64*, i64 } %xoa, 0
-    %a2b2 = extractvalue { i64*, i64 } %xoa, 1
-    %pc2 = getelementptr i64, i64* %a1b2, i64 %a2b2
-    store i64 %rb, i64* %pc2
-    br label %ctd_ifa
-
-  elsea:
-    br label %ctd_ifa
-
-  ctd_ifa:
-    %xj1 = phi i64* [ %a21, %elsea ], [ %a1b2, %while_enda ]
-    %xka1 = add i64 %a11, 1
-    %xla = insertvalue { i64, i64* } zeroinitializer, i64 %xka1, 0
-    %x6 = insertvalue { i64, i64* } %xla, i64* %xj1, 1
+    %a1a1 = extractvalue { { i64, { i64, i8* } }*, i64 } %xaaa, 0
+    %a2a1 = extractvalue { { i64, { i64, i8* } }*, i64 } %xaaa, 1
+    %xbaa1 = sub i64 %a2a1, 1
+    %xca = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a1, i64 %xbaa1
+    %ra1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xca
+    %p1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a1, i64 %a2a1
+    store { i64, { i64, i8* } } %ra1, { i64, { i64, i8* } }* %p1
+    %xea = sub i64 %a2a1, 1
+    %xfa = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %a1a1, 0
+    %x4 = insertvalue { { i64, { i64, i8* } }*, i64 } %xfa, i64 %xea, 1
     br label %while_start
 
   while_end:
-    %a12 = extractvalue { i64, i64* } %xba, 0
-    %x7 = extractvalue { i64, i64* } %xba, 1
-    br label %ctd_if
-
-  else:
-    br label %ctd_if
-
-  ctd_if:
-    %x8 = phi i64* [ %x, %else ], [ %x7, %while_end ]
-    ret i64* %x8
+    %a1a2 = extractvalue { { i64, { i64, i8* } }*, i64 } %xaaa, 0
+    %a2a2 = extractvalue { { i64, { i64, i8* } }*, i64 } %xaaa, 1
+    %p2 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1a2, i64 %a2a2
+    store { i64, { i64, i8* } } %r, { i64, { i64, i8* } }* %p2
+    ret { i64, { i64, i8* } }* %a1a2
 }
 
-define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_guarded_insertion_sort_impl(i64 %x, i64 %x1, i64 %x2, { i64, { i64, i8* } }* %x3) {
-
-  start:
-    %xa = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %x3, 0
-    %xaa = insertvalue { { i64, { i64, i8* } }*, i64 } %xa, i64 %x1, 1
-    br label %while_start
-
-  while_start:
-    %xba = phi { { i64, { i64, i8* } }*, i64 } [ %x5, %while_body ], [ %xaa, %start ]
-    %a1 = extractvalue { { i64, { i64, i8* } }*, i64 } %xba, 0
-    %a2 = extractvalue { { i64, { i64, i8* } }*, i64 } %xba, 1
-    %x4 = icmp slt i64 %a2, %x2
-    br i1 %x4, label %while_body, label %while_end
-
-  while_body:
-    %a11 = extractvalue { { i64, { i64, i8* } }*, i64 } %xba, 0
-    %a21 = extractvalue { { i64, { i64, i8* } }*, i64 } %xba, 1
-    %xaaa = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_is_guarded_insert_impl ({ i64, { i64, i8* } }* %a11, i64 %x, i64 %a21)
-    %xbaa = add i64 %a21, 1
-    %xca = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %xaaa, 0
-    %x5 = insertvalue { { i64, { i64, i8* } }*, i64 } %xca, i64 %xbaa, 1
-    br label %while_start
-
-  while_end:
-    %a12 = extractvalue { { i64, { i64, i8* } }*, i64 } %xba, 0
-    %a22 = extractvalue { { i64, { i64, i8* } }*, i64 } %xba, 1
-    ret { i64, { i64, i8* } }* %a12
-}
-
-define i64* @Sorting_Export_Code_unat_sort_guarded_insertion_sort_impl(i64 %x, i64 %x1, i64 %x2, i64* %x3) {
+define i64* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_sort_impl_context_guarded_insertion_sort_impl_LLVM_Shallow_ll_icmp_ult(i64 %x, i64 %x1, i64 %x2, i64* %x3) {
 
   start:
     %xa = insertvalue { i64*, i64 } zeroinitializer, i64* %x3, 0
@@ -4261,7 +5385,7 @@ define i64* @Sorting_Export_Code_unat_sort_guarded_insertion_sort_impl(i64 %x, i
   while_body:
     %a11 = extractvalue { i64*, i64 } %xba, 0
     %a21 = extractvalue { i64*, i64 } %xba, 1
-    %xaaa = call i64* @Sorting_Export_Code_unat_sort_is_guarded_insert_impl (i64* %a11, i64 %x, i64 %a21)
+    %xaaa = call i64* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_sort_impl_context_is_guarded_insert_impl_LLVM_Shallow_ll_icmp_ult (i64* %a11, i64 %x, i64 %a21)
     %xbaa = add i64 %a21, 1
     %xca = insertvalue { i64*, i64 } zeroinitializer, i64* %xaaa, 0
     %x5 = insertvalue { i64*, i64 } %xca, i64 %xbaa, 1
@@ -4273,169 +5397,7 @@ define i64* @Sorting_Export_Code_unat_sort_guarded_insertion_sort_impl(i64 %x, i
     ret i64* %a12
 }
 
-define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_introsort_aux_impl_f_08015050({ { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %x) {
-
-  start:
-    %a1 = extractvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %x, 0
-    %xaaa = extractvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %x, 1
-    %a1a = extractvalue { i64, { i64, i64 } } %xaaa, 0
-    %xbaa = extractvalue { i64, { i64, i64 } } %xaaa, 1
-    %a1b = extractvalue { i64, i64 } %xbaa, 0
-    %a2b = extractvalue { i64, i64 } %xbaa, 1
-    %xcaa = sub i64 %a1b, %a1a
-    %xdaa = icmp slt i64 16, %xcaa
-    br i1 %xdaa, label %then, label %else
-
-  then:
-    %xeaa = icmp eq i64 %a2b, 0
-    br i1 %xeaa, label %thena, label %elsea
-
-  thena:
-    %x1 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_heapsort_impl ({ i64, { i64, i8* } }* %a1, i64 %a1a, i64 %a1b)
-    br label %ctd_ifa
-
-  elsea:
-    %xfaa = sub i64 %a1b, %a1a
-    %xga = udiv i64 %xfaa, 2
-    %xha = add i64 %a1a, %xga
-    %xia = add i64 %a1a, 1
-    %xja = sub i64 %a1b, 1
-    %xka = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xia
-    %r = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xka
-    %xla = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xha
-    %ra = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xla
-    %xma = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %r, { i64, { i64, i8* } } %ra)
-    %p = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xia
-    store { i64, { i64, i8* } } %r, { i64, { i64, i8* } }* %p
-    %pa = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xha
-    store { i64, { i64, i8* } } %ra, { i64, { i64, i8* } }* %pa
-    br i1 %xma, label %thenb, label %elseb
-
-  thenb:
-    %xq = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xha
-    %rb = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xq
-    %xr = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xja
-    %rc = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xr
-    %xs = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %rb, { i64, { i64, i8* } } %rc)
-    %pb = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xha
-    store { i64, { i64, i8* } } %rb, { i64, { i64, i8* } }* %pb
-    %pc = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xja
-    store { i64, { i64, i8* } } %rc, { i64, { i64, i8* } }* %pc
-    br i1 %xs, label %thenc, label %elsec
-
-  thenc:
-    %x2 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %a1, i64 %a1a, i64 %xha)
-    br label %ctd_ifc
-
-  elsec:
-    %xw = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xia
-    %rd = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xw
-    %xx = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xja
-    %re = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xx
-    %xy = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %rd, { i64, { i64, i8* } } %re)
-    %pd = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xia
-    store { i64, { i64, i8* } } %rd, { i64, { i64, i8* } }* %pd
-    %pe = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xja
-    store { i64, { i64, i8* } } %re, { i64, { i64, i8* } }* %pe
-    br i1 %xy, label %thend, label %elsed
-
-  thend:
-    %x3 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %a1, i64 %a1a, i64 %xja)
-    br label %ctd_ifd
-
-  elsed:
-    %x4 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %a1, i64 %a1a, i64 %xia)
-    br label %ctd_ifd
-
-  ctd_ifd:
-    %x5 = phi { i64, { i64, i8* } }* [ %x4, %elsed ], [ %x3, %thend ]
-    br label %ctd_ifc
-
-  ctd_ifc:
-    %x6 = phi { i64, { i64, i8* } }* [ %x5, %ctd_ifd ], [ %x2, %thenc ]
-    br label %ctd_ifb
-
-  elseb:
-    %xq1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xia
-    %rb1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xq1
-    %xr1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xja
-    %rc1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xr1
-    %xs1 = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %rb1, { i64, { i64, i8* } } %rc1)
-    %pb1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xia
-    store { i64, { i64, i8* } } %rb1, { i64, { i64, i8* } }* %pb1
-    %pc1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xja
-    store { i64, { i64, i8* } } %rc1, { i64, { i64, i8* } }* %pc1
-    br i1 %xs1, label %thene, label %elsee
-
-  thene:
-    %x7 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %a1, i64 %a1a, i64 %xia)
-    br label %ctd_ife
-
-  elsee:
-    %xw1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xha
-    %rd1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xw1
-    %xx1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xja
-    %re1 = load { i64, { i64, i8* } }, { i64, { i64, i8* } }* %xx1
-    %xy1 = call i1 @Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } } %rd1, { i64, { i64, i8* } } %re1)
-    %pd1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xha
-    store { i64, { i64, i8* } } %rd1, { i64, { i64, i8* } }* %pd1
-    %pe1 = getelementptr { i64, { i64, i8* } }, { i64, { i64, i8* } }* %a1, i64 %xja
-    store { i64, { i64, i8* } } %re1, { i64, { i64, i8* } }* %pe1
-    br i1 %xy1, label %thenf, label %elsef
-
-  thenf:
-    %x8 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %a1, i64 %a1a, i64 %xja)
-    br label %ctd_iff
-
-  elsef:
-    %x9 = call { i64, { i64, i8* } }* @Proto_IICF_EOArray_swap_eo_impl1 ({ i64, { i64, i8* } }* %a1, i64 %a1a, i64 %xha)
-    br label %ctd_iff
-
-  ctd_iff:
-    %x10 = phi { i64, { i64, i8* } }* [ %x9, %elsef ], [ %x8, %thenf ]
-    br label %ctd_ife
-
-  ctd_ife:
-    %x11 = phi { i64, { i64, i8* } }* [ %x10, %ctd_iff ], [ %x7, %thene ]
-    br label %ctd_ifb
-
-  ctd_ifb:
-    %xq2 = phi { i64, { i64, i8* } }* [ %x11, %ctd_ife ], [ %x6, %ctd_ifc ]
-    %xra = add i64 %a1a, 1
-    %xs2 = call { { i64, { i64, i8* } }*, i64 } @Sorting_Export_Code_str_sort_qs_partition_impl (i64 %xra, i64 %a1b, i64 %a1a, { i64, { i64, i8* } }* %xq2)
-    %a = extractvalue { { i64, { i64, i8* } }*, i64 } %xs2, 0
-    %b = extractvalue { { i64, { i64, i8* } }*, i64 } %xs2, 1
-    %xta = sub i64 %a2b, 1
-    %xwa = insertvalue { i64, i64 } zeroinitializer, i64 %b, 0
-    %tmpca = insertvalue { i64, i64 } %xwa, i64 %xta, 1
-    %xxa = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %a1a, 0
-    %tmpda = insertvalue { i64, { i64, i64 } } %xxa, { i64, i64 } %tmpca, 1
-    %xya = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } zeroinitializer, { i64, { i64, i8* } }* %a, 0
-    %xza = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %xya, { i64, { i64, i64 } } %tmpda, 1
-    %xua = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_introsort_aux_impl_f_08015050 ({ { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %xza)
-    %xva = sub i64 %a2b, 1
-    %yba = insertvalue { i64, i64 } zeroinitializer, i64 %a1b, 0
-    %tmpeb = insertvalue { i64, i64 } %yba, i64 %xva, 1
-    %yca = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %b, 0
-    %tmpfa = insertvalue { i64, { i64, i64 } } %yca, { i64, i64 } %tmpeb, 1
-    %yda = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } zeroinitializer, { i64, { i64, i8* } }* %xua, 0
-    %x12 = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %yda, { i64, { i64, i64 } } %tmpfa, 1
-    %x13 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_introsort_aux_impl_f_08015050 ({ { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %x12)
-    br label %ctd_ifa
-
-  ctd_ifa:
-    %x14 = phi { i64, { i64, i8* } }* [ %x13, %ctd_ifb ], [ %x1, %thena ]
-    br label %ctd_if
-
-  else:
-    br label %ctd_if
-
-  ctd_if:
-    %x15 = phi { i64, { i64, i8* } }* [ %a1, %else ], [ %x14, %ctd_ifa ]
-    ret { i64, { i64, i8* } }* %x15
-}
-
-define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_unguarded_insertion_sort_impl(i64 %x, i64 %x1, i64 %x2, { i64, { i64, i8* } }* %x3) {
+define { i64, { i64, i8* } }* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_sort_impl_context_guarded_insertion_sort_impl_Sorting_Strings_strcmp_impl(i64 %x, i64 %x1, i64 %x2, { i64, { i64, i8* } }* %x3) {
 
   start:
     %xa = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %x3, 0
@@ -4452,7 +5414,7 @@ define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_unguarded_insertion_
   while_body:
     %a11 = extractvalue { { i64, { i64, i8* } }*, i64 } %xba, 0
     %a21 = extractvalue { { i64, { i64, i8* } }*, i64 } %xba, 1
-    %xaaa = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_is_unguarded_insert_impl ({ i64, { i64, i8* } }* %a11, i64 %x, i64 %a21)
+    %xaaa = call { i64, { i64, i8* } }* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_sort_impl_context_is_guarded_insert_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %a11, i64 %x, i64 %a21)
     %xbaa = add i64 %a21, 1
     %xca = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %xaaa, 0
     %x5 = insertvalue { { i64, { i64, i8* } }*, i64 } %xca, i64 %xbaa, 1
@@ -4464,169 +5426,7 @@ define { i64, { i64, i8* } }* @Sorting_Export_Code_str_sort_unguarded_insertion_
     ret { i64, { i64, i8* } }* %a12
 }
 
-define i64* @Sorting_Export_Code_unat_sort_introsort_aux_impl_f_07972740({ i64*, { i64, { i64, i64 } } } %x) {
-
-  start:
-    %a1 = extractvalue { i64*, { i64, { i64, i64 } } } %x, 0
-    %xaaa = extractvalue { i64*, { i64, { i64, i64 } } } %x, 1
-    %a1a = extractvalue { i64, { i64, i64 } } %xaaa, 0
-    %xbaa = extractvalue { i64, { i64, i64 } } %xaaa, 1
-    %a1b = extractvalue { i64, i64 } %xbaa, 0
-    %a2b = extractvalue { i64, i64 } %xbaa, 1
-    %xcaa = sub i64 %a1b, %a1a
-    %xdaa = icmp slt i64 16, %xcaa
-    br i1 %xdaa, label %then, label %else
-
-  then:
-    %xeaa = icmp eq i64 %a2b, 0
-    br i1 %xeaa, label %thena, label %elsea
-
-  thena:
-    %x1 = call i64* @heapsort (i64* %a1, i64 %a1a, i64 %a1b)
-    br label %ctd_ifa
-
-  elsea:
-    %xfaa = sub i64 %a1b, %a1a
-    %xga = udiv i64 %xfaa, 2
-    %xha = add i64 %a1a, %xga
-    %xia = add i64 %a1a, 1
-    %xja = sub i64 %a1b, 1
-    %xka = getelementptr i64, i64* %a1, i64 %xia
-    %r = load i64, i64* %xka
-    %xla = getelementptr i64, i64* %a1, i64 %xha
-    %ra = load i64, i64* %xla
-    %xma = icmp ult i64 %r, %ra
-    %p = getelementptr i64, i64* %a1, i64 %xia
-    store i64 %r, i64* %p
-    %pa = getelementptr i64, i64* %a1, i64 %xha
-    store i64 %ra, i64* %pa
-    br i1 %xma, label %thenb, label %elseb
-
-  thenb:
-    %xq = getelementptr i64, i64* %a1, i64 %xha
-    %rb = load i64, i64* %xq
-    %xr = getelementptr i64, i64* %a1, i64 %xja
-    %rc = load i64, i64* %xr
-    %xs = icmp ult i64 %rb, %rc
-    %pb = getelementptr i64, i64* %a1, i64 %xha
-    store i64 %rb, i64* %pb
-    %pc = getelementptr i64, i64* %a1, i64 %xja
-    store i64 %rc, i64* %pc
-    br i1 %xs, label %thenc, label %elsec
-
-  thenc:
-    %x2 = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %a1, i64 %a1a, i64 %xha)
-    br label %ctd_ifc
-
-  elsec:
-    %xw = getelementptr i64, i64* %a1, i64 %xia
-    %rd = load i64, i64* %xw
-    %xx = getelementptr i64, i64* %a1, i64 %xja
-    %re = load i64, i64* %xx
-    %xy = icmp ult i64 %rd, %re
-    %pd = getelementptr i64, i64* %a1, i64 %xia
-    store i64 %rd, i64* %pd
-    %pe = getelementptr i64, i64* %a1, i64 %xja
-    store i64 %re, i64* %pe
-    br i1 %xy, label %thend, label %elsed
-
-  thend:
-    %x3 = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %a1, i64 %a1a, i64 %xja)
-    br label %ctd_ifd
-
-  elsed:
-    %x4 = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %a1, i64 %a1a, i64 %xia)
-    br label %ctd_ifd
-
-  ctd_ifd:
-    %x5 = phi i64* [ %x4, %elsed ], [ %x3, %thend ]
-    br label %ctd_ifc
-
-  ctd_ifc:
-    %x6 = phi i64* [ %x5, %ctd_ifd ], [ %x2, %thenc ]
-    br label %ctd_ifb
-
-  elseb:
-    %xq1 = getelementptr i64, i64* %a1, i64 %xia
-    %rb1 = load i64, i64* %xq1
-    %xr1 = getelementptr i64, i64* %a1, i64 %xja
-    %rc1 = load i64, i64* %xr1
-    %xs1 = icmp ult i64 %rb1, %rc1
-    %pb1 = getelementptr i64, i64* %a1, i64 %xia
-    store i64 %rb1, i64* %pb1
-    %pc1 = getelementptr i64, i64* %a1, i64 %xja
-    store i64 %rc1, i64* %pc1
-    br i1 %xs1, label %thene, label %elsee
-
-  thene:
-    %x7 = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %a1, i64 %a1a, i64 %xia)
-    br label %ctd_ife
-
-  elsee:
-    %xw1 = getelementptr i64, i64* %a1, i64 %xha
-    %rd1 = load i64, i64* %xw1
-    %xx1 = getelementptr i64, i64* %a1, i64 %xja
-    %re1 = load i64, i64* %xx1
-    %xy1 = icmp ult i64 %rd1, %re1
-    %pd1 = getelementptr i64, i64* %a1, i64 %xha
-    store i64 %rd1, i64* %pd1
-    %pe1 = getelementptr i64, i64* %a1, i64 %xja
-    store i64 %re1, i64* %pe1
-    br i1 %xy1, label %thenf, label %elsef
-
-  thenf:
-    %x8 = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %a1, i64 %a1a, i64 %xja)
-    br label %ctd_iff
-
-  elsef:
-    %x9 = call i64* @Proto_IICF_EOArray_swap_eo_impl (i64* %a1, i64 %a1a, i64 %xha)
-    br label %ctd_iff
-
-  ctd_iff:
-    %x10 = phi i64* [ %x9, %elsef ], [ %x8, %thenf ]
-    br label %ctd_ife
-
-  ctd_ife:
-    %x11 = phi i64* [ %x10, %ctd_iff ], [ %x7, %thene ]
-    br label %ctd_ifb
-
-  ctd_ifb:
-    %xq2 = phi i64* [ %x11, %ctd_ife ], [ %x6, %ctd_ifc ]
-    %xra = add i64 %a1a, 1
-    %xs2 = call { i64*, i64 } @Sorting_Export_Code_unat_sort_qs_partition_impl (i64 %xra, i64 %a1b, i64 %a1a, i64* %xq2)
-    %a = extractvalue { i64*, i64 } %xs2, 0
-    %b = extractvalue { i64*, i64 } %xs2, 1
-    %xta = sub i64 %a2b, 1
-    %xwa = insertvalue { i64, i64 } zeroinitializer, i64 %b, 0
-    %tmpca = insertvalue { i64, i64 } %xwa, i64 %xta, 1
-    %xxa = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %a1a, 0
-    %tmpda = insertvalue { i64, { i64, i64 } } %xxa, { i64, i64 } %tmpca, 1
-    %xya = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %a, 0
-    %xza = insertvalue { i64*, { i64, { i64, i64 } } } %xya, { i64, { i64, i64 } } %tmpda, 1
-    %xua = call i64* @Sorting_Export_Code_unat_sort_introsort_aux_impl_f_07972740 ({ i64*, { i64, { i64, i64 } } } %xza)
-    %xva = sub i64 %a2b, 1
-    %yba = insertvalue { i64, i64 } zeroinitializer, i64 %a1b, 0
-    %tmpeb = insertvalue { i64, i64 } %yba, i64 %xva, 1
-    %yca = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %b, 0
-    %tmpfa = insertvalue { i64, { i64, i64 } } %yca, { i64, i64 } %tmpeb, 1
-    %yda = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %xua, 0
-    %x12 = insertvalue { i64*, { i64, { i64, i64 } } } %yda, { i64, { i64, i64 } } %tmpfa, 1
-    %x13 = call i64* @Sorting_Export_Code_unat_sort_introsort_aux_impl_f_07972740 ({ i64*, { i64, { i64, i64 } } } %x12)
-    br label %ctd_ifa
-
-  ctd_ifa:
-    %x14 = phi i64* [ %x13, %ctd_ifb ], [ %x1, %thena ]
-    br label %ctd_if
-
-  else:
-    br label %ctd_if
-
-  ctd_if:
-    %x15 = phi i64* [ %a1, %else ], [ %x14, %ctd_ifa ]
-    ret i64* %x15
-}
-
-define i64* @Sorting_Export_Code_unat_sort_unguarded_insertion_sort_impl(i64 %x, i64 %x1, i64 %x2, i64* %x3) {
+define i64* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_sort_impl_context_unguarded_insertion_sort_impl_LLVM_Shallow_ll_icmp_ult(i64 %x, i64 %x1, i64 %x2, i64* %x3) {
 
   start:
     %xa = insertvalue { i64*, i64 } zeroinitializer, i64* %x3, 0
@@ -4643,10 +5443,1607 @@ define i64* @Sorting_Export_Code_unat_sort_unguarded_insertion_sort_impl(i64 %x,
   while_body:
     %a11 = extractvalue { i64*, i64 } %xba, 0
     %a21 = extractvalue { i64*, i64 } %xba, 1
-    %xaaa = call i64* @Sorting_Export_Code_unat_sort_is_unguarded_insert_impl (i64* %a11, i64 %x, i64 %a21)
+    %xaaa = call i64* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_sort_impl_context_is_unguarded_insert_impl_LLVM_Shallow_ll_icmp_ult (i64* %a11, i64 %x, i64 %a21)
     %xbaa = add i64 %a21, 1
     %xca = insertvalue { i64*, i64 } zeroinitializer, i64* %xaaa, 0
     %x5 = insertvalue { i64*, i64 } %xca, i64 %xbaa, 1
+    br label %while_start
+
+  while_end:
+    %a12 = extractvalue { i64*, i64 } %xba, 0
+    %a22 = extractvalue { i64*, i64 } %xba, 1
+    ret i64* %a12
+}
+
+define { i64, { i64, i8* } }* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_sort_impl_context_unguarded_insertion_sort_impl_Sorting_Strings_strcmp_impl(i64 %x, i64 %x1, i64 %x2, { i64, { i64, i8* } }* %x3) {
+
+  start:
+    %xa = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %x3, 0
+    %xaa = insertvalue { { i64, { i64, i8* } }*, i64 } %xa, i64 %x1, 1
+    br label %while_start
+
+  while_start:
+    %xba = phi { { i64, { i64, i8* } }*, i64 } [ %x5, %while_body ], [ %xaa, %start ]
+    %a1 = extractvalue { { i64, { i64, i8* } }*, i64 } %xba, 0
+    %a2 = extractvalue { { i64, { i64, i8* } }*, i64 } %xba, 1
+    %x4 = icmp slt i64 %a2, %x2
+    br i1 %x4, label %while_body, label %while_end
+
+  while_body:
+    %a11 = extractvalue { { i64, { i64, i8* } }*, i64 } %xba, 0
+    %a21 = extractvalue { { i64, { i64, i8* } }*, i64 } %xba, 1
+    %xaaa = call { i64, { i64, i8* } }* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_sort_impl_context_is_unguarded_insert_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %a11, i64 %x, i64 %a21)
+    %xbaa = add i64 %a21, 1
+    %xca = insertvalue { { i64, { i64, i8* } }*, i64 } zeroinitializer, { i64, { i64, i8* } }* %xaaa, 0
+    %x5 = insertvalue { { i64, { i64, i8* } }*, i64 } %xca, i64 %xbaa, 1
+    br label %while_start
+
+  while_end:
+    %a12 = extractvalue { { i64, { i64, i8* } }*, i64 } %xba, 0
+    %a22 = extractvalue { { i64, { i64, i8* } }*, i64 } %xba, 1
+    ret { i64, { i64, i8* } }* %a12
+}
+
+define i64* @Monadify_M_CONST_Sorting_Heapsort_parameterized_sort_impl_context_sift_down_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult(i64* %x, i64 %x1, i64 %x2, i64 %x3, i64* %x4) {
+
+  start:
+    %x5 = sub i64 %x3, %x1
+    %xb = add i64 %x1, %x5
+    %xc = getelementptr i64, i64* %x4, i64 %xb
+    %r = load i64, i64* %xc
+    %xd = insertvalue { i64, i64* } zeroinitializer, i64 %r, 0
+    %xba = insertvalue { i64, i64* } %xd, i64* %x4, 1
+    %a1 = extractvalue { i64, i64* } %xba, 0
+    %a2 = extractvalue { i64, i64* } %xba, 1
+    %xg = insertvalue { i64, i1 } zeroinitializer, i64 %x5, 0
+    %tmpa = insertvalue { i64, i1 } %xg, i1 1, 1
+    %xh = insertvalue { i64*, { i64, i1 } } zeroinitializer, i64* %a2, 0
+    %xi = insertvalue { i64*, { i64, i1 } } %xh, { i64, i1 } %tmpa, 1
+    br label %while_start
+
+  while_start:
+    %xca = phi { i64*, { i64, i1 } } [ %x13, %ctd_if ], [ %xi, %start ]
+    %a1a = extractvalue { i64*, { i64, i1 } } %xca, 0
+    %xda = extractvalue { i64*, { i64, i1 } } %xca, 1
+    %a1b = extractvalue { i64, i1 } %xda, 0
+    %a2b = extractvalue { i64, i1 } %xda, 1
+    %xea = sub i64 %x2, %x1
+    %xfa = sub i64 %xea, 1
+    %xga = udiv i64 %xfa, 2
+    %xha = icmp slt i64 %a1b, %xga
+    %x6 = and i1 %xha, %a2b
+    br i1 %x6, label %while_body, label %while_end
+
+  while_body:
+    %a1a1 = extractvalue { i64*, { i64, i1 } } %xca, 0
+    %xda1 = extractvalue { i64*, { i64, i1 } } %xca, 1
+    %a1b1 = extractvalue { i64, i1 } %xda1, 0
+    %a2b1 = extractvalue { i64, i1 } %xda1, 1
+    %xea1 = mul i64 2, %a1b1
+    %xfa1 = add i64 %xea1, 1
+    %xga1 = mul i64 2, %a1b1
+    %xha1 = add i64 %xga1, 2
+    %xia = add i64 %x1, %xfa1
+    %xja = add i64 %x1, %xha1
+    %xp = getelementptr i64, i64* %a1a1, i64 %xia
+    %ra = load i64, i64* %xp
+    %xq = getelementptr i64, i64* %a1a1, i64 %xja
+    %rb = load i64, i64* %xq
+    %xr = call i1 @Monadify_M_CONST_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult (i64* %x, i64 %ra, i64 %rb)
+    %p = getelementptr i64, i64* %a1a1, i64 %xia
+    store i64 %ra, i64* %p
+    %pa = getelementptr i64, i64* %a1a1, i64 %xja
+    store i64 %rb, i64* %pa
+    br i1 %xr, label %then, label %else
+
+  then:
+    %xla = add i64 %x1, %xha1
+    %xu = getelementptr i64, i64* %a1a1, i64 %xla
+    %rc = load i64, i64* %xu
+    %xv = call i1 @Monadify_M_CONST_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult (i64* %x, i64 %a1, i64 %rc)
+    %pb = getelementptr i64, i64* %a1a1, i64 %xla
+    store i64 %rc, i64* %pb
+    br i1 %xv, label %thena, label %elsea
+
+  thena:
+    %xx = add i64 %x1, %xha1
+    %xy = getelementptr i64, i64* %a1a1, i64 %xx
+    %rd = load i64, i64* %xy
+    %xz = insertvalue { i64, i64* } zeroinitializer, i64 %rd, 0
+    %xna = insertvalue { i64, i64* } %xz, i64* %a1a1, 1
+    %a1c = extractvalue { i64, i64* } %xna, 0
+    %a2c = extractvalue { i64, i64* } %xna, 1
+    %yc = add i64 %x1, %a1b1
+    %pc = getelementptr i64, i64* %a2c, i64 %yc
+    store i64 %a1c, i64* %pc
+    %xpa = insertvalue { i64*, { i64, i1 } } zeroinitializer, i64* %a2c, 0
+    %ye = insertvalue { i64, i1 } zeroinitializer, i64 %xha1, 0
+    %tmpf = insertvalue { i64, i1 } %ye, i1 1, 1
+    %x7 = insertvalue { i64*, { i64, i1 } } %xpa, { i64, i1 } %tmpf, 1
+    br label %ctd_ifa
+
+  elsea:
+    %xna1 = insertvalue { i64*, { i64, i1 } } zeroinitializer, i64* %a1a1, 0
+    %xy1 = insertvalue { i64, i1 } zeroinitializer, i64 %a1b1, 0
+    %tmpf1 = insertvalue { i64, i1 } %xy1, i1 0, 1
+    %x8 = insertvalue { i64*, { i64, i1 } } %xna1, { i64, i1 } %tmpf1, 1
+    br label %ctd_ifa
+
+  ctd_ifa:
+    %x9 = phi { i64*, { i64, i1 } } [ %x8, %elsea ], [ %x7, %thena ]
+    br label %ctd_if
+
+  else:
+    %xla1 = add i64 %x1, %xfa1
+    %xu1 = getelementptr i64, i64* %a1a1, i64 %xla1
+    %rc1 = load i64, i64* %xu1
+    %xv1 = call i1 @Monadify_M_CONST_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult (i64* %x, i64 %a1, i64 %rc1)
+    %pb1 = getelementptr i64, i64* %a1a1, i64 %xla1
+    store i64 %rc1, i64* %pb1
+    br i1 %xv1, label %thenb, label %elseb
+
+  thenb:
+    %xx1 = add i64 %x1, %xfa1
+    %xy2 = getelementptr i64, i64* %a1a1, i64 %xx1
+    %rd1 = load i64, i64* %xy2
+    %xz1 = insertvalue { i64, i64* } zeroinitializer, i64 %rd1, 0
+    %xna2 = insertvalue { i64, i64* } %xz1, i64* %a1a1, 1
+    %a1c1 = extractvalue { i64, i64* } %xna2, 0
+    %a2c1 = extractvalue { i64, i64* } %xna2, 1
+    %yc1 = add i64 %x1, %a1b1
+    %pc1 = getelementptr i64, i64* %a2c1, i64 %yc1
+    store i64 %a1c1, i64* %pc1
+    %xpa1 = insertvalue { i64*, { i64, i1 } } zeroinitializer, i64* %a2c1, 0
+    %ye1 = insertvalue { i64, i1 } zeroinitializer, i64 %xfa1, 0
+    %tmpf2 = insertvalue { i64, i1 } %ye1, i1 1, 1
+    %x10 = insertvalue { i64*, { i64, i1 } } %xpa1, { i64, i1 } %tmpf2, 1
+    br label %ctd_ifb
+
+  elseb:
+    %xna3 = insertvalue { i64*, { i64, i1 } } zeroinitializer, i64* %a1a1, 0
+    %xy3 = insertvalue { i64, i1 } zeroinitializer, i64 %a1b1, 0
+    %tmpf3 = insertvalue { i64, i1 } %xy3, i1 0, 1
+    %x11 = insertvalue { i64*, { i64, i1 } } %xna3, { i64, i1 } %tmpf3, 1
+    br label %ctd_ifb
+
+  ctd_ifb:
+    %x12 = phi { i64*, { i64, i1 } } [ %x11, %elseb ], [ %x10, %thenb ]
+    br label %ctd_if
+
+  ctd_if:
+    %x13 = phi { i64*, { i64, i1 } } [ %x12, %ctd_ifb ], [ %x9, %ctd_ifa ]
+    br label %while_start
+
+  while_end:
+    %a1a2 = extractvalue { i64*, { i64, i1 } } %xca, 0
+    %xda2 = extractvalue { i64*, { i64, i1 } } %xca, 1
+    %a1b2 = extractvalue { i64, i1 } %xda2, 0
+    %a2b2 = extractvalue { i64, i1 } %xda2, 1
+    %xea2 = sub i64 %x2, %x1
+    %xfa2 = udiv i64 %xea2, 2
+    %xga2 = icmp slt i64 %a1b2, %xfa2
+    br i1 %xga2, label %thenc, label %elsec
+
+  thenc:
+    %xha2 = mul i64 2, %a1b2
+    %xia1 = add i64 %xha2, 1
+    %xja1 = add i64 %x1, %xia1
+    %xp1 = getelementptr i64, i64* %a1a2, i64 %xja1
+    %ra1 = load i64, i64* %xp1
+    %xq1 = call i1 @Monadify_M_CONST_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult (i64* %x, i64 %a1, i64 %ra1)
+    %p1 = getelementptr i64, i64* %a1a2, i64 %xja1
+    store i64 %ra1, i64* %p1
+    br i1 %xq1, label %thend, label %elsed
+
+  thend:
+    %xs = add i64 %x1, %xia1
+    %xt = getelementptr i64, i64* %a1a2, i64 %xs
+    %rb1 = load i64, i64* %xt
+    %xu2 = insertvalue { i64, i64* } zeroinitializer, i64 %rb1, 0
+    %xla2 = insertvalue { i64, i64* } %xu2, i64* %a1a2, 1
+    %a1c2 = extractvalue { i64, i64* } %xla2, 0
+    %a2c2 = extractvalue { i64, i64* } %xla2, 1
+    %xx2 = add i64 %x1, %a1b2
+    %pa1 = getelementptr i64, i64* %a2c2, i64 %xx2
+    store i64 %a1c2, i64* %pa1
+    %xy4 = add i64 %x1, %xia1
+    %pb2 = getelementptr i64, i64* %a2c2, i64 %xy4
+    store i64 %a1, i64* %pb2
+    br label %ctd_ifd
+
+  elsed:
+    %xs1 = add i64 %x1, %a1b2
+    %pa2 = getelementptr i64, i64* %a1a2, i64 %xs1
+    store i64 %a1, i64* %pa2
+    br label %ctd_ifd
+
+  ctd_ifd:
+    %x14 = phi i64* [ %a1a2, %elsed ], [ %a2c2, %thend ]
+    br label %ctd_ifc
+
+  elsec:
+    %xo = add i64 %x1, %a1b2
+    %p2 = getelementptr i64, i64* %a1a2, i64 %xo
+    store i64 %a1, i64* %p2
+    br label %ctd_ifc
+
+  ctd_ifc:
+    %x15 = phi i64* [ %a1a2, %elsec ], [ %x14, %ctd_ifd ]
+    ret i64* %x15
+}
+
+define i64* @Monadify_M_CONST_Sorting_Heapsort_parameterized_sort_impl_context_sift_down_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2, i64 %x3, i64* %x4) {
+
+  start:
+    %x5 = sub i64 %x3, %x1
+    %xb = add i64 %x1, %x5
+    %xc = getelementptr i64, i64* %x4, i64 %xb
+    %r = load i64, i64* %xc
+    %xd = insertvalue { i64, i64* } zeroinitializer, i64 %r, 0
+    %xba = insertvalue { i64, i64* } %xd, i64* %x4, 1
+    %a1 = extractvalue { i64, i64* } %xba, 0
+    %a2 = extractvalue { i64, i64* } %xba, 1
+    %xg = insertvalue { i64, i1 } zeroinitializer, i64 %x5, 0
+    %tmpa = insertvalue { i64, i1 } %xg, i1 1, 1
+    %xh = insertvalue { i64*, { i64, i1 } } zeroinitializer, i64* %a2, 0
+    %xi = insertvalue { i64*, { i64, i1 } } %xh, { i64, i1 } %tmpa, 1
+    br label %while_start
+
+  while_start:
+    %xca = phi { i64*, { i64, i1 } } [ %x13, %ctd_if ], [ %xi, %start ]
+    %a1a = extractvalue { i64*, { i64, i1 } } %xca, 0
+    %xda = extractvalue { i64*, { i64, i1 } } %xca, 1
+    %a1b = extractvalue { i64, i1 } %xda, 0
+    %a2b = extractvalue { i64, i1 } %xda, 1
+    %xea = sub i64 %x2, %x1
+    %xfa = sub i64 %xea, 1
+    %xga = udiv i64 %xfa, 2
+    %xha = icmp slt i64 %a1b, %xga
+    %x6 = and i1 %xha, %a2b
+    br i1 %x6, label %while_body, label %while_end
+
+  while_body:
+    %a1a1 = extractvalue { i64*, { i64, i1 } } %xca, 0
+    %xda1 = extractvalue { i64*, { i64, i1 } } %xca, 1
+    %a1b1 = extractvalue { i64, i1 } %xda1, 0
+    %a2b1 = extractvalue { i64, i1 } %xda1, 1
+    %xea1 = mul i64 2, %a1b1
+    %xfa1 = add i64 %xea1, 1
+    %xga1 = mul i64 2, %a1b1
+    %xha1 = add i64 %xga1, 2
+    %xia = add i64 %x1, %xfa1
+    %xja = add i64 %x1, %xha1
+    %xp = getelementptr i64, i64* %a1a1, i64 %xia
+    %ra = load i64, i64* %xp
+    %xq = getelementptr i64, i64* %a1a1, i64 %xja
+    %rb = load i64, i64* %xq
+    %xr = call i1 @Monadify_M_CONST_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %x, i64 %ra, i64 %rb)
+    %p = getelementptr i64, i64* %a1a1, i64 %xia
+    store i64 %ra, i64* %p
+    %pa = getelementptr i64, i64* %a1a1, i64 %xja
+    store i64 %rb, i64* %pa
+    br i1 %xr, label %then, label %else
+
+  then:
+    %xla = add i64 %x1, %xha1
+    %xu = getelementptr i64, i64* %a1a1, i64 %xla
+    %rc = load i64, i64* %xu
+    %xv = call i1 @Monadify_M_CONST_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %x, i64 %a1, i64 %rc)
+    %pb = getelementptr i64, i64* %a1a1, i64 %xla
+    store i64 %rc, i64* %pb
+    br i1 %xv, label %thena, label %elsea
+
+  thena:
+    %xx = add i64 %x1, %xha1
+    %xy = getelementptr i64, i64* %a1a1, i64 %xx
+    %rd = load i64, i64* %xy
+    %xz = insertvalue { i64, i64* } zeroinitializer, i64 %rd, 0
+    %xna = insertvalue { i64, i64* } %xz, i64* %a1a1, 1
+    %a1c = extractvalue { i64, i64* } %xna, 0
+    %a2c = extractvalue { i64, i64* } %xna, 1
+    %yc = add i64 %x1, %a1b1
+    %pc = getelementptr i64, i64* %a2c, i64 %yc
+    store i64 %a1c, i64* %pc
+    %xpa = insertvalue { i64*, { i64, i1 } } zeroinitializer, i64* %a2c, 0
+    %ye = insertvalue { i64, i1 } zeroinitializer, i64 %xha1, 0
+    %tmpf = insertvalue { i64, i1 } %ye, i1 1, 1
+    %x7 = insertvalue { i64*, { i64, i1 } } %xpa, { i64, i1 } %tmpf, 1
+    br label %ctd_ifa
+
+  elsea:
+    %xna1 = insertvalue { i64*, { i64, i1 } } zeroinitializer, i64* %a1a1, 0
+    %xy1 = insertvalue { i64, i1 } zeroinitializer, i64 %a1b1, 0
+    %tmpf1 = insertvalue { i64, i1 } %xy1, i1 0, 1
+    %x8 = insertvalue { i64*, { i64, i1 } } %xna1, { i64, i1 } %tmpf1, 1
+    br label %ctd_ifa
+
+  ctd_ifa:
+    %x9 = phi { i64*, { i64, i1 } } [ %x8, %elsea ], [ %x7, %thena ]
+    br label %ctd_if
+
+  else:
+    %xla1 = add i64 %x1, %xfa1
+    %xu1 = getelementptr i64, i64* %a1a1, i64 %xla1
+    %rc1 = load i64, i64* %xu1
+    %xv1 = call i1 @Monadify_M_CONST_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %x, i64 %a1, i64 %rc1)
+    %pb1 = getelementptr i64, i64* %a1a1, i64 %xla1
+    store i64 %rc1, i64* %pb1
+    br i1 %xv1, label %thenb, label %elseb
+
+  thenb:
+    %xx1 = add i64 %x1, %xfa1
+    %xy2 = getelementptr i64, i64* %a1a1, i64 %xx1
+    %rd1 = load i64, i64* %xy2
+    %xz1 = insertvalue { i64, i64* } zeroinitializer, i64 %rd1, 0
+    %xna2 = insertvalue { i64, i64* } %xz1, i64* %a1a1, 1
+    %a1c1 = extractvalue { i64, i64* } %xna2, 0
+    %a2c1 = extractvalue { i64, i64* } %xna2, 1
+    %yc1 = add i64 %x1, %a1b1
+    %pc1 = getelementptr i64, i64* %a2c1, i64 %yc1
+    store i64 %a1c1, i64* %pc1
+    %xpa1 = insertvalue { i64*, { i64, i1 } } zeroinitializer, i64* %a2c1, 0
+    %ye1 = insertvalue { i64, i1 } zeroinitializer, i64 %xfa1, 0
+    %tmpf2 = insertvalue { i64, i1 } %ye1, i1 1, 1
+    %x10 = insertvalue { i64*, { i64, i1 } } %xpa1, { i64, i1 } %tmpf2, 1
+    br label %ctd_ifb
+
+  elseb:
+    %xna3 = insertvalue { i64*, { i64, i1 } } zeroinitializer, i64* %a1a1, 0
+    %xy3 = insertvalue { i64, i1 } zeroinitializer, i64 %a1b1, 0
+    %tmpf3 = insertvalue { i64, i1 } %xy3, i1 0, 1
+    %x11 = insertvalue { i64*, { i64, i1 } } %xna3, { i64, i1 } %tmpf3, 1
+    br label %ctd_ifb
+
+  ctd_ifb:
+    %x12 = phi { i64*, { i64, i1 } } [ %x11, %elseb ], [ %x10, %thenb ]
+    br label %ctd_if
+
+  ctd_if:
+    %x13 = phi { i64*, { i64, i1 } } [ %x12, %ctd_ifb ], [ %x9, %ctd_ifa ]
+    br label %while_start
+
+  while_end:
+    %a1a2 = extractvalue { i64*, { i64, i1 } } %xca, 0
+    %xda2 = extractvalue { i64*, { i64, i1 } } %xca, 1
+    %a1b2 = extractvalue { i64, i1 } %xda2, 0
+    %a2b2 = extractvalue { i64, i1 } %xda2, 1
+    %xea2 = sub i64 %x2, %x1
+    %xfa2 = udiv i64 %xea2, 2
+    %xga2 = icmp slt i64 %a1b2, %xfa2
+    br i1 %xga2, label %thenc, label %elsec
+
+  thenc:
+    %xha2 = mul i64 2, %a1b2
+    %xia1 = add i64 %xha2, 1
+    %xja1 = add i64 %x1, %xia1
+    %xp1 = getelementptr i64, i64* %a1a2, i64 %xja1
+    %ra1 = load i64, i64* %xp1
+    %xq1 = call i1 @Monadify_M_CONST_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %x, i64 %a1, i64 %ra1)
+    %p1 = getelementptr i64, i64* %a1a2, i64 %xja1
+    store i64 %ra1, i64* %p1
+    br i1 %xq1, label %thend, label %elsed
+
+  thend:
+    %xs = add i64 %x1, %xia1
+    %xt = getelementptr i64, i64* %a1a2, i64 %xs
+    %rb1 = load i64, i64* %xt
+    %xu2 = insertvalue { i64, i64* } zeroinitializer, i64 %rb1, 0
+    %xla2 = insertvalue { i64, i64* } %xu2, i64* %a1a2, 1
+    %a1c2 = extractvalue { i64, i64* } %xla2, 0
+    %a2c2 = extractvalue { i64, i64* } %xla2, 1
+    %xx2 = add i64 %x1, %a1b2
+    %pa1 = getelementptr i64, i64* %a2c2, i64 %xx2
+    store i64 %a1c2, i64* %pa1
+    %xy4 = add i64 %x1, %xia1
+    %pb2 = getelementptr i64, i64* %a2c2, i64 %xy4
+    store i64 %a1, i64* %pb2
+    br label %ctd_ifd
+
+  elsed:
+    %xs1 = add i64 %x1, %a1b2
+    %pa2 = getelementptr i64, i64* %a1a2, i64 %xs1
+    store i64 %a1, i64* %pa2
+    br label %ctd_ifd
+
+  ctd_ifd:
+    %x14 = phi i64* [ %a1a2, %elsed ], [ %a2c2, %thend ]
+    br label %ctd_ifc
+
+  elsec:
+    %xo = add i64 %x1, %a1b2
+    %p2 = getelementptr i64, i64* %a1a2, i64 %xo
+    store i64 %a1, i64* %p2
+    br label %ctd_ifc
+
+  ctd_ifc:
+    %x15 = phi i64* [ %a1a2, %elsec ], [ %x14, %ctd_ifd ]
+    ret i64* %x15
+}
+
+define i64* @Monadify_M_CONST_Sorting_Heapsort_parameterized_sort_impl_context_heapify_btu_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult(i64* %x, i64 %x1, i64 %x2, i64* %x3) {
+
+  start:
+    %xa = sub i64 %x2, 1
+    %xba = insertvalue { i64*, i64 } zeroinitializer, i64* %x3, 0
+    %xca = insertvalue { i64*, i64 } %xba, i64 %xa, 1
+    br label %while_start
+
+  while_start:
+    %xaa = phi { i64*, i64 } [ %x6, %while_body ], [ %xca, %start ]
+    %a1 = extractvalue { i64*, i64 } %xaa, 0
+    %x4 = extractvalue { i64*, i64 } %xaa, 1
+    %x5 = icmp slt i64 %x1, %x4
+    br i1 %x5, label %while_body, label %while_end
+
+  while_body:
+    %a11 = extractvalue { i64*, i64 } %xaa, 0
+    %a2 = extractvalue { i64*, i64 } %xaa, 1
+    %xbaa = sub i64 %a2, 1
+    %xcaa = call i64* @Monadify_M_CONST_Sorting_Heapsort_parameterized_sort_impl_context_sift_down_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult (i64* %x, i64 %x1, i64 %x2, i64 %xbaa, i64* %a11)
+    %xda = insertvalue { i64*, i64 } zeroinitializer, i64* %xcaa, 0
+    %x6 = insertvalue { i64*, i64 } %xda, i64 %xbaa, 1
+    br label %while_start
+
+  while_end:
+    %a12 = extractvalue { i64*, i64 } %xaa, 0
+    %a21 = extractvalue { i64*, i64 } %xaa, 1
+    ret i64* %a12
+}
+
+define i64* @Monadify_M_CONST_Sorting_Heapsort_parameterized_sort_impl_context_heapify_btu_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2, i64* %x3) {
+
+  start:
+    %xa = sub i64 %x2, 1
+    %xba = insertvalue { i64*, i64 } zeroinitializer, i64* %x3, 0
+    %xca = insertvalue { i64*, i64 } %xba, i64 %xa, 1
+    br label %while_start
+
+  while_start:
+    %xaa = phi { i64*, i64 } [ %x6, %while_body ], [ %xca, %start ]
+    %a1 = extractvalue { i64*, i64 } %xaa, 0
+    %x4 = extractvalue { i64*, i64 } %xaa, 1
+    %x5 = icmp slt i64 %x1, %x4
+    br i1 %x5, label %while_body, label %while_end
+
+  while_body:
+    %a11 = extractvalue { i64*, i64 } %xaa, 0
+    %a2 = extractvalue { i64*, i64 } %xaa, 1
+    %xbaa = sub i64 %a2, 1
+    %xcaa = call i64* @Monadify_M_CONST_Sorting_Heapsort_parameterized_sort_impl_context_sift_down_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2, i64 %xbaa, i64* %a11)
+    %xda = insertvalue { i64*, i64 } zeroinitializer, i64* %xcaa, 0
+    %x6 = insertvalue { i64*, i64 } %xda, i64 %xbaa, 1
+    br label %while_start
+
+  while_end:
+    %a12 = extractvalue { i64*, i64 } %xaa, 0
+    %a21 = extractvalue { i64*, i64 } %xaa, 1
+    ret i64* %a12
+}
+
+define i64* @Monadify_M_CONST_Sorting_Heapsort_parameterized_sort_impl_context_heapsort_param_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult(i64* %x, i64* %x1, i64 %x2, i64 %x3) {
+
+  start:
+    %x4 = sub i64 %x3, %x2
+    %xa = icmp slt i64 1, %x4
+    br i1 %xa, label %then, label %else
+
+  then:
+    %xb = call i64* @Monadify_M_CONST_Sorting_Heapsort_parameterized_sort_impl_context_heapify_btu_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult (i64* %x, i64 %x2, i64 %x3, i64* %x1)
+    %xc = insertvalue { i64*, i64 } zeroinitializer, i64* %xb, 0
+    %xd = insertvalue { i64*, i64 } %xc, i64 %x3, 1
+    br label %while_start
+
+  while_start:
+    %xca = phi { i64*, i64 } [ %x6, %while_body ], [ %xd, %then ]
+    %a1 = extractvalue { i64*, i64 } %xca, 0
+    %a2 = extractvalue { i64*, i64 } %xca, 1
+    %xda = add i64 %x2, 1
+    %x5 = icmp slt i64 %xda, %a2
+    br i1 %x5, label %while_body, label %while_end
+
+  while_body:
+    %a11 = extractvalue { i64*, i64 } %xca, 0
+    %a21 = extractvalue { i64*, i64 } %xca, 1
+    %xda1 = sub i64 %a21, 1
+    %xfa = getelementptr i64, i64* %a11, i64 %x2
+    %r = load i64, i64* %xfa
+    %xga = getelementptr i64, i64* %a11, i64 %xda1
+    %ra = load i64, i64* %xga
+    %p = getelementptr i64, i64* %a11, i64 %x2
+    store i64 %ra, i64* %p
+    %pa = getelementptr i64, i64* %a11, i64 %xda1
+    store i64 %r, i64* %pa
+    %xja = sub i64 %a21, 1
+    %xk = call i64* @Monadify_M_CONST_Sorting_Heapsort_parameterized_sort_impl_context_sift_down_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult (i64* %x, i64 %x2, i64 %xja, i64 %x2, i64* %a11)
+    %xla = sub i64 %a21, 1
+    %xma = insertvalue { i64*, i64 } zeroinitializer, i64* %xk, 0
+    %x6 = insertvalue { i64*, i64 } %xma, i64 %xla, 1
+    br label %while_start
+
+  while_end:
+    %a12 = extractvalue { i64*, i64 } %xca, 0
+    %a22 = extractvalue { i64*, i64 } %xca, 1
+    br label %ctd_if
+
+  else:
+    br label %ctd_if
+
+  ctd_if:
+    %x7 = phi i64* [ %x1, %else ], [ %a12, %while_end ]
+    ret i64* %x7
+}
+
+define i64* @Monadify_M_CONST_Sorting_Heapsort_parameterized_sort_impl_context_heapsort_param_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl({ i64, { i64, i8* } }* %x, i64* %x1, i64 %x2, i64 %x3) {
+
+  start:
+    %x4 = sub i64 %x3, %x2
+    %xa = icmp slt i64 1, %x4
+    br i1 %xa, label %then, label %else
+
+  then:
+    %xb = call i64* @Monadify_M_CONST_Sorting_Heapsort_parameterized_sort_impl_context_heapify_btu_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %x, i64 %x2, i64 %x3, i64* %x1)
+    %xc = insertvalue { i64*, i64 } zeroinitializer, i64* %xb, 0
+    %xd = insertvalue { i64*, i64 } %xc, i64 %x3, 1
+    br label %while_start
+
+  while_start:
+    %xca = phi { i64*, i64 } [ %x6, %while_body ], [ %xd, %then ]
+    %a1 = extractvalue { i64*, i64 } %xca, 0
+    %a2 = extractvalue { i64*, i64 } %xca, 1
+    %xda = add i64 %x2, 1
+    %x5 = icmp slt i64 %xda, %a2
+    br i1 %x5, label %while_body, label %while_end
+
+  while_body:
+    %a11 = extractvalue { i64*, i64 } %xca, 0
+    %a21 = extractvalue { i64*, i64 } %xca, 1
+    %xda1 = sub i64 %a21, 1
+    %xfa = getelementptr i64, i64* %a11, i64 %x2
+    %r = load i64, i64* %xfa
+    %xga = getelementptr i64, i64* %a11, i64 %xda1
+    %ra = load i64, i64* %xga
+    %p = getelementptr i64, i64* %a11, i64 %x2
+    store i64 %ra, i64* %p
+    %pa = getelementptr i64, i64* %a11, i64 %xda1
+    store i64 %r, i64* %pa
+    %xja = sub i64 %a21, 1
+    %xk = call i64* @Monadify_M_CONST_Sorting_Heapsort_parameterized_sort_impl_context_sift_down_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %x, i64 %x2, i64 %xja, i64 %x2, i64* %a11)
+    %xla = sub i64 %a21, 1
+    %xma = insertvalue { i64*, i64 } zeroinitializer, i64* %xk, 0
+    %x6 = insertvalue { i64*, i64 } %xma, i64 %xla, 1
+    br label %while_start
+
+  while_end:
+    %a12 = extractvalue { i64*, i64 } %xca, 0
+    %a22 = extractvalue { i64*, i64 } %xca, 1
+    br label %ctd_if
+
+  else:
+    br label %ctd_if
+
+  ctd_if:
+    %x7 = phi i64* [ %x1, %else ], [ %a12, %while_end ]
+    ret i64* %x7
+}
+
+define i64* @Monadify_M_CONST_Sorting_Introsort_parameterized_sort_impl_context_introsort_param_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult(i64* %x, i64* %x1, i64 %x2, i64 %x3) {
+
+  start:
+    %x4 = sub i64 %x3, %x2
+    %xa = icmp slt i64 1, %x4
+    br i1 %xa, label %then, label %else
+
+  then:
+    %xb = sub i64 %x3, %x2
+    %xc = sub i64 64, 1
+    %xd = call i64 @Sorting_Log2_word_clz_impl (i64 %xb)
+    %xe = sub i64 %xc, %xd
+    %xf = mul i64 %xe, 2
+    %xg = call i64* @Monadify_M_CONST_Sorting_Introsort_parameterized_sort_impl_context_introsort_aux_param_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult (i64* %x, i64* %x1, i64 %x2, i64 %x3, i64 %xf)
+    %x5 = call i64* @Monadify_M_CONST_Sorting_Final_insertion_Sort_parameterized_sort_impl_context_final_insertion_sort_param_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult (i64* %x, i64* %xg, i64 %x2, i64 %x3)
+    br label %ctd_if
+
+  else:
+    br label %ctd_if
+
+  ctd_if:
+    %x6 = phi i64* [ %x1, %else ], [ %x5, %then ]
+    ret i64* %x6
+}
+
+define i64* @Monadify_M_CONST_Sorting_Introsort_parameterized_sort_impl_context_introsort_param_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl({ i64, { i64, i8* } }* %x, i64* %x1, i64 %x2, i64 %x3) {
+
+  start:
+    %x4 = sub i64 %x3, %x2
+    %xa = icmp slt i64 1, %x4
+    br i1 %xa, label %then, label %else
+
+  then:
+    %xb = sub i64 %x3, %x2
+    %xc = sub i64 64, 1
+    %xd = call i64 @Sorting_Log2_word_clz_impl (i64 %xb)
+    %xe = sub i64 %xc, %xd
+    %xf = mul i64 %xe, 2
+    %xg = call i64* @Monadify_M_CONST_Sorting_Introsort_parameterized_sort_impl_context_introsort_aux_param_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %x, i64* %x1, i64 %x2, i64 %x3, i64 %xf)
+    %x5 = call i64* @Monadify_M_CONST_Sorting_Final_insertion_Sort_parameterized_sort_impl_context_final_insertion_sort_param_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %x, i64* %xg, i64 %x2, i64 %x3)
+    br label %ctd_if
+
+  else:
+    br label %ctd_if
+
+  ctd_if:
+    %x6 = phi i64* [ %x1, %else ], [ %x5, %then ]
+    ret i64* %x6
+}
+
+define i64* @Monadify_M_CONST_Sorting_Introsort_parameterized_sort_impl_context_introsort_aux_param_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult(i64* %x, i64* %x1, i64 %x2, i64 %x3, i64 %x4) {
+
+  start:
+    %xa = insertvalue { i64, i64 } zeroinitializer, i64 %x3, 0
+    %tmpa = insertvalue { i64, i64 } %xa, i64 %x4, 1
+    %xaa = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %x2, 0
+    %tmpab = insertvalue { i64, { i64, i64 } } %xaa, { i64, i64 } %tmpa, 1
+    %xba = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %x1, 0
+    %x5 = insertvalue { i64*, { i64, { i64, i64 } } } %xba, { i64, { i64, i64 } } %tmpab, 1
+    %x6 = call i64* @Sorting_Export_Code_ll_icmp_ult_f_09027306 (i64* %x, { i64*, { i64, { i64, i64 } } } %x5)
+    ret i64* %x6
+}
+
+define i64* @Monadify_M_CONST_Sorting_Introsort_parameterized_sort_impl_context_introsort_aux_param_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl({ i64, { i64, i8* } }* %x, i64* %x1, i64 %x2, i64 %x3, i64 %x4) {
+
+  start:
+    %xa = insertvalue { i64, i64 } zeroinitializer, i64 %x3, 0
+    %tmpa = insertvalue { i64, i64 } %xa, i64 %x4, 1
+    %xaa = insertvalue { i64, { i64, i64 } } zeroinitializer, i64 %x2, 0
+    %tmpab = insertvalue { i64, { i64, i64 } } %xaa, { i64, i64 } %tmpa, 1
+    %xba = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %x1, 0
+    %x5 = insertvalue { i64*, { i64, { i64, i64 } } } %xba, { i64, { i64, i64 } } %tmpab, 1
+    %x6 = call i64* @Sorting_Export_Code_strcmp_impl_f_09093332 ({ i64, { i64, i8* } }* %x, { i64*, { i64, { i64, i64 } } } %x5)
+    ret i64* %x6
+}
+
+define { i64*, i64 } @Monadify_M_CONST_Sorting_Quicksort_Partition_parameterized_sort_impl_context_qs_partition_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult(i64* %x, i64 %x1, i64 %x2, i64 %x3, i64* %x4) {
+
+  start:
+    br label %while_start
+
+  while_start:
+    %s = phi i64 [ %x5, %while_body ], [ %x1, %start ]
+    %xa = getelementptr i64, i64* %x4, i64 %s
+    %r = load i64, i64* %xa
+    %xb = getelementptr i64, i64* %x4, i64 %x3
+    %ra = load i64, i64* %xb
+    %xc = call i1 @Monadify_M_CONST_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult (i64* %x, i64 %r, i64 %ra)
+    %p = getelementptr i64, i64* %x4, i64 %s
+    store i64 %r, i64* %p
+    %pa = getelementptr i64, i64* %x4, i64 %x3
+    store i64 %ra, i64* %pa
+    br i1 %xc, label %while_body, label %while_end
+
+  while_body:
+    %x5 = add i64 %s, 1
+    br label %while_start
+
+  while_end:
+    %xaa = sub i64 %x2, 1
+    br label %while_starta
+
+  while_starta:
+    %s1 = phi i64 [ %x7, %while_bodya ], [ %xaa, %while_end ]
+    %xd = getelementptr i64, i64* %x4, i64 %x3
+    %r1 = load i64, i64* %xd
+    %xe = getelementptr i64, i64* %x4, i64 %s1
+    %ra1 = load i64, i64* %xe
+    %xf = call i1 @Monadify_M_CONST_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult (i64* %x, i64 %r1, i64 %ra1)
+    %p1 = getelementptr i64, i64* %x4, i64 %x3
+    store i64 %r1, i64* %p1
+    %pa1 = getelementptr i64, i64* %x4, i64 %s1
+    store i64 %ra1, i64* %pa1
+    br i1 %xf, label %while_bodya, label %while_enda
+
+  while_bodya:
+    %x7 = sub i64 %s1, 1
+    br label %while_starta
+
+  while_enda:
+    %xba = insertvalue { i64, i64 } zeroinitializer, i64 %s, 0
+    %tmpa = insertvalue { i64, i64 } %xba, i64 %s1, 1
+    %xca = insertvalue { i64*, { i64, i64 } } zeroinitializer, i64* %x4, 0
+    %xda = insertvalue { i64*, { i64, i64 } } %xca, { i64, i64 } %tmpa, 1
+    br label %while_startb
+
+  while_startb:
+    %xbaa = phi { i64*, { i64, i64 } } [ %x12, %while_endd ], [ %xda, %while_enda ]
+    %a1 = extractvalue { i64*, { i64, i64 } } %xbaa, 0
+    %xcaa = extractvalue { i64*, { i64, i64 } } %xbaa, 1
+    %a = extractvalue { i64, i64 } %xcaa, 0
+    %x8 = extractvalue { i64, i64 } %xcaa, 1
+    %x9 = icmp slt i64 %a, %x8
+    br i1 %x9, label %while_bodyb, label %while_endb
+
+  while_bodyb:
+    %a11 = extractvalue { i64*, { i64, i64 } } %xbaa, 0
+    %xcaa1 = extractvalue { i64*, { i64, i64 } } %xbaa, 1
+    %a1a = extractvalue { i64, i64 } %xcaa1, 0
+    %a2a = extractvalue { i64, i64 } %xcaa1, 1
+    %xeaa = getelementptr i64, i64* %a11, i64 %a1a
+    %r2 = load i64, i64* %xeaa
+    %xfa = getelementptr i64, i64* %a11, i64 %a2a
+    %ra2 = load i64, i64* %xfa
+    %p2 = getelementptr i64, i64* %a11, i64 %a1a
+    store i64 %ra2, i64* %p2
+    %pa2 = getelementptr i64, i64* %a11, i64 %a2a
+    store i64 %r2, i64* %pa2
+    %xia = add i64 %a1a, 1
+    br label %while_startc
+
+  while_startc:
+    %s2 = phi i64 [ %x10, %while_bodyc ], [ %xia, %while_bodyb ]
+    %xk = getelementptr i64, i64* %a11, i64 %s2
+    %rb = load i64, i64* %xk
+    %xl = getelementptr i64, i64* %a11, i64 %x3
+    %rc = load i64, i64* %xl
+    %xm = call i1 @Monadify_M_CONST_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult (i64* %x, i64 %rb, i64 %rc)
+    %pb = getelementptr i64, i64* %a11, i64 %s2
+    store i64 %rb, i64* %pb
+    %pc = getelementptr i64, i64* %a11, i64 %x3
+    store i64 %rc, i64* %pc
+    br i1 %xm, label %while_bodyc, label %while_endc
+
+  while_bodyc:
+    %x10 = add i64 %s2, 1
+    br label %while_startc
+
+  while_endc:
+    %xka = sub i64 %a2a, 1
+    br label %while_startd
+
+  while_startd:
+    %s3 = phi i64 [ %x11, %while_bodyd ], [ %xka, %while_endc ]
+    %xn = getelementptr i64, i64* %a11, i64 %x3
+    %rb1 = load i64, i64* %xn
+    %xo = getelementptr i64, i64* %a11, i64 %s3
+    %rc1 = load i64, i64* %xo
+    %xp = call i1 @Monadify_M_CONST_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult (i64* %x, i64 %rb1, i64 %rc1)
+    %pb1 = getelementptr i64, i64* %a11, i64 %x3
+    store i64 %rb1, i64* %pb1
+    %pc1 = getelementptr i64, i64* %a11, i64 %s3
+    store i64 %rc1, i64* %pc1
+    br i1 %xp, label %while_bodyd, label %while_endd
+
+  while_bodyd:
+    %x11 = sub i64 %s3, 1
+    br label %while_startd
+
+  while_endd:
+    %xla = insertvalue { i64*, { i64, i64 } } zeroinitializer, i64* %a11, 0
+    %xma = insertvalue { i64, i64 } zeroinitializer, i64 %s2, 0
+    %tmpba = insertvalue { i64, i64 } %xma, i64 %s3, 1
+    %x12 = insertvalue { i64*, { i64, i64 } } %xla, { i64, i64 } %tmpba, 1
+    br label %while_startb
+
+  while_endb:
+    %a12 = extractvalue { i64*, { i64, i64 } } %xbaa, 0
+    %xcaa2 = extractvalue { i64*, { i64, i64 } } %xbaa, 1
+    %a1a1 = extractvalue { i64, i64 } %xcaa2, 0
+    %a2a1 = extractvalue { i64, i64 } %xcaa2, 1
+    %xdaa = insertvalue { i64*, i64 } zeroinitializer, i64* %a12, 0
+    %x13 = insertvalue { i64*, i64 } %xdaa, i64 %a1a1, 1
+    ret { i64*, i64 } %x13
+}
+
+define { i64*, i64 } @Monadify_M_CONST_Sorting_Quicksort_Partition_parameterized_sort_impl_context_qs_partition_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2, i64 %x3, i64* %x4) {
+
+  start:
+    br label %while_start
+
+  while_start:
+    %s = phi i64 [ %x5, %while_body ], [ %x1, %start ]
+    %xa = getelementptr i64, i64* %x4, i64 %s
+    %r = load i64, i64* %xa
+    %xb = getelementptr i64, i64* %x4, i64 %x3
+    %ra = load i64, i64* %xb
+    %xc = call i1 @Monadify_M_CONST_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %x, i64 %r, i64 %ra)
+    %p = getelementptr i64, i64* %x4, i64 %s
+    store i64 %r, i64* %p
+    %pa = getelementptr i64, i64* %x4, i64 %x3
+    store i64 %ra, i64* %pa
+    br i1 %xc, label %while_body, label %while_end
+
+  while_body:
+    %x5 = add i64 %s, 1
+    br label %while_start
+
+  while_end:
+    %xaa = sub i64 %x2, 1
+    br label %while_starta
+
+  while_starta:
+    %s1 = phi i64 [ %x7, %while_bodya ], [ %xaa, %while_end ]
+    %xd = getelementptr i64, i64* %x4, i64 %x3
+    %r1 = load i64, i64* %xd
+    %xe = getelementptr i64, i64* %x4, i64 %s1
+    %ra1 = load i64, i64* %xe
+    %xf = call i1 @Monadify_M_CONST_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %x, i64 %r1, i64 %ra1)
+    %p1 = getelementptr i64, i64* %x4, i64 %x3
+    store i64 %r1, i64* %p1
+    %pa1 = getelementptr i64, i64* %x4, i64 %s1
+    store i64 %ra1, i64* %pa1
+    br i1 %xf, label %while_bodya, label %while_enda
+
+  while_bodya:
+    %x7 = sub i64 %s1, 1
+    br label %while_starta
+
+  while_enda:
+    %xba = insertvalue { i64, i64 } zeroinitializer, i64 %s, 0
+    %tmpa = insertvalue { i64, i64 } %xba, i64 %s1, 1
+    %xca = insertvalue { i64*, { i64, i64 } } zeroinitializer, i64* %x4, 0
+    %xda = insertvalue { i64*, { i64, i64 } } %xca, { i64, i64 } %tmpa, 1
+    br label %while_startb
+
+  while_startb:
+    %xbaa = phi { i64*, { i64, i64 } } [ %x12, %while_endd ], [ %xda, %while_enda ]
+    %a1 = extractvalue { i64*, { i64, i64 } } %xbaa, 0
+    %xcaa = extractvalue { i64*, { i64, i64 } } %xbaa, 1
+    %a = extractvalue { i64, i64 } %xcaa, 0
+    %x8 = extractvalue { i64, i64 } %xcaa, 1
+    %x9 = icmp slt i64 %a, %x8
+    br i1 %x9, label %while_bodyb, label %while_endb
+
+  while_bodyb:
+    %a11 = extractvalue { i64*, { i64, i64 } } %xbaa, 0
+    %xcaa1 = extractvalue { i64*, { i64, i64 } } %xbaa, 1
+    %a1a = extractvalue { i64, i64 } %xcaa1, 0
+    %a2a = extractvalue { i64, i64 } %xcaa1, 1
+    %xeaa = getelementptr i64, i64* %a11, i64 %a1a
+    %r2 = load i64, i64* %xeaa
+    %xfa = getelementptr i64, i64* %a11, i64 %a2a
+    %ra2 = load i64, i64* %xfa
+    %p2 = getelementptr i64, i64* %a11, i64 %a1a
+    store i64 %ra2, i64* %p2
+    %pa2 = getelementptr i64, i64* %a11, i64 %a2a
+    store i64 %r2, i64* %pa2
+    %xia = add i64 %a1a, 1
+    br label %while_startc
+
+  while_startc:
+    %s2 = phi i64 [ %x10, %while_bodyc ], [ %xia, %while_bodyb ]
+    %xk = getelementptr i64, i64* %a11, i64 %s2
+    %rb = load i64, i64* %xk
+    %xl = getelementptr i64, i64* %a11, i64 %x3
+    %rc = load i64, i64* %xl
+    %xm = call i1 @Monadify_M_CONST_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %x, i64 %rb, i64 %rc)
+    %pb = getelementptr i64, i64* %a11, i64 %s2
+    store i64 %rb, i64* %pb
+    %pc = getelementptr i64, i64* %a11, i64 %x3
+    store i64 %rc, i64* %pc
+    br i1 %xm, label %while_bodyc, label %while_endc
+
+  while_bodyc:
+    %x10 = add i64 %s2, 1
+    br label %while_startc
+
+  while_endc:
+    %xka = sub i64 %a2a, 1
+    br label %while_startd
+
+  while_startd:
+    %s3 = phi i64 [ %x11, %while_bodyd ], [ %xka, %while_endc ]
+    %xn = getelementptr i64, i64* %a11, i64 %x3
+    %rb1 = load i64, i64* %xn
+    %xo = getelementptr i64, i64* %a11, i64 %s3
+    %rc1 = load i64, i64* %xo
+    %xp = call i1 @Monadify_M_CONST_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %x, i64 %rb1, i64 %rc1)
+    %pb1 = getelementptr i64, i64* %a11, i64 %x3
+    store i64 %rb1, i64* %pb1
+    %pc1 = getelementptr i64, i64* %a11, i64 %s3
+    store i64 %rc1, i64* %pc1
+    br i1 %xp, label %while_bodyd, label %while_endd
+
+  while_bodyd:
+    %x11 = sub i64 %s3, 1
+    br label %while_startd
+
+  while_endd:
+    %xla = insertvalue { i64*, { i64, i64 } } zeroinitializer, i64* %a11, 0
+    %xma = insertvalue { i64, i64 } zeroinitializer, i64 %s2, 0
+    %tmpba = insertvalue { i64, i64 } %xma, i64 %s3, 1
+    %x12 = insertvalue { i64*, { i64, i64 } } %xla, { i64, i64 } %tmpba, 1
+    br label %while_startb
+
+  while_endb:
+    %a12 = extractvalue { i64*, { i64, i64 } } %xbaa, 0
+    %xcaa2 = extractvalue { i64*, { i64, i64 } } %xbaa, 1
+    %a1a1 = extractvalue { i64, i64 } %xcaa2, 0
+    %a2a1 = extractvalue { i64, i64 } %xcaa2, 1
+    %xdaa = insertvalue { i64*, i64 } zeroinitializer, i64* %a12, 0
+    %x13 = insertvalue { i64*, i64 } %xdaa, i64 %a1a1, 1
+    ret { i64*, i64 } %x13
+}
+
+define { i64*, i64 } @Monadify_M_CONST_Sorting_Quicksort_Partition_parameterized_sort_impl_context_partition_pivot_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult(i64* %x, i64* %x1, i64 %x2, i64 %x3) {
+
+  start:
+    %x4 = sub i64 %x3, %x2
+    %xaa = udiv i64 %x4, 2
+    %xb = add i64 %x2, %xaa
+    %xca = add i64 %x2, 1
+    %xda = sub i64 %x3, 1
+    %xe = call i64* @Monadify_M_CONST_Sorting_Quicksort_Partition_parameterized_sort_impl_context_move_median_to_first_param_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult (i64* %x, i64 %x2, i64 %xca, i64 %xb, i64 %xda, i64* %x1)
+    %xfa = add i64 %x2, 1
+    %xg = call { i64*, i64 } @Monadify_M_CONST_Sorting_Quicksort_Partition_parameterized_sort_impl_context_qs_partition_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult (i64* %x, i64 %xfa, i64 %x3, i64 %x2, i64* %xe)
+    %a = extractvalue { i64*, i64 } %xg, 0
+    %b = extractvalue { i64*, i64 } %xg, 1
+    %xha = insertvalue { i64*, i64 } zeroinitializer, i64* %a, 0
+    %x5 = insertvalue { i64*, i64 } %xha, i64 %b, 1
+    ret { i64*, i64 } %x5
+}
+
+define { i64*, i64 } @Monadify_M_CONST_Sorting_Quicksort_Partition_parameterized_sort_impl_context_partition_pivot_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl({ i64, { i64, i8* } }* %x, i64* %x1, i64 %x2, i64 %x3) {
+
+  start:
+    %x4 = sub i64 %x3, %x2
+    %xaa = udiv i64 %x4, 2
+    %xb = add i64 %x2, %xaa
+    %xca = add i64 %x2, 1
+    %xda = sub i64 %x3, 1
+    %xe = call i64* @Monadify_M_CONST_Sorting_Quicksort_Partition_parameterized_sort_impl_context_move_median_to_first_param_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %x, i64 %x2, i64 %xca, i64 %xb, i64 %xda, i64* %x1)
+    %xfa = add i64 %x2, 1
+    %xg = call { i64*, i64 } @Monadify_M_CONST_Sorting_Quicksort_Partition_parameterized_sort_impl_context_qs_partition_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %x, i64 %xfa, i64 %x3, i64 %x2, i64* %xe)
+    %a = extractvalue { i64*, i64 } %xg, 0
+    %b = extractvalue { i64*, i64 } %xg, 1
+    %xha = insertvalue { i64*, i64 } zeroinitializer, i64* %a, 0
+    %x5 = insertvalue { i64*, i64 } %xha, i64 %b, 1
+    ret { i64*, i64 } %x5
+}
+
+define i64* @Monadify_M_CONST_Sorting_Quicksort_Partition_parameterized_sort_impl_context_move_median_to_first_param_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult(i64* %x, i64 %x1, i64 %x2, i64 %x3, i64 %x4, i64* %x5) {
+
+  start:
+    %xa = getelementptr i64, i64* %x5, i64 %x2
+    %r = load i64, i64* %xa
+    %xb = getelementptr i64, i64* %x5, i64 %x3
+    %ra = load i64, i64* %xb
+    %xc = call i1 @Monadify_M_CONST_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult (i64* %x, i64 %r, i64 %ra)
+    %p = getelementptr i64, i64* %x5, i64 %x2
+    store i64 %r, i64* %p
+    %pa = getelementptr i64, i64* %x5, i64 %x3
+    store i64 %ra, i64* %pa
+    br i1 %xc, label %then, label %else
+
+  then:
+    %xf = getelementptr i64, i64* %x5, i64 %x3
+    %rb = load i64, i64* %xf
+    %xg = getelementptr i64, i64* %x5, i64 %x4
+    %rc = load i64, i64* %xg
+    %xh = call i1 @Monadify_M_CONST_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult (i64* %x, i64 %rb, i64 %rc)
+    %pb = getelementptr i64, i64* %x5, i64 %x3
+    store i64 %rb, i64* %pb
+    %pc = getelementptr i64, i64* %x5, i64 %x4
+    store i64 %rc, i64* %pc
+    br i1 %xh, label %thena, label %elsea
+
+  thena:
+    %xcaa = getelementptr i64, i64* %x5, i64 %x1
+    %rd = load i64, i64* %xcaa
+    %xdaa = getelementptr i64, i64* %x5, i64 %x3
+    %raa = load i64, i64* %xdaa
+    %pd = getelementptr i64, i64* %x5, i64 %x1
+    store i64 %raa, i64* %pd
+    %paa = getelementptr i64, i64* %x5, i64 %x3
+    store i64 %rd, i64* %paa
+    br label %ctd_ifa
+
+  elsea:
+    %xk = getelementptr i64, i64* %x5, i64 %x2
+    %rd1 = load i64, i64* %xk
+    %xl = getelementptr i64, i64* %x5, i64 %x4
+    %re = load i64, i64* %xl
+    %xm = call i1 @Monadify_M_CONST_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult (i64* %x, i64 %rd1, i64 %re)
+    %pd1 = getelementptr i64, i64* %x5, i64 %x2
+    store i64 %rd1, i64* %pd1
+    %pe = getelementptr i64, i64* %x5, i64 %x4
+    store i64 %re, i64* %pe
+    br i1 %xm, label %thenb, label %elseb
+
+  thenb:
+    %xdaa1 = getelementptr i64, i64* %x5, i64 %x1
+    %rf = load i64, i64* %xdaa1
+    %xeaa = getelementptr i64, i64* %x5, i64 %x4
+    %raa1 = load i64, i64* %xeaa
+    %pf = getelementptr i64, i64* %x5, i64 %x1
+    store i64 %raa1, i64* %pf
+    %paa1 = getelementptr i64, i64* %x5, i64 %x4
+    store i64 %rf, i64* %paa1
+    br label %ctd_ifb
+
+  elseb:
+    %xdaa2 = getelementptr i64, i64* %x5, i64 %x1
+    %rf1 = load i64, i64* %xdaa2
+    %xeaa1 = getelementptr i64, i64* %x5, i64 %x2
+    %raa2 = load i64, i64* %xeaa1
+    %pf1 = getelementptr i64, i64* %x5, i64 %x1
+    store i64 %raa2, i64* %pf1
+    %paa2 = getelementptr i64, i64* %x5, i64 %x2
+    store i64 %rf1, i64* %paa2
+    br label %ctd_ifb
+
+  ctd_ifb:
+    %x6 = phi i64* [ %x5, %elseb ], [ %x5, %thenb ]
+    br label %ctd_ifa
+
+  ctd_ifa:
+    %x7 = phi i64* [ %x6, %ctd_ifb ], [ %x5, %thena ]
+    br label %ctd_if
+
+  else:
+    %xf1 = getelementptr i64, i64* %x5, i64 %x2
+    %rb1 = load i64, i64* %xf1
+    %xg1 = getelementptr i64, i64* %x5, i64 %x4
+    %rc1 = load i64, i64* %xg1
+    %xh1 = call i1 @Monadify_M_CONST_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult (i64* %x, i64 %rb1, i64 %rc1)
+    %pb1 = getelementptr i64, i64* %x5, i64 %x2
+    store i64 %rb1, i64* %pb1
+    %pc1 = getelementptr i64, i64* %x5, i64 %x4
+    store i64 %rc1, i64* %pc1
+    br i1 %xh1, label %thenc, label %elsec
+
+  thenc:
+    %xcaa1 = getelementptr i64, i64* %x5, i64 %x1
+    %rd2 = load i64, i64* %xcaa1
+    %xdaa3 = getelementptr i64, i64* %x5, i64 %x2
+    %raa3 = load i64, i64* %xdaa3
+    %pd2 = getelementptr i64, i64* %x5, i64 %x1
+    store i64 %raa3, i64* %pd2
+    %paa3 = getelementptr i64, i64* %x5, i64 %x2
+    store i64 %rd2, i64* %paa3
+    br label %ctd_ifc
+
+  elsec:
+    %xk1 = getelementptr i64, i64* %x5, i64 %x3
+    %rd3 = load i64, i64* %xk1
+    %xl1 = getelementptr i64, i64* %x5, i64 %x4
+    %re1 = load i64, i64* %xl1
+    %xm1 = call i1 @Monadify_M_CONST_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult (i64* %x, i64 %rd3, i64 %re1)
+    %pd3 = getelementptr i64, i64* %x5, i64 %x3
+    store i64 %rd3, i64* %pd3
+    %pe1 = getelementptr i64, i64* %x5, i64 %x4
+    store i64 %re1, i64* %pe1
+    br i1 %xm1, label %thend, label %elsed
+
+  thend:
+    %xdaa4 = getelementptr i64, i64* %x5, i64 %x1
+    %rf2 = load i64, i64* %xdaa4
+    %xeaa2 = getelementptr i64, i64* %x5, i64 %x4
+    %raa4 = load i64, i64* %xeaa2
+    %pf2 = getelementptr i64, i64* %x5, i64 %x1
+    store i64 %raa4, i64* %pf2
+    %paa4 = getelementptr i64, i64* %x5, i64 %x4
+    store i64 %rf2, i64* %paa4
+    br label %ctd_ifd
+
+  elsed:
+    %xdaa5 = getelementptr i64, i64* %x5, i64 %x1
+    %rf3 = load i64, i64* %xdaa5
+    %xeaa3 = getelementptr i64, i64* %x5, i64 %x3
+    %raa5 = load i64, i64* %xeaa3
+    %pf3 = getelementptr i64, i64* %x5, i64 %x1
+    store i64 %raa5, i64* %pf3
+    %paa5 = getelementptr i64, i64* %x5, i64 %x3
+    store i64 %rf3, i64* %paa5
+    br label %ctd_ifd
+
+  ctd_ifd:
+    %x8 = phi i64* [ %x5, %elsed ], [ %x5, %thend ]
+    br label %ctd_ifc
+
+  ctd_ifc:
+    %x9 = phi i64* [ %x8, %ctd_ifd ], [ %x5, %thenc ]
+    br label %ctd_if
+
+  ctd_if:
+    %x10 = phi i64* [ %x9, %ctd_ifc ], [ %x7, %ctd_ifa ]
+    ret i64* %x10
+}
+
+define i64* @Monadify_M_CONST_Sorting_Quicksort_Partition_parameterized_sort_impl_context_move_median_to_first_param_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2, i64 %x3, i64 %x4, i64* %x5) {
+
+  start:
+    %xa = getelementptr i64, i64* %x5, i64 %x2
+    %r = load i64, i64* %xa
+    %xb = getelementptr i64, i64* %x5, i64 %x3
+    %ra = load i64, i64* %xb
+    %xc = call i1 @Monadify_M_CONST_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %x, i64 %r, i64 %ra)
+    %p = getelementptr i64, i64* %x5, i64 %x2
+    store i64 %r, i64* %p
+    %pa = getelementptr i64, i64* %x5, i64 %x3
+    store i64 %ra, i64* %pa
+    br i1 %xc, label %then, label %else
+
+  then:
+    %xf = getelementptr i64, i64* %x5, i64 %x3
+    %rb = load i64, i64* %xf
+    %xg = getelementptr i64, i64* %x5, i64 %x4
+    %rc = load i64, i64* %xg
+    %xh = call i1 @Monadify_M_CONST_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %x, i64 %rb, i64 %rc)
+    %pb = getelementptr i64, i64* %x5, i64 %x3
+    store i64 %rb, i64* %pb
+    %pc = getelementptr i64, i64* %x5, i64 %x4
+    store i64 %rc, i64* %pc
+    br i1 %xh, label %thena, label %elsea
+
+  thena:
+    %xcaa = getelementptr i64, i64* %x5, i64 %x1
+    %rd = load i64, i64* %xcaa
+    %xdaa = getelementptr i64, i64* %x5, i64 %x3
+    %raa = load i64, i64* %xdaa
+    %pd = getelementptr i64, i64* %x5, i64 %x1
+    store i64 %raa, i64* %pd
+    %paa = getelementptr i64, i64* %x5, i64 %x3
+    store i64 %rd, i64* %paa
+    br label %ctd_ifa
+
+  elsea:
+    %xk = getelementptr i64, i64* %x5, i64 %x2
+    %rd1 = load i64, i64* %xk
+    %xl = getelementptr i64, i64* %x5, i64 %x4
+    %re = load i64, i64* %xl
+    %xm = call i1 @Monadify_M_CONST_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %x, i64 %rd1, i64 %re)
+    %pd1 = getelementptr i64, i64* %x5, i64 %x2
+    store i64 %rd1, i64* %pd1
+    %pe = getelementptr i64, i64* %x5, i64 %x4
+    store i64 %re, i64* %pe
+    br i1 %xm, label %thenb, label %elseb
+
+  thenb:
+    %xdaa1 = getelementptr i64, i64* %x5, i64 %x1
+    %rf = load i64, i64* %xdaa1
+    %xeaa = getelementptr i64, i64* %x5, i64 %x4
+    %raa1 = load i64, i64* %xeaa
+    %pf = getelementptr i64, i64* %x5, i64 %x1
+    store i64 %raa1, i64* %pf
+    %paa1 = getelementptr i64, i64* %x5, i64 %x4
+    store i64 %rf, i64* %paa1
+    br label %ctd_ifb
+
+  elseb:
+    %xdaa2 = getelementptr i64, i64* %x5, i64 %x1
+    %rf1 = load i64, i64* %xdaa2
+    %xeaa1 = getelementptr i64, i64* %x5, i64 %x2
+    %raa2 = load i64, i64* %xeaa1
+    %pf1 = getelementptr i64, i64* %x5, i64 %x1
+    store i64 %raa2, i64* %pf1
+    %paa2 = getelementptr i64, i64* %x5, i64 %x2
+    store i64 %rf1, i64* %paa2
+    br label %ctd_ifb
+
+  ctd_ifb:
+    %x6 = phi i64* [ %x5, %elseb ], [ %x5, %thenb ]
+    br label %ctd_ifa
+
+  ctd_ifa:
+    %x7 = phi i64* [ %x6, %ctd_ifb ], [ %x5, %thena ]
+    br label %ctd_if
+
+  else:
+    %xf1 = getelementptr i64, i64* %x5, i64 %x2
+    %rb1 = load i64, i64* %xf1
+    %xg1 = getelementptr i64, i64* %x5, i64 %x4
+    %rc1 = load i64, i64* %xg1
+    %xh1 = call i1 @Monadify_M_CONST_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %x, i64 %rb1, i64 %rc1)
+    %pb1 = getelementptr i64, i64* %x5, i64 %x2
+    store i64 %rb1, i64* %pb1
+    %pc1 = getelementptr i64, i64* %x5, i64 %x4
+    store i64 %rc1, i64* %pc1
+    br i1 %xh1, label %thenc, label %elsec
+
+  thenc:
+    %xcaa1 = getelementptr i64, i64* %x5, i64 %x1
+    %rd2 = load i64, i64* %xcaa1
+    %xdaa3 = getelementptr i64, i64* %x5, i64 %x2
+    %raa3 = load i64, i64* %xdaa3
+    %pd2 = getelementptr i64, i64* %x5, i64 %x1
+    store i64 %raa3, i64* %pd2
+    %paa3 = getelementptr i64, i64* %x5, i64 %x2
+    store i64 %rd2, i64* %paa3
+    br label %ctd_ifc
+
+  elsec:
+    %xk1 = getelementptr i64, i64* %x5, i64 %x3
+    %rd3 = load i64, i64* %xk1
+    %xl1 = getelementptr i64, i64* %x5, i64 %x4
+    %re1 = load i64, i64* %xl1
+    %xm1 = call i1 @Monadify_M_CONST_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %x, i64 %rd3, i64 %re1)
+    %pd3 = getelementptr i64, i64* %x5, i64 %x3
+    store i64 %rd3, i64* %pd3
+    %pe1 = getelementptr i64, i64* %x5, i64 %x4
+    store i64 %re1, i64* %pe1
+    br i1 %xm1, label %thend, label %elsed
+
+  thend:
+    %xdaa4 = getelementptr i64, i64* %x5, i64 %x1
+    %rf2 = load i64, i64* %xdaa4
+    %xeaa2 = getelementptr i64, i64* %x5, i64 %x4
+    %raa4 = load i64, i64* %xeaa2
+    %pf2 = getelementptr i64, i64* %x5, i64 %x1
+    store i64 %raa4, i64* %pf2
+    %paa4 = getelementptr i64, i64* %x5, i64 %x4
+    store i64 %rf2, i64* %paa4
+    br label %ctd_ifd
+
+  elsed:
+    %xdaa5 = getelementptr i64, i64* %x5, i64 %x1
+    %rf3 = load i64, i64* %xdaa5
+    %xeaa3 = getelementptr i64, i64* %x5, i64 %x3
+    %raa5 = load i64, i64* %xeaa3
+    %pf3 = getelementptr i64, i64* %x5, i64 %x1
+    store i64 %raa5, i64* %pf3
+    %paa5 = getelementptr i64, i64* %x5, i64 %x3
+    store i64 %rf3, i64* %paa5
+    br label %ctd_ifd
+
+  ctd_ifd:
+    %x8 = phi i64* [ %x5, %elsed ], [ %x5, %thend ]
+    br label %ctd_ifc
+
+  ctd_ifc:
+    %x9 = phi i64* [ %x8, %ctd_ifd ], [ %x5, %thenc ]
+    br label %ctd_if
+
+  ctd_if:
+    %x10 = phi i64* [ %x9, %ctd_ifc ], [ %x7, %ctd_ifa ]
+    ret i64* %x10
+}
+
+define i64* @Monadify_M_CONST_Sorting_Final_insertion_Sort_parameterized_sort_impl_context_final_insertion_sort_param_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult(i64* %x, i64* %x1, i64 %x2, i64 %x3) {
+
+  start:
+    %x4 = sub i64 %x3, %x2
+    %xa = icmp sle i64 %x4, 16
+    br i1 %xa, label %then, label %else
+
+  then:
+    %xb = add i64 %x2, 1
+    %x5 = call i64* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_parameterized_sort_impl_context_guarded_insertion_sort_param_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult (i64* %x, i64 %x2, i64 %xb, i64 %x3, i64* %x1)
+    br label %ctd_if
+
+  else:
+    %xb1 = add i64 %x2, 1
+    %xc = add i64 %x2, 16
+    %xd = call i64* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_parameterized_sort_impl_context_guarded_insertion_sort_param_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult (i64* %x, i64 %x2, i64 %xb1, i64 %xc, i64* %x1)
+    %xe = add i64 %x2, 16
+    %x6 = call i64* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_parameterized_sort_impl_context_unguarded_insertion_sort_param_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult (i64* %x, i64 %x2, i64 %xe, i64 %x3, i64* %xd)
+    br label %ctd_if
+
+  ctd_if:
+    %x7 = phi i64* [ %x6, %else ], [ %x5, %then ]
+    ret i64* %x7
+}
+
+define i64* @Monadify_M_CONST_Sorting_Final_insertion_Sort_parameterized_sort_impl_context_final_insertion_sort_param_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl({ i64, { i64, i8* } }* %x, i64* %x1, i64 %x2, i64 %x3) {
+
+  start:
+    %x4 = sub i64 %x3, %x2
+    %xa = icmp sle i64 %x4, 16
+    br i1 %xa, label %then, label %else
+
+  then:
+    %xb = add i64 %x2, 1
+    %x5 = call i64* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_parameterized_sort_impl_context_guarded_insertion_sort_param_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %x, i64 %x2, i64 %xb, i64 %x3, i64* %x1)
+    br label %ctd_if
+
+  else:
+    %xb1 = add i64 %x2, 1
+    %xc = add i64 %x2, 16
+    %xd = call i64* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_parameterized_sort_impl_context_guarded_insertion_sort_param_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %x, i64 %x2, i64 %xb1, i64 %xc, i64* %x1)
+    %xe = add i64 %x2, 16
+    %x6 = call i64* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_parameterized_sort_impl_context_unguarded_insertion_sort_param_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %x, i64 %x2, i64 %xe, i64 %x3, i64* %xd)
+    br label %ctd_if
+
+  ctd_if:
+    %x7 = phi i64* [ %x6, %else ], [ %x5, %then ]
+    ret i64* %x7
+}
+
+define i64* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_parameterized_sort_impl_context_is_guarded_param_insert_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult(i64* %x, i64* %x1, i64 %x2, i64 %x3) {
+
+  start:
+    %xa = getelementptr i64, i64* %x1, i64 %x3
+    %r = load i64, i64* %xa
+    %xba = insertvalue { i64*, i64 } zeroinitializer, i64* %x1, 0
+    %xca = insertvalue { i64*, i64 } %xba, i64 %x3, 1
+    br label %while_start
+
+  while_start:
+    %xbaa = phi { i64*, i64 } [ %x5, %while_body ], [ %xca, %start ]
+    %a1a = extractvalue { i64*, i64 } %xbaa, 0
+    %a2a = extractvalue { i64*, i64 } %xbaa, 1
+    %xcaa = icmp slt i64 %x2, %a2a
+    br i1 %xcaa, label %then, label %else
+
+  then:
+    %xda = sub i64 %a2a, 1
+    %xg = getelementptr i64, i64* %a1a, i64 %xda
+    %ra = load i64, i64* %xg
+    %xh = call i1 @Monadify_M_CONST_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult (i64* %x, i64 %r, i64 %ra)
+    %p = getelementptr i64, i64* %a1a, i64 %xda
+    store i64 %ra, i64* %p
+    br label %ctd_if
+
+  else:
+    br label %ctd_if
+
+  ctd_if:
+    %x4 = phi i1 [ 0, %else ], [ %xh, %then ]
+    br i1 %x4, label %while_body, label %while_end
+
+  while_body:
+    %a1a1 = extractvalue { i64*, i64 } %xbaa, 0
+    %a2a1 = extractvalue { i64*, i64 } %xbaa, 1
+    %xcaa1 = sub i64 %a2a1, 1
+    %xda1 = getelementptr i64, i64* %a1a1, i64 %xcaa1
+    %ra1 = load i64, i64* %xda1
+    %p1 = getelementptr i64, i64* %a1a1, i64 %a2a1
+    store i64 %ra1, i64* %p1
+    %xfa = sub i64 %a2a1, 1
+    %xga = insertvalue { i64*, i64 } zeroinitializer, i64* %a1a1, 0
+    %x5 = insertvalue { i64*, i64 } %xga, i64 %xfa, 1
+    br label %while_start
+
+  while_end:
+    %a1a2 = extractvalue { i64*, i64 } %xbaa, 0
+    %a2a2 = extractvalue { i64*, i64 } %xbaa, 1
+    %p2 = getelementptr i64, i64* %a1a2, i64 %a2a2
+    store i64 %r, i64* %p2
+    ret i64* %a1a2
+}
+
+define i64* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_parameterized_sort_impl_context_is_guarded_param_insert_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl({ i64, { i64, i8* } }* %x, i64* %x1, i64 %x2, i64 %x3) {
+
+  start:
+    %xa = getelementptr i64, i64* %x1, i64 %x3
+    %r = load i64, i64* %xa
+    %xba = insertvalue { i64*, i64 } zeroinitializer, i64* %x1, 0
+    %xca = insertvalue { i64*, i64 } %xba, i64 %x3, 1
+    br label %while_start
+
+  while_start:
+    %xbaa = phi { i64*, i64 } [ %x5, %while_body ], [ %xca, %start ]
+    %a1a = extractvalue { i64*, i64 } %xbaa, 0
+    %a2a = extractvalue { i64*, i64 } %xbaa, 1
+    %xcaa = icmp slt i64 %x2, %a2a
+    br i1 %xcaa, label %then, label %else
+
+  then:
+    %xda = sub i64 %a2a, 1
+    %xg = getelementptr i64, i64* %a1a, i64 %xda
+    %ra = load i64, i64* %xg
+    %xh = call i1 @Monadify_M_CONST_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %x, i64 %r, i64 %ra)
+    %p = getelementptr i64, i64* %a1a, i64 %xda
+    store i64 %ra, i64* %p
+    br label %ctd_if
+
+  else:
+    br label %ctd_if
+
+  ctd_if:
+    %x4 = phi i1 [ 0, %else ], [ %xh, %then ]
+    br i1 %x4, label %while_body, label %while_end
+
+  while_body:
+    %a1a1 = extractvalue { i64*, i64 } %xbaa, 0
+    %a2a1 = extractvalue { i64*, i64 } %xbaa, 1
+    %xcaa1 = sub i64 %a2a1, 1
+    %xda1 = getelementptr i64, i64* %a1a1, i64 %xcaa1
+    %ra1 = load i64, i64* %xda1
+    %p1 = getelementptr i64, i64* %a1a1, i64 %a2a1
+    store i64 %ra1, i64* %p1
+    %xfa = sub i64 %a2a1, 1
+    %xga = insertvalue { i64*, i64 } zeroinitializer, i64* %a1a1, 0
+    %x5 = insertvalue { i64*, i64 } %xga, i64 %xfa, 1
+    br label %while_start
+
+  while_end:
+    %a1a2 = extractvalue { i64*, i64 } %xbaa, 0
+    %a2a2 = extractvalue { i64*, i64 } %xbaa, 1
+    %p2 = getelementptr i64, i64* %a1a2, i64 %a2a2
+    store i64 %r, i64* %p2
+    ret i64* %a1a2
+}
+
+define i64* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_parameterized_sort_impl_context_is_unguarded_param_insert_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult(i64* %x, i64* %x1, i64 %x2, i64 %x3) {
+
+  start:
+    %xa = getelementptr i64, i64* %x1, i64 %x3
+    %r = load i64, i64* %xa
+    %xba = insertvalue { i64*, i64 } zeroinitializer, i64* %x1, 0
+    %xca = insertvalue { i64*, i64 } %xba, i64 %x3, 1
+    br label %while_start
+
+  while_start:
+    %xbaa = phi { i64*, i64 } [ %x4, %while_body ], [ %xca, %start ]
+    %a1a = extractvalue { i64*, i64 } %xbaa, 0
+    %a2a = extractvalue { i64*, i64 } %xbaa, 1
+    %xcaa = sub i64 %a2a, 1
+    %xg = getelementptr i64, i64* %a1a, i64 %xcaa
+    %ra = load i64, i64* %xg
+    %xh = call i1 @Monadify_M_CONST_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult (i64* %x, i64 %r, i64 %ra)
+    %p = getelementptr i64, i64* %a1a, i64 %xcaa
+    store i64 %ra, i64* %p
+    br i1 %xh, label %while_body, label %while_end
+
+  while_body:
+    %a1a1 = extractvalue { i64*, i64 } %xbaa, 0
+    %a2a1 = extractvalue { i64*, i64 } %xbaa, 1
+    %xcaa1 = sub i64 %a2a1, 1
+    %xda = getelementptr i64, i64* %a1a1, i64 %xcaa1
+    %ra1 = load i64, i64* %xda
+    %p1 = getelementptr i64, i64* %a1a1, i64 %a2a1
+    store i64 %ra1, i64* %p1
+    %xfa = sub i64 %a2a1, 1
+    %xga = insertvalue { i64*, i64 } zeroinitializer, i64* %a1a1, 0
+    %x4 = insertvalue { i64*, i64 } %xga, i64 %xfa, 1
+    br label %while_start
+
+  while_end:
+    %a1a2 = extractvalue { i64*, i64 } %xbaa, 0
+    %a2a2 = extractvalue { i64*, i64 } %xbaa, 1
+    %p2 = getelementptr i64, i64* %a1a2, i64 %a2a2
+    store i64 %r, i64* %p2
+    ret i64* %a1a2
+}
+
+define i64* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_parameterized_sort_impl_context_is_unguarded_param_insert_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl({ i64, { i64, i8* } }* %x, i64* %x1, i64 %x2, i64 %x3) {
+
+  start:
+    %xa = getelementptr i64, i64* %x1, i64 %x3
+    %r = load i64, i64* %xa
+    %xba = insertvalue { i64*, i64 } zeroinitializer, i64* %x1, 0
+    %xca = insertvalue { i64*, i64 } %xba, i64 %x3, 1
+    br label %while_start
+
+  while_start:
+    %xbaa = phi { i64*, i64 } [ %x4, %while_body ], [ %xca, %start ]
+    %a1a = extractvalue { i64*, i64 } %xbaa, 0
+    %a2a = extractvalue { i64*, i64 } %xbaa, 1
+    %xcaa = sub i64 %a2a, 1
+    %xg = getelementptr i64, i64* %a1a, i64 %xcaa
+    %ra = load i64, i64* %xg
+    %xh = call i1 @Monadify_M_CONST_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %x, i64 %r, i64 %ra)
+    %p = getelementptr i64, i64* %a1a, i64 %xcaa
+    store i64 %ra, i64* %p
+    br i1 %xh, label %while_body, label %while_end
+
+  while_body:
+    %a1a1 = extractvalue { i64*, i64 } %xbaa, 0
+    %a2a1 = extractvalue { i64*, i64 } %xbaa, 1
+    %xcaa1 = sub i64 %a2a1, 1
+    %xda = getelementptr i64, i64* %a1a1, i64 %xcaa1
+    %ra1 = load i64, i64* %xda
+    %p1 = getelementptr i64, i64* %a1a1, i64 %a2a1
+    store i64 %ra1, i64* %p1
+    %xfa = sub i64 %a2a1, 1
+    %xga = insertvalue { i64*, i64 } zeroinitializer, i64* %a1a1, 0
+    %x4 = insertvalue { i64*, i64 } %xga, i64 %xfa, 1
+    br label %while_start
+
+  while_end:
+    %a1a2 = extractvalue { i64*, i64 } %xbaa, 0
+    %a2a2 = extractvalue { i64*, i64 } %xbaa, 1
+    %p2 = getelementptr i64, i64* %a1a2, i64 %a2a2
+    store i64 %r, i64* %p2
+    ret i64* %a1a2
+}
+
+define i64* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_parameterized_sort_impl_context_guarded_insertion_sort_param_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult(i64* %x, i64 %x1, i64 %x2, i64 %x3, i64* %x4) {
+
+  start:
+    %xa = insertvalue { i64*, i64 } zeroinitializer, i64* %x4, 0
+    %xaa = insertvalue { i64*, i64 } %xa, i64 %x2, 1
+    br label %while_start
+
+  while_start:
+    %xba = phi { i64*, i64 } [ %x6, %while_body ], [ %xaa, %start ]
+    %a1 = extractvalue { i64*, i64 } %xba, 0
+    %a2 = extractvalue { i64*, i64 } %xba, 1
+    %x5 = icmp slt i64 %a2, %x3
+    br i1 %x5, label %while_body, label %while_end
+
+  while_body:
+    %a11 = extractvalue { i64*, i64 } %xba, 0
+    %a21 = extractvalue { i64*, i64 } %xba, 1
+    %xaaa = call i64* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_parameterized_sort_impl_context_is_guarded_param_insert_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult (i64* %x, i64* %a11, i64 %x1, i64 %a21)
+    %xbaa = add i64 %a21, 1
+    %xca = insertvalue { i64*, i64 } zeroinitializer, i64* %xaaa, 0
+    %x6 = insertvalue { i64*, i64 } %xca, i64 %xbaa, 1
+    br label %while_start
+
+  while_end:
+    %a12 = extractvalue { i64*, i64 } %xba, 0
+    %a22 = extractvalue { i64*, i64 } %xba, 1
+    ret i64* %a12
+}
+
+define i64* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_parameterized_sort_impl_context_guarded_insertion_sort_param_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2, i64 %x3, i64* %x4) {
+
+  start:
+    %xa = insertvalue { i64*, i64 } zeroinitializer, i64* %x4, 0
+    %xaa = insertvalue { i64*, i64 } %xa, i64 %x2, 1
+    br label %while_start
+
+  while_start:
+    %xba = phi { i64*, i64 } [ %x6, %while_body ], [ %xaa, %start ]
+    %a1 = extractvalue { i64*, i64 } %xba, 0
+    %a2 = extractvalue { i64*, i64 } %xba, 1
+    %x5 = icmp slt i64 %a2, %x3
+    br i1 %x5, label %while_body, label %while_end
+
+  while_body:
+    %a11 = extractvalue { i64*, i64 } %xba, 0
+    %a21 = extractvalue { i64*, i64 } %xba, 1
+    %xaaa = call i64* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_parameterized_sort_impl_context_is_guarded_param_insert_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %x, i64* %a11, i64 %x1, i64 %a21)
+    %xbaa = add i64 %a21, 1
+    %xca = insertvalue { i64*, i64 } zeroinitializer, i64* %xaaa, 0
+    %x6 = insertvalue { i64*, i64 } %xca, i64 %xbaa, 1
+    br label %while_start
+
+  while_end:
+    %a12 = extractvalue { i64*, i64 } %xba, 0
+    %a22 = extractvalue { i64*, i64 } %xba, 1
+    ret i64* %a12
+}
+
+define i64* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_parameterized_sort_impl_context_unguarded_insertion_sort_param_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult(i64* %x, i64 %x1, i64 %x2, i64 %x3, i64* %x4) {
+
+  start:
+    %xa = insertvalue { i64*, i64 } zeroinitializer, i64* %x4, 0
+    %xaa = insertvalue { i64*, i64 } %xa, i64 %x2, 1
+    br label %while_start
+
+  while_start:
+    %xba = phi { i64*, i64 } [ %x6, %while_body ], [ %xaa, %start ]
+    %a1 = extractvalue { i64*, i64 } %xba, 0
+    %a2 = extractvalue { i64*, i64 } %xba, 1
+    %x5 = icmp slt i64 %a2, %x3
+    br i1 %x5, label %while_body, label %while_end
+
+  while_body:
+    %a11 = extractvalue { i64*, i64 } %xba, 0
+    %a21 = extractvalue { i64*, i64 } %xba, 1
+    %xaaa = call i64* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_parameterized_sort_impl_context_is_unguarded_param_insert_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_LLVM_Shallow_ll_icmp_ult (i64* %x, i64* %a11, i64 %x1, i64 %a21)
+    %xbaa = add i64 %a21, 1
+    %xca = insertvalue { i64*, i64 } zeroinitializer, i64* %xaaa, 0
+    %x6 = insertvalue { i64*, i64 } %xca, i64 %xbaa, 1
+    br label %while_start
+
+  while_end:
+    %a12 = extractvalue { i64*, i64 } %xba, 0
+    %a22 = extractvalue { i64*, i64 } %xba, 1
+    ret i64* %a12
+}
+
+define i64* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_parameterized_sort_impl_context_unguarded_insertion_sort_param_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl({ i64, { i64, i8* } }* %x, i64 %x1, i64 %x2, i64 %x3, i64* %x4) {
+
+  start:
+    %xa = insertvalue { i64*, i64 } zeroinitializer, i64* %x4, 0
+    %xaa = insertvalue { i64*, i64 } %xa, i64 %x2, 1
+    br label %while_start
+
+  while_start:
+    %xba = phi { i64*, i64 } [ %x6, %while_body ], [ %xaa, %start ]
+    %a1 = extractvalue { i64*, i64 } %xba, 0
+    %a2 = extractvalue { i64*, i64 } %xba, 1
+    %x5 = icmp slt i64 %a2, %x3
+    br i1 %x5, label %while_body, label %while_end
+
+  while_body:
+    %a11 = extractvalue { i64*, i64 } %xba, 0
+    %a21 = extractvalue { i64*, i64 } %xba, 1
+    %xaaa = call i64* @Monadify_M_CONST_Sorting_Unguarded_Insertion_Sort_parameterized_sort_impl_context_is_unguarded_param_insert_impl_Monad_return_Monad_return_Proto_IICF_EOArray_eo_extract_impl_LLVM_DS_Array_array_upd_Sorting_Ex_Array_Idxs_idxs_comp_idx_pcmp_impl_Sorting_Strings_strcmp_impl ({ i64, { i64, i8* } }* %x, i64* %a11, i64 %x1, i64 %a21)
+    %xbaa = add i64 %a21, 1
+    %xca = insertvalue { i64*, i64 } zeroinitializer, i64* %xaaa, 0
+    %x6 = insertvalue { i64*, i64 } %xca, i64 %xbaa, 1
     br label %while_start
 
   while_end:

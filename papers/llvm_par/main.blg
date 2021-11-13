@@ -1,0 +1,48 @@
+This is BibTeX, Version 0.99d (TeX Live 2019/Debian)
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: main.aux
+The style file: abbrv.bst
+Database file #1: bib.bib
+Warning--empty year in HaLa21-toplas
+You've used 42 entries,
+            2118 wiz_defined-function locations,
+            781 strings with 10907 characters,
+and the built_in function-call counts, 16203 in all, are:
+= -- 1615
+> -- 665
+< -- 33
++ -- 263
+- -- 214
+* -- 1052
+:= -- 2439
+add.period$ -- 139
+call.type$ -- 42
+change.case$ -- 227
+chr.to.int$ -- 0
+cite$ -- 43
+duplicate$ -- 713
+empty$ -- 1359
+format.name$ -- 214
+if$ -- 3623
+int.to.chr$ -- 0
+int.to.str$ -- 42
+missing$ -- 38
+newline$ -- 210
+num.names$ -- 90
+pop$ -- 308
+preamble$ -- 1
+purify$ -- 186
+quote$ -- 0
+skip$ -- 561
+stack$ -- 0
+substring$ -- 988
+swap$ -- 270
+text.length$ -- 33
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 164
+warning$ -- 1
+while$ -- 154
+width$ -- 44
+write$ -- 472
+(There was 1 warning)

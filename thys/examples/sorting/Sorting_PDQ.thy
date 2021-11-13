@@ -1260,28 +1260,35 @@ begin
       unfolding mop_C_idx_def
       by (auto simp: pw_eq_iff refine_pw_simps)
       
-    sepref_def left_find_prev_ug_impl [llvm_inline] is "uncurry2 (PR_CONST (find_prev_unguarded (\<^bold>>)))" :: "arr_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a size_assn"
+      
+      
+    sepref_def left_find_prev_ug_impl [llvm_inline] is "uncurry2 (PR_CONST (find_prev_unguarded (\<^bold>>)))" 
+      :: "arr_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a size_assn"
       unfolding find_prev_unguarded_def mop_C_idx_unfolds PR_CONST_def
       apply (annot_snat_const "TYPE(size_t)")
       by sepref
 
-    sepref_def left_find_next_ug_impl [llvm_inline] is "uncurry3 (PR_CONST (find_next_unguarded (Not oo (\<^bold>>))))" :: "arr_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a size_assn"
+    sepref_def left_find_next_ug_impl [llvm_inline] is "uncurry3 (PR_CONST (find_next_unguarded (Not oo (\<^bold>>))))" 
+      :: "arr_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a size_assn"
       unfolding find_next_unguarded_def mop_C_idx_unfolds PR_CONST_def
       apply (annot_snat_const "TYPE(size_t)")
       by sepref
 
-    sepref_def left_find_next_g_impl [llvm_inline] is "uncurry3 (PR_CONST (find_next_guarded (Not oo (\<^bold>>))))" :: "arr_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a size_assn"
+    sepref_def left_find_next_g_impl [llvm_inline] is "uncurry3 (PR_CONST (find_next_guarded (Not oo (\<^bold>>))))" 
+      :: "arr_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a size_assn"
       unfolding find_next_guarded_def mop_C_idx_unfolds PR_CONST_def
       apply (annot_snat_const "TYPE(size_t)")
       by sepref
             
-    sepref_def left_first_find_next_impl [llvm_inline] is "uncurry4 (PR_CONST (first_find_next (Not oo (\<^bold>>))))" :: "arr_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a size_assn"
+    sepref_def left_first_find_next_impl [llvm_inline] is "uncurry4 (PR_CONST (first_find_next (Not oo (\<^bold>>))))" 
+      :: "arr_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a size_assn"
       unfolding first_find_next_def PR_CONST_def
       apply (annot_snat_const "TYPE(size_t)")
       by sepref
       
 
-    sepref_def partition_left_impl is "uncurry2 (PR_CONST partition_left)" :: "arr_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn \<times>\<^sub>a size_assn \<times>\<^sub>a arr_assn"
+    sepref_def partition_left_impl is "uncurry2 (PR_CONST partition_left)" 
+      :: "[\<lambda>_. True]\<^sub>c arr_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow> bool1_assn \<times>\<^sub>a size_assn \<times>\<^sub>a arr_assn [\<lambda>((a,_),_) (_,_,r). r=a]\<^sub>c"
       unfolding partition_left_def PR_CONST_def
       by sepref
       
@@ -1295,27 +1302,32 @@ begin
       right_first_find_next: "first_find_prev (Not oo (\<^bold><))"
       
       
-    sepref_def right_find_prev_ug_impl [llvm_inline] is "uncurry2 (PR_CONST (find_prev_unguarded (Not oo (\<^bold><))))" :: "arr_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a size_assn"
+    sepref_def right_find_prev_ug_impl [llvm_inline] is "uncurry2 (PR_CONST (find_prev_unguarded (Not oo (\<^bold><))))" 
+      :: "arr_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a size_assn"
       unfolding find_prev_unguarded_def mop_C_idx_unfolds PR_CONST_def
       apply (annot_snat_const "TYPE(size_t)")
       by sepref
 
-    sepref_def right_find_next_ug_impl [llvm_inline] is "uncurry3 (PR_CONST (find_next_unguarded (\<^bold><)))" :: "arr_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a size_assn"
+    sepref_def right_find_next_ug_impl [llvm_inline] is "uncurry3 (PR_CONST (find_next_unguarded (\<^bold><)))" 
+      :: "arr_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a size_assn"
       unfolding find_next_unguarded_def mop_C_idx_unfolds PR_CONST_def
       apply (annot_snat_const "TYPE(size_t)")
       by sepref
 
-    sepref_def right_find_prev_g_impl [llvm_inline] is "uncurry2 (PR_CONST (find_prev_guarded (Not oo (\<^bold><))))" :: "arr_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a size_assn"
+    sepref_def right_find_prev_g_impl [llvm_inline] is "uncurry2 (PR_CONST (find_prev_guarded (Not oo (\<^bold><))))" 
+      :: "arr_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a size_assn"
       unfolding find_prev_guarded_def mop_C_idx_unfolds PR_CONST_def
       apply (annot_snat_const "TYPE(size_t)")
       by sepref
             
-    sepref_def right_first_find_prev_impl [llvm_inline] is "uncurry3 (PR_CONST (first_find_prev (Not oo (\<^bold><))))" :: "arr_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a size_assn"
+    sepref_def right_first_find_prev_impl [llvm_inline] is "uncurry3 (PR_CONST (first_find_prev (Not oo (\<^bold><))))" 
+      :: "arr_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a size_assn"
       unfolding first_find_prev_def PR_CONST_def
       apply (annot_snat_const "TYPE(size_t)")
       by sepref
       
-    sepref_def partition_right_impl [llvm_inline] is "uncurry2 (PR_CONST partition_right)" :: "arr_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn \<times>\<^sub>a size_assn \<times>\<^sub>a arr_assn"
+    sepref_def partition_right_impl [llvm_inline] is "uncurry2 (PR_CONST partition_right)" 
+      :: "[\<lambda>_. True]\<^sub>c arr_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow> bool1_assn \<times>\<^sub>a size_assn \<times>\<^sub>a arr_assn [\<lambda>((a,_),_) (_,_,r). r=a]\<^sub>c"
       unfolding partition_right_def PR_CONST_def
       apply (rewrite at "mop_list_swap _ _ (_-1)" mop_list_safe_swap)
       apply (annot_snat_const "TYPE(size_t)")
@@ -1323,18 +1335,21 @@ begin
 
     sepref_register shuffle2  
       
-    sepref_def shuffle_impl [llvm_inline] is "uncurry3 shuffle2"   :: "arr_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn \<times>\<^sub>a arr_assn"
+    sepref_def shuffle_impl [llvm_inline] is "uncurry3 shuffle2"   
+      :: "[\<lambda>_. True]\<^sub>c arr_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow> bool1_assn \<times>\<^sub>a arr_assn [\<lambda>(((a,_),_),_) (_,r). r=a]\<^sub>c"
       unfolding shuffle2_def PR_CONST_def shuffle_left_def shuffle_right_def
       apply (annot_snat_const "TYPE(size_t)")
       by sepref
             
     sepref_register sort_three  
       
-    sepref_def sort_three_impl [llvm_inline] is "uncurry3 (PR_CONST sort_three)"   :: "arr_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a arr_assn"
+    sepref_def sort_three_impl [llvm_inline] is "uncurry3 (PR_CONST sort_three)"   
+      :: "[\<lambda>_. True]\<^sub>c arr_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow> arr_assn [\<lambda>(((a,_),_),_) r. r=a]\<^sub>c"
       unfolding sort_three_def sort_two_def PR_CONST_def
       by sepref
       
-    sepref_def move_pivot_to_front_impl [llvm_inline] is "uncurry2 (PR_CONST move_pivot_to_front2)" :: "arr_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a arr_assn"
+    sepref_def move_pivot_to_front_impl [llvm_inline] is "uncurry2 (PR_CONST move_pivot_to_front2)" 
+      :: "[\<lambda>_. True]\<^sub>c arr_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow> arr_assn [\<lambda>((a,_),_) r. r=a]\<^sub>c"
       unfolding move_pivot_to_front2_def PR_CONST_def
       apply (annot_snat_const "TYPE(size_t)")
       by sepref
@@ -1372,12 +1387,14 @@ begin
       heapsort_hnr[FCOMP heapsort_refine_fbs']
     
     sepref_register pdqsort_aux
-    sepref_def pdqsort_aux_impl [llvm_inline] is "uncurry4 (PR_CONST pdqsort_aux2)" :: "bool1_assn\<^sup>k *\<^sub>a arr_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a arr_assn"
+    sepref_def pdqsort_aux_impl [llvm_inline] is "uncurry4 (PR_CONST pdqsort_aux2)" 
+      :: "[\<lambda>_. True]\<^sub>c bool1_assn\<^sup>k *\<^sub>a arr_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow> arr_assn [\<lambda>((((_,a),_),_),_) r. r=a]\<^sub>c"
       unfolding pdqsort_aux2_def PR_CONST_def
       supply [[goals_limit = 1]]
       apply (annot_snat_const "TYPE(size_t)")
-      by sepref
-            
+      apply (rewrite RECT_cp_annot[where CP="\<lambda>(_,ai,_,_,_) r. r=ai"])
+      by sepref 
+                  
     lemma pdqsort_aux2_refine': "(PR_CONST pdqsort_aux2, PR_CONST pdqsort_aux) \<in> Id \<rightarrow> Id \<rightarrow> Id \<rightarrow> Id \<rightarrow> Id \<rightarrow> \<langle>Id\<rangle>nres_rel"  
       using pdqsort_aux2_refine by (auto intro: nres_relI)
       
@@ -1386,11 +1403,17 @@ begin
       
       
     sepref_register pdqsort  
-    sepref_def pdqsort_impl is "uncurry2 (PR_CONST pdqsort)" :: "arr_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a arr_assn"
+    sepref_def pdqsort_impl is "uncurry2 (PR_CONST pdqsort)" 
+      :: "[\<lambda>_. True]\<^sub>c arr_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow> arr_assn [\<lambda>((a,_),_) r. r=a]\<^sub>c"
       unfolding pdqsort_def PR_CONST_def
       apply (annot_snat_const "TYPE(size_t)")
       by sepref
-                        
+  
+      
+      
   end
 
+  
+  
+  
 end

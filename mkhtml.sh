@@ -51,6 +51,10 @@ if $REBUILD; then
   make
   cd $BASEDIR
 
+  cd papers/llvm_par
+  make
+  cd $BASEDIR
+
   cd thys
   isabelle build -v -D .
 #   isabelle build -v -d '$AFP' -D .
@@ -70,6 +74,7 @@ cp index.md html/
 cp dist.tgz html/
 cp dist-2020.tgz html/
 cp dist-v1.1.tgz html/
+cp dist-v2.0.tgz html/
 cp LICENSE html/
 cp etc/logo/logo_200.png html/
 
@@ -84,7 +89,10 @@ cp papers/2020_Enschede_Talk/pres.pdf html/enschede2020.pdf
 cp papers/2021_Enschede_Talk/pres.pdf html/enschede2021.pdf
 cp papers/2021_RF_Pres/pres.pdf html/RF_pres.pdf
 
-pandoc -V pagetitle="Isabelle LLVM" -s index.md > html/index.html
+cp papers/llvm_par/main.pdf html/paper_llvm_par.pdf
+
+
+pandoc -V pagetitle="Isabelle LLVM Parallel" -s index.md > html/index.html
 
 
 if $UPLOAD; then

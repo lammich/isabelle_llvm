@@ -143,7 +143,9 @@ lemma "llvm_htriple (\<upharpoonleft>uint.assn n ni) (fib ni) (\<lambda>ri. \<up
   
 prepare_code_thms (LLVM) [code] fib_def  (* Set up code equation. Required to execute semantics in Isabelle. *)
 
-value "map (\<lambda>n. run (fib64 n) (LLVM_MEMORY (MEMORY []))) [0,1,2,3]"
+term "Abs_memory []"
+
+value "map (\<lambda>n. run (fib64 n) (Abs_memory [])) [0,1,2,3]"
 
 
 (*
@@ -173,11 +175,39 @@ find_theorems llc_while
 
 lemma "foo (test)"
   unfolding test_def
-  apply (simp named_ss llvm_inline:)
+  apply (simp named_ss llvm_pre_simp:)
   oops
 
 export_llvm test
 
+
+subsubsection \<open>Distance between two Points (double)\<close>
+
+context begin
+
+  definition ddist :: "double \<times> double \<Rightarrow> double \<times> double \<Rightarrow> double llM"
+    where [llvm_code]: "ddist p\<^sub>1 p\<^sub>2 \<equiv> doM {
+    let (x\<^sub>1,y\<^sub>1) = p\<^sub>1;
+    let (x\<^sub>2,y\<^sub>2) = p\<^sub>2;
+    let dx = x\<^sub>1 - x\<^sub>2;
+    let dy = y\<^sub>1 - y\<^sub>2;
+    return (dsqrt ( dx*dx + dy*dy ))
+  }"
+  
+  export_llvm ddist
+  
+  interpretation llvm_prim_arith_setup .
+
+  (* There's not much we can prove without defined rounding mode. At least not in current setup! *)
+  lemma "llvm_htriple \<box> (ddist p\<^sub>1 p\<^sub>2) (\<lambda>_. \<box>)"
+    unfolding ddist_def 
+    apply (simp split: prod.split add: Let_def)
+    apply vcg
+    done
+
+  (* TODO: Prove upper and lower bounds. This needs an infrastructure to be thought of! *)  
+
+end
 
 
 text \<open>Example and Regression Tests using LLVM-VCG directly, 
@@ -206,7 +236,7 @@ end
 definition "my_sel_fst \<equiv> fst o Rep_my_pair"
 definition "my_sel_snd \<equiv> snd o Rep_my_pair"
 
-lemma my_pair_to_val[ll_to_val]: "to_val x = llvm_struct [to_val (my_sel_fst x), to_val (my_sel_snd x)]"
+lemma my_pair_to_val[ll_to_val]: "to_val x = LL_STRUCT [to_val (my_sel_fst x), to_val (my_sel_snd x)]"
   by (auto simp: my_sel_fst_def my_sel_snd_def to_val_my_pair_def to_val_prod)
 
 
@@ -214,9 +244,9 @@ definition my_fst :: "('a::llvm_rep,'b::llvm_rep)my_pair \<Rightarrow> 'a llM" w
 definition my_snd :: "('a::llvm_rep,'b::llvm_rep)my_pair \<Rightarrow> 'b llM" where [llvm_inline]: "my_snd x \<equiv> ll_extract_value x 1"
 definition my_ins_fst :: "('a::llvm_rep,'b::llvm_rep)my_pair \<Rightarrow> 'a \<Rightarrow> ('a,'b)my_pair llM" where [llvm_inline]: "my_ins_fst x a \<equiv> ll_insert_value x a 0"
 definition my_ins_snd :: "('a::llvm_rep,'b::llvm_rep)my_pair \<Rightarrow> 'b \<Rightarrow> ('a,'b)my_pair llM" where [llvm_inline]: "my_ins_snd x a \<equiv> ll_insert_value x a 1"
-definition my_gep_fst :: "('a::llvm_rep,'b::llvm_rep)my_pair ptr \<Rightarrow> 'a ptr llM" where [llvm_inline]: "my_gep_fst x \<equiv> ll_gep_struct x 0"
+(*definition my_gep_fst :: "('a::llvm_rep,'b::llvm_rep)my_pair ptr \<Rightarrow> 'a ptr llM" where [llvm_inline]: "my_gep_fst x \<equiv> ll_gep_struct x 0"
 definition my_gep_snd :: "('a::llvm_rep,'b::llvm_rep)my_pair ptr \<Rightarrow> 'b ptr llM" where [llvm_inline]: "my_gep_snd x \<equiv> ll_gep_struct x 1"
-
+*)
 
 definition [llvm_code]: "add_add (a::_ word) \<equiv> doM {
   x \<leftarrow> ll_add a a;
@@ -233,16 +263,12 @@ definition [llvm_code]: "test_named (a::32 word) (b::64 word) \<equiv> doM {
   n \<leftarrow> my_ins_fst n init;
   n \<leftarrow> my_ins_snd n init;
   
-  p \<leftarrow> ll_malloc TYPE((1 word,16 word)my_pair) (1::64 word);
-  p1 \<leftarrow> my_gep_fst p;
-  p2 \<leftarrow> my_gep_snd p;
-  
   return b
 }"
 
 lemma my_pair_id_struct[ll_identified_structures]: "ll_is_identified_structure ''my_pair'' TYPE((_,_)my_pair)"
   unfolding ll_is_identified_structure_def
-  apply (simp add: llvm_s_struct_def)
+  apply (simp add: )
   done
 
 thm ll_identified_structures
@@ -276,9 +302,9 @@ datatype 'a list_cell = CELL (data: 'a) ("next": "'a list_cell ptr")
 
 instantiation list_cell :: (llvm_rep)llvm_rep
 begin
-  definition "to_val_list_cell \<equiv> \<lambda>CELL a b \<Rightarrow> llvm_struct [to_val a, to_val b]"
-  definition "from_val_list_cell p \<equiv> case llvm_the_struct p of [a,b] \<Rightarrow> CELL (from_val a) (from_val b)"
-  definition [simp]: "struct_of_list_cell (_::(('a) list_cell) itself) \<equiv> llvm_s_struct [struct_of TYPE('a), struct_of TYPE('a list_cell ptr)]"
+  definition "to_val_list_cell \<equiv> \<lambda>CELL a b \<Rightarrow> LL_STRUCT [to_val a, to_val b]"
+  definition "from_val_list_cell p \<equiv> case llvm_val.the_fields p of [a,b] \<Rightarrow> CELL (from_val a) (from_val b)"
+  definition [simp]: "struct_of_list_cell (_::(('a) list_cell) itself) \<equiv> VS_STRUCT [struct_of TYPE('a), struct_of TYPE('a list_cell ptr)]"
   definition [simp]: "init_list_cell ::('a) list_cell \<equiv> CELL init init"
   
   instance
@@ -286,20 +312,20 @@ begin
     unfolding from_val_list_cell_def to_val_list_cell_def struct_of_list_cell_def init_list_cell_def
     (* TODO: Clean proof here, not breaking abstraction barriers! *)
     apply (auto simp: to_val_word_def init_zero fun_eq_iff split: list_cell.splits)
-    apply (smt (z3) from_to_id' list.case(1) list.case(2) list_cell.sel(1) list_cell.sel(2) llvm_the_struct_inv struct_of_prod_def struct_of_ptr_def to_from_id to_val_prod)
-    by (metis init_ptr_def init_zero llvm_zero_initializer_simps(2) struct_of_ptr_def)
-    
+    subgoal for v v1 v2 by (cases v) (auto)
+    subgoal by (metis init_ptr_def init_zero llvm_zero_initializer.simps(4) struct_of_ptr_def)
+    done
 
 end
 
-lemma to_val_list_cell[ll_to_val]: "to_val x = llvm_struct [to_val (data x), to_val (next x)]"
+lemma to_val_list_cell[ll_to_val]: "to_val x = LL_STRUCT [to_val (data x), to_val (next x)]"
   apply (cases x)
   apply (auto simp: to_val_list_cell_def)
   done
 
 lemma [ll_identified_structures]: "ll_is_identified_structure ''list_cell'' TYPE(_ list_cell)"  
   unfolding ll_is_identified_structure_def
-  by (simp add: llvm_s_struct_def)
+  by (simp)
 
   
 find_theorems "prod_insert_fst"
@@ -308,20 +334,20 @@ lemma cell_insert_value:
   "ll_insert_value (CELL x n) x' 0 = return (CELL x' n)"
   "ll_insert_value (CELL x n) n' (Suc 0) = return (CELL x n')"
 
-  apply (simp_all add: ll_insert_value_def Let_def checked_from_val_def 
+  apply (simp_all add: ll_insert_value_def llvm_insert_value_def Let_def checked_from_val_def 
                 to_val_list_cell_def from_val_list_cell_def)
   done
 
 lemma cell_extract_value:
   "ll_extract_value (CELL x n) 0 = return x"  
   "ll_extract_value (CELL x n) (Suc 0) = return n"  
-  apply (simp_all add: ll_extract_value_def Let_def checked_from_val_def 
+  apply (simp_all add: ll_extract_value_def llvm_extract_value_def Let_def checked_from_val_def 
                 to_val_list_cell_def from_val_list_cell_def)
   done
   
 find_theorems "ll_insert_value"
 
-lemma inline_return_cell[llvm_inline]: "return (CELL a x) = doM {
+lemma inline_return_cell[llvm_pre_simp]: "return (CELL a x) = doM {
     r \<leftarrow> ll_insert_value init a 0;
     r \<leftarrow> ll_insert_value r x 1;
     return r
@@ -329,7 +355,7 @@ lemma inline_return_cell[llvm_inline]: "return (CELL a x) = doM {
   apply (auto simp: cell_insert_value)
   done
 
-lemma inline_cell_case[llvm_inline]: "(case x of (CELL a n) \<Rightarrow> f a n) = doM {
+lemma inline_cell_case[llvm_pre_simp]: "(case x of (CELL a n) \<Rightarrow> f a n) = doM {
   a \<leftarrow> ll_extract_value x 0;
   n \<leftarrow> ll_extract_value x 1;
   f a n
@@ -338,7 +364,7 @@ lemma inline_cell_case[llvm_inline]: "(case x of (CELL a n) \<Rightarrow> f a n)
   apply (auto simp: cell_extract_value)
   done
   
-lemma inline_return_cell_case[llvm_inline]: "doM {return (case x of (CELL a n) \<Rightarrow> f a n)} = doM {
+lemma inline_return_cell_case[llvm_pre_simp]: "doM {return (case x of (CELL a n) \<Rightarrow> f a n)} = doM {
   a \<leftarrow> ll_extract_value x 0;
   n \<leftarrow> ll_extract_value x 1;
   return (f a n)
@@ -375,7 +401,7 @@ definition [llvm_code]: "cr_big_al (n::64 word) \<equiv> doM {
   return s    
 }"
 
-declare Let_def[llvm_inline]
+declare Let_def[llvm_pre_simp]
 export_llvm (debug) cr_big_al is "cr_big_al" file "code/cr_big_al.ll"
 
 
@@ -391,11 +417,11 @@ definition [llvm_inline]: "llc_for_range l h c s \<equiv> doM {
 }"
 
 lemma llc_for_range_rule:
-  assumes [vcg_rules]: "\<And>i ii si. llvm_htripleF F 
+  assumes [vcg_rules]: "\<And>i ii si. llvm_htriple 
       (\<upharpoonleft>snat.assn i ii ** \<up>\<^sub>d(lo\<le>i \<and> i<hi) ** I i si) 
       (c ii si) 
       (\<lambda>si. I (i+1) si)"
-  shows "llvm_htripleF F
+  shows "llvm_htriple
       (\<upharpoonleft>snat.assn lo loi ** \<upharpoonleft>snat.assn hi hii ** \<up>(lo\<le>hi) ** I lo si)
       (llc_for_range loi hii c si)
       (\<lambda>si. I hi si)"
@@ -453,7 +479,7 @@ lemma is_sep_red_false[simp]: "is_sep_red P' Q' sep_false Q"
 lemma entails_pre_pure[sep_algebra_simps]: 
   "(\<up>\<Phi> \<turnstile> Q) \<longleftrightarrow> (\<Phi> \<longrightarrow> \<box>\<turnstile>Q)"  
   "(\<up>\<Phi>**P \<turnstile> Q) \<longleftrightarrow> (\<Phi> \<longrightarrow> P\<turnstile>Q)"  
-  by (auto simp: entails_def sep_algebra_simps pred_lift_extract_simps)
+  by (auto simp: entails_def sep_algebra_simps )
   
   
   
@@ -461,7 +487,7 @@ definition "lstr_assn A I \<equiv> mk_assn (\<lambda>as cs. \<up>(length cs = le
 
 lemma lstr_assn_union: "I\<inter>I'={} \<Longrightarrow> 
   \<upharpoonleft>(lstr_assn A (I\<union>I')) as cs = (\<upharpoonleft>(lstr_assn A I) as cs ** \<upharpoonleft>(lstr_assn A I') as cs)"
-  by (auto simp: lstr_assn_def sep_algebra_simps pred_lift_extract_simps)
+  by (auto simp: lstr_assn_def sep_algebra_simps )
 
   
 lemma lstr_assn_red: "is_sep_red 
@@ -476,17 +502,17 @@ lemma lstr_assn_red': "PRECOND (SOLVE_AUTO (I\<inter>I'\<noteq>{})) \<Longrighta
   
     
 lemma lstr_assn_singleton: "\<upharpoonleft>(lstr_assn A {i}) as cs = (\<up>(length cs = length as \<and> i<length as) ** \<upharpoonleft>A (as!i) (cs!i))"  
-  by (auto simp: lstr_assn_def sep_algebra_simps pred_lift_extract_simps)
+  by (auto simp: lstr_assn_def sep_algebra_simps)
   
 lemma lstr_assn_empty: "\<upharpoonleft>(lstr_assn A {}) as cs = \<up>(length cs = length as)"  
-  by (auto simp: lstr_assn_def sep_algebra_simps pred_lift_extract_simps)
+  by (auto simp: lstr_assn_def sep_algebra_simps)
     
 lemma lstr_assn_out_of_range: 
   "\<not>(length cs = length as \<and> (\<forall>i\<in>I. i<length as)) \<Longrightarrow> \<upharpoonleft>(lstr_assn A I) as cs = sep_false"  
   "i\<in>I \<Longrightarrow> \<not>i<length as \<Longrightarrow> \<upharpoonleft>(lstr_assn A I) as cs = sep_false"  
   "i\<in>I \<Longrightarrow> \<not>i<length cs \<Longrightarrow> \<upharpoonleft>(lstr_assn A I) as cs = sep_false"  
   "length cs \<noteq> length as \<Longrightarrow> \<upharpoonleft>(lstr_assn A I) as cs = sep_false"  
-  by (auto simp: lstr_assn_def sep_algebra_simps pred_lift_extract_simps)
+  by (auto simp: lstr_assn_def sep_algebra_simps)
   
   
   
@@ -502,7 +528,7 @@ proof -
     = (\<Union>*ia\<in>I - {i}. \<upharpoonleft>A (as[i := ai] ! ia) (cs ! ia))"
     by (rule sep_set_img_cong) auto
   then have 1: "\<upharpoonleft>(lstr_assn A (I-{i})) as cs = \<upharpoonleft>(lstr_assn A (I-{i})) (as[i:=ai]) cs"
-    by (auto simp: lstr_assn_def sep_algebra_simps pred_lift_extract_simps)
+    by (auto simp: lstr_assn_def sep_algebra_simps)
   
   show ?thesis
     using lstr_assn_red[of A "{i}" I "as[i:=ai]" cs]
@@ -531,7 +557,9 @@ lemma is_pure_lst_assn[is_pure_rule]: "is_pure A \<Longrightarrow> is_pure (lstr
   
 lemma vcg_prep_lstr_assn: (* TODO: Need mechanism to recursively prepare pure parts of A! *)
   "pure_part (\<upharpoonleft>(lstr_assn A I) as cs) \<Longrightarrow> length cs = length as \<and> (\<forall>i\<in>I. i<length as)"
-  by (auto simp: lstr_assn_def sep_algebra_simps dest: pure_part_split_conj)
+  by (auto simp: lstr_assn_def sep_algebra_simps 
+    simp del: pred_lift_extract_simps
+    dest: pure_part_split_conj)
 
 
 (* TODO: Move *)  
@@ -691,11 +719,12 @@ qed
   
 lemma "pure_part (\<upharpoonleft>(lstr_assn A I) as cs) \<Longrightarrow> (length cs = length as) \<and> (\<forall>i\<in>I. i<length as \<and> pure_part (\<upharpoonleft>A (as!i) (cs!i)))"
   by (auto simp: lstr_assn_def is_pure_def list_all2_conv_all_nth sep_algebra_simps 
+    simp del: pred_lift_extract_simps
     dest!: pure_part_split_conj pure_part_split_img)
 
 (* TODO: Move *)    
 lemma lstr_assn_insert: "i\<notin>I \<Longrightarrow> \<upharpoonleft>(lstr_assn A (insert i I)) as cs = (\<up>(i < length as) ** \<upharpoonleft>A (as!i) (cs!i) ** \<upharpoonleft>(lstr_assn A I) as cs)"
-  by (auto simp: lstr_assn_def sep_algebra_simps pred_lift_extract_simps)
+  by (auto simp: lstr_assn_def sep_algebra_simps)
     
 
 lemma fri_lstr_pure_rl[fri_rules]:

@@ -1,3 +1,5 @@
+#error obsolete, replaced by sorting.cpp
+
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -58,7 +60,7 @@ void test_str() {
 
 
 int main(int argc, char **argv) {
-//test_int();
+  test_int();
   test_str();
 }
 

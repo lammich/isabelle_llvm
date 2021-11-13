@@ -121,7 +121,8 @@ end
 context sort_impl_context begin
   sepref_register final_insertion_sort2  
   sepref_def final_insertion_sort_impl is "uncurry2 (PR_CONST final_insertion_sort2)" 
-    :: "(woarray_assn elem_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a woarray_assn elem_assn"
+    :: "[\<lambda>_. True]\<^sub>c (woarray_slice_assn elem_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k 
+      \<rightarrow> woarray_slice_assn elem_assn [\<lambda>((ai,_),_) r. r=ai]\<^sub>c"
     unfolding final_insertion_sort2_def PR_CONST_def
     apply (annot_snat_const "TYPE(size_t)")
     by sepref
@@ -154,7 +155,8 @@ context parameterized_sort_impl_context begin
 
   sepref_register final_insertion_sort_param
   sepref_def final_insertion_sort_param_impl is "uncurry3 (PR_CONST final_insertion_sort_param)" 
-    :: "cparam_assn\<^sup>k *\<^sub>a wo_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a wo_assn"
+    :: "[\<lambda>_. True]\<^sub>c cparam_assn\<^sup>k *\<^sub>a wo_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k 
+      \<rightarrow> wo_assn [\<lambda>(((_,ai),_),_) r. r=ai]\<^sub>c"
     unfolding final_insertion_sort_param_def PR_CONST_def
     apply (annot_snat_const "TYPE(size_t)")
     by sepref

@@ -3,9 +3,11 @@ theory Sepref_Translate
 imports 
   Sepref_Monadify 
   Sepref_Constraints 
+  Sepref_Conc_Post
   Sepref_Frame 
   Sepref_Rules 
   Sepref_Combinator_Setup
+  "../lib/More_Eisbach_Tools"
   "Lib/User_Smashing"
 begin
 
@@ -71,7 +73,7 @@ lemma vassn_tag_simps[simp]:
   by (auto simp: vassn_tag_def)
 
 lemma hn_refine_vassn_tagI: 
-  "\<lbrakk> vassn_tag \<Gamma> \<Longrightarrow> hn_refine \<Gamma> c \<Gamma>' R a \<rbrakk> \<Longrightarrow> hn_refine \<Gamma> c \<Gamma>' R a"  
+  "\<lbrakk> vassn_tag \<Gamma> \<Longrightarrow> hn_refine \<Gamma> c \<Gamma>' R CP a \<rbrakk> \<Longrightarrow> hn_refine \<Gamma> c \<Gamma>' R CP a"  
   apply (rule hn_refine_preI)
   by (auto simp: vassn_tag_def)
   
@@ -90,8 +92,8 @@ lemma RPREMI: "P \<Longrightarrow> RPREM P" by simp
 
 lemma trans_frame_rule:
   assumes "RECOVER_PURE \<Gamma> \<Gamma>'"
-  assumes "vassn_tag (\<Gamma>'**F) \<Longrightarrow> hn_refine \<Gamma>' c \<Gamma>'' R a"
-  shows "hn_refine (\<Gamma>**F) c (\<Gamma>''**F) R a"
+  assumes "vassn_tag (\<Gamma>'**F) \<Longrightarrow> hn_refine \<Gamma>' c \<Gamma>'' R CP a"
+  shows "hn_refine (\<Gamma>**F) c (\<Gamma>''**F) R CP a"
   apply (rule hn_refine_vassn_tagI)
   apply (rule hn_refine_frame[OF _ entails_refl])
   applyF (rule hn_refine_cons_pre)
@@ -104,8 +106,8 @@ lemma trans_frame_rule:
 
 lemma recover_pure_cons: \<comment> \<open>Used for debugging\<close>
   assumes "RECOVER_PURE \<Gamma> \<Gamma>'"
-  assumes "hn_refine \<Gamma>' c \<Gamma>'' R a"
-  shows "hn_refine (\<Gamma>) c (\<Gamma>'') R a"
+  assumes "hn_refine \<Gamma>' c \<Gamma>'' R CP a"
+  shows "hn_refine (\<Gamma>) c (\<Gamma>'') R CP a"
   using trans_frame_rule[where F=\<box>, OF assms] by simp
 
 
@@ -124,8 +126,8 @@ lemmas CPR_TAG_rules = CPR_TAG_starI CPR_tag_ctxtI CPR_tag_fallbackI
 lemma cons_pre_rule: \<comment> \<open>Consequence rule to be applied if no direct operation rule matches\<close>
   assumes "CPR_TAG P P'"
   assumes "P \<turnstile> P'"
-  assumes "hn_refine P' c Q R m"
-  shows "hn_refine P c Q R m"
+  assumes "hn_refine P' c Q R CP m"
+  shows "hn_refine P c Q R CP m"
   using assms(2-) by (rule hn_refine_cons_pre)
 
 
@@ -309,6 +311,9 @@ structure Sepref_Translate = struct
       val t_pref_def = MK side_pref_def_tac
       val t_rprem = MK side_rprem_tac
       val t_gen_algo = side_gen_algo_tac ctxt
+      val t_cp_cond = MK (apply_method_noargs @{method cp_solve_cond})
+      val t_cp_simplify = MK (apply_method_noargs @{method cp_simplify})
+      
       val t_fallback = MK side_fallback_tac
     in
       WITH_concl 
@@ -323,7 +328,9 @@ structure Sepref_Translate = struct
             | @{mpat "DEFER_tag _"} => t_pref_def
             | @{mpat "RPREM _"} => t_rprem
             | @{mpat "GEN_ALGO _ _"} => t_gen_algo
-            | @{mpat "hn_refine _ _ _ _ _"} => hnr_tac 
+            | @{mpat "CP_cond _"} => t_cp_cond           
+            | @{mpat "CP_simplify _ _"} => t_cp_simplify
+            | @{mpat "hn_refine _ _ _ _ _ _"} => hnr_tac 
             | _ => t_fallback
           )
         | _ => K no_tac  
@@ -440,7 +447,7 @@ method_setup sepref_bounds = \<open>SIMPLE_METHOD_NOPARAM' (Sepref_Translate.bou
 subsubsection \<open>Basic Setup\<close>
               
 lemma hn_pass[sepref_fr_rules]:
-  shows "hn_refine (hn_ctxt P x x') (return x') (hn_invalid P x x') P (PASS$x)"
+  shows "hn_refine (hn_ctxt P x x') (return x') (hn_invalid P x x') P (\<lambda>r. r=x') (PASS$x)"
   apply rule
   apply (subst invalidate_clone') unfolding hn_ctxt_def
   apply vcg
@@ -454,15 +461,15 @@ lemma hn_pass[sepref_fr_rules]:
 thm hnr_bind
 
 lemma hn_bind[sepref_comb_rules]:
-  assumes D1: "hn_refine \<Gamma> m' \<Gamma>1 Rh m"
+  assumes D1: "hn_refine \<Gamma> m' \<Gamma>1 Rh CP\<^sub>1 m"
   assumes D2: 
-    "\<And>x x'. bind_ref_tag x m \<Longrightarrow> 
-      hn_refine (hn_ctxt Rh x x' ** \<Gamma>1) (f' x') (\<Gamma>2 x x') R (f x)"
+    "\<And>x x'. bind_ref_tag x m \<Longrightarrow> CP_assm (CP\<^sub>1 x') \<Longrightarrow>
+      hn_refine (hn_ctxt Rh x x' ** \<Gamma>1) (f' x') (\<Gamma>2 x x') R (CP\<^sub>2 x') (f x)"
   assumes IMP: "\<And>x x'. \<Gamma>2 x x' \<turnstile> hn_ctxt Rx x x' ** \<Gamma>'"
   assumes "MK_FREE Rx fr"
-  shows "hn_refine \<Gamma> (doM {x\<leftarrow>m'; r\<leftarrow>f' x; fr x; return r}) \<Gamma>' R (Refine_Basic.bind$m$(\<lambda>\<^sub>2x. f x))"
+  shows "hn_refine \<Gamma> (doM {x\<leftarrow>m'; r\<leftarrow>f' x; fr x; return r}) \<Gamma>' R (CP_SEQ CP\<^sub>1 CP\<^sub>2) (Refine_Basic.bind$m$(\<lambda>\<^sub>2x. f x))"
   using assms
-  unfolding APP_def PROTECT2_def bind_ref_tag_def
+  unfolding APP_def PROTECT2_def bind_ref_tag_def CP_defs
   by (rule hnr_bind)
 
 
@@ -470,51 +477,172 @@ lemma hn_RECT'[sepref_comb_rules]:
   assumes "INDEP Ry" "INDEP Rx" "INDEP Rx'"
   assumes FR: "P \<turnstile> hn_ctxt Rx ax px ** F"
   assumes S: "\<And>cf af ax px. \<lbrakk>
-    \<And>ax px. hn_refine (hn_ctxt Rx ax px ** F) (cf px) (hn_ctxt Rx' ax px ** F) Ry 
+    \<And>ax px. hn_refine (hn_ctxt Rx ax px ** F) (cf px) (hn_ctxt Rx' ax px ** F) Ry (\<lambda>_. True)
       (RCALL$af$ax)\<rbrakk> 
-    \<Longrightarrow> hn_refine (hn_ctxt Rx ax px ** F) (cB cf px) (F' ax px) Ry 
+    \<Longrightarrow> hn_refine (hn_ctxt Rx ax px ** F) (cB cf px) (F' ax px) Ry (CP px)
           (aB af ax)"
   assumes FR': "\<And>ax px. F' ax px \<turnstile> hn_ctxt Rx' ax px ** F"
   assumes M: "(\<And>x. M.mono_body (\<lambda>f. cB f x))"
   (*assumes PREC[unfolded CONSTRAINT_def]: "CONSTRAINT precise Ry"*)
   shows "hn_refine 
-    (P) (Monad.REC cB px) (hn_ctxt Rx' ax px ** F) Ry 
+    (P) (Monad.REC cB px) (hn_ctxt Rx' ax px ** F) Ry (CP$px)
         (RECT$(\<lambda>\<^sub>2D x. aB D x)$ax)"
   unfolding APP_def PROTECT2_def 
   apply (rule hn_refine_cons_pre[OF FR])
   apply (rule hnr_RECT)
 
   apply (rule hn_refine_cons_post[OF _ FR'])
+  apply (rule hn_refine_cons_cp_only)
   apply (rule S[unfolded RCALL_def APP_def])
+  apply (rule hn_refine_cons_cp_only)
   apply assumption
-  apply fact+
+  apply simp
+  apply assumption
+  apply fact
   done
 
 lemma hn_RCALL[sepref_comb_rules]:
-  assumes "RPREM (hn_refine P' c Q' R (RCALL $ a $ b))"
+  assumes "RPREM (hn_refine P' c Q' R CP (RCALL $ a $ b))"
     and "P \<turnstile> P' ** F"
-  shows "hn_refine P c (Q'**F) R (RCALL $ a $ b)"
+  shows "hn_refine P c (Q'**F) R CP (RCALL $ a $ b)"
   using assms hn_refine_frame[where m="RCALL$a$b"] 
   by simp
 
   
+definition RECT_cp_annot :: "('ai \<Rightarrow> 'bi \<Rightarrow> bool) \<Rightarrow> (('a \<Rightarrow> 'b nres) \<Rightarrow> 'a \<Rightarrow> 'b nres) \<Rightarrow> 'a \<Rightarrow> 'b nres" 
+  where "RECT_cp_annot CP \<equiv> RECT"    
+
+lemma RECT_cp_annot: "RECT = RECT_cp_annot CP" unfolding RECT_cp_annot_def ..
+
+lemma RECT_cp_annot_pat[def_pat_rules]:
+  "RECT_cp_annot$CP \<equiv> UNPROTECT (RECT_cp_annot CP)"
+  by simp
+
+lemma RECT_cp_annot_arity[sepref_monadify_arity]:
+  "PR_CONST (RECT_cp_annot CP) \<equiv> \<lambda>\<^sub>2B x. SP (PR_CONST (RECT_cp_annot CP))$(\<lambda>\<^sub>2D x. B$(\<lambda>\<^sub>2x. RCALL$D$x)$x)$x" 
+  by (simp_all)
+
+
+lemma RECT_cp_annot_comb[sepref_monadify_comb]:
+  "\<And>B x. PR_CONST (RECT_cp_annot CP)$B$x \<equiv> Refine_Basic.bind$(EVAL$x)$(\<lambda>\<^sub>2x. SP (PR_CONST (RECT_cp_annot CP)$B$x))"
+  by (simp_all)
+
+lemma RECT_cp_annot_id[id_rules]: 
+  "PR_CONST (RECT_cp_annot CP) ::\<^sub>i TYPE((('c \<Rightarrow> 'd nres) \<Rightarrow> 'c \<Rightarrow> 'd nres) \<Rightarrow> 'c \<Rightarrow> 'd nres)"
+  by simp
+  
+  
+lemma hn_RECT_cp_annot(*[sepref_comb_rules]*):
+  assumes "INDEP Ry" "INDEP Rx" "INDEP Rx'"
+  assumes FR: "P \<turnstile> hn_ctxt Rx ax px ** F"
+  assumes S: "\<And>cf af ax px. \<lbrakk>
+    \<And>ax px. hn_refine (hn_ctxt Rx ax px ** F) (cf px) (hn_ctxt Rx' ax px ** F) Ry (CP px)
+      (RCALL$af$ax)\<rbrakk> 
+    \<Longrightarrow> hn_refine (hn_ctxt Rx ax px ** F) (cB cf px) (F' ax px) Ry (CP' px)
+          (aB af ax)"
+  assumes CP: "\<And>px r. CP_assm (CP' px r) \<Longrightarrow> CP_cond (CP px r)"        
+  assumes FR': "\<And>ax px. F' ax px \<turnstile> hn_ctxt Rx' ax px ** F"
+  assumes M: "(\<And>x. M.mono_body (\<lambda>f. cB f x))"
+  (*assumes PREC[unfolded CONSTRAINT_def]: "CONSTRAINT precise Ry"*)
+  shows "hn_refine 
+    (P) (Monad.REC cB px) (hn_ctxt Rx' ax px ** F) Ry (CP$px)
+        (PR_CONST (RECT_cp_annot CP)$(\<lambda>\<^sub>2D x. aB D x)$ax)"
+  unfolding APP_def PROTECT2_def RECT_cp_annot_def PR_CONST_def
+  apply (rule hn_refine_cons_pre[OF FR])
+  
+  thm hnr_RECT
+  
+  apply (rule hnr_RECT)
+
+  apply (rule hn_refine_cons_post[OF _ FR'])
+  apply (rule hn_refine_cons_cp_only)
+  apply (rule S[unfolded RCALL_def APP_def])
+  apply (rule hn_refine_cons_cp_only)
+  applyS assumption
+  applyS simp
+  subgoal using CP by (simp add: CP_defs)
+  applyS fact
+  done
+
+lemma hn_RECT_cp_annot_noframe:
+  assumes "INDEP Ry" "INDEP Rx" "INDEP Rx'"
+  assumes FR: "P \<turnstile> hn_ctxt Rx ax px ** F"
+  assumes S: "\<And>cf af ax px. \<lbrakk>
+    \<And>ax px. hn_refine (hn_ctxt Rx ax px) (cf px) (hn_ctxt Rx' ax px) Ry (CP px)
+      (RCALL$af$ax)\<rbrakk> 
+    \<Longrightarrow> hn_refine (hn_ctxt Rx ax px) (cB cf px) (F' ax px) Ry (CP' px)
+          (aB af ax)"
+  assumes CP: "\<And>px r. CP_assm (CP' px r) \<Longrightarrow> CP_cond (CP px r)"        
+  assumes FR': "\<And>ax px. F' ax px \<turnstile> hn_ctxt Rx' ax px"
+  assumes M: "(\<And>x. M.mono_body (\<lambda>f. cB f x))"
+  (*assumes PREC[unfolded CONSTRAINT_def]: "CONSTRAINT precise Ry"*)
+  shows "hn_refine 
+    (P) (Monad.REC cB px) (hn_ctxt Rx' ax px ** F) Ry (CP$px)
+        (PR_CONST (RECT_cp_annot CP)$(\<lambda>\<^sub>2D x. aB D x)$ax)"
+        
+  apply (rule hn_refine_cons_post)
+  apply (rule hn_refine_frame[where F=F])    
+  apply (rule hn_RECT_cp_annot[where F=\<box>, OF assms(1,2,3)])  
+  applyS (rule entails_refl)
+  focus apply simp apply (rule S) apply simp solved
+  applyS fact
+  focus apply simp apply fact solved
+  applyS fact
+  focus using FR apply (simp add: algebra_simps) solved
+  applyS (simp add: algebra_simps)
+  done
+  
+  
+lemma hn_RECT'_cp[sepref_comb_rules]:
+  assumes "INDEP Ry" "INDEP Rx" "INDEP Rx'"
+  assumes FR: "P \<turnstile> hn_ctxt Rx ax px ** F"
+  assumes S: "\<And>cf af ax px. \<lbrakk>
+    \<And>ax px. hn_refine (hn_ctxt Rx ax px ** F) (cf px) (hn_ctxt Rx' ax px ** F) Ry (CP px)
+      (RCALL$af$ax)\<rbrakk> 
+    \<Longrightarrow> hn_refine (hn_ctxt Rx ax px ** F) (cB cf px) (F' ax px) Ry (CP' px)
+          (aB af ax)"
+  assumes CP: "\<And>px r. CP_assm (CP' px r) \<Longrightarrow> CP_cond (CP px r)"        
+  assumes FR': "\<And>ax px. F' ax px \<turnstile> hn_ctxt Rx' ax px ** F"
+  assumes M: "(\<And>x. M.mono_body (\<lambda>f. cB f x))"
+  (*assumes PREC[unfolded CONSTRAINT_def]: "CONSTRAINT precise Ry"*)
+  shows "hn_refine 
+    (P) (Monad.REC cB px) (hn_ctxt Rx' ax px ** F) Ry (CP$px)
+        (PR_CONST (RECT_cp_annot CP)$(\<lambda>\<^sub>2D x. aB D x)$ax)"
+  unfolding APP_def PROTECT2_def RECT_cp_annot_def PR_CONST_def
+  apply (rule hn_refine_cons_pre[OF FR])
+  apply (rule hnr_RECT)
+
+  apply (rule hn_refine_cons_post[OF _ FR'])
+  apply (rule hn_refine_cons_cp_only)
+  apply (rule S[unfolded RCALL_def APP_def])
+  apply (rule hn_refine_cons_cp_only)
+  apply assumption
+  apply simp
+  subgoal using CP by (simp add: CP_defs)
+  apply fact
+  done
+  
+  
+  
+  
 lemma hn_refine_synthI:
-  assumes "hn_refine \<Gamma> c \<Gamma>' R' m"
+  assumes "hn_refine \<Gamma> c \<Gamma>' R' CP m"
   assumes "c = c'"
   assumes "R' = R''"
   assumes "\<Gamma>' \<turnstile> \<Gamma>''"
-  shows "hn_refine \<Gamma> c' \<Gamma>'' R'' m"
+  shows "hn_refine \<Gamma> c' \<Gamma>'' R'' CP m"
   using assms by (blast intro: hn_refine_cons_post)
   
 lemma hn_refine_extract_pre_val: 
-  "hn_refine (hn_val S xa xc ** \<Gamma>) c \<Gamma>' R m \<longleftrightarrow> ((xc,xa)\<in>S \<longrightarrow> hn_refine \<Gamma> c \<Gamma>' R m)"
+  "hn_refine (hn_val S xa xc ** \<Gamma>) c \<Gamma>' R CP m \<longleftrightarrow> ((xc,xa)\<in>S \<longrightarrow> hn_refine \<Gamma> c \<Gamma>' R CP m)"
   unfolding hn_refine_def hn_ctxt_def pure_def
-  by (auto simp: sep_algebra_simps pred_lift_extract_simps htriple_extract_pre_pure)
+  apply (cases "(xc,xa)\<in>S")
+  by (auto simp: sep_algebra_simps)
   
 lemma hnr_freeI:
   assumes "MK_FREE R fr"
-  assumes "hn_refine \<Gamma> c \<Gamma>' R' m"
-  shows "hn_refine (hn_ctxt R x y ** \<Gamma>) (doM { fr y; c}) \<Gamma>' R' m"  
+  assumes "hn_refine \<Gamma> c \<Gamma>' R' CP m"
+  shows "hn_refine (hn_ctxt R x y ** \<Gamma>) (doM { fr y; c}) \<Gamma>' R' CP m"  
 proof (rule hn_refine_nofailI)  
   assume "nofail m"
   note [vcg_rules] = MK_FREED[OF assms(1)] hn_refineD[OF assms(2) \<open>nofail m\<close>]
@@ -543,8 +671,8 @@ lemma arity_ASSERT_bind[sepref_monadify_arity]:
   by auto
 
 lemma hn_ASSERT_bind[sepref_comb_rules]: 
-  assumes "I \<Longrightarrow> hn_refine \<Gamma> c \<Gamma>' R m"
-  shows "hn_refine \<Gamma> c \<Gamma>' R (PR_CONST (op_ASSERT_bind I)$m)"
+  assumes "I \<Longrightarrow> hn_refine \<Gamma> c \<Gamma>' R CP m"
+  shows "hn_refine \<Gamma> c \<Gamma>' R CP (PR_CONST (op_ASSERT_bind I)$m)"
   using assms
   apply (cases I)
   apply auto
@@ -566,8 +694,8 @@ lemma arity_ASSUME_bind[sepref_monadify_arity]:
 
 lemma hn_ASSUME_bind[sepref_comb_rules]: 
   assumes "vassn_tag \<Gamma> \<Longrightarrow> I"
-  assumes "I \<Longrightarrow> hn_refine \<Gamma> c \<Gamma>' R m"
-  shows "hn_refine \<Gamma> c \<Gamma>' R (PR_CONST (op_ASSUME_bind I)$m)"
+  assumes "I \<Longrightarrow> hn_refine \<Gamma> c \<Gamma>' R CP m"
+  shows "hn_refine \<Gamma> c \<Gamma>' R CP (PR_CONST (op_ASSUME_bind I)$m)"
   apply (rule hn_refine_preI)
   using assms
   apply (cases I)
@@ -580,7 +708,7 @@ sepref_register mop_free
 
 lemma mop_free_hnr[sepref_fr_rules]:
   assumes "MK_FREE R f"  
-  shows "(f,mop_free)\<in>R\<^sup>d\<rightarrow>\<^sub>aunit_assn"
+  shows "(f,mop_free)\<in>R\<^sup>d\<rightarrow>\<^sub>a\<^sub>d(\<lambda>_. unit_assn)"
   unfolding mop_free_def
   apply (rule hfrefI)
   apply (rule hn_refineI)
@@ -593,12 +721,14 @@ lemma mop_free_hnr[sepref_fr_rules]:
 subsection "Import of Parametricity Theorems"
 lemma pure_hn_refineI:
   assumes "Q \<longrightarrow> (c,a)\<in>R"
-  shows "hn_refine (\<up>Q) (return c) (\<up>Q) (pure R) (RETURN a)"
+  (* TODO: Weak CP copied from Sep-Imp-HOL. *)
+  shows "hn_refine (\<up>Q) (return c) (\<up>Q) (pure R) (\<lambda>_. True) (RETURN a)"
   unfolding hn_refine_def pure_def using assms by vcg
 
 lemma pure_hn_refineI_no_asm:
   assumes "(c,a)\<in>R"
-  shows "hn_refine \<box> (return c) \<box> (pure R) (RETURN a)"
+  (* TODO: Weak CP copied from Sep-Imp-HOL. *)
+  shows "hn_refine \<box> (return c) \<box> (pure R) (\<lambda>_. True) (RETURN a)"
   unfolding hn_refine_def pure_def using assms by vcg
 
 lemma import_param_0:

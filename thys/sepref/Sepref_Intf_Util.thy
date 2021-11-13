@@ -155,16 +155,16 @@ subsubsection \<open>Premises\<close>
 subsubsection \<open>Composition Rules\<close>
   lemma hfcomp_tcomp_pre:
     assumes B: "(g,h) \<in> [Q]\<^sub>f\<^sub>d T \<rightarrow> (\<lambda>x. \<langle>U x\<rangle>nres_rel)"
-    assumes A: "(f,g) \<in> [P]\<^sub>a\<^sub>d RR' \<rightarrow> S"
-    shows "(f,h) \<in> [tcomp_pre Q T P]\<^sub>a\<^sub>d hrp_comp RR' T \<rightarrow> hrr_comp T S U"
+    assumes A: "(f,g) \<in> [P]\<^sub>a [C]\<^sub>c RR' \<rightarrow>\<^sub>d S [CP]\<^sub>c"
+    shows "(f,h) \<in> [tcomp_pre Q T P]\<^sub>a [C]\<^sub>c hrp_comp RR' T \<rightarrow>\<^sub>d hrr_comp T S U [CP]\<^sub>c"
     using hfcomp[OF A B] by simp
 
   lemma transform_pre_param:
-    assumes A: "IMP_LIST Cns ((f, h) \<in> [tcomp_pre Q T P]\<^sub>a\<^sub>d hrp_comp RR' T \<rightarrow> hrr_comp T S U)"
+    assumes A: "IMP_LIST Cns ((f, h) \<in> [tcomp_pre Q T P]\<^sub>a [C]\<^sub>c hrp_comp RR' T \<rightarrow>\<^sub>d hrr_comp T S U [CP]\<^sub>c)"
     assumes P: "IMP_LIST Cns ((P,P') \<in> T \<rightarrow> bool_rel)"
     assumes C: "IMP_PRE PP' (and_pre P' Q)"
     (*assumes D: "IMP_LIST Cns (\<forall>a c x y. (c,a)\<in>T \<longrightarrow> S c x y \<turnstile> S' a x y)"*)
-    shows "IMP_LIST Cns ((f,h) \<in> [PP']\<^sub>a\<^sub>d hrp_comp RR' T \<rightarrow> hrr_comp T S U)"
+    shows "IMP_LIST Cns ((f,h) \<in> [PP']\<^sub>a [C]\<^sub>c hrp_comp RR' T \<rightarrow>\<^sub>d hrr_comp T S U [CP]\<^sub>c)"
     unfolding from_IMP_LIST
     apply (rule hfref_cons) 
     apply (rule A[unfolded from_IMP_LIST])
@@ -176,26 +176,26 @@ subsubsection \<open>Composition Rules\<close>
     done
     
  
-  lemma hfref_mop_conv: "((g,mop P f) \<in> [Q]\<^sub>a\<^sub>d R \<rightarrow> S) \<longleftrightarrow> (g,f) \<in> [\<lambda>x. P x \<and> Q x]\<^sub>a\<^sub>d R \<rightarrow> S"
+  lemma hfref_mop_conv: "((g,mop P f) \<in> [Q]\<^sub>a [C]\<^sub>c R \<rightarrow>\<^sub>d S [CP]\<^sub>c) \<longleftrightarrow> (g,f) \<in> [\<lambda>x. P x \<and> Q x]\<^sub>a [C]\<^sub>c R \<rightarrow>\<^sub>d S [CP]\<^sub>c"
     apply (simp add: hfref_to_ASSERT_conv)
     apply (fo_rule arg_cong fun_cong)+
     by (auto intro!: ext simp: pw_eq_iff refine_pw_simps)
   
   lemma hfref_op_to_mop:
-    assumes R: "(impl,f) \<in> [Q]\<^sub>a\<^sub>d R \<rightarrow> S"
+    assumes R: "(impl,f) \<in> [Q]\<^sub>a [C]\<^sub>c R \<rightarrow>\<^sub>d S [CP]\<^sub>c"
     assumes DEF: "mf \<equiv> mop P f"
     assumes C: "IMP_PRE PP' (imp_pre P Q)"
-    shows "(impl,mf) \<in> [PP']\<^sub>a\<^sub>d R \<rightarrow> S"
+    shows "(impl,mf) \<in> [PP']\<^sub>a [C]\<^sub>c R \<rightarrow>\<^sub>d S [CP]\<^sub>c"
     unfolding DEF hfref_mop_conv
     apply (rule hfref_cons[OF R])
     using C
     by (auto simp: IMP_PRE_def imp_pre_def)
   
   lemma hfref_mop_to_op:
-    assumes R: "(impl,mf) \<in> [Q]\<^sub>a\<^sub>d R \<rightarrow> S"
+    assumes R: "(impl,mf) \<in> [Q]\<^sub>a [C]\<^sub>c R \<rightarrow>\<^sub>d S [CP]\<^sub>c"
     assumes DEF: "mf \<equiv> mop P f"
     assumes C: "IMP_PRE PP' (and_pre Q P)"
-    shows "(impl,f) \<in> [PP']\<^sub>a\<^sub>d R \<rightarrow> S"
+    shows "(impl,f) \<in> [PP']\<^sub>a [C]\<^sub>c R \<rightarrow>\<^sub>d S [CP]\<^sub>c"
     using R unfolding DEF hfref_mop_conv 
     apply (rule hfref_cons)
     using C
@@ -398,7 +398,7 @@ subsection \<open>ML-Level Declarations\<close>
       
           local
             val (_,R,S) = case Thm.concl_of thm of
-              @{mpat "Trueprop (_\<in>hfref ?P ?R ?S)"} => (P,R,S)
+              @{mpat "Trueprop (_\<in>hfref ?P _ ?R ?S _)"} => (P,R,S)
             | @{mpat "Trueprop (_\<in>fref ?P ?R ?S)"} => (P,R,S)
             | _ => raise THM("cleanup_constraints: Expected hfref or fref-theorem",~1,[thm])  
       
@@ -1050,7 +1050,7 @@ subsection \<open>ML-Level Declarations\<close>
       
         fun chk_result ctxt thm = let
           val (_,R,S) = case Thm.concl_of thm of
-            @{mpat "Trueprop (_\<in>hfref ?P ?R ?S)"} => (P,R,S)
+            @{mpat "Trueprop (_\<in>hfref ?P _ ?R ?S _)"} => (P,R,S)
           | _ => raise THM("chk_result: Expected hfref-theorem",~1,[thm])  
       
           fun err t = let

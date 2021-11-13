@@ -12,8 +12,8 @@ string str(const char *s) {
 
 void test_kmp(string a, string b) {
 
-  int64_t la=a.len;
-  int64_t lb=b.len;
+//   int64_t la=a.len;
+//   int64_t lb=b.len;
 
   char *da = a.str;
   char *db = b.str;

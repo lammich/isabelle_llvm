@@ -1233,11 +1233,16 @@ sepref_def has_lchild_impl [llvm_inline] is "uncurry2 (RETURN ooo has_lchild3)" 
 sepref_def has_rchild_impl [llvm_inline] is "uncurry2 (RETURN ooo has_rchild3)" :: "[\<lambda>((l,h),i). l<h]\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow> bool1_assn"
   unfolding has_rchild3_def apply (annot_snat_const "TYPE (size_t)") by sepref
 
-sepref_def mop_geth_impl [llvm_inline] is "uncurry3 mop_geth3" :: "size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (eoarray_assn elem_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a elem_assn \<times>\<^sub>a eoarray_assn elem_assn"
+sepref_def mop_geth_impl [llvm_inline] is "uncurry3 mop_geth3" 
+  :: "[\<lambda>_. True]\<^sub>c size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (eoarray_slice_assn elem_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k \<rightarrow> elem_assn \<times>\<^sub>a eoarray_slice_assn elem_assn [\<lambda>(((_,_),ai),_) (_,ri). ri=ai]\<^sub>c"
   unfolding mop_geth3_def by sepref
   
   
-sepref_def mop_seth_impl [llvm_inline] is "uncurry4 mop_seth3" :: "size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (eoarray_assn elem_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a elem_assn\<^sup>d \<rightarrow>\<^sub>a eoarray_assn elem_assn"
+sepref_def mop_seth_impl [llvm_inline] is "uncurry4 mop_seth3" 
+  :: "[\<lambda>_. True]\<^sub>c 
+      size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (eoarray_slice_assn elem_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a elem_assn\<^sup>d 
+      \<rightarrow> eoarray_slice_assn elem_assn
+      [\<lambda>((((_,_),ai),_),_) ri. ri=ai]\<^sub>c"
   unfolding mop_seth3_def by sepref
   
 
@@ -1245,18 +1250,22 @@ sepref_def mop_seth_impl [llvm_inline] is "uncurry4 mop_seth3" :: "size_assn\<^s
 context sort_impl_context begin
   
 sepref_register "sift_down4 (\<^bold><)"
-sepref_def sift_down_impl is "uncurry3 (PR_CONST (sift_down4 (\<^bold><)))" :: "size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (woarray_assn elem_assn)\<^sup>d \<rightarrow>\<^sub>a (woarray_assn elem_assn)"
+sepref_def sift_down_impl is "uncurry3 (PR_CONST (sift_down4 (\<^bold><)))" 
+  :: "[\<lambda>_. True]\<^sub>c size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (woarray_slice_assn elem_assn)\<^sup>d 
+    \<rightarrow> (woarray_slice_assn elem_assn) [\<lambda>(((_,_),_),ai) ri. ri=ai]\<^sub>c"
   unfolding sift_down4_def PR_CONST_def
-  by sepref (* Takes loooong! *)
+  by sepref_dbg_keep (* Takes loooong! *)
 
 sepref_register "heapify_btu1 (\<^bold><)"
-sepref_def heapify_btu_impl is "uncurry2 (PR_CONST (heapify_btu1  (\<^bold><)))" :: "size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (woarray_assn elem_assn)\<^sup>d \<rightarrow>\<^sub>a (woarray_assn elem_assn)"
+sepref_def heapify_btu_impl is "uncurry2 (PR_CONST (heapify_btu1  (\<^bold><)))" 
+  :: "[\<lambda>_. True]\<^sub>c size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a (woarray_slice_assn elem_assn)\<^sup>d \<rightarrow> (woarray_slice_assn elem_assn) [\<lambda>((_,_),ai) r. r=ai]\<^sub>c"
   unfolding heapify_btu1_def PR_CONST_def
   apply (annot_snat_const "TYPE (size_t)")
   by sepref
   
 sepref_register "heapsort1 (\<^bold><)"
-sepref_def heapsort_impl is "uncurry2 (PR_CONST (heapsort1  (\<^bold><)))" :: "(woarray_assn elem_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a (woarray_assn elem_assn)"
+sepref_def heapsort_impl is "uncurry2 (PR_CONST (heapsort1  (\<^bold><)))" :: 
+  "[\<lambda>_. True]\<^sub>c (woarray_slice_assn elem_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow> (woarray_slice_assn elem_assn) [\<lambda>((ai,_),_) r. r=ai]\<^sub>c"
   unfolding heapsort1_def PR_CONST_def
   apply (rewrite at "sift_down4 _ _ _ \<hole> _" fold_COPY)
   apply (annot_snat_const "TYPE (size_t)")
@@ -1443,10 +1452,14 @@ end
 
 context parameterized_sort_impl_context begin
 
-sepref_def mop_geth_impl [llvm_inline] is "uncurry3 mop_geth3" :: "size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a eo_assn\<^sup>d *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a elem_assn \<times>\<^sub>a eo_assn"
+sepref_def mop_geth_impl [llvm_inline] is "uncurry3 mop_geth3" 
+  :: "[\<lambda>_. True]\<^sub>c size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a eo_assn\<^sup>d *\<^sub>a size_assn\<^sup>k 
+    \<rightarrow> elem_assn \<times>\<^sub>a eo_assn [\<lambda>(((_,_),ai),_) (_,r). r=ai]\<^sub>c"
   unfolding mop_geth3_def by sepref
   
-sepref_def mop_seth_impl [llvm_inline] is "uncurry4 mop_seth3" :: "size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a eo_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a elem_assn\<^sup>d \<rightarrow>\<^sub>a eo_assn"
+sepref_def mop_seth_impl [llvm_inline] is "uncurry4 mop_seth3" 
+  :: "[\<lambda>_. True]\<^sub>c size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a eo_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a elem_assn\<^sup>d 
+    \<rightarrow> eo_assn [\<lambda>((((_,_),ai),_),_) r. r=ai]\<^sub>c"
   unfolding mop_seth3_def by sepref
   
 
@@ -1457,21 +1470,22 @@ context parameterized_sort_impl_context
 begin
   sepref_register "sift_down_param"
   sepref_def sift_down_impl is "uncurry4 (PR_CONST sift_down_param)" 
-    :: "cparam_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a wo_assn\<^sup>d \<rightarrow>\<^sub>a wo_assn"
+    :: "[\<lambda>_. True]\<^sub>c cparam_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a wo_assn\<^sup>d 
+      \<rightarrow> wo_assn [\<lambda>((((_,_),_),_),ai) r. r=ai]\<^sub>c"
     unfolding sift_down_param_def PR_CONST_def
     by sepref (* Takes loooong! *)
   
 
 sepref_register "heapify_btu_param"
 sepref_def heapify_btu_impl is "uncurry3 (PR_CONST heapify_btu_param)" 
-  :: "cparam_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a wo_assn\<^sup>d \<rightarrow>\<^sub>a wo_assn"
+  :: "[\<lambda>_. True]\<^sub>c cparam_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a wo_assn\<^sup>d \<rightarrow> wo_assn [\<lambda>(((_,_),_),ai) r. r=ai]\<^sub>c"
   unfolding heapify_btu_param_def PR_CONST_def
   apply (annot_snat_const "TYPE (size_t)")
   by sepref
   
 sepref_register "heapsort_param"
 sepref_def heapsort_param_impl is "uncurry3 (PR_CONST heapsort_param)" 
-  :: "cparam_assn\<^sup>k *\<^sub>a wo_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a wo_assn"
+  :: "[\<lambda>_. True]\<^sub>c cparam_assn\<^sup>k *\<^sub>a wo_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow> wo_assn [\<lambda>(((_,ai),_),_) r. r=ai]\<^sub>c"
   unfolding heapsort_param_def PR_CONST_def
   apply (rewrite at "sift_down_param _ _ _ \<hole> _" fold_COPY)
   apply (annot_snat_const "TYPE (size_t)")

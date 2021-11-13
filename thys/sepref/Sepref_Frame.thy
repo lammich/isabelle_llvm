@@ -90,8 +90,8 @@ definition "WEAKEN_HNR_POST \<Gamma> \<Gamma>' \<Gamma>'' \<equiv> (\<exists>h. 
 
 lemma weaken_hnr_postI:
   assumes "WEAKEN_HNR_POST \<Gamma> \<Gamma>'' \<Gamma>'"
-  assumes "hn_refine \<Gamma> c \<Gamma>' R a"
-  shows "hn_refine \<Gamma> c \<Gamma>'' R a"
+  assumes "hn_refine \<Gamma> c \<Gamma>' R CP a"
+  shows "hn_refine \<Gamma> c \<Gamma>'' R CP a"
   apply (rule hn_refine_preI)
   apply (rule hn_refine_cons_post)
   apply (rule assms)
@@ -450,7 +450,7 @@ structure Sepref_Frame : SEPREF_FRAME = struct
       | match _ _ = false
 
     fun dest_with_frame (*ctxt*) _ t = let
-      val (P,c,Q,R,a) = dest_hn_refine t
+      val (P,c,Q,R,CP,a) = dest_hn_refine t
   
       val (_,(_,args)) = dest_hnr_absfun a
       val pre_ctes = strip_star P |> map dest_ctxt_elem
@@ -462,23 +462,23 @@ structure Sepref_Frame : SEPREF_FRAME = struct
           | SOME x => x)
 
     in
-      ((pre_args,frame),c,Q,R,a)
+      ((pre_args,frame),c,Q,R,CP,a)
     end
   
     fun align_goal_conv_aux ctxt t = let
-      val ((pre_args,frame),c,Q,R,a) = dest_with_frame ctxt t
+      val ((pre_args,frame),c,Q,R,CP,a) = dest_with_frame ctxt t
       
       val P' = apply2 (list_star o map mk_ctxt_elem) (pre_args,frame) |> mk_star
-      val t' = mk_hn_refine (P',c,Q,R,a)
+      val t' = mk_hn_refine (P',c,Q,R,CP,a)
     in t' end  
 
     fun align_rl_conv_aux ctxt t = let
-      val ((pre_args,frame),c,Q,R,a) = dest_with_frame ctxt t
+      val ((pre_args,frame),c,Q,R,CP,a) = dest_with_frame ctxt t
 
       val _ = frame = [] orelse raise TERM ("align_rl_conv: Extra preconditions in rule",[t,list_star (map mk_ctxt_elem frame)])
 
       val P' = list_star (map mk_ctxt_elem pre_args)
-      val t' = mk_hn_refine (P',c,Q,R,a)
+      val t' = mk_hn_refine (P',c,Q,R,CP,a)
     in t' end  
 
 
@@ -492,7 +492,7 @@ structure Sepref_Frame : SEPREF_FRAME = struct
       open Conv
       val nr_conv = normrel_conv ctxt
     in
-      HOL_concl_conv (fn _ => hn_refine_conv nr_conv all_conv all_conv all_conv all_conv) ctxt
+      HOL_concl_conv (fn _ => hn_refine_conv nr_conv all_conv all_conv all_conv all_conv all_conv) ctxt
     end  
     
   in
@@ -507,7 +507,7 @@ structure Sepref_Frame : SEPREF_FRAME = struct
       val nr_conv = normrel_conv ctxt
     in
       HOL_concl_conv (fn ctxt => f_tac_conv ctxt (align_rl_conv_aux ctxt) (star_permute_tac ctxt)) ctxt
-      then_conv HOL_concl_conv (K (hn_refine_conv nr_conv all_conv nr_conv nr_conv all_conv)) ctxt
+      then_conv HOL_concl_conv (K (hn_refine_conv nr_conv all_conv nr_conv nr_conv all_conv all_conv)) ctxt
     end
 
     fun align_goal_tac ctxt = 
@@ -547,8 +547,8 @@ lemmas [named_ss sepref_frame_normrel] = the_pure_pure pure_the_pure
 lemmas [named_ss sepref_frame_normrel] = pred_lift_move_merge_simps
 
 lemma hnr_pre_pureI[sepref_frame_normgoal_intros]:
-  assumes "\<Phi> \<Longrightarrow> hn_refine \<Gamma> c \<Gamma>' R a"
-  shows "hn_refine (\<up>\<Phi> ** \<Gamma>) c \<Gamma>' R a"
+  assumes "\<Phi> \<Longrightarrow> hn_refine \<Gamma> c \<Gamma>' R CP a"
+  shows "hn_refine (\<up>\<Phi> ** \<Gamma>) c \<Gamma>' R CP a"
   using assms
   by (simp add: hnr_pre_pure_conv)
 

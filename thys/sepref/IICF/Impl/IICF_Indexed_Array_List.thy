@@ -364,9 +364,9 @@ begin
     
     
     lemma ial_assn_fold'[fcomp_norm_unfold]: "hrr_comp nat_rel
-                        (hrr_comp nat_rel (\<lambda>N _. marl_assn' TYPE('l) snat_assn N \<times>\<^sub>a array_assn snat.option_assn)
+                        (hrr_comp nat_rel (\<lambda>N. marl_assn' TYPE('l) snat_assn N \<times>\<^sub>a array_assn snat.option_assn)
                           ial_rel1)
-                        (\<lambda>x. \<langle>nat_rel\<rangle>list_rel) = (\<lambda>N _. ial_assn N)"
+                        (\<lambda>x. \<langle>nat_rel\<rangle>list_rel) = (\<lambda>N. ial_assn N)"
       unfolding ial_assn_def
       by (auto simp: fun_eq_iff hrr_comp_nondep hr_comp_assoc)
     
@@ -374,7 +374,7 @@ begin
 
     
     sepref_definition ial_empty_impl [llvm_code]
-      is aial_empty :: "idx_assn\<^sup>k \<rightarrow>\<^sub>a\<^sub>d (\<lambda>N _. ial2_assn N)"
+      is aial_empty :: "idx_assn\<^sup>k \<rightarrow>\<^sub>a\<^sub>d (\<lambda>N. ial2_assn N)"
       unfolding aial_empty_def
       by sepref
         

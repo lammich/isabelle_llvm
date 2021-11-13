@@ -2,7 +2,7 @@ section \<open>LLVM Shallow Embedding --- Reasoning Setup\<close>
 theory LLVM_Shallow_RS
 imports 
   "../basic/LLVM_Basic_Main"
-  LLVM_Memory_RS
+  LLVM_Simple_Memory_RS
 begin
 
 
@@ -18,7 +18,7 @@ ML \<open>
       fun dest_return @{mpat "return ?x ::_ llM"} = SOME x | dest_return _ = NONE
       fun dest_bind @{mpat "bind ?m ?f ::_ llM"} = SOME (m,f) | dest_bind _ = NONE
       
-      fun dest_monadT (Type (@{type_name M},[T,@{typ unit},@{typ llvm_memory},@{typ err}])) = SOME T | dest_monadT _ = NONE
+      fun dest_monadT (Type (@{type_name M},[T,@{typ unit},@{typ llvm_memory},@{typ err},@{typ llvm_macc}])) = SOME T | dest_monadT _ = NONE
       val bind_return_thm = @{lemma "bind m return = m" by simp}
       val return_bind_thm = @{lemma "bind (return x) f = f x" by simp}
       val bind_bind_thm = @{lemma "bind (bind m (\<lambda>x. f x)) g = bind m (\<lambda>x. bind (f x) g)" by simp}
@@ -27,7 +27,7 @@ ML \<open>
     
     val _ = Theory.setup
      (Attrib.setup \<^binding>\<open>vcg_const\<close>
-      (Args.term >> (fn t => Thm.declaration_attribute (K (Monadify.prepare_add_const_decl t))))
+      (Args.term >> (fn t => Thm.declaration_attribute (K (Monadify.prepare_add_const_decl false t))))
       "declaration of new vcg-constant")
 
     fun monadify_all_tac ctxt = CONVERSION (Conv.top_sweep_conv (Monadify.monadify_conv) ctxt)
@@ -56,12 +56,13 @@ subsection \<open>Abbreviations for VCG\<close>
 type_synonym ll_assn = "(llvm_amemory \<Rightarrow> bool)"
 abbreviation llvm_htriple 
   :: "ll_assn \<Rightarrow> 'a llM \<Rightarrow> ('a \<Rightarrow> ll_assn) \<Rightarrow> bool" 
-  where "llvm_htriple \<equiv> htriple llvm_\<alpha>"
-abbreviation llvm_htripleF 
+  where "llvm_htriple \<equiv> htriple"
+(*abbreviation llvm_htripleF 
   :: "ll_assn \<Rightarrow> ll_assn \<Rightarrow> 'a llM \<Rightarrow> ('a \<Rightarrow> ll_assn) \<Rightarrow> bool" 
   where "llvm_htripleF \<equiv> htripleF llvm_\<alpha>"
 abbreviation "llSTATE \<equiv> STATE llvm_\<alpha>"
 abbreviation "llPOST \<equiv> POSTCOND llvm_\<alpha>"
+*)
 
 locale llvm_prim_setup
 (* Locale to contain primitive VCG setup, without data refinement *)
@@ -69,7 +70,7 @@ locale llvm_prim_setup
 subsection \<open>General VCG Setup\<close>
 lemma fri_extract_prod_case[fri_extract_simps]: "(case p of (a,b) \<Rightarrow> (P a b :: ll_assn)) = (EXS a b. \<up>(p=(a,b)) ** P a b)"  
   apply (cases p) apply (rule ext)
-  apply (auto simp: sep_algebra_simps pred_lift_extract_simps)
+  apply (auto simp: sep_algebra_simps)
   done
   
 lemma norm_prod_case[vcg_normalize_simps]:
@@ -135,9 +136,9 @@ text \<open>This rule is to be overloaded by later rules\<close>
     
 lemma pure_part_pureD[vcg_prep_ext_rules]: "pure_part (\<up>\<Phi>) \<Longrightarrow> \<Phi>" by simp
 
-lemma prep_ext_state[vcg_prep_ext_rules]: 
+(*lemma prep_ext_state[vcg_prep_ext_rules]: 
   "llSTATE P s \<Longrightarrow> pure_part P"  
-  unfolding STATE_def by (blast intro: pure_partI)
+  unfolding STATE_def by (blast intro: pure_partI)*)
   
 lemma prep_ext_pure_part_pure[vcg_prep_ext_rules]: 
   "pure_part (\<upharpoonleft>\<^sub>pA a c) \<Longrightarrow> pure_part (\<upharpoonleft>A a c)"  
@@ -207,7 +208,11 @@ subsubsection \<open>Pointers\<close>
 text \<open>Assertion for pointer to single value\<close>
 definition ll_pto :: "('a::llvm_rep, 'a ptr) dr_assn"
   where "ll_pto \<equiv> mk_assn (\<lambda>v p. llvm_pto (to_val v) (the_raw_ptr p))"
+  
+lemma ll_pto_null[simp]: "\<upharpoonleft>ll_pto x null = sep_false"
+  by (simp add: ll_pto_def null_def llvm_pto_def)
 
+  
 instantiation ptr :: (llvm_rep) addr_algebra begin  
   definition "abase \<equiv> abase o the_raw_ptr"
   definition "acompat a b \<equiv> acompat (the_raw_ptr a) (the_raw_ptr b)"
@@ -223,38 +228,28 @@ instantiation ptr :: (llvm_rep) addr_algebra begin
     done
 
 end
-  
-lemma ll_pto_null[simp]: "\<upharpoonleft>ll_pto x null = sep_false"
-  by (simp add: ll_pto_def null_def)
 
+find_theorems pure_part
+
+lemma ll_pto_base[vcg_prep_ext_rules]: "pure_part (\<upharpoonleft>ll_pto x p) \<Longrightarrow> abase p"
+  by (simp add: ll_pto_def null_def llvm_pto_def abase_ptr_def split: llvm_ptr.splits)
+
+lemma abase_not_null[simp]: "\<not>abase null"  
+  by (auto simp: abase_ptr_def null_def)
   
+
 text \<open>Assertion to range of array\<close>  
 definition "ll_range I \<equiv> mk_assn (\<lambda>f p. \<up>(abase p) ** (\<Union>*i\<in>I. \<upharpoonleft>ll_pto (f i) (p +\<^sub>a i)))"
-
-lemma ll_range_preep_pure[vcg_prep_ext_rules]: 
-  "pure_part (\<upharpoonleft>(ll_range I) f p) \<Longrightarrow> abase p"
-  unfolding ll_range_def
-  apply (erule mk_assn_extractI')
-  by vcg_try_solve
-  
-lemma ll_range_not_base: "\<not>abase p \<Longrightarrow> \<upharpoonleft>(ll_range I) f p = sep_false"
-  unfolding ll_range_def by auto
-
-lemma null_not_base[simp]: "\<not>abase null"  
-  apply (auto simp: abase_ptr_def null_def)
-  apply (auto simp: abase_llvm_ptr_def llvm_null_def)
-  done
   
 lemma ll_range_not_null[simp]: "\<upharpoonleft>(ll_range I) f null = sep_false"
-  by (simp add: ll_range_not_base)
+  by (simp add: ll_range_def)
   
+lemma ll_range_base[vcg_prep_ext_rules]: "pure_part (\<upharpoonleft>(ll_range I) xs p) \<Longrightarrow> abase p"
+  unfolding ll_range_def apply (cases "abase p") apply (simp_all) done
     
 lemma ll_pto_not_same: "(\<upharpoonleft>ll_pto x p ** \<upharpoonleft>ll_pto y p) = sep_false"
   apply (rule ext)
-  apply (auto simp: ll_pto_def llvm_pto_def ab.ba.pto_def split: rptr.splits addr.splits)
-  apply (auto simp: sep_algebra_simps sep_conj_def)
-  apply (auto simp: sep_disj_llvm_amemory_def sep_algebra_simps ab.pto_def split: baddr.splits)
-  apply (auto simp: vpto_assn_def VAL.pto_not_same_aux)
+  apply (auto simp add: ll_pto_def llvm_pto_def sep_conj_def sep_algebra_simps split: llvm_ptr.splits)
   done
 
 lemma ll_range_merge: "I\<^sub>1\<inter>I\<^sub>2={} \<Longrightarrow> (\<upharpoonleft>(ll_range I\<^sub>1) f p ** \<upharpoonleft>(ll_range I\<^sub>2) f p) = \<upharpoonleft>(ll_range (I\<^sub>1\<union>I\<^sub>2)) f p"
@@ -267,18 +262,16 @@ lemma ll_range_bogus_upd[simp]: "x\<notin>I \<Longrightarrow> \<upharpoonleft>(l
   by (rule sep_set_img_cong) (auto)
   
   
-lemma open_ll_range: "i\<in>I \<Longrightarrow> \<upharpoonleft>(ll_range I) f p = (\<up>abase p ** \<upharpoonleft>ll_pto (f i) (p +\<^sub>a i) ** \<upharpoonleft>(ll_range (I-{i})) f p)"
+lemma open_ll_range: "i\<in>I \<Longrightarrow> \<upharpoonleft>(ll_range I) f p = (\<up>(abase p) ** \<upharpoonleft>ll_pto (f i) (p +\<^sub>a i) ** \<upharpoonleft>(ll_range (I-{i})) f p)"
   unfolding ll_range_def
-  apply (cases "abase p"; simp add: sep_algebra_simps)
-  by (auto simp:  sep_set_img_remove)
+  by (auto simp: sep_algebra_simps  sep_set_img_remove)
 
-lemma 
-  assumes "I\<inter>I'\<noteq>{}"  
+lemma diff_ll_range:
   assumes "F \<turnstile> \<upharpoonleft>(ll_range (I'-I)) f p ** F'"
   shows "\<upharpoonleft>(ll_range I) f p ** F \<turnstile> \<upharpoonleft>(ll_range I') f p ** \<upharpoonleft>(ll_range (I-I')) f p ** F'"
 proof -
   have "\<upharpoonleft>(ll_range I) f p ** F \<turnstile> \<upharpoonleft>(ll_range I) f p ** \<upharpoonleft>(ll_range (I'-I)) f p ** F'"
-    using assms(2) conj_entails_mono by blast
+    using assms(1) conj_entails_mono by blast
   also have "\<dots> = (\<upharpoonleft>(ll_range (I \<union> (I'-I))) f p ** F')"
     apply (subst ll_range_merge[symmetric])
     by auto
@@ -292,45 +285,62 @@ qed
   
 subsubsection \<open>Load and Store\<close>
 context llvm_prim_mem_setup begin
-lemma checked_from_val_rule[vcg_rules]: "llvm_htriple \<box> (checked_from_val (to_val x)) (\<lambda>r. \<up>(r=x))"  
+
+lemma checked_from_val_rule[vcg_rules]: "llvm_htriple (\<box>) (checked_from_val (to_val x)) (\<lambda>r. \<up>(r=x))"  
   unfolding checked_from_val_def
   by vcg
   
+  
+    
+find_theorems "HT "   pure_part
+
+
+
+  
 text \<open>Standard rules for load and store from pointer\<close>  
 lemma ll_load_rule[vcg_rules]: "llvm_htriple (\<upharpoonleft>ll_pto x p) (ll_load p) (\<lambda>r. \<up>(r=x) ** \<upharpoonleft>ll_pto x p)"
-  unfolding ll_load_def ll_pto_def 
-  by vcg
+  unfolding ll_load_def ll_pto_def llvm_load_def llvm_extract_addr_def to_val_ptr_def
+  apply (simp add: llvm_pto_def split!: llvm_ptr.splits)
+  apply vcg
+  done
 
 lemma ll_store_rule[vcg_rules]: "llvm_htriple (\<upharpoonleft>ll_pto xx p) (ll_store x p) (\<lambda>_. \<upharpoonleft>ll_pto x p)"
-  unfolding ll_store_def ll_pto_def
-  by vcg
+  unfolding ll_store_def ll_pto_def llvm_store_def llvm_extract_addr_def to_val_ptr_def
+  apply (simp add: llvm_pto_def split!: llvm_ptr.splits)
+  apply vcg
+  done
   
 text \<open>Rules for load and store from indexed pointer, wrt. range\<close>  
 
 lemmas [fri_extract_simps] = sep_conj_assoc
 
 
-find_theorems htriple EXTRACT
-thm vcg_decomp_rules
-
 lemma ll_load_rule_range[vcg_rules]:
   shows "llvm_htriple (\<upharpoonleft>(ll_range I) a p ** \<up>\<^sub>!( p' ~\<^sub>a p \<and> p' -\<^sub>a p \<in> I )) (ll_load p') (\<lambda>r. \<up>(r = a (p' -\<^sub>a p)) ** \<upharpoonleft>(ll_range I) a p)"
-  unfolding vcg_tag_defs
-  apply (rule htriple_vcgI')
-  apply fri_extract_basic
-  apply (simp add: open_ll_range)
-  apply fri_extract
+  apply vcg
+  apply (clarsimp simp: open_ll_range)
   apply vcg
   done
 
 lemma ll_store_rule_range[vcg_rules]:
   shows "llvm_htriple (\<upharpoonleft>(ll_range I) a p ** \<up>\<^sub>!( p' ~\<^sub>a p \<and> p' -\<^sub>a p \<in> I )) (ll_store x p') (\<lambda>_. \<upharpoonleft>(ll_range I) (a(p' -\<^sub>a p := x)) p)"
-  unfolding vcg_tag_defs
-  apply (rule htriple_vcgI')
-  apply fri_extract_basic
-  apply (simp add: open_ll_range)
-  apply fri_extract
-  by vcg
+  apply vcg
+  apply (clarsimp simp: open_ll_range)
+  apply vcg
+  done
+
+
+lemma ll_load_rule_range':
+  shows "llvm_htriple (\<upharpoonleft>(ll_range I) a p ** \<up>\<^sub>!( ofs \<in> I )) (ll_load (p +\<^sub>a ofs)) (\<lambda>r. \<up>(r = a ofs) ** \<upharpoonleft>(ll_range I) a p)"
+  apply vcg
+  done
+
+lemma ll_store_rule_range':
+  shows "llvm_htriple (\<upharpoonleft>(ll_range I) a p ** \<up>\<^sub>!( ofs \<in> I )) (ll_store x (p +\<^sub>a ofs)) (\<lambda>_. \<upharpoonleft>(ll_range I) (a(ofs := x)) p)"
+  apply vcg
+  apply (clarsimp simp: open_ll_range)
+  apply vcg
+  done
 
 subsubsection \<open>Offsetting Pointers\<close>
 
@@ -338,14 +348,36 @@ subsubsection \<open>Offsetting Pointers\<close>
   which is not supported by these rules yet.
 *)
 
+(* TODO: Move *)
+lemma extract_sint_to_val[vcg_normalize_simps]: "llvm_extract_sint (to_val i) = return (sint i)"
+  unfolding llvm_extract_sint_def to_val_word_def
+  by (simp add: sint_uint)
+
+lemma extract_unat_to_val[vcg_normalize_simps]: "llvm_extract_unat (to_val n) = return (unat n)"
+  unfolding llvm_extract_unat_def to_val_word_def
+  by (auto split: llvm_val.split)
+  
+  
+  
+lemma abase_is_ptr[simp]: "abase (the_raw_ptr p) \<Longrightarrow> llvm_ptr.is_addr (the_raw_ptr p)"
+  unfolding abase_ptr_def apply (cases p) subgoal for lp apply (cases lp) apply auto done done
+  
+
 text \<open>Rule for indexing pointer. Note, the new target address must exist\<close>
+
+(* TODO: Move *)
+lemma from_val_LL_PTR[simp]: "from_val (LL_PTR p) = PTR p"
+  unfolding from_val_ptr_def by simp
+
 lemma ll_ofs_ptr_rule[vcg_rules]: 
   "llvm_htriple 
     (\<upharpoonleft>ll_pto v (p +\<^sub>a (sint i)) ** \<up>\<^sub>!(abase p))
     (ll_ofs_ptr p i) 
     (\<lambda>r. \<up>(r= p +\<^sub>a (sint i)) ** \<upharpoonleft>ll_pto v (p +\<^sub>a (sint i)))"
-  unfolding ll_ofs_ptr_def ll_pto_def abase_ptr_def aidx_ptr_def
-  by vcg
+  unfolding ll_ofs_ptr_def llvm_ofs_ptr_def llvm_extract_ptr_def ll_pto_def abase_ptr_def aidx_ptr_def
+    to_val_ptr_def
+  apply vcg
+  done
 
 text \<open>Rule for indexing pointer into range. Note, the new target address must exist\<close>
   
@@ -354,11 +386,8 @@ lemma ll_ofs_ptr_rule'[vcg_rules]:
     (\<upharpoonleft>(ll_range I) x p ** \<up>\<^sub>!(p ~\<^sub>a p' \<and> (p' +\<^sub>a sint i) -\<^sub>a p \<in> I)) 
     (ll_ofs_ptr p' i) 
     (\<lambda>r. \<up>(r= p' +\<^sub>a sint i) ** \<upharpoonleft>(ll_range I) x p)"
-  unfolding vcg_tag_defs
-  apply (rule htriple_vcgI')
-  apply fri_extract_basic
-  apply (simp add: open_ll_range vcg_tag_defs)
-  apply fri_extract
+  apply vcg
+  apply (clarsimp simp: open_ll_range)
   apply vcg
   done
 
@@ -367,7 +396,7 @@ subsubsection \<open>Allocate and Free\<close>
 
 text \<open>Memory allocation tag, which expresses ownership of an allocated block.\<close>
 definition ll_malloc_tag :: "int \<Rightarrow> 'a::llvm_rep ptr \<Rightarrow> _" 
-  where "ll_malloc_tag n p \<equiv> \<up>(n\<ge>0) ** llvm_malloc_tag n (the_raw_ptr p)"
+  where "ll_malloc_tag n p \<equiv> \<up>(n\<ge>0) ** llvm_blockp (the_raw_ptr p) (nat n)"
 
 (* TODO: Move *)
 lemma abase_ptr_iff: "abase (PTR r) \<longleftrightarrow> abase r"
@@ -376,6 +405,68 @@ lemma abase_ptr_iff: "abase (PTR r) \<longleftrightarrow> abase r"
 lemma the_raw_PTR_aidx: "the_raw_ptr (PTR r +\<^sub>a x) = r +\<^sub>a x"
   by (simp add: aidx_ptr_def)
 
+lemma range_split_last: "l\<le>h \<Longrightarrow> {l..<1+h} = insert h {l..<h}" for l h :: int by auto
+  
+(* TODO: Move *)
+lemma llvm_blockv_Nil[simp]: "llvm_blockv [] b = 0"
+  by (simp add: llvm_blockv_def)
+
+  
+lemma block_base_abase[simp]: "llvm_ptr_is_block_base p \<Longrightarrow> abase (PTR p)"  
+  by (cases p; auto simp: llvm_ptr_is_block_base_def abase_ptr_def)
+  
+lemma llvm_pto_is_ato: "\<lbrakk>llvm_ptr.is_addr p; llvm_addr.idx (llvm_ptr.the_addr p) \<ge> 0\<rbrakk> 
+  \<Longrightarrow> llvm_pto x p = EXACT (llvm_ato x (llvm_ptr.the_addr p))"  
+  by (cases p; simp add: llvm_pto_def)
+  
+find_theorems "to_val (from_val _)"  
+  
+lemma range_split_aux: "(\<Union>*i\<in>{0..<int (length xs)}. llvm_pto (to_val ((from_val ((xs @ [x]) ! nat i)) :: 'a :: llvm_rep )) (f i))
+  = (\<Union>*i\<in>{0..<int (length xs)}. llvm_pto (to_val ((from_val (xs ! nat i)) :: 'a )) (f i))" 
+  apply (rule sep_set_img_cong) 
+  apply (auto)
+  done
+  
+(* TODO: Move *)  
+lemma is_addr_add[simp]: "llvm_ptr.is_addr (p +\<^sub>a i) \<longleftrightarrow> llvm_ptr.is_addr p"  
+  by (cases p; auto)
+  
+lemma addr_idx_the_addr_add[simp]: "llvm_ptr.is_addr p \<Longrightarrow> llvm_addr.idx (llvm_ptr.the_addr (p +\<^sub>a i)) = llvm_addr.idx (llvm_ptr.the_addr p) + i"
+  by (cases p) auto
+  
+lemma blockv_range_conv:
+  "\<lbrakk>llvm_ptr_is_block_base p; \<forall>x\<in>set xs. llvm_struct_of_val x = struct_of TYPE('a::llvm_rep) \<rbrakk> \<Longrightarrow> 
+  EXACT (llvm_blockv xs (llvm_ptr_the_block p)) 
+  = (\<upharpoonleft>(ll_range {0..<int (length xs)}) (\<lambda>i. from_val (xs ! nat i) :: 'a ) (PTR p))"
+  apply (induction xs rule: rev_induct)
+  apply (auto simp: ll_range_def range_split_last sep_algebra_simps EXACT_split ll_pto_def)
+  apply (auto simp: llvm_ptr_is_block_base_def range_split_aux the_raw_PTR_aidx)
+  apply (auto simp: llvm_pto_is_ato llvm_ptr_is_block_base_def range_split_aux the_raw_PTR_aidx)
+  apply (subst sep_conj_commute)
+  apply (cases p; simp)
+  by (smt (z3) fold_addr_add llvm_ptr.sel llvm_ptr_the_block_def)
+  
+  
+lemma blockvp_range_conv:
+  assumes "\<forall>x\<in>set xs. llvm_struct_of_val x = struct_of TYPE('a::llvm_rep)"
+  shows "llvm_blockvp xs p = (\<up>(llvm_ptr_is_block_base p) ** \<upharpoonleft>(ll_range {0..<int (length xs)}) (\<lambda>i. from_val (xs!nat i) :: 'a) (PTR p))"
+  unfolding llvm_blockvp_def
+  apply (cases "llvm_ptr_is_block_base p"; simp add: sep_algebra_simps blockv_range_conv assms)
+  done
+  
+lemma ll_range_init_conv_aux: "\<upharpoonleft>(ll_range {0..<uint n}) (\<lambda>i. from_val (replicate (unat n) (llvm_zero_initializer (struct_of TYPE('a::llvm_rep))) ! nat i)) p
+  = \<upharpoonleft>(ll_range {0..<uint n}) (\<lambda>_. init::'a) p"  
+  apply (cases "abase p"; simp add: ll_range_def sep_algebra_simps)
+  apply (rule sep_set_img_cong; clarsimp)
+  subgoal for i
+    apply (subgoal_tac "nat i < unat n")
+    apply simp
+    subgoal by (metis from_to_id' init_zero)
+    subgoal by (metis Word.of_nat_unat nat_less_iff)
+    done
+  done
+  
+
 text \<open>Allocation returns an array-base pointer to an initialized range, 
   as well as an allocation tag\<close>
 lemma ll_malloc_rule[vcg_rules]: 
@@ -383,11 +474,63 @@ lemma ll_malloc_rule[vcg_rules]:
     (\<up>(n\<noteq>0)) 
     (ll_malloc TYPE('a::llvm_rep) n) 
     (\<lambda>r. \<upharpoonleft>(ll_range {0..< uint n}) (\<lambda>_. init) r ** ll_malloc_tag (uint n) r)"
-  unfolding ll_malloc_def ll_pto_def ll_malloc_tag_def ll_range_def 
-  supply [simp] = unat_gt_0 abase_ptr_iff the_raw_PTR_aidx
-  apply vcg
+  unfolding ll_malloc_def ll_pto_def ll_malloc_tag_def llvm_alloc_def    
+  supply [simp] = unat_gt_0 abase_ptr_iff the_raw_PTR_aidx blockvp_range_conv ll_range_init_conv_aux
+  apply vcg  
+  apply vcg_normalize
+  subgoal for r (* TODO: Missing pure extraction on fri *)
+    apply (cases "llvm_ptr_is_block_base r"; simp add: sep_algebra_simps)
+    apply vcg
+    done
   done
+  
+(* TODO: Move *)  
+lemma llvm_blockvp_empty[simp]: "llvm_blockvp [] p = \<up>llvm_ptr_is_block_base p"  
+  unfolding llvm_blockvp_def by simp
+  
+(* TODO: Move *)  
+lemma llvm_ptr_is_block_base_NULL[simp]: "\<not>llvm_ptr_is_block_base PTR_NULL" by (simp add: llvm_ptr_is_block_base_def)
 
+(* TODO: Move *)  
+lemma llvm_blockvp_split[simp]: "llvm_blockvp (xs@[x]) p = (llvm_blockvp xs p ** llvm_pto x (p +\<^sub>a (int (length xs))))"
+  unfolding llvm_blockvp_def
+  apply (cases p; simp add: sep_algebra_simps llvm_pto_def EXACT_split)
+  apply (auto simp: )
+  subgoal for pp
+    apply (cases pp; auto simp add: llvm_ptr_is_block_base_def llvm_ptr_the_block_def sep_algebra_simps)
+    done
+  subgoal by (simp add: llvm_ptr_is_block_base_def)
+  done
+  
+lemma free_blockvp_aux: 
+  assumes [simp]: "llvm_ptr_is_block_base p"
+  shows "(\<Union>*i\<in>{0..<n}. llvm_pto (to_val (f i)) (p +\<^sub>a i)) = llvm_blockvp (map (to_val o f o int) [0..<nat n]) p"
+proof -
+
+  have 1: "{0..<Suc n} = insert n {0..<n}" for n by auto
+
+  have A: "(\<Union>*i\<in>{0..<n}. llvm_pto (to_val (f (int i))) (p +\<^sub>a int i)) = llvm_blockvp (map (to_val o f o int) [0..<n]) p"
+    for n :: nat
+    apply (induction n)
+    apply (auto simp: sep_algebra_simps 1 sep_conj_c)
+    done
+
+  have B: "n\<ge>0 \<Longrightarrow> {0..<nat n} = nat`{0..<n}"
+    apply (induction "nat n" arbitrary: n)
+    apply auto
+    by (metis image_atLeastZeroLessThan_int image_eqI int_nat_eq lessThan_iff of_nat_0_le_iff of_nat_eq_iff)
+  
+    
+  show ?thesis
+    apply (cases "n\<ge>0"; (simp add: sep_algebra_simps)?)  
+    using A[of "nat n"] 
+    apply (simp add: B)
+    apply (subst (asm) sep_set_img_map)
+    subgoal by (simp add: eq_nat_nat_iff inj_on_def)
+    by simp
+    
+qed          
+  
   
 text \<open>Free takes a range and the matching allocation tag\<close>
 lemma ll_free_rule[vcg_rules]:
@@ -396,10 +539,26 @@ lemma ll_free_rule[vcg_rules]:
     (ll_free p)
     (\<lambda>_. \<box>)
   "
-  unfolding ll_free_def ll_pto_def ll_malloc_tag_def ll_range_def vcg_tag_defs
-  supply [simp] = list_conj_eq_sep_set_img abase_ptr_def aidx_ptr_def 
-  supply [named_ss fri_prepare_simps] = sep_set_img_pull_EXS
-  by vcg
+  unfolding ll_free_def ll_pto_def ll_malloc_tag_def ll_range_def vcg_tag_defs llvm_free_def
+    llvm_extract_ptr_def to_val_ptr_def
+  apply (cases p; simp)  
+  subgoal for pp
+    apply (cases "llvm_ptr_is_block_base pp")
+    subgoal
+      supply [simp] = list_conj_eq_sep_set_img abase_ptr_def aidx_ptr_def 
+      supply [named_ss fri_prepare_simps] = sep_set_img_pull_EXS
+      apply (simp add: )
+      apply (simp add: sep_algebra_simps)
+      apply (subst free_blockvp_aux)
+      apply vcg
+      supply [vcg_rules] = llvmt_freep_rule[where xs="map _ [0..<nat n]", simplified]
+      apply vcg
+      done
+    subgoal by (simp add: llvm_blockp_def)
+    done  
+  done
+  
+  (* TODO: xxx, ctd here: the new 'simple' memory model is a mess, but try and ctd here *)
   
 end  
 
@@ -441,11 +600,18 @@ lemma cond_llvm_htripleI: "x = return y \<Longrightarrow> llvm_htriple \<box> x 
 locale llvm_prim_arith_setup
 
 sublocale llvm_prim_setup < llvm_prim_arith_setup .
+
+
+
+definition "vcg_assert_valid_ptr p \<equiv> llvmt_check_ptr (the_raw_ptr p)"  
+
   
 context llvm_prim_arith_setup begin
 context 
   notes [simp] = op_lift_arith2'_def op_lift_arith2_def 
-                  op_lift_cmp_def op_lift_ptr_cmp_def op_lift_iconv_def 
+                 op_lift_farith1_def op_lift_farith2_def
+                 op_lift_farith1_rm_def op_lift_farith2_rm_def op_lift_farith3_rm_def
+                 op_lift_cmp_def op_lift_iconv_def 
   notes [simp] = word_to_lint_convs[symmetric]
   notes [simp] = from_bool_lint_conv udivrem_is_undef_word_conv sdivrem_is_undef_word_conv
   notes [simp] = word_to_lint_to_uint_conv word_to_lint_to_sint_conv
@@ -473,6 +639,35 @@ lemma ll_sdiv_rule[vcg_rules]: "\<lbrakk>WBOUNDS (b\<noteq>0); WBOUNDS (in_srang
 lemma ll_srem_rule[vcg_rules]: "\<lbrakk>WBOUNDS (b\<noteq>0); WBOUNDS (in_srange (sdiv) a b)\<rbrakk> \<Longrightarrow> llvm_htriple \<box> (ll_srem a b) (\<lambda>r. \<up>(r = a smod b))"
   unfolding vcg_tag_defs by vcg
 
+
+lemma ll_fadd_simp[vcg_normalize_simps]: "ll_fadd a b = return (a + b)" by (auto simp: ll_fadd_def) 
+lemma ll_fsub_simp[vcg_normalize_simps]: "ll_fsub a b = return (a - b)" by (auto simp: ll_fsub_def) 
+lemma ll_fmul_simp[vcg_normalize_simps]: "ll_fmul a b = return (a * b)" by (auto simp: ll_fmul_def) 
+lemma ll_fdiv_simp[vcg_normalize_simps]: "ll_fdiv a b = return (a / b)" by (auto simp: ll_fdiv_def) 
+lemma ll_frem_simp[vcg_normalize_simps]: "ll_frem a b = return (drem a b)" by (auto simp: ll_frem_def) 
+lemma ll_sqrt_f64_simp[vcg_normalize_simps]: "ll_sqrt_f64 a = return (dsqrt a)" by (auto simp: ll_sqrt_f64_def) 
+  
+
+lemmas [vcg_normalize_simps] = xlate_rounding_mode_simps
+
+lemma ll_x86_avx512_simps[vcg_normalize_simps]:
+  "ll_x86_avx512_add_sd_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm; return (dradd rm a b)}"
+  "ll_x86_avx512_sub_sd_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm; return (drsub rm a b)}"
+  "ll_x86_avx512_mul_sd_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm; return (drmul rm a b)}"
+  "ll_x86_avx512_div_sd_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm; return (drdiv rm a b)}"
+  "ll_x86_avx512_sqrt_sd      rm a = doM {rm \<leftarrow> xlate_rounding_mode rm; return (drsqrt rm a)}"
+  "ll_x86_avx512_vfmadd_f64   rm a b c = doM {rm \<leftarrow> xlate_rounding_mode rm; return (drfmadd rm a b c)}"
+  unfolding
+    ll_x86_avx512_add_sd_round_def
+    ll_x86_avx512_sub_sd_round_def
+    ll_x86_avx512_mul_sd_round_def
+    ll_x86_avx512_div_sd_round_def
+    ll_x86_avx512_sqrt_sd_def
+    ll_x86_avx512_vfmadd_f64_def
+  by auto  
+    
+  
+  
 paragraph \<open>Comparison\<close>
 lemma ll_icmp_simps[vcg_normalize_simps]: 
   "ll_icmp_eq a b = return (from_bool (a = b))" 
@@ -483,16 +678,77 @@ lemma ll_icmp_simps[vcg_normalize_simps]:
   "ll_icmp_ult a b = return (from_bool (a < b))" 
   unfolding ll_icmp_eq_def ll_icmp_ne_def ll_icmp_sle_def ll_icmp_slt_def ll_icmp_ule_def ll_icmp_ult_def
   by auto
-
-lemma check_ptr_simp[vcg_normalize_simps]: "check_ptrs_cmp p\<^sub>1 p\<^sub>2 = (
-  if p\<^sub>1=null \<or> p\<^sub>2=null then return () else doM { ll_load p\<^sub>1; ll_load p\<^sub>2; return ()})"
-  unfolding check_ptrs_cmp_def by simp
-
+ 
+  
+definition [vcg_normalize_simps]: "check_ptrs_cmp p\<^sub>1 p\<^sub>2 = (
+  if p\<^sub>1=null \<or> p\<^sub>2=null then return () else doM { vcg_assert_valid_ptr p\<^sub>1; vcg_assert_valid_ptr p\<^sub>2; return ()})"
+  
+  
+lemma word1_to_lint_ltrue: "word_to_lint (1::1 word) = ltrue"  
+  unfolding word_to_lint_def ltrue_def by auto
+  
+lemma word1_to_lint_lfalse: "word_to_lint (0::1 word) = lfalse"  
+  unfolding word_to_lint_def lfalse_def by auto
+    
 lemma ll_ptrcmp_simps[vcg_normalize_simps]: 
   "ll_ptrcmp_eq a b = doM { check_ptrs_cmp a b; return (from_bool (a = b))}" 
   "ll_ptrcmp_ne a b = doM { check_ptrs_cmp a b; return (from_bool (a \<noteq> b))}" 
-  unfolding ll_ptrcmp_eq_def ll_ptrcmp_ne_def 
-  by auto
+  unfolding ll_ptrcmp_eq_def ll_ptrcmp_ne_def check_ptrs_cmp_def llvm_ptr_eq_def llvm_ptr_neq_def llvm_extract_ptr_def
+  unfolding to_val_ptr_def null_def
+  subgoal
+    apply (cases a; cases b; auto simp: vcg_normalize_simps from_val_word_def)
+    subgoal by (auto simp: word1_to_lint_lfalse word1_to_lint_ltrue bool_to_lint_def)
+    subgoal by (auto simp: word1_to_lint_lfalse word1_to_lint_ltrue bool_to_lint_def)
+    unfolding vcg_assert_valid_ptr_def llvmt_ptr_eq_def llvmt_check_ptrcmp_def
+    apply (auto simp: lint_to_word_def)
+    done
+  subgoal
+    apply (cases a; cases b; auto simp: vcg_normalize_simps from_val_word_def)
+    subgoal by (auto simp: word1_to_lint_lfalse word1_to_lint_ltrue bool_to_lint_def)
+    subgoal by (auto simp: word1_to_lint_lfalse word1_to_lint_ltrue bool_to_lint_def)
+    unfolding vcg_assert_valid_ptr_def llvmt_ptr_neq_def llvmt_check_ptrcmp_def
+    apply (auto simp: lint_to_word_def)
+    done
+  done  
+  
+lemma ll_fcmp_simp[vcg_normalize_simps]:
+  "ll_fcmp_oeq a b = return (from_bool (\<not>is_nan a \<and> \<not>is_nan b \<and> eq_double a b))"
+  "ll_fcmp_ogt a b = return (from_bool (\<not>is_nan a \<and> \<not>is_nan b \<and> a > b))"
+  "ll_fcmp_oge a b = return (from_bool (\<not>is_nan a \<and> \<not>is_nan b \<and> a \<ge> b))"
+  "ll_fcmp_olt a b = return (from_bool (\<not>is_nan a \<and> \<not>is_nan b \<and> a < b))"
+  "ll_fcmp_ole a b = return (from_bool (\<not>is_nan a \<and> \<not>is_nan b \<and> a \<le> b))"
+  "ll_fcmp_one a b = return (from_bool (\<not>is_nan a \<and> \<not>is_nan b \<and> \<not>eq_double a b))"
+  "ll_fcmp_ord a b = return (from_bool (\<not>is_nan a \<and> \<not>is_nan b))"
+
+  "ll_fcmp_ueq a b = return (from_bool (is_nan a \<or> is_nan b \<or> eq_double a b))"
+  "ll_fcmp_ugt a b = return (from_bool (is_nan a \<or> is_nan b \<or> a > b))"
+  "ll_fcmp_uge a b = return (from_bool (is_nan a \<or> is_nan b \<or> a \<ge> b))"
+  "ll_fcmp_ult a b = return (from_bool (is_nan a \<or> is_nan b \<or> a < b))"
+  "ll_fcmp_ule a b = return (from_bool (is_nan a \<or> is_nan b \<or> a \<le> b))"
+  "ll_fcmp_une a b = return (from_bool (is_nan a \<or> is_nan b \<or> \<not>eq_double a b))"
+  "ll_fcmp_uno a b = return (from_bool (is_nan a \<or> is_nan b))"
+  
+  unfolding 
+    ll_fcmp_oeq_def
+    ll_fcmp_ogt_def
+    ll_fcmp_oge_def
+    ll_fcmp_olt_def
+    ll_fcmp_ole_def
+    ll_fcmp_one_def
+    ll_fcmp_ord_def
+  
+    ll_fcmp_ueq_def
+    ll_fcmp_ugt_def
+    ll_fcmp_uge_def
+    ll_fcmp_ult_def
+    ll_fcmp_ule_def
+    ll_fcmp_une_def
+    ll_fcmp_uno_def
+  
+  apply (auto simp: op_lift_fcmp_def)
+  done
+    
+    
   
 paragraph \<open>Bitwise\<close>
 
@@ -537,6 +793,7 @@ lemmas ll_sext_rule[vcg_rules] = cond_llvm_htripleI[OF ll_sext_simp, OF WBOUNDSD
 end
 end
 
+(* TODO: Proper handling of ptrcmp
 context
 begin
   interpretation llvm_prim_arith_setup .
@@ -548,6 +805,15 @@ begin
     "ll_ptrcmp_ne a null = doM { return (from_bool (a \<noteq> null))}" 
     "ll_ptrcmp_ne null b = doM { return (from_bool (b \<noteq> null))}" 
     by (vcg_normalize; simp add: eq_commute[of null]; fail)+
+  
+end
+*)
+
+context llvm_prim_mem_setup begin
+  lemma vcg_assert_valid_ptr_rule[vcg_rules]: "llvm_htriple (\<upharpoonleft>ll_pto x p) (vcg_assert_valid_ptr p) (\<lambda>_. \<upharpoonleft>ll_pto x p)"
+    unfolding vcg_assert_valid_ptr_def ll_pto_def
+    apply vcg
+    done
   
 end
 
@@ -570,10 +836,10 @@ lemma llc_if_simps[vcg_normalize_simps]:
   "llc_if 0 t e = e"
   by (auto simp: llc_if_def)
   
-lemma llc_if_simp[vcg_normalize_simps]: "wp (llc_if b t e) Q s \<longleftrightarrow> (to_bool b \<longrightarrow> wp t Q s) \<and> (\<not>to_bool b \<longrightarrow> wp e Q s)"
+lemma llc_if_simp[vcg_normalize_simps]: "wpa A (llc_if b t e) Q s \<longleftrightarrow> (to_bool b \<longrightarrow> wpa A t Q s) \<and> (\<not>to_bool b \<longrightarrow> wpa A e Q s)"
   unfolding llc_if_def by simp
 
-lemma if_simp[vcg_normalize_simps]: "wp (If b t e) Q s \<longleftrightarrow> (b \<longrightarrow> wp t Q s) \<and> (\<not>b \<longrightarrow> wp e Q s)"
+lemma if_simp[vcg_normalize_simps]: "wpa A (If b t e) Q s \<longleftrightarrow> (b \<longrightarrow> wpa A t Q s) \<and> (\<not>b \<longrightarrow> wpa A e Q s)"
   by simp
   
 end  
@@ -588,35 +854,37 @@ lemma llc_while_unfold: "llc_while b f \<sigma> = doM { ctd \<leftarrow> b \<sig
   done
 
 definition llc_while_annot :: "('\<sigma>::llvm_rep \<Rightarrow> 't \<Rightarrow> llvm_amemory \<Rightarrow> bool) \<Rightarrow> ('t\<times>'t) set \<Rightarrow> ('\<sigma>\<Rightarrow>1 word llM) \<Rightarrow> _"
-  where [llvm_inline]: "llc_while_annot I R \<equiv> llc_while"
+  where [llvm_pre_simp]: "llc_while_annot I R \<equiv> llc_while"
 
 declare [[vcg_const "llc_while_annot I R"]]
   
 lemma annotate_llc_while: "llc_while = llc_while_annot I R" by (simp add: llc_while_annot_def) 
   
 context llvm_prim_ctrl_setup begin
-  
+
 lemma basic_while_rule:
   assumes "wf R"
-  assumes "llSTATE (I \<sigma> t) s"
-  assumes STEP: "\<And>\<sigma> t s. \<lbrakk> llSTATE (I \<sigma> t) s \<rbrakk> \<Longrightarrow> wp (b \<sigma>) (\<lambda>ctd s\<^sub>1. 
-    (to_bool ctd \<longrightarrow> wp (f \<sigma>) (\<lambda>\<sigma>' s\<^sub>2. llSTATE (EXS t'. I \<sigma>' t' ** \<up>((t',t)\<in>R)) s\<^sub>2) s\<^sub>1)
+  assumes "STATE asf (I \<sigma> t) s"
+  assumes STEP: "\<And>\<sigma> t s. \<lbrakk> STATE asf (I \<sigma> t) s \<rbrakk> \<Longrightarrow> wpa A (b \<sigma>) (\<lambda>ctd s\<^sub>1. 
+    (to_bool ctd \<longrightarrow> wpa A (f \<sigma>) (\<lambda>\<sigma>' s\<^sub>2. STATE asf (EXS t'. I \<sigma>' t' ** \<up>((t',t)\<in>R)) s\<^sub>2) s\<^sub>1)
   \<and> (\<not>to_bool ctd \<longrightarrow> Q \<sigma> s\<^sub>1)
     ) s"
-  shows "wp (llc_while b f \<sigma>) Q s"
+  shows "wpa A (llc_while b f \<sigma>) Q s"
   using assms(1,2)
 proof (induction t arbitrary: \<sigma> s)
   case (less t)
   show ?case 
     apply (subst llc_while_unfold)
-    apply (simp add: vcg_normalize_simps)
-    apply (rule wp_monoI[OF STEP])
+    apply vcg
+    apply (rule wpa_monoI[OF STEP])
     apply fact
     subgoal for r s\<^sub>1
       apply (cases "to_bool r"; simp add: vcg_normalize_simps)
-      apply (erule wp_monoI; clarsimp; fri_extract)
+      apply vcg
+      apply (erule wpa_monoI; clarsimp; fri_extract)
       apply (rule less.IH; assumption)
       done
+    subgoal by simp  
     done
 qed          
 
@@ -627,25 +895,29 @@ text \<open>
   derivable via frame inference. In practice, the invariant will contain a \<open>\<up>(t=\<dots>)\<close> part.
 \<close>  
 lemma llc_while_annot_rule[vcg_decomp_erules]:  
-  assumes "llSTATE P s"
+  assumes "STATE asf P s"
   assumes "FRAME P (I \<sigma> t) F"
   assumes WF: "SOLVE_AUTO_DEFER (wf R)"
-  assumes STEP: "\<And>\<sigma> t s. \<lbrakk> llSTATE ((I \<sigma> t ** F)) s \<rbrakk> \<Longrightarrow> EXTRACT (wp (b \<sigma>) (\<lambda>ctd s\<^sub>1. 
-    (to_bool ctd \<longrightarrow> wp (f \<sigma>) (\<lambda>\<sigma>' s\<^sub>2. llPOST (EXS t'. I \<sigma>' t' ** \<up>((t',t)\<in>R) ** F) s\<^sub>2) s\<^sub>1)
+  assumes STEP: "\<And>\<sigma> t s. \<lbrakk> STATE asf ((I \<sigma> t ** F)) s \<rbrakk> \<Longrightarrow> EXTRACT (wpa A (b \<sigma>) (\<lambda>ctd s\<^sub>1. 
+    (to_bool ctd \<longrightarrow> wpa A (f \<sigma>) (\<lambda>\<sigma>' s\<^sub>2. POSTCOND asf (EXS t'. I \<sigma>' t' ** \<up>((t',t)\<in>R) ** F) s\<^sub>2) s\<^sub>1)
   \<and> (\<not>to_bool ctd \<longrightarrow> Q \<sigma> s\<^sub>1)
     ) s)"
-  shows "wp (llc_while_annot I R b f \<sigma>) Q s"
+  shows "wpa A (llc_while_annot I R b f \<sigma>) Q s"
 proof -
-  from \<open>llSTATE P s\<close> \<open>FRAME P (I \<sigma> t) F\<close> have PRE: "llSTATE (I \<sigma> t ** F) s"
-    by (simp add: FRAME_def STATE_def entails_def)
+  from \<open>STATE asf P s\<close> \<open>FRAME P (I \<sigma> t) F\<close> have PRE: "STATE asf (I \<sigma> t ** F) s"
+    using FRAME_def STATE_monoI by blast
 
+  note STEP'=STEP[unfolded vcg_tag_defs]  
+    
   show ?thesis  
     unfolding llc_while_annot_def
     apply (rule basic_while_rule[where I="\<lambda>\<sigma> t. I \<sigma> t ** F" and R=R])
     subgoal using WF unfolding vcg_tag_defs .
     apply (rule PRE)
-    using STEP unfolding vcg_tag_defs
-    apply (simp add: sep_algebra_simps)
+    apply (erule wpa_monoI[OF STEP'])
+    apply auto
+    apply (erule wpa_monoI;simp add: sep_algebra_simps)
+    apply (erule wpa_monoI;simp add: sep_algebra_simps)
     done
   
 qed  
@@ -654,7 +926,7 @@ end
 
 subsection \<open>LLVM Code Generator Setup\<close>
 
-lemma elim_higher_order_return[llvm_inline]: "doM { x::_\<Rightarrow>_ \<leftarrow> return f; m x } = m f" by simp
+lemma elim_higher_order_return[llvm_pre_simp]: "doM { x::_\<Rightarrow>_ \<leftarrow> return f; m x } = m f" by simp
 
 
 text \<open>Useful shortcuts\<close>
@@ -669,7 +941,7 @@ subsubsection \<open>Direct Arithmetic\<close>
 context begin
   interpretation llvm_prim_arith_setup .
 
-  lemma arith_inlines[llvm_inline, vcg_monadify_xforms]: 
+  lemma arith_inlines[llvm_pre_simp, vcg_monadify_xforms]: 
     "return (a+b) = ll_add a b" 
     "return (a-b) = ll_sub a b" 
     "return (a*b) = ll_mul a b" 
@@ -677,9 +949,49 @@ context begin
     "return (a AND b) = ll_and a b" 
     "return (a OR b) = ll_or a b" 
     "return (a XOR b) = ll_xor a b" 
+    by vcg                                           
+
+  lemma farith_inlines[llvm_pre_simp, vcg_monadify_xforms]: 
+    "return (a+b) = ll_fadd a b" 
+    "return (a-b) = ll_fsub a b" 
+    "return (a*b) = ll_fmul a b" 
+    "return (a/b) = ll_fdiv a b" 
+    "return (drem a b) = ll_frem a b" 
+    "return (dsqrt a) = ll_sqrt_f64 a" 
     by vcg
+
+  term sqrt  
     
 end  
+
+text \<open>Activates AVX512f for Isabelle/LLVM \<close>
+locale llvm_avx512f_setup begin
+
+declare [[llc_compile_avx512f]]
+
+context begin
+  interpretation llvm_prim_arith_setup .
+
+  fun avx512_rm where
+    "avx512_rm To_nearest = AVX512_FROUND_TO_NEAREST_NO_EXC"
+  | "avx512_rm float_To_zero = AVX512_FROUND_TO_ZERO_NO_EXC"
+  | "avx512_rm To_pinfinity = AVX512_FROUND_TO_POS_INF_NO_EXC"
+  | "avx512_rm To_ninfinity = AVX512_FROUND_TO_NEG_INF_NO_EXC"
+  
+  lemmas [llvm_pre_simp(*, vcg_monadify_xforms*)] = avx512_rm.simps
+  
+  lemma avx512_arith_inlines[llvm_pre_simp(*, vcg_monadify_xforms*)]:
+    "return (dradd rm a b) = ll_x86_avx512_add_sd_round (avx512_rm rm) a b"
+    "return (drsub rm a b) = ll_x86_avx512_sub_sd_round (avx512_rm rm) a b"
+    "return (drmul rm a b) = ll_x86_avx512_mul_sd_round (avx512_rm rm) a b"
+    "return (drdiv rm a b) = ll_x86_avx512_div_sd_round (avx512_rm rm) a b"
+    "return (drsqrt rm a) = ll_x86_avx512_sqrt_sd (avx512_rm rm) a"
+    "return (drfmadd rm a b c) = ll_x86_avx512_vfmadd_f64 (avx512_rm rm) a b c"
+    by (cases rm; vcg)+
+  
+end
+end
+
 
 subsubsection \<open>Direct Comparison\<close>
 abbreviation (input) ll_cmp' :: "bool \<Rightarrow> 1 word" where "ll_cmp' \<equiv> from_bool"
@@ -693,19 +1005,37 @@ definition [vcg_monadify_xforms,llvm_inline]: "ll_cmp b \<equiv> return (ll_cmp'
 
 definition "ll_cmp'_eq a b \<equiv> ll_cmp' (a=b)"
 definition "ll_cmp'_ne a b \<equiv> ll_cmp' (a\<noteq>b)"
-definition "ll_cmp'_ule a b \<equiv> ll_cmp' (a\<le>b)"
-definition "ll_cmp'_ult a b \<equiv> ll_cmp' (a<b)"
-definition "ll_cmp'_sle a b \<equiv> ll_cmp' (a <=s b)"
-definition "ll_cmp'_slt a b \<equiv> ll_cmp' (a <s b)"
+definition "ll_cmp'_ule a b \<equiv> ll_cmp' (a\<le>b)" for a b :: "_ word"
+definition "ll_cmp'_ult a b \<equiv> ll_cmp' (a<b)" for a b :: "_ word"
+definition "ll_cmp'_sle a b \<equiv> ll_cmp' (a <=s b)" for a b :: "_ word"
+definition "ll_cmp'_slt a b \<equiv> ll_cmp' (a <s b)" for a b :: "_ word"
+
+definition "ll_cmp'_fle a b \<equiv> ll_cmp' (a\<le>b)" for a b :: "double"
+definition "ll_cmp'_flt a b \<equiv> ll_cmp' (a<b)" for a b :: "double"
+
                                           
 lemmas ll_cmp'_defs = ll_cmp'_eq_def ll_cmp'_ne_def ll_cmp'_ule_def ll_cmp'_ult_def ll_cmp'_sle_def ll_cmp'_slt_def
+                      ll_cmp'_fle_def ll_cmp'_flt_def
 
-lemmas [llvm_inline, vcg_monadify_xforms] = ll_cmp'_defs[symmetric]
+lemmas [llvm_pre_simp, vcg_monadify_xforms] = ll_cmp'_defs[symmetric]
 
+(* TODO: Move *)
+lemma dcompare_has_ord_semantics:
+  "a<b \<Longrightarrow> \<not>is_nan a \<and> \<not>is_nan b"
+  "a\<le>b \<Longrightarrow> \<not>is_nan a \<and> \<not>is_nan b"
+  apply (all transfer')
+  unfolding less_float_def less_eq_float_def flt_def fle_def fcompare_def 
+  by auto
+
+lemma dcompare_ord_conv:
+  "\<not> LLVM_Double.is_nan a \<and> \<not> LLVM_Double.is_nan b \<and> a < b \<longleftrightarrow> a < b"  
+  "\<not> LLVM_Double.is_nan a \<and> \<not> LLVM_Double.is_nan b \<and> a \<le> b \<longleftrightarrow> a \<le> b"  
+  using dcompare_has_ord_semantics by blast+
+  
 context begin
   interpretation llvm_prim_arith_setup .
 
-  lemma ll_cmp'_xforms[vcg_monadify_xforms,llvm_inline]:
+  lemma ll_cmp'_xforms[vcg_monadify_xforms,llvm_pre_simp]:
     "return (ll_cmp'_eq  a b) = ll_icmp_eq a b" 
     "return (ll_cmp'_ne  a b) = ll_icmp_ne a b" 
     "return (ll_cmp'_ult a b) = ll_icmp_ult a b" 
@@ -715,6 +1045,14 @@ context begin
     unfolding ll_cmp_def ll_cmp'_defs
     by (all vcg_normalize)
 
+
+  lemma ll_cmp'_double_xforms[vcg_monadify_xforms,llvm_pre_simp]:
+    "return (ll_cmp'_flt  a b) = ll_fcmp_olt a b" 
+    "return (ll_cmp'_fle  a b) = ll_fcmp_ole a b" 
+    unfolding ll_cmp'_defs
+    apply (all vcg_normalize)
+    apply (simp_all add: dcompare_ord_conv)
+    done
     
   text \<open>Comparison with null pointers can be transformed automatically.
     Any other pointer comparisons carry additional precondition, and cannot
@@ -722,7 +1060,7 @@ context begin
   definition "ll_eq_null a \<equiv> ll_cmp'_eq a null"  
   definition "ll_ne_null a \<equiv> ll_cmp'_ne a null"  
     
-  lemma ll_ptrcmp'_xforms[vcg_monadify_xforms,llvm_inline]:
+  lemma ll_ptrcmp'_xforms[vcg_monadify_xforms,llvm_pre_simp]:
     "return (ll_eq_null a) = ll_ptrcmp_eq a null" 
     "return (ll_ne_null a) = ll_ptrcmp_ne a null" 
     "ll_cmp'_eq a null = ll_eq_null a" 
@@ -731,17 +1069,18 @@ context begin
     "ll_cmp'_ne null b = ll_ne_null b" 
     unfolding ll_cmp_def ll_cmp'_defs ll_eq_null_def ll_ne_null_def
     by (all \<open>vcg_normalize; simp add: eq_commute[of null]\<close>)
+  
     
 end    
 
 subsubsection \<open>Boolean Operations\<close>
-lemma llvm_if_inline[llvm_inline,vcg_monadify_xforms]: "If b t e = llc_if (from_bool b) t e"  
+lemma llvm_if_inline[llvm_pre_simp,vcg_monadify_xforms]: "If b t e = llc_if (from_bool b) t e"  
   by (auto simp: llc_if_def)
   
-lemma from_bool_to_bool1[llvm_inline]: "from_bool (to_bool (x::1 word)) = x"
+lemma from_bool_to_bool1[llvm_pre_simp]: "from_bool (to_bool (x::1 word)) = x"
   by (metis from_bool_1 to_bool_eq word1_cases)
   
-lemma (in llvm_prim_arith_setup) llvm_from_bool_inline[llvm_inline]: 
+lemma (in llvm_prim_arith_setup) llvm_from_bool_inline[llvm_pre_simp]: 
   "from_bool (a\<and>b) = (from_bool a AND from_bool b)"  
   "from_bool (a\<or>b) = (from_bool a OR from_bool b)"  
   "(from_bool (\<not>a)::1 word) = (1 - (from_bool a :: 1 word))"  
@@ -752,39 +1091,39 @@ lemma (in llvm_prim_arith_setup) llvm_from_bool_inline[llvm_inline]:
 
 subsubsection \<open>Products\<close>
   
-lemma inline_prod_case[llvm_inline]: "(\<lambda>(a,b). f a b) = (\<lambda>x. doM { a\<leftarrow>prod_extract_fst x; b \<leftarrow> prod_extract_snd x; f a b })"  
+lemma inline_prod_case[llvm_pre_simp]: "(\<lambda>(a,b). f a b) = (\<lambda>x. doM { a\<leftarrow>prod_extract_fst x; b \<leftarrow> prod_extract_snd x; f a b })"  
   by (auto simp: prod_ops_simp)
   
-lemma inline_return_prod_case[llvm_inline]: 
+lemma inline_return_prod_case[llvm_pre_simp]: 
   "return (case x of (a,b) \<Rightarrow> f a b) = (case x of (a,b) \<Rightarrow> return (f a b))" by (rule prod.case_distrib)
   
   
-lemma inline_return_prod[llvm_inline]: "return (a,b) = doM { x \<leftarrow> prod_insert_fst init a; x \<leftarrow> prod_insert_snd x b; return x }"  
+lemma inline_return_prod[llvm_pre_simp]: "return (a,b) = doM { x \<leftarrow> prod_insert_fst init a; x \<leftarrow> prod_insert_snd x b; return x }"  
   by (auto simp: prod_ops_simp)
   
 lemma ll_extract_pair_pair:
   "ll_extract_value (a,b) 0 = return a"
   "ll_extract_value (a,b) 1 = return b" 
-  unfolding ll_extract_value_def checked_from_val_def
+  unfolding ll_extract_value_def llvm_extract_value_def checked_from_val_def
   by auto
   
 txt \<open>This lemma removes insert-extracts artifacts. 
   This makes code lemmas smaller, and can speed up preprocessing significantly.\<close>
-lemma ins_extr_prod_simp[llvm_inline]: "doM {
+lemma ins_extr_prod_simp[llvm_pre_simp]: "doM {
     (x::'a::llvm_rep \<times> 'b::llvm_rep) \<leftarrow> ll_insert_value init a 0;
     x \<leftarrow> ll_insert_value x b Numeral1;
     a::'a \<leftarrow> ll_extract_value x 0;
     b::'b \<leftarrow> ll_extract_value x Numeral1;
     f a b
   } = f a b"
-  apply (simp add: ll_insert_value_def ll_extract_value_def checked_from_val_def)
+  apply (simp add: ll_insert_value_def ll_extract_value_def llvm_insert_value_def llvm_extract_value_def checked_from_val_def)
   done
   
   
 subsubsection \<open>Marking of constants\<close>    
 definition "ll_const x \<equiv> return x"
 
-lemma ll_const_inline[llvm_inline]: "bind (ll_const x) f = f x" by (auto simp: ll_const_def)
+lemma ll_const_inline[llvm_pre_simp]: "bind (ll_const x) f = f x" by (auto simp: ll_const_def)
   
 declare [[vcg_const "numeral a"]]
 declare [[vcg_const "ll_const c"]]
@@ -920,9 +1259,9 @@ context begin
 
 interpretation llvm_prim_arith_setup .
 
-abbreviation ll_not1 :: "1 word \<Rightarrow> 1 word llM" where "ll_not1 x \<equiv> ll_add x 1"  
+abbreviation (input) ll_not1 :: "1 word \<Rightarrow> 1 word llM" where "ll_not1 x \<equiv> ll_add x 1"  
     
-lemma ll_not1_inline[llvm_inline]: "return (~~x) \<equiv> ll_not1 x"
+lemma ll_not1_inline[llvm_pre_simp]: "return (~~x) \<equiv> ll_not1 x"
   by (auto simp: word1_NOT_eq arith_inlines)
   
 lemma bool_bin_ops:
@@ -951,48 +1290,56 @@ end
 
 subsection \<open>Control Flow\<close>
 
-definition "ABSTRACT c ty P s \<equiv> \<exists>F a. llSTATE (\<upharpoonleft>ty a c ** F) s \<and> P a"  
+definition "ABSTRACT asf c ty P s \<equiv> \<exists>F a. STATE asf (\<upharpoonleft>ty a c ** F) s \<and> P a"  
 
-lemma ABSTRACT_pure: "is_pure A \<Longrightarrow> ABSTRACT c A P h \<longleftrightarrow> (\<exists>a. \<flat>\<^sub>pA a c \<and> P a)"
+(*
+lemma ABSTRACT_pure: "is_pure PP \<Longrightarrow> ABSTRACT A asf c PP P h \<longleftrightarrow> (\<exists>a. \<flat>\<^sub>pPP a c \<and> P a)"
   unfolding ABSTRACT_def  
   apply (auto simp: STATE_extract)
   apply (auto simp: STATE_def dr_assn_pure_asm_prefix_def sep_conj_def pure_part_def)
+  
+  oops
   by (metis (full_types) extract_pure_assn pred_lift_def sep_add_zero_sym sep_disj_commute sep_disj_zero sep_empty_app)
+*)  
 
 lemma ABSTRACT_erule[vcg_decomp_erules]:
-  assumes "llSTATE P s"
+  assumes "STATE asf P s"
   assumes "FRAME P (\<upharpoonleft>ty a c) F"
-  assumes "llSTATE (\<upharpoonleft>ty a c ** F) s \<Longrightarrow> EXTRACT (Q a)"
-  shows "ABSTRACT c ty Q s"
+  assumes "STATE asf (\<upharpoonleft>ty a c ** F) s \<Longrightarrow> EXTRACT (Q a)"
+  shows "ABSTRACT asf c ty Q s"
   using assms
-  by (auto simp: FRAME_def ABSTRACT_def STATE_def entails_def vcg_tag_defs)
+  by (force simp: FRAME_def ABSTRACT_def STATE_def entails_def vcg_tag_defs)
+  
 
 
 context begin
   interpretation llvm_prim_arith_setup + llvm_prim_ctrl_setup .
 
   lemma dr_normalize_llc_if[vcg_normalize_simps]: 
-    "\<flat>\<^sub>pbool.assn b bi \<Longrightarrow> wp (llc_if bi t e) Q s \<longleftrightarrow> ((b \<longrightarrow> wp t Q s) \<and> (\<not>b\<longrightarrow>wp e Q s))"
+    "\<flat>\<^sub>pbool.assn b bi \<Longrightarrow> wpa A (llc_if bi t e) Q s \<longleftrightarrow> ((b \<longrightarrow> wpa A t Q s) \<and> (\<not>b\<longrightarrow>wpa A e Q s))"
     unfolding bool.assn_def by vcg_normalize
 
 
   lemma llc_while_annot_dr_rule[vcg_decomp_erules]:  
-    assumes "llSTATE P s"
+    assumes "STATE asf P s"
     assumes "FRAME P (I \<sigma> t) F"
     assumes WF: "SOLVE_AUTO_DEFER (wf R)"
-    assumes STEP: "\<And>\<sigma> t s. \<lbrakk> llSTATE ((I \<sigma> t ** F)) s \<rbrakk> \<Longrightarrow> EXTRACT (wp (b \<sigma>) (\<lambda>ctdi s\<^sub>1. 
-        ABSTRACT ctdi bool.assn (\<lambda>ctd. 
-            (ctd \<longrightarrow> wp (f \<sigma>) (\<lambda>\<sigma>' s\<^sub>2. llPOST (EXS t'. I \<sigma>' t' ** \<up>\<^sub>d((t',t)\<in>R) ** F) s\<^sub>2) s\<^sub>1)
+    assumes STEP: "\<And>\<sigma> t s. \<lbrakk> STATE asf ((I \<sigma> t ** F)) s \<rbrakk> \<Longrightarrow> EXTRACT (wpa A (b \<sigma>) (\<lambda>ctdi s\<^sub>1. 
+        ABSTRACT asf ctdi bool.assn (\<lambda>ctd. 
+            (ctd \<longrightarrow> wpa A (f \<sigma>) (\<lambda>\<sigma>' s\<^sub>2. POSTCOND asf (EXS t'. I \<sigma>' t' ** \<up>\<^sub>d((t',t)\<in>R) ** F) s\<^sub>2) s\<^sub>1)
           \<and> (\<not>ctd \<longrightarrow> Q \<sigma> s\<^sub>1)
         ) s\<^sub>1
       ) s)"
-    shows "wp (llc_while_annot I R b f \<sigma>) Q s"
+    shows "wpa A (llc_while_annot I R b f \<sigma>) Q s"
     using assms(1) apply -
     apply vcg_rl
     apply fact
     apply fact
     apply (drule STEP)
-    apply (simp add: fri_extract_simps ABSTRACT_pure vcg_tag_defs bool.assn_def)    
+    apply (simp add: fri_extract_simps vcg_tag_defs bool.assn_def)   
+    apply (simp add: ABSTRACT_def)
+    apply (erule wpa_monoI)
+    apply auto
     done
     
 end

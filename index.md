@@ -1,6 +1,9 @@
-# ![Isabelle-LLVM Logo](logo_200.png) Isabelle-LLVM
+<!--
+  IMPORTANT: If you landed here from a downloaded archive file, go to html/index.html to view this page in a browsable form!
+-->
+# ![Isabelle-LLVM Parallel Logo](logo_200.png) Isabelle-LLVM Parallel
 
-Isabelle-LLVM is a verification framework for Isabelle/HOL that targets LLVM as backend.
+Isabelle-LLVM Parallel is a verification framework for Isabelle/HOL that targets LLVM as backend.
 The main features are:
 
   * Shallowly embedded semantics of fragment of LLVM
@@ -8,25 +11,48 @@ The main features are:
   * Generation of header files for interfacing the code from C/C++
   * Separation logic based VCG
   * Support for stepwise refinement based verification
+  * Support for parallel programs
 
 ## News
-  * Updated to work with new Isabelle 2021 version
+  * October 2021: Added support for parallel programs
+  * July 2021: [ISASAT](https://m-fleury.github.io/isasat/isasat.html), a fully verified SAT solver that uses Isabelle-LLVM, has won the [2021 EDA](https://www.eda-ai.org/) Fixed CNF Encoding Race.
   * June 2021: released version 2.0. New features:
     * support of arbitrary structures, and pointers to structure itself (required for, e.g., linked lists)
     * faster export_llvm for big code
+  * Updated to work with new Isabelle 2021 version
 
 
 
 ## Getting Started
-  You can [browse the theories](Isabelle_LLVM/) or [download](dist.tgz) the files.
+  You can [browse the theories](Isabelle_LLVM/) or [download](dist.tgz) the files. (The download link won't work if you are browsing this from inside the downloaded archive!)
 
   Warning: the .thy files in the download are best viewed with the [Isabelle/HOL](https://isabelle.in.tum.de) IDE.
 
-### Git Repository
-  The project is hosted on github [https://github.com/lammich/isabelle_llvm](https://github.com/lammich/isabelle_llvm)
+<!--### Git Repository
+  The project is hosted on github [https://github.com/lammich/isabelle_llvm](https://github.com/lammich/isabelle_llvm)-->
 
 ### Starting Points for Browsing
   Here are some default starting points for browsing the theories
+
+#### Parallel Paper
+  Some starting points, structured according to the parallel paper:
+
+  [Memory Model](Isabelle_LLVM/Simple_Memory.html)
+
+  [Monad with Interference](Isabelle_LLVM/Monad.html) A bit more general than described in the paper: the actual monad is parameterized over the type of memory accesses
+
+  [Code Generator](Isabelle_LLVM/LLVM_Codegen.html) Including the [template for translating llc_par](Isabelle_LLVM/files/par_wrapper.tmpl.ml.html)
+
+  [Separation Logic and VCG](Isabelle_LLVM/LLVM_VCG_Main.html) A bit more general than described in paper, parameterized over memory model.
+    The general rules are proved in [Sep_Generic_Wp.thy](Isabelle_LLVM/Sep_Generic_Wp.html), e.g. lemma ht_par for the parallel rule.
+    The instantiated parallel rule is ht_llc_par in [Sepref_Parallel.thy](Isabelle_LLVM/Sepref_Parallel.html).
+
+  [Sepref Tool](Isabelle_LLVM/Sepref.html) Including the parallel setup in [Sepref_Parallel.thy](Isabelle_LLVM/Sepref_Parallel.html).
+
+  [Sorting Algorithms](Isabelle_LLVM/Sorting_Export_Code.html) Contains the code export to LLVM, and the final correctness theorem.
+  Our parallel quicksort algorithm is in [Sorting_Parsort.thy](Isabelle_LLVM/Sorting_Parsort.html)
+  and the sampling partitioner is in [Sorting_Sample_Partition.thy](Isabelle_LLVM/Sorting_Sample_Partition.html).
+
 
 #### Verified Algorithms
   [Introsort](Isabelle_LLVM/Sorting_Introsort.html)
@@ -42,7 +68,7 @@ The main features are:
 
 
 ## Prerequisites
-  * To compile the LLVM code: Working installation of [LLVM](http://releases.llvm.org/) version >= 6.0.0.
+  * To compile the LLVM code: Working installation of [LLVM](http://releases.llvm.org/) version >= 10.0.0.
   * To compile the functional code: An [MLton](http://mlton.org/) compiler version >= 20100608.
   * To re-check the proofs: Working installation of [Isabelle/HOL](https://isabelle.in.tum.de) 
     with the [Archive of Formal Proofs](https://www.isa-afp.org) installed 
@@ -59,7 +85,7 @@ The main features are:
     cd sorting
     make run
 
-  This will run the binary search, KMP, and sorting benchmarks.
+  This will run the binary search, KMP, and parallel sorting benchmarks.
   Warning: We have only tested this on a Linux x86_64 platform so far. 
   We do not (yet) know how LLVM will digest our code on other platforms.
     
@@ -84,6 +110,8 @@ The main features are:
 
 
 ## Talks and Publications
+  [Parallel Paper (this submission)](paper_llvm_par.pdf)
+
   [IJCAR'2020 Paper](paper_IJCAR2020.pdf) [Slides](slides_IJCAR2020.pdf)
 
   [ITP'2019 Paper](paper_ITP2019.pdf) [Slides](slides_ITP2019.pdf)
@@ -99,7 +127,13 @@ The main features are:
 
 
 ## Old Versions
+  The download links won't work if you are browsing this from inside a downloaded archive!
+
   [Isabelle-LLVM 1.0 for Isabelle-2020](dist-2020.tgz)
 
   [Isabelle-LLVM 1.1 for Isabelle-2021](dist-v1.1.tgz)
+
+  [Isabelle-LLVM 2.0 for Isabelle-2021](dist-v2.0.tgz)
+
+
 

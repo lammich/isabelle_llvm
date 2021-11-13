@@ -96,7 +96,7 @@ subsection \<open>Constant Folding\<close>
 (*
    TODO: No idea how complete these are 
 *)
-lemmas llvm_num_const_simps[llvm_inline] 
+lemmas llvm_num_const_simps[llvm_pre_simp] 
   = Num.arith_simps power_numeral pred_numeral_simps power_0
     arith_special numeral_One[symmetric]
 
@@ -120,7 +120,7 @@ lemma len_neq_one_conv:
   
 lemma word_of_int_div2: "0\<le>w \<Longrightarrow> w<2^LENGTH('a) \<Longrightarrow> word_of_int w div (2::'a::len word) = word_of_int (w div 2)"  
   apply (simp add: word_uint_eq_iff uint_word_of_int uint_div bintrunc_mod2p) 
-  by (smt int_mod_eq' mod_self zdiv_eq_0_iff)
+  by (smt (z3) mod_pos_pos_trivial mod_self nonneg1_imp_zdiv_pos_iff nonneg_mod_div)
 
 lemma word_of_int_shr1: "0\<le>w \<Longrightarrow> w<2^LENGTH('a::len) \<Longrightarrow> (word_of_int w :: 'a word) >> Suc 0 = word_of_int (w div 2)"
   by (auto simp: shiftr1_is_div_2[simplified] word_of_int_div2)

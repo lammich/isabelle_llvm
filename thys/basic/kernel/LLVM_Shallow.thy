@@ -1,12 +1,14 @@
 section \<open>Shallow Embedding of LLVM Semantics\<close>
 theory LLVM_Shallow
 imports Main  
-  "LLVM_Memory"
+  "Simple_Memory"
 begin
+
+
   text \<open>We define a type synonym for the LLVM monad\<close>
-  type_synonym 'a llM = "('a,unit,llvm_memory,err) M"
+  type_synonym 'a llM = "('a,unit,llvm_memory,err,llvm_macc) M"
   translations
-    (type) "'a llM" \<leftharpoondown> (type) "('a, unit, llvm_memory, err) M"
+    (type) "'a llM" \<leftharpoondown> (type) "('a, unit, llvm_memory, err,llvm_macc) M"
   
     
 
@@ -31,11 +33,11 @@ begin
   class llvm_rep = llvm_repv +
     fixes to_val :: "'a \<Rightarrow> llvm_val"
       and from_val :: "llvm_val \<Rightarrow> 'a"
-      and struct_of :: "'a itself \<Rightarrow> llvm_vstruct"
+      and struct_of :: "'a itself \<Rightarrow> llvm_struct"
       and init :: 'a
     assumes from_to_id[simp]: "from_val o to_val = id"
-    assumes to_from_id[simp]: "llvm_vstruct v = struct_of TYPE('a) \<Longrightarrow> to_val (from_val v) = v"
-    assumes struct_of_matches[simp]: "llvm_vstruct (to_val x) = (struct_of TYPE('a))"
+    assumes to_from_id[simp]: "llvm_struct_of_val v = struct_of TYPE('a) \<Longrightarrow> to_val (from_val v) = v"
+    assumes struct_of_matches[simp]: "llvm_struct_of_val (to_val x) = (struct_of TYPE('a))"
     assumes init_zero: "to_val init = llvm_zero_initializer (struct_of TYPE('a))"
     
   begin
@@ -53,8 +55,9 @@ begin
     representable datatypes, this enables easy \<open>llvm_rep\<close> instantiations for recursive structures
     via pointers, such as linked list cells. 
   \<close>
+  
   datatype 'a ptr = PTR (the_raw_ptr: llvm_ptr)
-  definition null :: "'a ptr" where "null = PTR llvm_null"
+  definition null :: "'a ptr" where "null = PTR PTR_NULL"
   
 
   text \<open>We instantiate the type classes for the supported types, 
@@ -63,9 +66,9 @@ begin
   instance unit :: llvm_repv by standard
   
   instantiation word :: (len) llvm_rep begin
-    definition "to_val w \<equiv> llvm_int (lconst (len_of TYPE('a)) (uint w))"
-    definition "from_val v \<equiv> word_of_int (lint_to_uint (llvm_the_int v))"
-    definition [simp]: "struct_of_word (_::'a word itself) \<equiv> llvm_s_int (len_of TYPE('a))"
+    definition "to_val w \<equiv> LL_INT (lconst (len_of TYPE('a)) (uint w))"
+    definition "from_val v \<equiv> word_of_int (lint_to_uint (llvm_val.the_int v))"
+    definition [simp]: "struct_of_word (_::'a word itself) \<equiv> VS_INT (len_of TYPE('a))"
     definition [simp]: "init_word \<equiv> 0::'a word"
     
     
@@ -75,61 +78,64 @@ begin
     instance
       apply standard
       apply (rule ext)
-      apply (auto simp: from_val_word_def to_val_word_def)
-      apply (auto simp: llvm_s_int_def llvm_zero_initializer_def llvm_int_def)
-      subgoal for v apply (cases v) 
-        apply (auto simp: llvm_int_def llvm_the_int_def llvm_s_ptr_def llvm_struct_def llvm_ptr_def llvm_vstruct_def)
-        using int_inv_aux apply (simp add: llvm_vstruct_def) 
-      done
+      apply (simp_all add: from_val_word_def to_val_word_def)
+      subgoal for v apply (cases v) using int_inv_aux by auto
       done
       
   end
-  
+
+  instantiation double :: llvm_rep begin
+    definition "to_val w \<equiv> LL_DOUBLE w"
+    definition "from_val v \<equiv> llvm_val.the_double v"
+    definition [simp]: "struct_of_double (_::double itself) \<equiv> VS_DOUBLE"
+    definition [simp]: "init_double \<equiv> 0::double"
+
+    instance
+      apply standard
+      apply (simp_all add: fun_eq_iff from_val_double_def to_val_double_def)
+      subgoal for v by (cases v; simp)
+      done
+      
+  end
+    
   instantiation ptr :: (type) llvm_rep begin
-    definition "to_val_ptr \<equiv> llvm_ptr o ptr.the_raw_ptr"
-    definition "from_val_ptr v \<equiv> PTR (llvm_the_ptr v)"
-    definition [simp]: "struct_of_ptr (_::'a ptr itself) \<equiv> llvm_s_ptr"
+    definition "to_val_ptr \<equiv> LL_PTR o ptr.the_raw_ptr"
+    definition "from_val_ptr v \<equiv> PTR (llvm_val.the_ptr v)"
+    definition [simp]: "struct_of_ptr (_::'a ptr itself) \<equiv> VS_PTR"
     definition [simp]: "init_ptr::'a ptr \<equiv> null"
   
     instance
       apply standard
       apply (rule ext)
-      apply (auto simp: from_val_ptr_def to_val_ptr_def)
-      apply (auto simp: llvm_zero_initializer_def llvm_ptr_def llvm_s_ptr_def null_def llvm_null_def)
-      subgoal for v apply (cases v)
-        by (auto simp: llvm_s_int_def llvm_s_struct_def llvm_ptr_def llvm_the_ptr_def)
+      apply (simp_all add: from_val_ptr_def to_val_ptr_def null_def)
+      subgoal for v apply (cases v) by auto
       done
       
   end
   
   instantiation prod :: (llvm_rep, llvm_rep) llvm_rep begin
-    definition "to_val_prod \<equiv> \<lambda>(a,b). llvm_struct [to_val a, to_val b]"
-    definition "from_val_prod p \<equiv> case llvm_the_struct p of [a,b] \<Rightarrow> (from_val a, from_val b)"
-    definition [simp]: "struct_of_prod (_::('a\<times>'b) itself) \<equiv> llvm_s_struct [struct_of TYPE('a), struct_of TYPE('b)]"
+    definition "to_val_prod \<equiv> \<lambda>(a,b). LL_STRUCT [to_val a, to_val b]"
+    definition "from_val_prod p \<equiv> case llvm_val.the_fields p of [a,b] \<Rightarrow> (from_val a, from_val b)"
+    definition [simp]: "struct_of_prod (_::('a\<times>'b) itself) \<equiv> VS_STRUCT [struct_of TYPE('a), struct_of TYPE('b)]"
     definition [simp]: "init_prod ::'a\<times>'b \<equiv> (init,init)"
     
     instance
       apply standard
       apply (rule ext)
-      apply (auto simp: from_val_prod_def to_val_prod_def)
-      apply (auto simp: llvm_struct_def llvm_s_struct_def init_zero llvm_zero_initializer_def)
-      subgoal for v
-        apply (cases v)
-        apply (auto simp: llvm_s_int_def llvm_s_ptr_def llvm_struct_def llvm_the_struct_def 
-          llvm_val.the_val_def llvm_vstruct_def split: prod.splits llvm_val.splits val.split)
-        done
+      apply (auto simp: from_val_prod_def to_val_prod_def init_zero)
+      subgoal for v by (cases v) auto
       done
       
   end
 
-  lemma to_val_prod_conv[simp]: "to_val (a,b) = llvm_struct [to_val a, to_val b]"
+  lemma to_val_prod_conv[simp]: "to_val (a,b) = LL_STRUCT [to_val a, to_val b]"
     unfolding to_val_prod_def by auto
   
   
   text \<open>Checked conversion from value\<close>  
   definition checked_from_val :: "llvm_val \<Rightarrow> 'a::llvm_rep llM" where
     "checked_from_val v \<equiv> doM {
-      fcheck (STATIC_ERROR ''Type mismatch'') (llvm_vstruct v = struct_of TYPE('a));
+      fcheck (STATIC_ERROR ''Type mismatch'') (llvm_struct_of_val v = struct_of TYPE('a));
       return (from_val v)
     }" 
 
@@ -140,7 +146,7 @@ begin
     LLVM Language Reference Manual \<^url>\<open>https://llvm.org/docs/LangRef.html\<close>.\<close>
     
   
-  subsubsection \<open>Binary Operations\<close>  
+  subsubsection \<open>Binary Integer Operations\<close>  
   text \<open>We define a generic lifter for binary arithmetic operations.
     It is parameterized by an error condition.
   \<close> (* TODO: Use precondition instead of negated precondition! *)
@@ -167,7 +173,34 @@ begin
   definition "ll_urem \<equiv> op_lift_arith2 udivrem_is_undef (mod)"
   definition "ll_sdiv \<equiv> op_lift_arith2 sdivrem_is_undef (sdiv)"
   definition "ll_srem \<equiv> op_lift_arith2 sdivrem_is_undef (smod)"
+
+  subsubsection \<open>Binary Floating Point Operations\<close>  
+  text \<open>We define a generic lifter for binary arithmetic operations.
+    It is parameterized by an error condition.
+  \<close> (* TODO: Use precondition instead of negated precondition! *)
   
+  definition op_lift_farith1 :: "_ \<Rightarrow> double \<Rightarrow> double llM"
+    where "op_lift_farith1 f a \<equiv> doM {
+    return (f a)
+  }"
+  
+  definition op_lift_farith2 :: "_ \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double llM"
+    where "op_lift_farith2 f a b \<equiv> doM {
+    return (f a b)
+  }"
+
+  definition op_lift_farith3 :: "_ \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double llM"
+    where "op_lift_farith3 f a b c \<equiv> doM {
+    return (f a b c)
+  }"
+  
+          
+  definition "ll_fadd \<equiv> op_lift_farith2 (+)"
+  definition "ll_fsub \<equiv> op_lift_farith2 (-)"
+  definition "ll_fmul \<equiv> op_lift_farith2 (*)"
+  definition "ll_fdiv \<equiv> op_lift_farith2 (/)"
+  definition "ll_frem \<equiv> op_lift_farith2 (drem)"     
+  definition "ll_sqrt_f64 \<equiv> op_lift_farith1 (dsqrt)"
   
   subsubsection \<open>Compare Operations\<close>
   definition op_lift_cmp :: "_ \<Rightarrow> 'a::len word \<Rightarrow> 'a word \<Rightarrow> 1 word llM"
@@ -184,10 +217,123 @@ begin
   definition "ll_icmp_ule \<equiv> op_lift_cmp (\<le>)"
   definition "ll_icmp_ult \<equiv> op_lift_cmp (<)"
 
+  subsubsection \<open>Floating Point Compare Operations\<close>
+  definition op_lift_fcmp :: "bool \<Rightarrow> _ \<Rightarrow> double \<Rightarrow> double \<Rightarrow> 1 word llM"
+    where "op_lift_fcmp ordered f a b \<equiv> doM {
+      if ordered then
+        return (lint_to_word (bool_to_lint (\<not>is_nan a \<and> \<not>is_nan b \<and> f a b)))
+      else
+        return (lint_to_word (bool_to_lint (is_nan a \<or> is_nan b \<or> f a b)))
+    
+  }"
+    
+  (* from the LLVM docs: (we skip true and false here, as they are not required for our purpose )
+    oeq: yields true if both operands are not a QNAN and op1 is equal to op2.
+    ogt: yields true if both operands are not a QNAN and op1 is greater than op2.
+    oge: yields true if both operands are not a QNAN and op1 is greater than or equal to op2.
+    olt: yields true if both operands are not a QNAN and op1 is less than op2.
+    ole: yields true if both operands are not a QNAN and op1 is less than or equal to op2.
+    one: yields true if both operands are not a QNAN and op1 is not equal to op2.
+    ord: yields true if both operands are not a QNAN.
+    ueq: yields true if either operand is a QNAN or op1 is equal to op2.
+    ugt: yields true if either operand is a QNAN or op1 is greater than op2.
+    uge: yields true if either operand is a QNAN or op1 is greater than or equal to op2.
+    ult: yields true if either operand is a QNAN or op1 is less than op2.
+    ule: yields true if either operand is a QNAN or op1 is less than or equal to op2.
+    une: yields true if either operand is a QNAN or op1 is not equal to op2.
+    uno: yields true if either operand is a QNAN.
+  *)
   
+  definition "ll_fcmp_oeq \<equiv> op_lift_fcmp True (eq_double)"
+  definition "ll_fcmp_ogt \<equiv> op_lift_fcmp True (>)"
+  definition "ll_fcmp_oge \<equiv> op_lift_fcmp True (\<ge>)"
+  definition "ll_fcmp_olt \<equiv> op_lift_fcmp True (<)"
+  definition "ll_fcmp_ole \<equiv> op_lift_fcmp True (\<le>)"
+  definition "ll_fcmp_one \<equiv> op_lift_fcmp True (Not oo eq_double)"
+  definition "ll_fcmp_ord \<equiv> op_lift_fcmp True (\<lambda>_ _. True)"
 
+  definition "ll_fcmp_ueq \<equiv> op_lift_fcmp False (eq_double)"
+  definition "ll_fcmp_ugt \<equiv> op_lift_fcmp False (>)"
+  definition "ll_fcmp_uge \<equiv> op_lift_fcmp False (\<ge>)"
+  definition "ll_fcmp_ult \<equiv> op_lift_fcmp False (<)"
+  definition "ll_fcmp_ule \<equiv> op_lift_fcmp False (\<le>)"
+  definition "ll_fcmp_une \<equiv> op_lift_fcmp False (Not oo eq_double)"
+  definition "ll_fcmp_uno \<equiv> op_lift_fcmp False (\<lambda>_ _. False)"
   
-  subsubsection \<open>Bitwise Binary Operations\<close>  
+  
+  subsubsection "AVX512f: sd-operations with rounding mode"
+  text \<open>The code generator creates the insertion/extraction into vector type.\<close>
+  (* TODO: Add vector type to memory model! *)
+
+  (*Rounding mode constants, from LLVM's smmintrin.h:
+  
+    #define _MM_FROUND_TO_NEAREST_INT    0x00
+    #define _MM_FROUND_TO_NEG_INF        0x01
+    #define _MM_FROUND_TO_POS_INF        0x02
+    #define _MM_FROUND_TO_ZERO           0x03
+    #define _MM_FROUND_CUR_DIRECTION     0x04
+    
+    #define _MM_FROUND_RAISE_EXC         0x00
+    #define _MM_FROUND_NO_EXC            0x08
+  *) 
+  
+  abbreviation (input) "AVX512_MM_FROUND_TO_NEAREST_INT \<equiv> 0x00 :: nat"
+  abbreviation (input) "AVX512_MM_FROUND_TO_NEG_INF     \<equiv> 0x01 :: nat"
+  abbreviation (input) "AVX512_MM_FROUND_TO_POS_INF     \<equiv> 0x02 :: nat"
+  abbreviation (input) "AVX512_MM_FROUND_TO_ZERO        \<equiv> 0x03 :: nat"
+  abbreviation (input) "AVX512_MM_FROUND_CUR_DIRECTION  \<equiv> 0x04 :: nat"   
+  
+  abbreviation (input) "AVX512_MM_FROUND_RAISE_EXC      \<equiv> 0x00 :: nat"
+  abbreviation (input) "AVX512_MM_FROUND_NO_EXC         \<equiv> 0x08 :: nat"
+  
+  (* We support the following combinations (from Intel's Intrinsics guide, without CUR_DIRECTION)
+    (_MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC) // round to nearest, and suppress exceptions
+    (_MM_FROUND_TO_NEG_INF |_MM_FROUND_NO_EXC)     // round down, and suppress exceptions
+    (_MM_FROUND_TO_POS_INF |_MM_FROUND_NO_EXC)     // round up, and suppress exceptions
+    (_MM_FROUND_TO_ZERO |_MM_FROUND_NO_EXC)        // truncate, and suppress exceptions
+    
+  *)
+
+  abbreviation (input) "AVX512_FROUND_TO_NEAREST_NO_EXC \<equiv> 0x08 :: nat"
+  abbreviation (input) "AVX512_FROUND_TO_NEG_INF_NO_EXC \<equiv> 0x09 :: nat"
+  abbreviation (input) "AVX512_FROUND_TO_POS_INF_NO_EXC \<equiv> 0x0A :: nat"
+  abbreviation (input) "AVX512_FROUND_TO_ZERO_NO_EXC \<equiv> 0x0B :: nat"
+
+  (* Alternative definitions, showing consistency! *)  
+  lemma "AVX512_FROUND_TO_NEAREST_NO_EXC = AVX512_MM_FROUND_TO_NEAREST_INT OR AVX512_MM_FROUND_NO_EXC" by eval
+  lemma "AVX512_FROUND_TO_NEG_INF_NO_EXC = AVX512_MM_FROUND_TO_NEG_INF OR AVX512_MM_FROUND_NO_EXC" by eval
+  lemma "AVX512_FROUND_TO_POS_INF_NO_EXC = AVX512_MM_FROUND_TO_POS_INF OR AVX512_MM_FROUND_NO_EXC" by eval
+  lemma "AVX512_FROUND_TO_ZERO_NO_EXC = AVX512_MM_FROUND_TO_ZERO OR AVX512_MM_FROUND_NO_EXC" by eval
+
+  definition xlate_rounding_mode :: "nat \<Rightarrow> roundmode llM" where "xlate_rounding_mode rm \<equiv> 
+         if rm = AVX512_FROUND_TO_NEAREST_NO_EXC then return To_nearest
+    else if rm = AVX512_FROUND_TO_NEG_INF_NO_EXC then return To_ninfinity
+    else if rm = AVX512_FROUND_TO_POS_INF_NO_EXC then return To_pinfinity
+    else if rm = AVX512_FROUND_TO_ZERO_NO_EXC then return float_To_zero
+    else fail (STATIC_ERROR ''Unsupported rounding mode'')"
+    
+  lemma xlate_rounding_mode_simps:  
+    "xlate_rounding_mode AVX512_FROUND_TO_NEAREST_NO_EXC = return To_nearest"
+    "xlate_rounding_mode AVX512_FROUND_TO_NEG_INF_NO_EXC = return To_ninfinity"
+    "xlate_rounding_mode AVX512_FROUND_TO_POS_INF_NO_EXC = return To_pinfinity"
+    "xlate_rounding_mode AVX512_FROUND_TO_ZERO_NO_EXC = return float_To_zero"
+    unfolding xlate_rounding_mode_def by simp_all
+    
+  definition op_lift_farith1_rm :: "(roundmode \<Rightarrow> double \<Rightarrow> double) \<Rightarrow> nat \<Rightarrow> double \<Rightarrow> double llM" 
+    where "op_lift_farith1_rm f rm a \<equiv> doM { rm \<leftarrow> xlate_rounding_mode rm; return (f rm a) }"
+  definition op_lift_farith2_rm :: "(roundmode \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double) \<Rightarrow> nat \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double llM" 
+    where "op_lift_farith2_rm f rm a b \<equiv> doM { rm \<leftarrow> xlate_rounding_mode rm; return (f rm a b) }"
+  definition op_lift_farith3_rm :: "(roundmode \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double) \<Rightarrow> nat \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double llM" 
+    where "op_lift_farith3_rm f rm a b c \<equiv> doM { rm \<leftarrow> xlate_rounding_mode rm; return (f rm a b c) }"
+    
+  definition "ll_x86_avx512_add_sd_round \<equiv> op_lift_farith2_rm dradd"
+  definition "ll_x86_avx512_sub_sd_round \<equiv> op_lift_farith2_rm drsub"
+  definition "ll_x86_avx512_mul_sd_round \<equiv> op_lift_farith2_rm drmul"
+  definition "ll_x86_avx512_div_sd_round \<equiv> op_lift_farith2_rm drdiv"
+  definition "ll_x86_avx512_sqrt_sd \<equiv> op_lift_farith1_rm drsqrt"
+  definition "ll_x86_avx512_vfmadd_f64 \<equiv> op_lift_farith3_rm drfmadd"
+  
+  subsubsection \<open>Bitwise Binary Operations\<close>                                      
   definition "shift_ovf a n \<equiv> nat (lint_to_uint n) \<ge> width a"
   definition "bitSHL' a n \<equiv> bitSHL a (nat (lint_to_uint n))"
   definition "bitASHR' a n \<equiv> bitASHR a (nat (lint_to_uint n))"
@@ -209,51 +355,28 @@ begin
     
   definition ll_extract_value :: "'t::llvm_rep \<Rightarrow> nat \<Rightarrow> 't\<^sub>1::llvm_rep llM"
     where "ll_extract_value p i \<equiv> doM {
-      fcheck (STATIC_ERROR ''Expected struct'') (llvm_is_struct (to_val p));
-      let vs = llvm_the_struct (to_val p);
-      fcheck (STATIC_ERROR ''Field index out of range'') (i<length vs);
-      checked_from_val (vs!i)
+      r \<leftarrow> llvm_extract_value (to_val p) i;
+      checked_from_val r
     }"  
     
   definition ll_insert_value :: "'t::llvm_rep \<Rightarrow> 't\<^sub>1::llvm_rep \<Rightarrow> nat \<Rightarrow> 't::llvm_rep llM"
     where "ll_insert_value p x i \<equiv> doM {
-      fcheck (STATIC_ERROR ''Expected struct'') (llvm_is_struct (to_val p));
-      let vs = llvm_the_struct (to_val p);
-      fcheck (STATIC_ERROR ''Field index out of range'') (i<length vs);
-      checked_from_val (llvm_struct (vs[i:=to_val x]))
+      r \<leftarrow> llvm_insert_value (to_val p) (to_val x) i;
+      checked_from_val r
     }"
-    
-    
-  (*
-  definition "checked_split_pair v \<equiv> doM {
-    fcheck (STATIC_ERROR ''Expected pair'') (llvm_is_pair v);
-    return (llvm_the_pair v)
-  }"
-  
-  definition ll_extract_fst :: "'t::llvm_rep \<Rightarrow> 't\<^sub>1::llvm_rep llM" where "ll_extract_fst p = doM { (a,b) \<leftarrow> checked_split_pair (to_val p); checked_from_val a }"
-  definition ll_extract_snd :: "'t::llvm_rep \<Rightarrow> 't\<^sub>2::llvm_rep llM" where "ll_extract_snd p = doM { (a,b) \<leftarrow> checked_split_pair (to_val p); checked_from_val b }"
-  definition ll_insert_fst :: "'t::llvm_rep \<Rightarrow> 't\<^sub>1::llvm_rep \<Rightarrow> 't llM" where "ll_insert_fst p x = doM { (a,b) \<leftarrow> checked_split_pair (to_val p); checked_from_val (llvm_pair (to_val x) b) }" 
-  definition ll_insert_snd :: "'t::llvm_rep \<Rightarrow> 't\<^sub>2::llvm_rep \<Rightarrow> 't llM" where "ll_insert_snd p x = doM { (a,b) \<leftarrow> checked_split_pair (to_val p); checked_from_val (llvm_pair a (to_val x)) }" 
-  *)  
-  
-  
-  (*  
-  definition ll_extract_fst :: "('a::llvm_rep \<times> 'b::llvm_rep) \<Rightarrow> 'a llM" where "ll_extract_fst ab \<equiv> return (fst ab)"
-  definition ll_extract_snd :: "('a::llvm_rep \<times> 'b::llvm_rep) \<Rightarrow> 'b llM" where "ll_extract_snd ab \<equiv> return (snd ab)"
-  definition ll_insert_fst :: "('a::llvm_rep \<times> 'b::llvm_rep) \<Rightarrow> 'a \<Rightarrow> ('a\<times>'b) llM" where "ll_insert_fst ab a \<equiv> return (a,snd ab)"
-  definition ll_insert_snd :: "('a::llvm_rep \<times> 'b::llvm_rep) \<Rightarrow> 'b \<Rightarrow> ('a\<times>'b) llM" where "ll_insert_snd ab b \<equiv> return (fst ab,b)"
-  *)
     
   subsubsection \<open>Memory Access and Addressing Operations\<close>
     
   definition ll_load :: "'a::llvm_rep ptr \<Rightarrow> 'a llM" where
     "ll_load p \<equiv> doM {
-      r \<leftarrow> llvm_load (the_raw_ptr p);
+      r \<leftarrow> llvm_load (to_val p);
       checked_from_val r
     }"
     
   definition ll_store :: "'a::llvm_rep \<Rightarrow> 'a ptr \<Rightarrow> unit llM" where
-    "ll_store v p \<equiv> llvm_store (to_val v) (the_raw_ptr p)"
+    "ll_store v p \<equiv> doM {
+      llvm_store (to_val v) (to_val p)
+    }"
 
   text \<open>Note that LLVM itself does not have malloc and free instructions.
     However, these are primitive instructions in our abstract memory model, 
@@ -266,27 +389,31 @@ begin
   definition ll_malloc :: "'a::llvm_rep itself \<Rightarrow> _::len word \<Rightarrow> 'a ptr llM" where
     "ll_malloc TYPE('a) n = doM {
       fcheck MEM_ERROR (unat n > 0); \<comment> \<open>Disallow empty malloc\<close>
-      r \<leftarrow> llvm_allocn (to_val (init::'a)) (unat n);
-      return (PTR r)
+      r \<leftarrow> llvm_alloc (struct_of TYPE ('a)) (to_val n);
+      return (from_val r)
     }"
         
   definition ll_free :: "'a::llvm_rep ptr \<Rightarrow> unit llM" 
-    where "ll_free p \<equiv> llvm_free (the_raw_ptr p)"
+    where "ll_free p \<equiv> doM {
+      llvm_free (to_val p)
+    }"
 
 
   text \<open>As for the aggregate operations, the \<open>getelementptr\<close> instruction is instantiated 
     for pointer and structure indexing. \<close>
       
   definition ll_ofs_ptr :: "'a::llvm_rep ptr \<Rightarrow> _::len word \<Rightarrow> 'a ptr llM" where "ll_ofs_ptr p ofs = doM {
-    r \<leftarrow> llvm_checked_idx_ptr (the_raw_ptr p) (sint ofs);
-    return (PTR r)
+    r \<leftarrow> llvm_ofs_ptr (to_val p) (to_val ofs);
+    return (from_val r)
   }"  
 
+  (* disabled in simple memory model
   definition ll_gep_struct :: "'p::llvm_rep ptr \<Rightarrow> nat \<Rightarrow> 'a::llvm_rep ptr llM" where "ll_gep_struct p i = doM {
     fcheck (STATIC_ERROR ''gep_struct: Expected struct type'') (llvm_is_s_struct (struct_of TYPE('p)));
     r \<leftarrow> llvm_checked_gep (the_raw_ptr p) (PFLD i);
     return (PTR r)
   }"
+  *)
 
   subsubsection \<open>Pointer Comparison\<close>  
   text \<open>Note: There are no pointer comparison instructions in LLVM. 
@@ -305,18 +432,23 @@ begin
   \<close>
   
   text \<open>Check if a pair of pointers is valid for comparison operation, i.e., one is null or both are currently allocated\<close>
-  definition check_ptrs_cmp :: "'a::llvm_rep ptr \<Rightarrow> 'a ptr \<Rightarrow> unit llM" where
+  (*definition check_ptrs_cmp :: "'a::llvm_rep ptr \<Rightarrow> 'a ptr \<Rightarrow> unit llM" where
     "check_ptrs_cmp p\<^sub>1 p\<^sub>2 \<equiv> if p\<^sub>1=null \<or> p\<^sub>2=null then return () else doM { ll_load p\<^sub>1; ll_load p\<^sub>2; return ()}"
   
   definition op_lift_ptr_cmp :: "_ \<Rightarrow> 'a::llvm_rep ptr \<Rightarrow> 'a ptr \<Rightarrow> 1 word llM"
     where "op_lift_ptr_cmp f a b \<equiv> doM {
     check_ptrs_cmp a b;  
     return (lint_to_word (bool_to_lint (f a b)))
+  }"*)
+  
+  definition ll_ptrcmp_eq :: "'a ptr \<Rightarrow> 'a ptr \<Rightarrow> 1 word llM" where "ll_ptrcmp_eq a b \<equiv> doM {
+    r \<leftarrow> llvm_ptr_eq (to_val a) (to_val b);
+    return (from_val r)
   }"
-  
-  definition "ll_ptrcmp_eq \<equiv> op_lift_ptr_cmp (=)"
-  definition "ll_ptrcmp_ne \<equiv> op_lift_ptr_cmp (\<noteq>)"
-  
+  definition ll_ptrcmp_ne :: "'a ptr \<Rightarrow> 'a ptr \<Rightarrow> 1 word llM" where "ll_ptrcmp_ne a b \<equiv> doM {
+    r \<leftarrow> llvm_ptr_neq (to_val a) (to_val b);
+    return (from_val r)
+  }"
   
   subsubsection \<open>Conversion Operations\<close>
   definition "llb_trunc i w \<equiv> doM {
@@ -381,6 +513,17 @@ begin
     "\<lbrakk>monotone orda ordb F; monotone orda ordb G\<rbrakk> \<Longrightarrow> monotone orda ordb (\<lambda>f. llc_if b (F f) (G f))"
     unfolding llc_if_def by pf_mono_prover
 
+  thm partial_function_mono
+    
+  subsubsection \<open>Parallel Combinator\<close>  
+  definition llc_par :: "('a \<Rightarrow> 'ar llM) \<Rightarrow> ('b \<Rightarrow> 'br llM) \<Rightarrow> 'a \<Rightarrow> 'b \<Rightarrow> ('ar \<times> 'br) llM" where 
+    "llc_par f g a b \<equiv> par PAR_ERROR (f a) (g b)"
+
+  lemma par_mono[partial_function_mono]:
+    "\<lbrakk>\<And>x. monotone M.le_fun M_ord (\<lambda>f. F f x); \<And>x. monotone M.le_fun M_ord (\<lambda>f. G f x)\<rbrakk> \<Longrightarrow> monotone M.le_fun M_ord (\<lambda>f. llc_par (F f) (G f) a b)"
+    unfolding llc_par_def 
+    by pf_mono_prover
+    
   subsubsection \<open>While-Combinator\<close>
   text \<open>
     Note that we also include the while combinator at this point, as we plan
@@ -405,6 +548,12 @@ begin
     apply (rewrite mwhile_unfold)
     by simp
 
+  lemma llc_while_mono[partial_function_mono]:      
+    assumes "\<And>x. M_mono (\<lambda>f. b f x)"
+    assumes "\<And>x. M_mono (\<lambda>f. c f x)"
+    shows "M_mono (\<lambda>D. llc_while (b D) (c D) \<sigma>)"
+    using assms unfolding llc_while_def by pf_mono_prover
+    
   (* 'Definition' of llc_while for presentation in paper: *)  
   lemma "llc_while b c s \<equiv> doM { x \<leftarrow> b s; llc_if x (doM {s\<leftarrow>c s; llc_while b c s}) (return s) }"
     unfolding llc_while_def llc_if_def
@@ -412,4 +561,5 @@ begin
     by simp
     
       
+    
 end

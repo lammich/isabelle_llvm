@@ -9,7 +9,6 @@ begin
     tuple of parameters, or unit if there are none.
     \<close>
 
-    
   definition "non_dep R \<equiv> \<forall>b. R b = R undefined"
   lemma non_dep_simp: "non_dep R \<Longrightarrow> NO_MATCH undefined x \<Longrightarrow> R x = R undefined"
     by (auto simp: non_dep_def)
@@ -25,8 +24,6 @@ begin
     
   lemma non_dep2_K[simp, intro!]: "non_dep2 (\<lambda>_ _. c)"  
     by (auto simp: non_dep2_def)
-    
-    
     
 
   subsection \<open>Assertion Interface Binding\<close>
@@ -163,42 +160,53 @@ begin
     \<close>
   (* TODO: We only use this with keep/destroy information, so we could model
     the parameter relations as such (('a\<Rightarrow>'ai \<Rightarrow> assn) \<times> bool) *)
+    
+    
   definition hfref 
     :: "
       ('a \<Rightarrow> bool) 
+   \<Rightarrow> ('ai \<Rightarrow> bool) 
    \<Rightarrow> (('a \<Rightarrow> 'ai \<Rightarrow> assn) \<times> ('a \<Rightarrow> 'ai \<Rightarrow> assn)) 
-   \<Rightarrow> ('a \<Rightarrow> 'ai \<Rightarrow> 'b \<Rightarrow> 'bi \<Rightarrow> assn) 
+   \<Rightarrow> ('a \<Rightarrow> 'b \<Rightarrow> 'bi \<Rightarrow> assn)
+   \<Rightarrow> ('ai \<Rightarrow> 'bi \<Rightarrow> bool) 
    \<Rightarrow> (('ai \<Rightarrow> 'bi llM) \<times> ('a\<Rightarrow>'b nres)) set"
-   ("[_]\<^sub>a\<^sub>d _ \<rightarrow> _" [0,60,60] 60)
+   ("[_]\<^sub>a [_]\<^sub>c _ \<rightarrow>\<^sub>d _ [_]\<^sub>c" [0,0,60,60,0] 60)
    where
-    "[P]\<^sub>a\<^sub>d RS \<rightarrow> T \<equiv> { (f,g) . \<forall>c a.  P a \<longrightarrow> hn_refine (fst RS a c) (f c) (snd RS a c) (T a c) (g a)}"
+    "[P]\<^sub>a [C]\<^sub>c RS \<rightarrow>\<^sub>d T [CP]\<^sub>c \<equiv> { (f,g) . \<forall>c a.  P a \<and> C c \<longrightarrow> hn_refine (fst RS a c) (f c) (snd RS a c) (T a) (CP c) (g a)}"
+    
+    
 
-  abbreviation hfrefnd ("[_]\<^sub>a _ \<rightarrow> _" [0,60,60] 60) where "[P]\<^sub>a RS \<rightarrow> T \<equiv> ([P]\<^sub>a\<^sub>d RS \<rightarrow> (\<lambda>_ _. T))"
-  abbreviation hfreft ("_ \<rightarrow>\<^sub>a\<^sub>d _" [60,60] 60) where "RS \<rightarrow>\<^sub>a\<^sub>d T \<equiv> ([\<lambda>_. True]\<^sub>a\<^sub>d RS \<rightarrow> T)"
-  abbreviation hfreftnd ("_ \<rightarrow>\<^sub>a _" [60,60] 60) where "RS \<rightarrow>\<^sub>a T \<equiv> [\<lambda>_. True]\<^sub>a RS \<rightarrow> T"
+  abbreviation hfrefcpt ("[_]\<^sub>a _ \<rightarrow>\<^sub>d _" [0,60,60] 60) where "[P]\<^sub>a RS \<rightarrow>\<^sub>d T \<equiv> ([P]\<^sub>a [\<lambda>_. True]\<^sub>c RS \<rightarrow>\<^sub>d T [\<lambda>_ _. True]\<^sub>c)"
+  abbreviation hfrefpt ("[_]\<^sub>c _ \<rightarrow>\<^sub>d _ [_]\<^sub>c" [0,60,60,0] 60) where "[C]\<^sub>c RS \<rightarrow>\<^sub>d T [CP]\<^sub>c \<equiv> ([\<lambda>_. True]\<^sub>a [C]\<^sub>c RS \<rightarrow>\<^sub>d T [CP]\<^sub>c)"
+  abbreviation hfreftt ("_ \<rightarrow>\<^sub>a\<^sub>d _" [60,60] 60) where "RS \<rightarrow>\<^sub>a\<^sub>d T \<equiv> ([\<lambda>_. True]\<^sub>a RS \<rightarrow>\<^sub>d T)"
 
+  abbreviation hfrefcptnd ("[_]\<^sub>a _ \<rightarrow> _" [0,60,60] 60) where "[P]\<^sub>a RS \<rightarrow> T \<equiv> [P]\<^sub>a RS \<rightarrow>\<^sub>d (\<lambda>_. T)"
+  abbreviation hfrefptnd ("[_]\<^sub>c _ \<rightarrow> _ [_]\<^sub>c" [0,60,60,0] 60) where "[C]\<^sub>c RS \<rightarrow> T [CP]\<^sub>c \<equiv> [C]\<^sub>c RS \<rightarrow>\<^sub>d (\<lambda>_. T) [CP]\<^sub>c"
+  abbreviation hfrefttnd ("_ \<rightarrow>\<^sub>a _" [60,60] 60) where "RS \<rightarrow>\<^sub>a T \<equiv> RS \<rightarrow>\<^sub>a\<^sub>d (\<lambda>_. T)"
+  
   lemma hfrefI[intro?]: 
-    assumes "\<And>c a. P a \<Longrightarrow> hn_refine (fst RS a c) (f c) (snd RS a c) (T a c) (g a)"
-    shows "(f,g)\<in>hfref P RS T"
+    assumes "\<And>c a. P a \<Longrightarrow> C c \<Longrightarrow> hn_refine (fst RS a c) (f c) (snd RS a c) (T a) (CP c) (g a)"
+    shows "(f,g)\<in>hfref P C RS T CP"
     using assms unfolding hfref_def by blast
 
   lemma hfrefD: 
-    assumes "(f,g)\<in>hfref P RS T"
-    shows "\<And>c a. P a \<Longrightarrow> hn_refine (fst RS a c) (f c) (snd RS a c) (T a c) (g a)"
+    assumes "(f,g)\<in>hfref P C RS T CP"
+    shows "\<And>c a. P a \<Longrightarrow> C c \<Longrightarrow> hn_refine (fst RS a c) (f c) (snd RS a c) (T a) (CP c) (g a)"
     using assms unfolding hfref_def by blast
 
   lemma hfref_to_ASSERT_conv: 
-    "NO_MATCH (\<lambda>_. True) P \<Longrightarrow> (a,b)\<in>[P]\<^sub>a\<^sub>d R \<rightarrow> S \<longleftrightarrow> (a,\<lambda>x. doN {ASSERT (P x); b x}) \<in> R \<rightarrow>\<^sub>a\<^sub>d S"  
+    "NO_MATCH (\<lambda>_. True) P \<Longrightarrow> (a,b)\<in>[P]\<^sub>a [C]\<^sub>c R \<rightarrow>\<^sub>d S [CP]\<^sub>c \<longleftrightarrow> (a,\<lambda>x. doN {ASSERT (P x); b x}) \<in> [C]\<^sub>c R \<rightarrow>\<^sub>d S [CP]\<^sub>c"
     unfolding hfref_def
     apply (clarsimp; safe; clarsimp?)
     apply (rule hn_refine_nofailI)
     apply (simp add: refine_pw_simps)
     subgoal for xc xa
       apply (drule spec[of _ xc])
+      apply simp
       apply (drule spec[of _ xa])
       by simp
     done
-
+    
   text \<open>
     A pair of argument refinement assertions can be created by the 
     input assertion and the information whether the parameter is kept or destroyed
@@ -253,9 +261,9 @@ begin
   subsubsection \<open>Conversion from fref to hfref\<close>  
   (* TODO: Variant of import-param! Automate this! *)
   lemma fref_to_pure_hfref':
-    assumes "(f,g) \<in> [P]\<^sub>f R\<rightarrow>\<langle>S\<rangle>nres_rel"
+    assumes "(f,g) \<in> [P]\<^sub>f R\<rightarrow>(\<langle>S\<rangle>nres_rel)"
     assumes "\<And>x. x\<in>Domain R \<inter> R\<inverse>``Collect P \<Longrightarrow> f x = RETURN (f' x)"
-    shows "(return o f', g) \<in> [P]\<^sub>a (pure R)\<^sup>k\<rightarrow>pure S"
+    shows "(return o f', g) \<in> [P]\<^sub>a (pure R)\<^sup>k\<rightarrow>\<^sub>d(\<lambda>_. pure S)"
   proof -
   
     {
@@ -265,16 +273,18 @@ begin
         using assms
         by (fastforce simp: fref_def pw_le_iff pw_nres_rel_iff refine_pw_simps)
         
-      hence "ENTAILS F ((\<up>((c, a) \<in> R) \<and>* (\<lambda>s. \<exists>x. (\<up>((f' c, x) \<in> S) \<and>* \<up>(RETURN x \<le> g a)) s)) \<and>* F)" 
+      (*hence "ENTAILS F ((\<up>((c, a) \<in> R) \<and>* (\<lambda>s. \<exists>x. (\<up>((f' c, x) \<in> S) \<and>* \<up>(RETURN x \<le> g a)) s)) \<and>* F)" 
         for F :: assn 
         using A by vcg
+      *)
     } note AUX=this 
     
     show ?thesis
       apply (rule hfrefI) apply (rule hn_refineI)
       unfolding pure_def 
       apply vcg
-      apply (rule AUX)
+      apply (frule (2) AUX)
+      apply vcg
       .
   qed      
 
@@ -282,8 +292,8 @@ begin
   subsubsection \<open>Conversion from hfref to hnr\<close>  
   text \<open>This section contains the lemmas. The ML code is further down. \<close>
   lemma hf2hnr:
-    assumes "(f,g) \<in> [P]\<^sub>a\<^sub>d R \<rightarrow> S"
-    shows "\<forall>x xi. P x \<longrightarrow> hn_refine (hn_ctxt (fst R) x xi ** \<box>) (f$xi) (hn_ctxt (snd R) x xi ** \<box>) (S x xi) (g$x)"
+    assumes "(f,g) \<in> [P]\<^sub>a [C]\<^sub>c R \<rightarrow>\<^sub>d S [CP]\<^sub>c"
+    shows "\<forall>x xi. P x \<and> C xi \<longrightarrow> hn_refine (hn_ctxt (fst R) x xi ** \<box>) (f$xi) (hn_ctxt (snd R) x xi ** \<box>) (S x) (CP xi) (g$x)"
     using assms
     unfolding hfref_def 
     by (auto simp: hn_ctxt_def)
@@ -304,17 +314,17 @@ begin
         (hn_ctxt (to_hnr_prod A B) x xi ** \<Gamma>) 
         (fi xi) 
         (hn_ctxt (to_hnr_prod A' B') x xi ** \<Gamma>') 
-        (R x xi) 
+        (R x) (CP xi)
         (f x))
 \<longleftrightarrow> (\<forall>b bi a ai. P (a,b) \<longrightarrow>
       hn_refine 
         (hn_ctxt A a ai ** hn_ctxt B b bi ** \<Gamma>) 
         (fi (ai,bi)) 
         (hn_ctxt A' a ai ** hn_ctxt B' b bi ** \<Gamma>')
-        (R (a,b) (ai,bi))
+        (R (a,b)) (CP (ai,bi))
         (f (a,b))
     )"
-    by (auto simp: hn_ctxt_def prod_assn_def sep_conj_ac)
+    by (auto simp: hn_ctxt_def prod_assn_def sep_conj_c)
     
   (*  
   lemma hnr_intro_dummy:
@@ -396,7 +406,7 @@ begin
 
   lemma hr_compI: "(b,a)\<in>R2 \<Longrightarrow> R1 b c \<turnstile> hr_comp R1 R2 a c"  
     unfolding hr_comp_def
-    by (auto simp: sep_algebra_simps entails_def pred_lift_extract_simps)
+    by (auto simp: sep_algebra_simps entails_def)
 
   lemma hr_comp_Id1[simp]: "hr_comp (pure Id) R = pure R"  
     unfolding hr_comp_def[abs_def] pure_def
@@ -406,25 +416,25 @@ begin
   lemma hr_comp_Id2[simp]: "hr_comp R Id = R"  
     unfolding hr_comp_def[abs_def]
     apply (intro ext)
-    by (auto simp: sep_algebra_simps pred_lift_extract_simps)
+    by (auto simp: sep_algebra_simps)
     
   lemma hr_comp_emp[simp]: "hr_comp (\<lambda>a c. \<box>) R a c = \<up>(\<exists>b. (b,a)\<in>R)"
     unfolding hr_comp_def[abs_def]
     apply (intro ext)
-    by (auto simp: sep_algebra_simps pred_lift_extract_simps)
+    by (auto simp: sep_algebra_simps)
 
   lemma hr_comp_prod_conv[simp]:
     "hr_comp (prod_assn Ra Rb) (Ra' \<times>\<^sub>r Rb') 
     = prod_assn (hr_comp Ra Ra') (hr_comp Rb Rb')"  
     unfolding hr_comp_def[abs_def] prod_assn_def[abs_def]
     apply (intro ext)
-    apply (auto 0 3 simp: sep_algebra_simps pred_lift_extract_simps)
+    apply (auto 0 3 simp: sep_algebra_simps)
     done
 
   lemma hr_comp_pure: "hr_comp (pure R) S = pure (R O S)"  
     apply (intro ext)
     unfolding hr_comp_def[abs_def] pure_def
-    by (auto simp: sep_algebra_simps pred_lift_extract_simps)
+    by (auto simp: sep_algebra_simps)
 
   lemma hr_comp_is_pure[safe_constraint_rules]: "is_pure A \<Longrightarrow> is_pure (hr_comp A B)"
     by (auto simp: hr_comp_pure is_pure_conv)
@@ -434,12 +444,12 @@ begin
     by (clarsimp simp: hr_comp_pure)
 
   lemma rdomp_hrcomp_conv[simp]: "rdomp (hr_comp A R) x \<longleftrightarrow> (\<exists>y. rdomp A y \<and> (y,x)\<in>R)"
-    by (auto simp: rdomp_def hr_comp_def sep_algebra_simps pred_lift_extract_simps)
+    by (auto simp: rdomp_def hr_comp_def sep_algebra_simps)
 
   lemma hn_rel_compI: 
     "\<lbrakk>nofail a; (b,a)\<in>\<langle>R2\<rangle>nres_rel\<rbrakk> \<Longrightarrow> hn_rel R1 b c \<turnstile> hn_rel (hr_comp R1 R2) a c"
     unfolding hr_comp_def hn_rel_def nres_rel_def entails_def
-    apply (auto simp: sep_algebra_simps pred_lift_extract_simps)
+    apply (auto simp: sep_algebra_simps)
     apply (drule (1) order_trans)
     apply (auto simp add: ret_le_down_conv)
     done
@@ -458,12 +468,12 @@ begin
   lemma hr_comp_assoc: "hr_comp (hr_comp R S) T = hr_comp R (S O T)"
     apply (intro ext)
     unfolding hr_comp_def
-    by (auto simp: sep_algebra_simps pred_lift_extract_simps)
+    by (auto simp: sep_algebra_simps)
 
     
   lemma hrp_comp_Id1[simp]: "hrp_comp (hf_pres (pure Id) pp) R = hf_pres (pure R) pp"
     unfolding hrp_comp_def apply (cases pp) apply auto
-    by (auto simp: hr_comp_def[abs_def] invalid_assn_def[abs_def] fun_eq_iff sep_algebra_simps pred_lift_extract_simps)
+    by (auto simp: hr_comp_def[abs_def] invalid_assn_def[abs_def] fun_eq_iff sep_algebra_simps)
   
   lemma hrp_comp_Id2[simp]: "hrp_comp A Id = A"
     unfolding hrp_comp_def by auto
@@ -475,14 +485,14 @@ begin
     
     
     
-  definition "hrr_comp R R1 R2 x y a c \<equiv> 
-    if non_dep2 R1 then
-      hr_comp (R1 undefined undefined) (R2 x) a c
+  definition "hrr_comp R R1 R2 x a c \<equiv> 
+    if non_dep R1 then
+      hr_comp (R1 undefined) (R2 x) a c
     else
-      EXS b. \<up>((b,x)\<in>R) ** hr_comp (R1 b y) (R2 x) a c"
+      EXS b. \<up>((b,x)\<in>R) ** hr_comp (R1 b) (R2 x) a c"
   
   lemma hnr_comp:
-    assumes R: "\<And>b1 c1. P b1 \<Longrightarrow> hn_refine (R1 b1 c1 ** \<Gamma>) (c c1) (R1p b1 c1 ** \<Gamma>') (R b1 c1) (b b1)"
+    assumes R: "\<And>b1. P b1 \<Longrightarrow> hn_refine (R1 b1 c1 ** \<Gamma>) (c c1) (R1p b1 c1 ** \<Gamma>') (R b1) (CP c1) (b b1)"
     assumes S: "\<And>a1 b1. \<lbrakk>Q a1; (b1,a1)\<in>R1'\<rbrakk> \<Longrightarrow> (b b1,a a1)\<in>\<langle>R' a1\<rangle>nres_rel"
     assumes PQ: "\<And>a1 b1. \<lbrakk>Q a1; (b1,a1)\<in>R1'\<rbrakk> \<Longrightarrow> P b1"
     assumes Q: "Q a1"
@@ -490,11 +500,12 @@ begin
       (hr_comp R1 R1' a1 c1 ** \<Gamma>) 
       (c c1)
       (hr_comp R1p R1' a1 c1 ** \<Gamma>') 
-      (hrr_comp R1' R R' a1 c1) 
+      (hrr_comp R1' R R' a1) 
+      (CP c1)
       (a a1)"
   proof -
 
-    note [vcg_rules] = R[THEN hn_refineD, of _ c1]
+    note [vcg_rules] = R[THEN hn_refineD]
     
     have [simp]: "nofail (b x)" if  "nofail (a a1)" "(x, a1) \<in> R1'" for x
       using that Q S nres_rel_def pw_ref_iff by fastforce
@@ -503,17 +514,17 @@ begin
     show ?thesis      
       unfolding hn_refine_alt
       unfolding hr_comp_def hn_rel_def hrr_comp_def
-      apply (cases "non_dep2 R"; simp)
+      apply (cases "non_dep R"; simp)
       subgoal premises prems
-        apply (auto simp: sep_algebra_simps)
+        apply (auto simp: sep_algebra_simps simp del: pred_lift_extract_simps)
         using PQ[OF Q] 
-        supply [simp] = non_dep2_simp[OF prems]
+        supply [simp] = non_dep_simp[OF prems]
         apply vcg
         apply (frule S[OF Q])
         apply (erule (2) hnr_comp_aux)
         by vcg_try_solve
       subgoal  
-        apply (auto simp: sep_algebra_simps)
+        apply (auto simp: sep_algebra_simps simp del: pred_lift_extract_simps)
         using PQ[OF Q]
         apply vcg
         apply (frule S[OF Q])
@@ -525,7 +536,7 @@ begin
   
 
   lemma hnr_comp1_aux:
-    assumes R: "\<And>b1 c1. P b1 \<Longrightarrow> hn_refine (hn_ctxt R1 b1 c1) (c c1) (hn_ctxt R1p b1 c1) (R b1 c1) (b$b1)"
+    assumes R: "\<And>b1. P b1 \<Longrightarrow> hn_refine (hn_ctxt R1 b1 c1) (c c1) (hn_ctxt R1p b1 c1) (R b1) (CP c1) (b$b1)"
     assumes S: "\<And>a1 b1. \<lbrakk>Q a1; (b1,a1)\<in>R1'\<rbrakk> \<Longrightarrow> (b$b1,a$a1)\<in>\<langle>R' a1\<rangle>nres_rel"
     assumes PQ: "\<And>a1 b1. \<lbrakk>Q a1; (b1,a1)\<in>R1'\<rbrakk> \<Longrightarrow> P b1"
     assumes Q: "Q a1"
@@ -533,61 +544,68 @@ begin
       (hr_comp R1 R1' a1 c1) 
       (c c1)
       (hr_comp R1p R1' a1 c1) 
-      (hrr_comp R1' R R' a1 c1) 
+      (hrr_comp R1' R R' a1) 
+      (CP c1)
       (a a1)"
     using assms hnr_comp[where \<Gamma>=\<box> and \<Gamma>'=\<box> and a=a and b=b and c=c and P=P and Q=Q]  
     unfolding hn_ctxt_def
     by auto
 
   lemma hfcomp:
-    assumes A: "(f,g) \<in> [P]\<^sub>a\<^sub>d RR' \<rightarrow> S"
+    assumes A: "(f,g) \<in> [P]\<^sub>a [C]\<^sub>c RR' \<rightarrow>\<^sub>d S [CP]\<^sub>c"
     assumes B: "(g,h) \<in> [Q]\<^sub>f\<^sub>d T \<rightarrow> (\<lambda>x. \<langle>U x\<rangle>nres_rel)"
-    shows "(f,h) \<in> [\<lambda>a. Q a \<and> (\<forall>a'. (a',a)\<in>T \<longrightarrow> P a')]\<^sub>a\<^sub>d 
-      hrp_comp RR' T \<rightarrow> hrr_comp T S U"
+    shows "(f,h) \<in> [\<lambda>a. Q a \<and> (\<forall>a'. (a',a)\<in>T \<longrightarrow> P a')]\<^sub>a [C]\<^sub>c
+      hrp_comp RR' T \<rightarrow>\<^sub>d hrr_comp T S U [CP]\<^sub>c"
     using assms  
     unfolding fref_def hfref_def hrp_comp_def
     apply clarsimp
-    apply (rule hnr_comp1_aux[of 
-        P "fst RR'" f "snd RR'" S g "\<lambda>a. Q a \<and> (\<forall>a'. (a',a)\<in>T \<longrightarrow> P a')" T h U])
-    apply (auto simp: hn_ctxt_def)
+    subgoal for c a
+      apply (rule hnr_comp1_aux[of 
+          P "fst RR'" c f "snd RR'" S _ g "\<lambda>a. Q a \<and> (\<forall>a'. (a',a)\<in>T \<longrightarrow> P a')" T h U])
+      apply (auto simp: hn_ctxt_def) 
+      done
     done
 
-  lemma hrr_comp_nondep: "hrr_comp T (\<lambda>_ _. A) R = (\<lambda>x _. hr_comp A (R x))"
+  lemma hrr_comp_nondep: "hrr_comp T (\<lambda>_. A) R = (\<lambda>x. hr_comp A (R x))"
     unfolding hrr_comp_def
     by (auto simp: fun_eq_iff)
     
   (* TODO: Concept of lifting dependent relation over other relation! Allows us to handle hrr_comp R R1 (\<lambda>_. Id) *)
   lemma hrr_comp_Id_R_Id: "hrr_comp Id R1 (\<lambda>_. Id) = R1"
-    by (auto simp: hrr_comp_def fun_eq_iff pred_lift_extract_simps non_dep2_simp[of R1])
+    by (auto simp: hrr_comp_def fun_eq_iff pred_lift_extract_simps non_dep_simp[of R1])
   
-  lemma hrr_comp_id_conv[simp]: "hrr_comp Id R1 R2 = (\<lambda>x y. hr_comp (R1 x y) (R2 x))"
+  lemma hrr_comp_id_conv[simp]: "hrr_comp Id R1 R2 = (\<lambda>x. hr_comp (R1 x) (R2 x))"
     unfolding hrr_comp_def
-    by (auto simp: fun_eq_iff pred_lift_extract_simps non_dep2_simp[of R1])
+    by (auto simp: fun_eq_iff pred_lift_extract_simps non_dep_simp[of R1])
   
     
   lemma hfref_weaken_pre_nofail: 
-    assumes "(f,g) \<in> [P]\<^sub>a\<^sub>d R \<rightarrow> S"  
-    shows "(f,g) \<in> [\<lambda>x. nofail (g x) \<longrightarrow> P x]\<^sub>a\<^sub>d R \<rightarrow> S"
+    assumes "(f,g) \<in> [P]\<^sub>a [C]\<^sub>c R \<rightarrow>\<^sub>d S [CP]\<^sub>c"  
+    shows "(f,g) \<in> [\<lambda>x. nofail (g x) \<longrightarrow> P x]\<^sub>a [C]\<^sub>c R \<rightarrow>\<^sub>d S [CP]\<^sub>c"
     using assms
     unfolding hfref_def hn_refine_def
     by auto
 
   lemma hfref_cons:
-    assumes "(f,g) \<in> [P]\<^sub>a\<^sub>d R \<rightarrow> S"
+    assumes "(f,g) \<in> [P]\<^sub>a [C]\<^sub>c R \<rightarrow>\<^sub>d S [CP]\<^sub>c"
     assumes "\<And>x. P' x \<Longrightarrow> P x"
+    assumes "\<And>x. C' x \<Longrightarrow> C x"
     assumes "\<And>x y. fst R' x y \<turnstile> fst R x y"
     assumes "\<And>x y. snd R x y \<turnstile> snd R' x y"
-    assumes "\<And>x y a c. P' a \<Longrightarrow> S a c x y \<turnstile> S' a c x y"
-    shows "(f,g) \<in> [P']\<^sub>a\<^sub>d R' \<rightarrow> S'"
+    assumes "\<And>x y a. P' a \<Longrightarrow> S a x y \<turnstile> S' a x y"
+    assumes "\<And>x y. CP x y \<Longrightarrow> CP' x y"
+    shows "(f,g) \<in> [P']\<^sub>a [C']\<^sub>c R' \<rightarrow>\<^sub>d S' [CP']\<^sub>c"
     unfolding hfref_def
     apply clarsimp
-    apply (rule hn_refine_cons)
-    apply (rule assms(3))
+    apply (rule hn_refine_cons_cp)
+    apply (rule assms(4))
     defer
     
-    apply (rule entails_trans[OF assms(4) entails_refl])
-    apply (erule assms(5))
+    apply (rule entails_trans[OF assms(5) entails_refl])
+    apply (erule assms(6))
+    apply (erule assms(7))
     apply (frule assms(2))
+    apply (frule assms(3))
     using assms(1)
     unfolding hfref_def
     apply auto
@@ -615,7 +633,7 @@ begin
   lemma hr_comp_invalid: "hr_comp (invalid_assn R1) R2 = invalid_assn (hr_comp R1 R2)"
     apply (intro ext)
     unfolding invalid_assn_def hr_comp_def
-    apply (auto simp: sep_algebra_simps pred_lift_extract_simps)
+    apply (auto simp: sep_algebra_simps)
     apply (auto simp: pure_part_def) (* TODO: too low-level! *)
     done
 
@@ -627,7 +645,7 @@ begin
   definition "hrp_imp RR RR' \<equiv> 
     \<forall>a b. (fst RR' a b \<turnstile> fst RR a b) \<and> (snd RR a b \<turnstile> snd RR' a b)"
 
-  lemma hfref_imp: "hrp_imp RR RR' \<Longrightarrow> [P]\<^sub>a RR \<rightarrow> S \<subseteq> [P]\<^sub>a RR' \<rightarrow> S"  
+  lemma hfref_imp: "hrp_imp RR RR' \<Longrightarrow> [P]\<^sub>a [C]\<^sub>c RR \<rightarrow>\<^sub>d S [CP]\<^sub>c \<subseteq> [P]\<^sub>a [C]\<^sub>c RR' \<rightarrow>\<^sub>d S [CP]\<^sub>c"  
     apply clarsimp
     apply (erule hfref_cons)
     apply (simp_all add: hrp_imp_def)
@@ -641,10 +659,10 @@ begin
 
 
   lemma hrp_comp_cong: "hrp_imp A A' \<Longrightarrow> B=B' \<Longrightarrow> hrp_imp (hrp_comp A B) (hrp_comp A' B')"
-    by (auto simp: hrp_imp_def hrp_comp_def hr_comp_def entails_def sep_algebra_simps pred_lift_extract_simps)
+    by (auto simp: hrp_imp_def hrp_comp_def hr_comp_def entails_def sep_algebra_simps)
     
   lemma hrp_prod_cong: "hrp_imp A A' \<Longrightarrow> hrp_imp B B' \<Longrightarrow> hrp_imp (A*\<^sub>aB) (A'*\<^sub>aB')"
-    by (auto simp: hrp_imp_def prod_assn_def sep_algebra_simps pred_lift_extract_simps
+    by (auto simp: hrp_imp_def prod_assn_def sep_algebra_simps
       intro: conj_entails_mono
     )
 
@@ -652,7 +670,7 @@ begin
     unfolding hrp_imp_def
     by (fastforce intro: entails_trans)
 
-  lemma fcomp_norm_dflt_init: "x\<in>[P]\<^sub>a R \<rightarrow> T \<Longrightarrow> hrp_imp R S \<Longrightarrow> x\<in>[P]\<^sub>a S \<rightarrow> T"
+  lemma fcomp_norm_dflt_init: "x\<in>[P]\<^sub>a [C]\<^sub>c R \<rightarrow>\<^sub>d T [CP]\<^sub>c \<Longrightarrow> hrp_imp R S \<Longrightarrow> x\<in>[P]\<^sub>a [C]\<^sub>c S \<rightarrow>\<^sub>d T [CP]\<^sub>c"
     apply (erule set_rev_mp)
     by (rule hfref_imp)
 
@@ -665,7 +683,7 @@ begin
     assumes "\<And>x y. \<lbrakk>P x; (y,x)\<in>R; y\<in>Domain R; S' x \<rbrakk> \<Longrightarrow> Q x y \<equiv> Q' x y"
     shows "comp_PRE R P Q S \<equiv> comp_PRE R' P' Q' S'"
     using assms
-    by (fastforce simp: comp_PRE_def intro!: eq_reflection ext)
+    by (fastforce simp: comp_PRE_def fun_eq_iff intro!: eq_reflection)
 
   lemma fref_compI_PRE:
     "\<lbrakk> (f,g)\<in>fref P R1 R2; (g,h)\<in>fref Q S1 S2 \<rbrakk> 
@@ -701,65 +719,65 @@ begin
 
   lemma hfref_weaken_pre: 
     assumes "\<And>x. P x \<longrightarrow> P' x"  
-    assumes "(f,h) \<in> hfref P' R S"
-    shows "(f,h) \<in> hfref P R S"
+    assumes "(f,h) \<in> hfref P' C R S CP"
+    shows "(f,h) \<in> hfref P C R S CP"
     using assms
     by (auto simp: hfref_def)
 
   lemma hfref_weaken_pre': 
     assumes "\<And>x. \<lbrakk>P x; rdomp (fst R) x\<rbrakk> \<Longrightarrow> P' x"  
-    assumes "(f,h) \<in> hfref P' R S"
-    shows "(f,h) \<in> hfref P R S"
+    assumes "(f,h) \<in> hfref P' C R S CP"
+    shows "(f,h) \<in> hfref P C R S CP"
     apply (rule hfrefI)
     apply (rule hn_refine_preI)
     using assms
     by (auto simp: hfref_def rdomp_def)
 
   lemma hfref_weaken_pre_nofail': 
-    assumes "(f,g) \<in> [P]\<^sub>a\<^sub>d R \<rightarrow> S"  
+    assumes "(f,g) \<in> [P]\<^sub>a [C]\<^sub>c R \<rightarrow>\<^sub>d S [CP]\<^sub>c"  
     assumes "\<And>x. \<lbrakk>nofail (g x); Q x\<rbrakk> \<Longrightarrow> P x"
-    shows "(f,g) \<in> [Q]\<^sub>a\<^sub>d R \<rightarrow> S"
+    shows "(f,g) \<in> [Q]\<^sub>a [C]\<^sub>c R \<rightarrow>\<^sub>d S [CP]\<^sub>c"
     apply (rule hfref_weaken_pre[OF _ assms(1)[THEN hfref_weaken_pre_nofail]])
     using assms(2) 
     by blast
 
   lemma hfref_with_rdomI:
-    assumes "(c,a)\<in>[\<lambda>x. P x \<and> rdomp (fst A) x]\<^sub>a\<^sub>d A \<rightarrow> R"
-    shows "(c,a)\<in>[P]\<^sub>a\<^sub>d A \<rightarrow> R"
+    assumes "(c,a)\<in>[\<lambda>x. P x \<and> rdomp (fst A) x]\<^sub>a [C]\<^sub>c A \<rightarrow>\<^sub>d R [CP]\<^sub>c"
+    shows "(c,a)\<in>[P]\<^sub>a [C]\<^sub>c A \<rightarrow>\<^sub>d R [CP]\<^sub>c"
     by (metis (no_types, lifting) assms hfref_weaken_pre')
     
   lemma hfref_compI_PRE_aux:
-    assumes A: "(f,g) \<in> [P]\<^sub>a\<^sub>d RR' \<rightarrow> S"
+    assumes A: "(f,g) \<in> [P]\<^sub>a [C]\<^sub>c RR' \<rightarrow>\<^sub>d S [CP]\<^sub>c"
     assumes B: "(g,h) \<in> [Q]\<^sub>f\<^sub>d T \<rightarrow> (\<lambda>x. \<langle>U x\<rangle>nres_rel)"
-    shows "(f,h) \<in> [comp_PRE T Q (\<lambda>_. P) (\<lambda>_. True)]\<^sub>a\<^sub>d 
-      hrp_comp RR' T \<rightarrow> hrr_comp T S U"
+    shows "(f,h) \<in> [comp_PRE T Q (\<lambda>_. P) (\<lambda>_. True)]\<^sub>a [C]\<^sub>c
+      hrp_comp RR' T \<rightarrow>\<^sub>d hrr_comp T S U [CP]\<^sub>c"
     apply (rule hfref_weaken_pre[OF _ hfcomp[OF A B]])
     by (auto simp: comp_PRE_def)
 
 
   lemma hfref_compI_PRE:
-    assumes A: "(f,g) \<in> [P]\<^sub>a\<^sub>d RR' \<rightarrow> S"
+    assumes A: "(f,g) \<in> [P]\<^sub>a [C]\<^sub>c RR' \<rightarrow>\<^sub>d S [CP]\<^sub>c"
     assumes B: "(g,h) \<in> [Q]\<^sub>f\<^sub>d T \<rightarrow> (\<lambda>x. \<langle>U x\<rangle>nres_rel)"
-    shows "(f,h) \<in> [comp_PRE T Q (\<lambda>x y. P y) (\<lambda>x. nofail (h x))]\<^sub>a\<^sub>d 
-      hrp_comp RR' T \<rightarrow> hrr_comp T S U"
+    shows "(f,h) \<in> [comp_PRE T Q (\<lambda>x y. P y) (\<lambda>x. nofail (h x))]\<^sub>a [C]\<^sub>c
+      hrp_comp RR' T \<rightarrow>\<^sub>d hrr_comp T S U [CP]\<^sub>c"
     using hfref_compI_PRE_aux[OF A B, THEN hfref_weaken_pre_nofail]  
     apply (rule hfref_weaken_pre[rotated])
     apply (auto simp: comp_PRE_def)
     done
 
   lemma hfref_PRE_D1:
-    assumes "(f,h) \<in> hfref (comp_PRE S1 Q (\<lambda>x _. P x) X) R S"  
-    shows "(f,h) \<in> hfref (\<lambda>x. Q x \<and> P x) R S"
+    assumes "(f,h) \<in> hfref (comp_PRE S1 Q (\<lambda>x _. P x) X) C R S CP"  
+    shows "(f,h) \<in> hfref (\<lambda>x. Q x \<and> P x) C R S CP"
     by (rule hfref_weaken_pre[OF PRE_D1 assms])
 
   lemma hfref_PRE_D2:
-    assumes "(f,h) \<in> hfref (comp_PRE S1 Q P X) R S"  
-    shows "(f,h) \<in> hfref (\<lambda>x. Q x \<and> (\<forall>y. (y,x)\<in>S1 \<longrightarrow> X x \<longrightarrow> P x y)) R S"
+    assumes "(f,h) \<in> hfref (comp_PRE S1 Q P X) C R S CP"  
+    shows "(f,h) \<in> hfref (\<lambda>x. Q x \<and> (\<forall>y. (y,x)\<in>S1 \<longrightarrow> X x \<longrightarrow> P x y)) C R S CP"
     by (rule hfref_weaken_pre[OF PRE_D2 assms])
 
   lemma hfref_PRE_D3:
-    assumes "(f,h) \<in> hfref (comp_PRE S1 Q P X) R S"  
-    shows "(f,h) \<in> hfref (comp_PRE S1 Q P X) R S"
+    assumes "(f,h) \<in> hfref (comp_PRE S1 Q P X) C R S CP"  
+    shows "(f,h) \<in> hfref (comp_PRE S1 Q P X) C R S CP"
     using assms .
 
   lemmas hfref_PRE_D = hfref_PRE_D1 hfref_PRE_D3
@@ -834,8 +852,8 @@ begin
 
   lemma auto_weaken_pre_init_hf: 
     assumes "\<And>x. PROTECT P x \<longrightarrow> P' x"  
-    assumes "(f,h) \<in> hfref P' R S"
-    shows "(f,h) \<in> hfref P R S"
+    assumes "(f,h) \<in> hfref P' C R S CP"
+    shows "(f,h) \<in> hfref P C R S CP"
     using assms
     by (auto simp: hfref_def)
 
@@ -890,8 +908,8 @@ begin
     by simp
 
   lemma hfsynth_hnr_from_hfI:
-    assumes "\<forall>x xi. P x \<and> hfsynth_ID_R (fst R) x \<longrightarrow> hn_refine (hn_ctxt (fst R) x xi ** \<box>) (f$xi) (hn_ctxt (snd R) x xi ** \<box>) (S x xi) (g$x)"
-    shows "(f,g) \<in> [P]\<^sub>a\<^sub>d R \<rightarrow> S"
+    assumes "\<forall>x xi. P x \<and> C xi \<and> hfsynth_ID_R (fst R) x \<longrightarrow> hn_refine (hn_ctxt (fst R) x xi ** \<box>) (f$xi) (hn_ctxt (snd R) x xi ** \<box>) (S x) (CP xi) (g$x)"
+    shows "(f,g) \<in> [P]\<^sub>a [C]\<^sub>c R \<rightarrow>\<^sub>d S [CP]\<^sub>c"
     using assms
     unfolding hfref_def 
     by (auto simp: hn_ctxt_def)
@@ -963,11 +981,13 @@ begin
       type hnr_analysis = {
         thm: thm,                     (* Original theorem, may be normalized *)
         precond: term,                (* Precondition, abstracted over abs-arguments *)
+        ccond: term,                  (* Concrete precondition, abstracted over conc-arguments *)
         prems : term list,            (* Premises not depending on arguments *)
         ahead: term * bool,           (* Abstract function, has leading RETURN *)
         chead: term * bool,           (* Concrete function, has leading return *)
         argrels: (term * bool) list,  (* Argument relations, preserved (keep-flag) *)
-        result_rel: term              (* Result relation *)
+        result_rel: term,             (* Result relation *)
+        cpcond: term                  (* Concrete postcondition (abstracted over conc-arguments) *)
       }
   
       val analyze_hnr: Proof.context -> thm -> hnr_analysis
@@ -1085,8 +1105,8 @@ begin
       fun rthm_type thm =
         case Thm.concl_of thm |> HOLogic.dest_Trueprop of
           @{mpat "(_,_) \<in> fref _ _ _"} => RT_FREF
-        | @{mpat "(_,_) \<in> hfref _ _ _"} => RT_HFREF
-        | @{mpat "hn_refine _ _ _ _ _"} => RT_HNR
+        | @{mpat "(_,_) \<in> hfref _ _ _ _ _"} => RT_HFREF
+        | @{mpat "hn_refine _ _ _ _ _ _"} => RT_HNR
         | @{mpat "(_,_) \<in> _"} => RT_HOPARAM (* TODO: Distinction between ho-param and fo-param *)
         | _ => RT_OTHER
 
@@ -1172,13 +1192,15 @@ begin
         val ord = prod_ord Term_Ord.fast_term_ord Term_Ord.fast_term_ord);
   
       type hnr_analysis = {
-        thm: thm,                     
-        precond: term,                
-        prems : term list,
-        ahead: term * bool,           
-        chead: term * bool,           
-        argrels: (term * bool) list,  
-        result_rel: term              
+        thm: thm,                     (* Original theorem, may be normalized *)
+        precond: term,                (* Precondition, abstracted over abs-arguments *)
+        ccond: term,                  (* Concrete precondition, abstracted over conc-arguments *)
+        prems : term list,            (* Premises not depending on arguments *)
+        ahead: term * bool,           (* Abstract function, has leading RETURN *)
+        chead: term * bool,           (* Concrete function, has leading return *)
+        argrels: (term * bool) list,  (* Argument relations, preserved (keep-flag) *)
+        result_rel: term,             (* Result relation *)
+        cpcond: term                  (* Concrete postcondition (abstracted over conc-arguments) *)
       }
   
     
@@ -1242,8 +1264,9 @@ begin
           | dest_hn_ctxt _ = fail "Invalid hn_ctxt parameter in pre or postcondition"
     
     
-        fun dest_hn_refine @{mpat "(hn_refine ?G ?c ?G' ?R ?a)"} = (G,c,G',R,a) 
+        (*fun dest_hn_refine @{mpat "(hn_refine ?G ?c ?G' ?R ?a)"} = (G,c,G',R,CP,a) 
           | dest_hn_refine _ = fail "Conclusion is not a hn_refine statement"
+        *)
     
         (*
           Strip separation conjunctions. Special case for "emp", which is ignored. 
@@ -1273,7 +1296,7 @@ begin
         val _ = add_dbg "thm" [Thm.prop_of thm]
         val prems = Thm.prems_of thm
         val concl = Thm.concl_of thm |> HOLogic.dest_Trueprop
-        val (G,c,G',R,a) = dest_hn_refine concl
+        val (G,c,G',R,CP,a) = Sepref_Basic.dest_hn_refine concl
     
         val pre_pairs = G 
           |> strip_star'
@@ -1344,35 +1367,64 @@ begin
         val aa_set = Termtab.make_set aargs
         val ca_set = Termtab.make_set cargs
 
-        fun is_precond t =
+        
+        datatype PCLS = pc_PREM | pc_ABS | pc_CONC
+        
+        fun classify_precond t =
+          case (exists_subterm (Termtab.defined ca_set) t, exists_subterm (Termtab.defined aa_set) t) of
+            (false,false) => (pc_PREM,t)
+          | (true,false) => (pc_CONC,t)
+          | (false,true) => (pc_ABS,t)
+          | _ => fail "Premise contains abstract and concrete argument"
+
+        val prems = map classify_precond prems  
+                  
+        val preconds = filter (fn (x,_) => x=pc_ABS) prems |> map snd
+        val cconds = filter (fn (x,_) => x=pc_CONC) prems |> map snd
+        val prems = filter (fn (x,_) => x=pc_PREM) prems |> map snd
+        
+        (*fun is_precond t =
           (exists_subterm (Termtab.defined ca_set) t andalso fail "Premise contains concrete argument")
           orelse exists_subterm (Termtab.defined aa_set) t
 
         val (preconds, prems) = split is_precond prems  
+        *)
     
         val precond = 
           map atomize_prem preconds 
           |> mk_conjs
           |> fold lambda aargs
     
+        val ccond = 
+          map atomize_prem cconds 
+          |> mk_conjs
+          |> fold lambda cargs
+          
         val _ = add_dbg "precond" [precond]
+        val _ = add_dbg "ccond" [ccond]
         val _ = add_dbg "prems" prems
     
+        val cpcond = fold lambda cargs CP  
+        val R = fold lambda aargs R
+        val _ = add_dbg "cpcond" [cpcond]
+        
       in
         {
           thm = thm,
           precond = precond,
+          ccond = ccond,
           prems = prems,
           ahead = (ahead,leading_RETURN),
           chead = (chead,leading_return),
           argrels = argrels,
-          result_rel = R
+          result_rel = R,
+          cpcond = cpcond
         }
       end  
     
       fun pretty_hnr_analysis 
         ctxt 
-        ({thm,precond,ahead,chead,argrels,result_rel,...}) 
+        ({thm,precond,ccond,ahead,chead,argrels,result_rel,cpcond,...}) 
         : Pretty.T =
       let  
         val _ = thm (* Suppress unused warning for thm *)
@@ -1396,8 +1448,11 @@ begin
           Pretty.block [ 
             Pretty.enclose "[" "]" [pretty_chead, pretty_ahead],
             Pretty.enclose "[" "]" [Syntax.pretty_term ctxt precond],
+            Pretty.enclose "[" "]" [Syntax.pretty_term ctxt ccond],
             Pretty.brk 1,
-            Pretty.block (Pretty.separate " \<rightarrow>" (map pretty_argrel argrels @ [Syntax.pretty_term ctxt result_rel]))
+            Pretty.block (Pretty.separate " \<rightarrow>" (map pretty_argrel argrels @ [Syntax.pretty_term ctxt result_rel])),
+            Pretty.brk 1,
+            Pretty.enclose "[" "]" [Syntax.pretty_term ctxt cpcond]
           ]
         ] |> Pretty.block
     
@@ -1406,7 +1461,7 @@ begin
     
       fun mk_hfref_thm 
         ctxt 
-        ({thm,precond,prems,ahead,chead,argrels,result_rel}) = 
+        ({thm,precond,ccond,prems,ahead,chead,argrels,result_rel,cpcond}) = 
       let
     
         fun mk_keep (R,true) = @{mk_term "?R\<^sup>k"}
@@ -1455,6 +1510,18 @@ begin
           |> rpt_uncurry num_args
           |> rew_uncurry_lambda (* Convert to nicer \<lambda>((...,_),_) - form*)
 
+        val ccond = ccond
+          |> rpt_uncurry num_args
+          |> rew_uncurry_lambda (* Convert to nicer \<lambda>((...,_),_) - form*)
+          
+        val cpcond = cpcond
+          |> rpt_uncurry num_args
+          |> rew_uncurry_lambda (* Convert to nicer \<lambda>((...,_),_) - form*)
+
+        val result_rel = result_rel
+          |> rpt_uncurry num_args
+          |> rew_uncurry_lambda (* Convert to nicer \<lambda>((...,_),_) - form*)
+                    
         (* Re-attach leading RETURN/return *)
         fun mk_RETURN (t,r) = if r then 
             let
@@ -1493,10 +1560,10 @@ begin
     
         (* Produce final result statement *)
         
-        val _ = @{print} chead
-        val _ = @{print} (fastype_of chead)
+        (*val _ = @{print} chead
+        val _ = @{print} (fastype_of chead)*)
         
-        val result = @{mk_term "Trueprop ((?chead,?ahead) \<in> [?precond]\<^sub>a ?argrel \<rightarrow> ?result_rel)"}
+        val result = @{mk_term "Trueprop ((?chead,?ahead) \<in> [?precond]\<^sub>a [?ccond]\<^sub>c ?argrel \<rightarrow>\<^sub>d ?result_rel [?cpcond]\<^sub>c)"}
         val result = Logic.list_implies (prems,result)
     
         (********************************)

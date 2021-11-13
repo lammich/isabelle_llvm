@@ -1,7 +1,7 @@
 theory Sorting_Setup
 imports "../../sepref/IICF/IICF" "../../sepref/IICF/Impl/Proto_IICF_EOArray" Sorting_Misc 
 begin
-  hide_const (open) Word.slice array_assn
+  hide_const (open) Word.slice LLVM_DS_Array.array_assn LLVM_DS_NArray.array_slice_assn
 
   
 
@@ -266,7 +266,7 @@ locale sort_impl_context = weak_ordering +
   notes [[sepref_register_adhoc "(\<^bold><)"]]
 begin
 
-  abbreviation "arr_assn \<equiv> woarray_assn elem_assn"
+  abbreviation "arr_assn \<equiv> woarray_slice_assn elem_assn"
   
   
   definition "cmpo_idxs2 xs\<^sub>0 i j \<equiv> doN {
@@ -339,23 +339,23 @@ begin
     by (auto simp: pw_le_iff refine_pw_simps)
     
         
-  sepref_definition cmp_idxs_impl [llvm_inline] is "uncurry2 cmp_idxs2" :: "(woarray_assn elem_assn)\<^sup>k *\<^sub>a snat_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
+  sepref_definition cmp_idxs_impl [llvm_inline] is "uncurry2 cmp_idxs2" :: "(woarray_slice_assn elem_assn)\<^sup>k *\<^sub>a snat_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
     unfolding cmp_idxs2_def cmpo_idxs2_def PR_CONST_def
     supply [sepref_fr_rules] = eo_hnr_dep
     by sepref
     
-  sepref_definition cmpo_idxs_impl [llvm_inline] is "uncurry2 cmpo_idxs2" :: "(eoarray_assn elem_assn)\<^sup>k *\<^sub>a snat_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
+  sepref_definition cmpo_idxs_impl [llvm_inline] is "uncurry2 cmpo_idxs2" :: "(eoarray_slice_assn elem_assn)\<^sup>k *\<^sub>a snat_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
     unfolding cmpo_idxs2_def PR_CONST_def
     supply [sepref_fr_rules] = eo_hnr_dep
     by sepref
 
-  sepref_definition cmpo_v_idx_impl [llvm_inline] is "uncurry2 cmpo_v_idx2" :: "(eoarray_assn elem_assn)\<^sup>k *\<^sub>a elem_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
+  sepref_definition cmpo_v_idx_impl [llvm_inline] is "uncurry2 cmpo_v_idx2" :: "(eoarray_slice_assn elem_assn)\<^sup>k *\<^sub>a elem_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
     unfolding cmpo_v_idx2_def PR_CONST_def
     supply [sepref_fr_rules] = eo_hnr_dep
     by sepref
   
   
-  sepref_definition cmpo_idx_v_impl [llvm_inline] is "uncurry2 cmpo_idx_v2" :: "(eoarray_assn elem_assn)\<^sup>k *\<^sub>a snat_assn\<^sup>k *\<^sub>a elem_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
+  sepref_definition cmpo_idx_v_impl [llvm_inline] is "uncurry2 cmpo_idx_v2" :: "(eoarray_slice_assn elem_assn)\<^sup>k *\<^sub>a snat_assn\<^sup>k *\<^sub>a elem_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
     unfolding cmpo_idx_v2_def PR_CONST_def
     supply [sepref_fr_rules] = eo_hnr_dep
     by sepref
@@ -386,7 +386,7 @@ begin
     apply refine_vcg
     by auto
         
-  sepref_definition cmp_idxs'_impl [llvm_inline] is "uncurry2 cmp_idxs2'" :: "(woarray_assn elem_assn)\<^sup>k *\<^sub>a snat_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
+  sepref_definition cmp_idxs'_impl [llvm_inline] is "uncurry2 cmp_idxs2'" :: "(woarray_slice_assn elem_assn)\<^sup>k *\<^sub>a snat_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
     unfolding cmp_idxs2'_def PR_CONST_def
     by sepref
     
@@ -851,10 +851,10 @@ locale random_access_iterator =
     and extract_impl :: "'oi \<Rightarrow> 'size::len2 word \<Rightarrow> ('ai \<times> 'oi) llM"
     and set_impl :: "'oi \<Rightarrow> 'size word \<Rightarrow> 'ai \<Rightarrow> 'oi llM"
   assumes
-          to_eo_hnr: "(to_eo_impl, mop_to_eo_conv) \<in> wo_assn\<^sup>d \<rightarrow>\<^sub>a\<^sub>d (\<lambda>_ ai. cnc_assn (\<lambda>x. x=ai) eo_assn)" 
-      and to_wo_hnr: "(to_wo_impl, mop_to_wo_conv) \<in> eo_assn\<^sup>d \<rightarrow>\<^sub>a\<^sub>d (\<lambda>_ ai. cnc_assn (\<lambda>x. x=ai) wo_assn)"
-      and eo_extract_hnr_aux: "(uncurry extract_impl, uncurry mop_eo_extract) \<in> eo_assn\<^sup>d *\<^sub>a snat_assn\<^sup>k \<rightarrow>\<^sub>a\<^sub>d (\<lambda>_ (ai,_). elem_assn \<times>\<^sub>a cnc_assn (\<lambda>x. x = ai) eo_assn)"
-      and eo_set_hnr_aux: "(uncurry2 set_impl, uncurry2 mop_eo_set) \<in> eo_assn\<^sup>d *\<^sub>a snat_assn\<^sup>k *\<^sub>a elem_assn\<^sup>d \<rightarrow>\<^sub>a\<^sub>d (\<lambda>_ ((ai,_),_). cnc_assn (\<lambda>x. x=ai) eo_assn)"
+          to_eo_hnr: "(to_eo_impl, mop_to_eo_conv) \<in> [\<lambda>_. True]\<^sub>c wo_assn\<^sup>d \<rightarrow> (eo_assn) [\<lambda>ai x. x=ai]\<^sub>c" 
+      and to_wo_hnr: "(to_wo_impl, mop_to_wo_conv) \<in> [\<lambda>_. True]\<^sub>c eo_assn\<^sup>d \<rightarrow> (wo_assn) [\<lambda>ai x. x=ai]\<^sub>c"
+      and eo_extract_hnr_aux: "(uncurry extract_impl, uncurry mop_eo_extract) \<in> [\<lambda>_. True]\<^sub>c eo_assn\<^sup>d *\<^sub>a snat_assn\<^sup>k \<rightarrow> (elem_assn \<times>\<^sub>a eo_assn) [\<lambda>(ai,_) (_,x). x=ai]\<^sub>c"
+      and eo_set_hnr_aux: "(uncurry2 set_impl, uncurry2 mop_eo_set) \<in> [\<lambda>_. True]\<^sub>c eo_assn\<^sup>d *\<^sub>a snat_assn\<^sup>k *\<^sub>a elem_assn\<^sup>d \<rightarrow> eo_assn [\<lambda>((ai,_),_) x. x=ai]\<^sub>c"
       
   notes [[sepref_register_adhoc to_eo_impl to_wo_impl extract_impl set_impl]]
 begin
@@ -866,7 +866,7 @@ begin
   private method rl_mono = 
     (rule hfref_cons; 
       clarsimp_all; 
-      clarsimp_all simp: cnc_assn_def sep_algebra_simps entails_lift_extract_simps)
+      clarsimp_all simp: sep_algebra_simps entails_lift_extract_simps)
 
   lemma eo_extract_nodep_hnr_aux: 
     "(uncurry extract_impl, uncurry mop_eo_extract) \<in> eo_assn\<^sup>d *\<^sub>a snat_assn\<^sup>k \<rightarrow>\<^sub>a elem_assn \<times>\<^sub>a eo_assn"
@@ -878,21 +878,23 @@ begin
     using eo_set_hnr_aux
     by rl_mono
     
-  lemma to_eo_nodep_hnr[sepref_fr_rules]: "(to_eo_impl, mop_to_eo_conv) \<in> wo_assn\<^sup>d \<rightarrow>\<^sub>a eo_assn"
+  lemmas [sepref_fr_rules] = to_eo_hnr to_wo_hnr
+    
+  lemma to_eo_nodep_hnr: "(to_eo_impl, mop_to_eo_conv) \<in> wo_assn\<^sup>d \<rightarrow>\<^sub>a eo_assn"
     using to_eo_hnr
     by rl_mono
 
-  lemma to_wo_nodep_hnr[sepref_fr_rules]: "(to_wo_impl, mop_to_wo_conv) \<in> eo_assn\<^sup>d \<rightarrow>\<^sub>a wo_assn"
+  lemma to_wo_nodep_hnr: "(to_wo_impl, mop_to_wo_conv) \<in> eo_assn\<^sup>d \<rightarrow>\<^sub>a wo_assn"
     using to_wo_hnr
     by rl_mono
   
         
     
-  sepref_decl_impl (ismop,no_register) eo_extract: eo_extract_hnr_aux .
-  sepref_decl_impl (ismop) eo_extract_nodep: eo_extract_nodep_hnr_aux .
+  sepref_decl_impl (ismop) eo_extract: eo_extract_hnr_aux .
+  sepref_decl_impl (ismop,no_register) eo_extract_nodep: eo_extract_nodep_hnr_aux .
   
-  sepref_decl_impl (ismop,no_register) eo_set: eo_set_hnr_aux .
-  sepref_decl_impl (ismop) eo_set_nodep: eo_set_nodep_hnr_aux .
+  sepref_decl_impl (ismop) eo_set: eo_set_hnr_aux .
+  sepref_decl_impl (ismop,no_register) eo_set_nodep: eo_set_nodep_hnr_aux .
         
     
   lemmas eo_hnr_dep = eo_extract_dep_hnr eo_extract_hnr_mop eo_set_hnr eo_set_hnr_mop 
@@ -901,7 +903,8 @@ begin
     to_eo_nodep_hnr to_wo_nodep_hnr
     
     
-  sepref_definition swap_eo_impl_aux is "uncurry2 swap_eo" :: "wo_assn\<^sup>d *\<^sub>a (snat_assn' TYPE('size))\<^sup>k *\<^sub>a (snat_assn' TYPE('size))\<^sup>k \<rightarrow>\<^sub>a wo_assn"
+  sepref_definition swap_eo_impl_aux is "uncurry2 swap_eo" 
+    :: "[\<lambda>_. True]\<^sub>c wo_assn\<^sup>d *\<^sub>a (snat_assn' TYPE('size))\<^sup>k *\<^sub>a (snat_assn' TYPE('size))\<^sup>k \<rightarrow> wo_assn [\<lambda>((xsi,_),_) r. r=xsi]\<^sub>c"
     unfolding swap_eo_def
     by sepref
     

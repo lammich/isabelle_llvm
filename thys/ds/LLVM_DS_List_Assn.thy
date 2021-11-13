@@ -4,7 +4,7 @@ imports "../vcg/LLVM_VCG_Main"
 begin
   (* TODO: Improve handling of pure assertions. 
     Dirty hacks like for pure list-assn shouldn't be necessary!
-  *)
+  *) 
 
   (* TODO: Move *)  
   lemma gen_drule:
@@ -35,8 +35,7 @@ begin
   subsection \<open>Tags\<close>  
   text \<open>Ghost instructions to guide the VCG and Frame Inference\<close>
   lemma entails_is_noop_htriple: "(A \<turnstile> B) \<Longrightarrow> llvm_htriple A (return x) (\<lambda>_. B)"
-    apply (auto simp: htriple_def wp_return)
-    by (metis entails_def sep_conj_impl1)
+    by (auto simp: htriple_def wpa_return elim: STATE_monoI)
 
   lemma tag_op_ruleI: 
     assumes "tag_op = return x"  
@@ -175,7 +174,10 @@ begin
     assumes "dom R \<supseteq> {0..<length ys}"
     shows "\<upharpoonleft>(list_assn A R) xs ys \<turnstile> \<box>"
     using assms unfolding list_assn_def 
-    by (auto simp: sep_algebra_simps entails_lift_extract_simps dest: map_le_implies_dom_le)
+    apply (subgoal_tac "{0..<length ys} - dom R = {}")
+    apply simp
+    apply (auto simp: sep_algebra_simps entails_lift_extract_simps dest: map_le_implies_dom_le)
+    done
 
   subsubsection \<open>Extracting and Joining Elements\<close>  
   
@@ -196,7 +198,7 @@ begin
     using assms unfolding list_assn_def
     supply [simp] = le_idxe_map_updI list_assn_extract_aux ndomIff
     supply fri_red_img[fri_red_rules]
-    apply (clarsimp simp: sep_algebra_simps entails_lift_extract_simps)
+    apply (cases "length xs = length ys"; simp add: )
     apply (rule ENTAILSD)
     apply vcg
     done
@@ -223,7 +225,8 @@ begin
     
     supply [simp] = le_idxe_map_updI le_idxe_map_delD
     supply fri_red_img[fri_red_rules]
-    apply (clarsimp simp: sep_algebra_simps entails_lift_extract_simps)
+    apply (clarsimp simp: sep_algebra_simps entails_lift_extract_simps simp del: pred_lift_extract_simps)
+
     apply (subst list_assn_upd_aux)
     subgoal by (metis domI idxe_map_dom map_leD)
     apply auto [2]
@@ -237,7 +240,7 @@ begin
     shows "\<upharpoonleft>(list_assn A R) xs ys ** \<upharpoonleft>A x y \<turnstile> \<upharpoonleft>(list_assn A (R(i:=None))) xs ys"
     apply (rule entails_pureI)
     apply (subst (asm) list_assn_def)
-    apply (clarsimp simp: sep_algebra_simps dest!: pure_part_split_conj)
+    apply (clarsimp simp: sep_algebra_simps simp del: pred_lift_extract_simps dest!: pure_part_split_conj)
     apply (rule entails_trans[OF list_assn_update[where i=i]])
     using assms by (auto dest: le_idxe_mapD)
     
@@ -252,8 +255,11 @@ begin
   lemma list_assn_push_back:
     shows "(\<upharpoonleft>(list_assn A R) xs ys ** \<upharpoonleft>A x y) \<turnstile> (\<upharpoonleft>(list_assn A R) (xs@[x]) (ys@[y]))"
     unfolding list_assn_def
-    apply (clarsimp simp: sep_algebra_simps atLeast0_lessThan_Suc entails_lift_extract_simps 
-      insert_Diff_if le_idxe_map_append2I; safe)
+    apply (clarsimp 
+      simp: sep_algebra_simps atLeast0_lessThan_Suc entails_lift_extract_simps
+      simp: insert_Diff_if le_idxe_map_append2I
+      simp del: pred_lift_extract_simps
+      ; safe)
     apply (auto dest: le_idxe_map_lenD; fail)
     apply (rule ENTAILSD)
     supply [simp] = nth_append
@@ -269,7 +275,9 @@ begin
     apply (cases xs rule: rev_cases; cases ys rule: rev_cases)
     apply (clarsimp_all 
       dest!: pure_part_split_conj 
-      simp: sep_algebra_simps atLeast0_lessThan_Suc domI set_minus_minus_disj_conv)
+      simp: sep_algebra_simps atLeast0_lessThan_Suc domI set_minus_minus_disj_conv
+      simp del: pred_lift_extract_simps
+      )
     apply (rule ENTAILSD)
     supply [simp] = le_idxe_map_append1I
     by vcg

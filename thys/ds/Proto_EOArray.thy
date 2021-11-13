@@ -147,7 +147,33 @@ begin
     supply [simp] = lo_insert_elem
     apply vcg'
     done
+
     
+    
+  definition "sao_assn A \<equiv> mk_assn (\<lambda>xs p. EXS xsi. \<upharpoonleft>array_slice_assn xsi p ** \<upharpoonleft>(list_assn (oelem_assn A)) xs xsi)"
+
+  
+  lemma sao_nth_rule[vcg_rules]: "llvm_htriple 
+    (\<upharpoonleft>(sao_assn A) xs p \<and>* \<upharpoonleft>snat.assn i ii \<and>* \<up>\<^sub>d(i < length xs \<and> xs!i\<noteq>None)) 
+    (array_nth p ii)
+    (\<lambda>ri. \<upharpoonleft>A (the (xs!i)) ri \<and>* \<upharpoonleft>(sao_assn A) (xs[i:=None]) p)"  
+    unfolding sao_assn_def
+    supply [simp] = lo_extract_elem
+    apply vcg'
+    done
+  
+  
+  lemma sao_upd_rule_snat[vcg_rules]: "llvm_htriple 
+    (\<upharpoonleft>(sao_assn A) xs p \<and>* \<upharpoonleft>A x xi \<and>* \<upharpoonleft>snat.assn i ii \<and>* \<up>\<^sub>d(i < length xs \<and> xs!i=None)) 
+    (array_upd p ii xi)
+    (\<lambda>r. \<up>(r = p) \<and>* \<upharpoonleft>(sao_assn A) (xs[i := Some x]) p)"
+    unfolding sao_assn_def 
+    supply [simp] = lo_insert_elem
+    apply vcg'
+    done
+    
+    
+        
 (*
   xxx, ctd here: new, free, then integrate into sepref!   
     XXX: First integrate into sepref, than care about new and free.

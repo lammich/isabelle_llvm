@@ -147,7 +147,7 @@ ML \<open>
     local
       open Sepref_Basic
       fun mark_params t = let
-        val (P,c,Q,R,a) = dest_hn_refine t
+        val (P,c,Q,R,CP,a) = dest_hn_refine t
         val pps = strip_star P |> map_filter (dest_hn_ctxt_opt #> map_option #2)
 
         fun tr env (t as @{mpat "RETURN$?x"}) = 
@@ -160,7 +160,7 @@ ML \<open>
 
         val a = tr [] a
       in
-        mk_hn_refine (P,c,Q,R,a)
+        mk_hn_refine (P,c,Q,R,CP,a)
       end
 
     in  
@@ -240,7 +240,7 @@ ML \<open>
     fun mark_params_tac ctxt = CONVERSION (
       Refine_Util.HOL_concl_conv (K (mark_params_conv ctxt)) ctxt)
 
-    fun contains_eval @{mpat "Trueprop (hn_refine _ _ _ _ ?a)"} =   
+    fun contains_eval @{mpat "Trueprop (hn_refine _ _ _ _ _ ?a)"} =   
       Term.exists_subterm (fn @{mpat EVAL} => true | _ => false) a
     | contains_eval t = raise TERM("contains_eval",[t]);  
 

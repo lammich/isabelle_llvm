@@ -671,8 +671,11 @@ context sort_impl_context begin
     pdq_is_unguarded_insert3: "pdq_is_insert2 False"
     maybe_is_insert3: "maybe_is_insert2"
   
+    
+  term arr_assn  
+    
   sepref_def pdq_is_guarded_insert_impl [llvm_inline] is "uncurry2 (PR_CONST (pdq_is_insert2' True))" 
-    :: "(woarray_assn elem_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a woarray_assn elem_assn"
+    :: "[\<lambda>_.True]\<^sub>c arr_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow> arr_assn [\<lambda>((a,_),_) r. r=a]\<^sub>c"
     unfolding pdq_is_insert2'_def PR_CONST_def
     apply (simp named_ss HOL_ss:)
     supply [[goals_limit = 1]]
@@ -680,7 +683,7 @@ context sort_impl_context begin
     by sepref
 
   sepref_def pdq_is_unguarded_insert_impl [llvm_inline] is "uncurry2 (PR_CONST (pdq_is_insert2' False))" 
-    :: "(woarray_assn elem_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a woarray_assn elem_assn"
+    :: "[\<lambda>_.True]\<^sub>c arr_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow> arr_assn [\<lambda>((a,_),_) r. r=a]\<^sub>c"
     unfolding pdq_is_insert2'_def PR_CONST_def
     apply (simp named_ss HOL_ss:)
     supply [[goals_limit = 1]]
@@ -688,7 +691,7 @@ context sort_impl_context begin
     by sepref
 
   sepref_def maybe_is_insert_impl [llvm_inline] is "uncurry2 (PR_CONST maybe_is_insert2')" 
-    :: "(woarray_assn elem_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a size_assn \<times>\<^sub>a woarray_assn elem_assn"
+    :: "[\<lambda>_.True]\<^sub>c arr_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow> size_assn \<times>\<^sub>a arr_assn [\<lambda>((a,_),_) (_,r). r=a]\<^sub>c"
     unfolding maybe_is_insert2'_def PR_CONST_def
     supply [[goals_limit = 1]]
     apply (annot_snat_const "TYPE(size_t)")
@@ -738,21 +741,21 @@ context sort_impl_context begin
     maybe_insort
     
   sepref_def pdq_unguarded_insort_impl is "uncurry2 (PR_CONST (pdq_insort False))" 
-    :: "(woarray_assn elem_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a woarray_assn elem_assn"
+    :: "[\<lambda>_.True]\<^sub>c arr_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow> arr_assn [\<lambda>((a,_),_) r. r=a]\<^sub>c"
     unfolding pdq_insort_def PR_CONST_def
     apply (simp named_ss HOL_ss:)
     apply (annot_snat_const "TYPE(size_t)")
     by sepref
     
   sepref_def pdq_guarded_insort_impl is "uncurry2 (PR_CONST (pdq_insort True))" 
-    :: "(woarray_assn elem_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a woarray_assn elem_assn"
+    :: "[\<lambda>_.True]\<^sub>c arr_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow> arr_assn [\<lambda>((a,_),_) r. r=a]\<^sub>c"
     unfolding pdq_insort_def PR_CONST_def
     apply (simp named_ss HOL_ss:)
     apply (annot_snat_const "TYPE(size_t)")
     by sepref
      
   sepref_def maybe_insort_impl is "uncurry2 (PR_CONST maybe_insort)" 
-    :: "(woarray_assn elem_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn \<times>\<^sub>a woarray_assn elem_assn"
+    :: "[\<lambda>_.True]\<^sub>c arr_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow> bool1_assn \<times>\<^sub>a arr_assn [\<lambda>((a,_),_) (_,r). r=a]\<^sub>c"
     unfolding maybe_insort_def PR_CONST_def
     apply (simp named_ss HOL_ss:)
     apply (annot_snat_const "TYPE(size_t)")
@@ -763,7 +766,7 @@ context sort_impl_context begin
   lemma insort_is_decG: "pdq_insort = pdq_insort_decG" unfolding pdq_insort_decG_def by (auto intro!: ext)
     
   sepref_definition pdq_insort_impl [llvm_inline] is "uncurry3 (PR_CONST pdq_insort_decG)" 
-    :: "bool1_assn\<^sup>k *\<^sub>a (woarray_assn elem_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a woarray_assn elem_assn"
+    :: "[\<lambda>_.True]\<^sub>c bool1_assn\<^sup>k *\<^sub>a arr_assn\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow> arr_assn [\<lambda>(((_,a),_),_) r. r=a]\<^sub>c"
     unfolding pdq_insort_decG_def PR_CONST_def by sepref
      
     

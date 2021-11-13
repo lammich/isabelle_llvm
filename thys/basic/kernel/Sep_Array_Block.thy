@@ -30,22 +30,22 @@ subsection \<open>Memory and Pointer Operations\<close>
 locale array_block1 =
   fixes static_err :: 'err
     and mem_err :: 'err
-    and vload :: "'vaddr::this_addr \<Rightarrow> ('val,_,'val,'err) M"
-    and vstore :: "'val \<Rightarrow> 'vaddr \<Rightarrow> (unit,_,'val,'err) M"
-    and vgep :: "'vaddr \<Rightarrow> 'vidx \<Rightarrow> ('vaddr,_,'val,'err) M"
+    and vload :: "'vaddr::this_addr \<Rightarrow> ('val,_,'val,'err,'i::interference) M"
+    and vstore :: "'val \<Rightarrow> 'vaddr \<Rightarrow> (unit,_,'val,'err,'i) M"
+    and vgep :: "'vaddr \<Rightarrow> 'vidx \<Rightarrow> ('vaddr,_,'val,'err,'i) M"
 begin
-  definition load :: "'vaddr baddr \<Rightarrow> ('val,_,'val block,'err) M" where
+  definition load :: "'vaddr baddr \<Rightarrow> ('val,_,'val block,'err,'i) M" where
     "load \<equiv> \<lambda>BADDR i va \<Rightarrow> fcheck mem_err (i\<ge>0) \<then> zoom (lift_lens mem_err (idx\<^sub>L (nat i))) (vload va)"
 
-  definition store :: "'val \<Rightarrow> 'vaddr baddr \<Rightarrow> (unit,_,'val block,'err) M" where
+  definition store :: "'val \<Rightarrow> 'vaddr baddr \<Rightarrow> (unit,_,'val block,'err,'i) M" where
     "store \<equiv> \<lambda>x. \<lambda>BADDR i va \<Rightarrow> fcheck mem_err (i\<ge>0) \<then> zoom (lift_lens mem_err (idx\<^sub>L (nat i))) (vstore x va)" 
 
   text \<open>Check that a block address is in range, i.e., at most one past the end of the actual block.\<close>
-  definition check_addr :: "'vaddr baddr \<Rightarrow> (unit,_,'val block,'err) M" where
+  definition check_addr :: "'vaddr baddr \<Rightarrow> (unit,_,'val block,'err,'i) M" where
     "check_addr \<equiv> \<lambda>BADDR i va \<Rightarrow> doM {blk\<leftarrow>Monad.get; fcheck mem_err (0\<le>i \<and> i\<le>int (length blk))}"
 
   text \<open>Index (offset) an address. It must point to the start of a value.\<close>  
-  definition checked_idx_baddr :: "'vaddr baddr \<Rightarrow> int \<Rightarrow> ('vaddr baddr, _, 'val list, 'err) M" where 
+  definition checked_idx_baddr :: "'vaddr baddr \<Rightarrow> int \<Rightarrow> ('vaddr baddr, _, 'val list, 'err,'i) M" where 
   "checked_idx_baddr \<equiv> \<lambda>BADDR i va \<Rightarrow> \<lambda>j. doM {
     fcheck mem_err (va = this_addr);
     let r = BADDR (i+j) va;
@@ -54,7 +54,7 @@ begin
   }"
 
   text \<open>Advance an address into the structure of a value.\<close>
-  definition checked_gep_addr :: "'vaddr baddr \<Rightarrow> 'vidx \<Rightarrow> ('vaddr baddr, _, 'val list, 'err) M"
+  definition checked_gep_addr :: "'vaddr baddr \<Rightarrow> 'vidx \<Rightarrow> ('vaddr baddr, _, 'val list, 'err,'i) M"
     where
     "checked_gep_addr \<equiv> \<lambda>BADDR i va \<Rightarrow> \<lambda>vi. doM {
       fcheck mem_err  (i\<ge>0);
