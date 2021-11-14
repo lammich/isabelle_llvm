@@ -144,7 +144,7 @@ proof -
 qed
 
 lemma sorted_sorted_wrt_lt: "sorted = sorted_wrt_lt ((<)::_::linorder \<Rightarrow>_)"
-  apply (intro ext) unfolding sorted_sorted_wrt by simp
+  apply (intro ext) by simp
 
 
 

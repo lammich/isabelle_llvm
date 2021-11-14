@@ -89,7 +89,7 @@ begin
       fun lhs_conv cv = eqn_conv cv Conv.all_conv
       fun rhs_conv cv = eqn_conv Conv.all_conv cv
       
-              
+      (*              
       (* TODO: Move *)
       fun instantiate_uc (tyenv,tenv) thm = let
         val thy = Thm.theory_of_thm thm
@@ -101,6 +101,7 @@ begin
       in
         Thm.instantiate (tyi,ti) thm
       end
+      *)
 
       fun is_monomorphic_type T = not (Term.exists_subtype (fn TVar _ => true | TFree _ => true | _ => false) T)
       

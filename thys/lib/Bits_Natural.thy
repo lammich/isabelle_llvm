@@ -13,9 +13,7 @@ lemma bin_trunc_xor':
 (*lemma uint_xor: "uint (x XOR y) = uint x XOR uint y"
   by (transfer, simp add: bin_trunc_xor')*)
 
-
-
-instance nat :: semiring_bit_syntax ..
+(*instance nat :: semiring_bit_syntax ..*)
 
 instantiation nat :: set_bit begin
   definition set_bit_nat :: "nat \<Rightarrow> nat \<Rightarrow> bool \<Rightarrow> nat" where
@@ -85,7 +83,7 @@ lemma nat_shiftr[simp]:
   "m >> 0 = m"
   \<open>((0::nat) >> m) = 0\<close>
   \<open>(m >> Suc n) = (m div 2 >> n)\<close> for m :: nat
-  by (simp_all add: shiftr_eq_drop_bit drop_bit_Suc)
+  by (simp_all add: shiftr_def  drop_bit_Suc)
 
 lemma nat_shifl_div: \<open>m >> n = m div (2^n)\<close> for m :: nat
   by (induction n arbitrary: m) (auto simp: div_mult2_eq)
@@ -94,7 +92,7 @@ lemma nat_shiftl[simp]:
   "m << 0 = m"
   \<open>((0) << m) = 0\<close>
   \<open>(m << Suc n) = ((m * 2) << n)\<close> for m :: nat
-  by (simp_all add: shiftl_eq_push_bit)
+  by (simp_all add: shiftl_def)
 
 lemma nat_shiftr_div2: \<open>m >> 1 = m div 2\<close> for m :: nat
   by auto
@@ -162,8 +160,9 @@ lemma bitXOR_1_if_mod_2: \<open> L XOR 1 = (if L mod 2 = 0 then L + 1 else L - 1
 
 lemma bitAND_1_mod_2: \<open>L AND 1 = L mod 2\<close> for L :: nat by auto
 
-lemma nat_set_bit_0: \<open>set_bit x 0 b = nat ((bin_rest (int x)) BIT b)\<close> for x :: nat
+(*lemma nat_set_bit_0: \<open>set_bit x 0 b = nat ((bin_rest (int x)) BIT b)\<close> for x :: nat
   by (auto simp: set_bit_nat_def Bit_def) 
+*)  
 
 lemma nat_test_bit0_iff: \<open>n !! 0 \<longleftrightarrow> n mod 2 = 1\<close> for n :: nat
 proof -
@@ -174,18 +173,17 @@ proof -
     by auto
 
   show ?thesis
-    unfolding test_bit_eq_bit
     by (auto simp: bin_last_def zmod_int bit_nat_def odd_iff_mod_2_eq_one)
     
 qed
 
 lemma test_bit_2: \<open>m > 0 \<Longrightarrow> (2*n) !! m \<longleftrightarrow> n !! (m - 1)\<close> for n :: nat
   by (cases m)
-    (auto simp: test_bit_eq_bit bit_nat_def)
+    (auto simp: bit_nat_def)
 
 lemma test_bit_Suc_2: \<open>m > 0 \<Longrightarrow> Suc (2 * n) !! m \<longleftrightarrow> (2 * n) !! m\<close> for n :: nat
   apply (cases m)
-  by (auto simp: test_bit_eq_bit bit_nat_def div_mult2_eq)
+  by (auto simp: bit_nat_def div_mult2_eq)
 
 lemma bin_rest_prev_eq:
   assumes [simp]: \<open>m > 0\<close>
@@ -196,7 +194,7 @@ proof -
     unfolding m'_def
     by auto
   moreover have \<open>bin_nth (int m') (m - Suc 0) = m' !! (m - Suc 0)\<close>
-    by (simp add: bit_of_nat_iff_bit test_bit_eq_bit)
+    by (simp add: bit_of_nat_iff_bit)
   ultimately show ?thesis
     by (auto simp: test_bit_2 test_bit_Suc_2)
 qed
@@ -209,7 +207,7 @@ lemma bin_to_bl_eq_nat:
   by (metis Nat.size_nat_def size_bin_to_bl)
 
 lemma nat_bin_nth_bl: "n < m \<Longrightarrow> w !! n = nth (rev (bin_to_bl m (int w))) n" for w :: nat
-  by (metis bin_nth_bl bit_of_nat_iff_bit test_bit_eq_bit)
+  by (metis bin_nth_bl bit_of_nat_iff_bit)
 
 lemma bin_nth_ge_size: \<open>nat na \<le> n \<Longrightarrow> 0 \<le> na \<Longrightarrow> bin_nth na n = False\<close>
 proof (induction \<open>n\<close> arbitrary: na)
@@ -228,12 +226,12 @@ next
 qed
 
 lemma test_bit_nat_outside: "n > size w \<Longrightarrow> \<not>w !! n" for w :: nat
-  unfolding test_bit_eq_bit bit_nat_def
+  unfolding bit_nat_def
   by (metis Nat.size_nat_def div_less even_zero le_eq_less_or_eq le_less_trans n_less_equal_power_2)
 
 lemma nat_bin_nth_bl':
   \<open>a !! n \<longleftrightarrow> (n < size a \<and> (rev (bin_to_bl (size a) (int a)) ! n))\<close>
-  by (metis Nat.size_nat_def bit_nat_def div_less even_zero n_less_equal_power_2 nat_bin_nth_bl not_less_iff_gr_or_eq test_bit_eq_bit test_bit_nat_outside)
+  by (metis Nat.size_nat_def bit_nat_def div_less even_zero n_less_equal_power_2 nat_bin_nth_bl not_less_iff_gr_or_eq test_bit_nat_outside)
 
 lemma nat_set_bit_test_bit: \<open>set_bit w n x !! m = (if m = n then x else w !! m)\<close> for w n :: nat
   unfolding nat_bin_nth_bl'
@@ -242,7 +240,7 @@ lemma nat_set_bit_test_bit: \<open>set_bit w n x !! m = (if m = n then x else w 
        apply (metis bin_nth_ge_size bin_nth_sc bin_sc_ge0 leI of_nat_less_0_iff set_bit_nat_def)
       apply (metis bin_nth_bl bin_nth_ge_size bin_nth_sc bin_sc_ge0 bin_to_bl_def int_nat_eq leI
       of_nat_less_0_iff set_bit_nat_def)
-  apply (metis Nat.size_nat_def bin_to_bl_def nat_bin_nth_bl' set_bit_class.bit_set_bit_iff test_bit_eq_bit)
+      apply (metis Generic_set_bit.bit_set_bit_iff bin_to_bl_def nat_bin_nth_bl' size_nat)
     apply (metis Nat.size_nat_def bin_nth_bl bin_nth_sc_gen bin_to_bl_def int_nat_eq nat_bin_nth_bl
       nat_bin_nth_bl' of_nat_less_0_iff of_nat_less_iff set_bit_nat_def)
    apply (metis (full_types) bin_nth_bl bin_nth_ge_size bin_nth_sc_gen bin_sc_ge0 bin_to_bl_def leI of_nat_less_0_iff set_bit_nat_def)
@@ -270,13 +268,13 @@ lemma nat_and_numerals [simp]:
   "(1::nat) AND numeral (Num.Bit1 y) = 1"
   "numeral (Num.Bit0 x) AND (1::nat) = 0"
   "numeral (Num.Bit1 x) AND (1::nat) = 1"
-  "(Suc 0::nat) AND numeral (Num.Bit0 y) = 0"
+(*  "(Suc 0::nat) AND numeral (Num.Bit0 y) = 0"
   "(Suc 0::nat) AND numeral (Num.Bit1 y) = 1"
   "numeral (Num.Bit0 x) AND (Suc 0::nat) = 0"
-  "numeral (Num.Bit1 x) AND (Suc 0::nat) = 1"
+  "numeral (Num.Bit1 x) AND (Suc 0::nat) = 1"*)
   "Suc 0 AND Suc 0 = 1"
   for n::nat
-  by (auto simp: and_nat_def Bit_def nat_add_distrib)
+  by (auto)
   
   
   

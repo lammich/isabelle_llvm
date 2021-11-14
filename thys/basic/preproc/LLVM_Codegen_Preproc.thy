@@ -338,7 +338,7 @@ subsection \<open>Preprocessor\<close>
       thm 
       |> (simplify (put_simpset HOL_ss ctxt addsimps @{thms Monad.bind_laws atomize_eq}))
       |> cthm_norm_lambda ctxt
-      |> (Conv.fconv_rule (Refine_Util.f_tac_conv ctxt normalize_eq (norm_tac ctxt)))
+      |> (Conv.fconv_rule (Refine_Util.f_tac_conv ctxt normalize_eq (norm_tac)))
       |> (Conv.fconv_rule (Conv.top_sweep_conv (K (Conv.rewr_conv @{thm unit_meta_eq})) ctxt))
     end
     

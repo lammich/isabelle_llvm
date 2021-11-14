@@ -113,7 +113,7 @@ lemma abs_rem_rtz_lt: "b\<noteq>0 \<Longrightarrow> \<bar>a smod b\<bar> < \<bar
 text \<open>LLVM documentation: The remainder is either zero, or has the same sign as the dividend\<close>
 lemma rem_rtz_sign: "(a::int) smod b = 0 \<or> sgn ((a::int) smod b) = sgn a"
   apply (clarsimp simp: srem_int_original_def)
-  by (metis (no_types, hide_lams) Euclidean_Division.pos_mod_sign abs_le_zero_iff abs_of_nonneg add.inverse_neutral mod_0 mod_by_0 neg_le_0_iff_le not_le sgn_pos)
+  by (metis (no_types) Euclidean_Division.pos_mod_sign abs_le_zero_iff abs_of_nonneg add.inverse_neutral mod_0 mod_by_0 neg_le_0_iff_le not_le sgn_pos)
   (*by (smt Euclidean_Division.pos_mod_sign sgn_pos zmod_trival_iff)*)
   
 

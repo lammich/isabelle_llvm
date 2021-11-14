@@ -257,9 +257,7 @@ structure Sepref_Frame : SEPREF_FRAME = struct
     end
   
     fun prepare_fi_conv ctxt ct = case Thm.term_of ct of
-      @{mpat "?P \<turnstile> ?Q"} => let
-        val cert = Thm.cterm_of ctxt
-  
+      (t as @{mpat "?P \<turnstile> ?Q"}) => let
         (* Build table from abs-vars to ctxt *)
         val (Qm, Qum) = strip_star Q |> filter_out is_true |> List.partition is_hn_ctxt
 
@@ -292,12 +290,17 @@ structure Sepref_Frame : SEPREF_FRAME = struct
         val P' = mk_star (list_star (map fst pairs), list_star Pum)
         val Q' = mk_star (list_star (map snd pairs), list_star (Qum2@Qum))
         
-        val new_ct = mk_entails (P', Q') |> cert
-  
-        val msg_tac = dbg_msg_tac (Sepref_Debugging.msg_allgoals "Solving frame permutation") ctxt 1
-        val tac = msg_tac THEN ALLGOALS (resolve_tac ctxt @{thms reorder_enttI}) THEN star_permute_tac ctxt
+        val new_t = mk_entails (P', Q')
+        val goal_t = Logic.mk_equals (t,new_t)
 
-        val thm = Goal.prove_internal ctxt [] (mk_cequals (ct,new_ct)) (fn _ => tac)
+        val goal_ctxt = Variable.declare_term goal_t ctxt
+  
+        val msg_tac = dbg_msg_tac (Sepref_Debugging.msg_allgoals "Solving frame permutation") goal_ctxt 1
+        val tac = msg_tac THEN ALLGOALS (resolve_tac goal_ctxt @{thms reorder_enttI}) THEN star_permute_tac goal_ctxt
+        
+        val goal_ct = Thm.cterm_of ctxt goal_t
+        
+        val thm = Goal.prove_internal ctxt [] (goal_ct) (fn _ => tac)
   
       in 
         thm
@@ -325,7 +328,7 @@ structure Sepref_Frame : SEPREF_FRAME = struct
     CONVERSION Thm.eta_conversion THEN'
     (*CONCL_COND' is_frame THEN'*)
     Frame_Infer.simp_ai_tac ctxt THEN'
-    CONVERSION (HOL_concl_conv (fn _ => prepare_fi_conv ctxt) ctxt)
+    CONVERSION (HOL_concl_conv (prepare_fi_conv) ctxt)
   end    
 
 
@@ -400,19 +403,19 @@ structure Sepref_Frame : SEPREF_FRAME = struct
 
   fun merge_tac side_tac ctxt = let
     open Refine_Util Conv
-    val reord_conv = Fri_Extract.cong_rl_conv (reorder_ctxt_conv ctxt) @{thm merge_left_assn_cong} 
+    fun reord_conv ctxt = Fri_Extract.cong_rl_conv (reorder_ctxt_conv ctxt) @{thm merge_left_assn_cong} 
            then_conv Fri_Extract.cong_rl_conv (reorder_ctxt_conv ctxt) @{thm merge_right_assn_cong}
            
-    val merge_conv = 
+    fun merge_conv ctxt = 
       Frame_Infer.rewrite_a_conv ctxt
-      then_conv reord_conv 
+      then_conv reord_conv ctxt
       then_conv Conv.rewr_conv @{thm MERGE_append_END}
       then_conv Frame_Infer.rewrite_a_conv ctxt
            
   in
     CONVERSION Thm.eta_conversion THEN'
     CONCL_COND' is_merge THEN'
-    CONVERSION (HOL_concl_conv (fn _ => merge_conv) ctxt) THEN'
+    CONVERSION (HOL_concl_conv (merge_conv) ctxt) THEN'
     frame_loop_tac side_tac ctxt
   end
 
@@ -490,13 +493,19 @@ structure Sepref_Frame : SEPREF_FRAME = struct
 
     fun norm_goal_pre_conv ctxt = let
       open Conv
-      val nr_conv = normrel_conv ctxt
+      
+      fun conv ctxt = let
+        val nr_conv = normrel_conv ctxt
+      in  
+        hn_refine_conv nr_conv all_conv all_conv all_conv all_conv all_conv
+      end
+      
     in
-      HOL_concl_conv (fn _ => hn_refine_conv nr_conv all_conv all_conv all_conv all_conv all_conv) ctxt
+      HOL_concl_conv conv ctxt
     end  
     
   in
-    fun align_goal_conv ctxt = f_tac_conv ctxt (align_goal_conv_aux ctxt) (star_permute_tac ctxt)
+    fun align_goal_conv ctxt = f_tac_conv ctxt (align_goal_conv_aux ctxt) (star_permute_tac)
 
     fun norm_goal_pre_tac ctxt = 
       CONVERSION (norm_goal_pre_conv ctxt)
@@ -504,10 +513,14 @@ structure Sepref_Frame : SEPREF_FRAME = struct
 
     fun align_rl_conv ctxt = let
       open Conv
-      val nr_conv = normrel_conv ctxt
+      fun conv ctxt = let
+        val nr_conv = normrel_conv ctxt
+      in
+        (hn_refine_conv nr_conv all_conv nr_conv nr_conv all_conv all_conv)
+      end  
     in
-      HOL_concl_conv (fn ctxt => f_tac_conv ctxt (align_rl_conv_aux ctxt) (star_permute_tac ctxt)) ctxt
-      then_conv HOL_concl_conv (K (hn_refine_conv nr_conv all_conv nr_conv nr_conv all_conv all_conv)) ctxt
+      HOL_concl_conv (fn ctxt => f_tac_conv ctxt (align_rl_conv_aux ctxt) (star_permute_tac)) ctxt
+      then_conv HOL_concl_conv conv ctxt
     end
 
     fun align_goal_tac ctxt = 

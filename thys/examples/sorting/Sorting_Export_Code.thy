@@ -111,7 +111,7 @@ lemma "llvm_htriple
   (unat_par_sort_impl xsi ni)
   (\<lambda>r. \<up>(r = xsi) \<and>* (\<lambda>s. \<exists>xs'. (woarray_slice_assn unat_assn xs' xsi \<and>* \<up>(sorted xs' \<and> mset xs'=mset xs)) s))"
   using unat_sort.par_sort_impl_correct[of xs xsi n ni] 
-  unfolding sort_spec_def sorted_sorted_wrt
+  unfolding sort_spec_def
   by (auto simp: conj_commute)
   
   

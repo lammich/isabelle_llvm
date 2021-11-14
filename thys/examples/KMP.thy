@@ -646,7 +646,7 @@ lemma \<ff>_step_bound(*rm*):
 
 lemma border_take_\<ff>: "border (take (\<ff> s i - 1) s ) (take i s)"
   apply (cases i, simp_all)
-  by (metis intrinsic_borderI' border_order.eq_iff border_order.less_imp_le border_positions nat.simps(3) nat_le_linear positions_border take_all take_eq_Nil take_length_ib zero_less_Suc)
+  by (metis intrinsic_borderI' border_order.order.eq_iff border_order.less_imp_le border_positions nat.simps(3) nat_le_linear positions_border take_all take_eq_Nil take_length_ib zero_less_Suc)
 
 corollary \<ff>_strict_borderI: "y = \<ff> s (i-1) \<Longrightarrow> strict_border (take (i-1) s) (take (j-1) s) \<Longrightarrow> strict_border (take (y-1) s) (take (j-1) s)"
   using border_order.less_le_not_le border_order.order.trans border_take_\<ff> by blast

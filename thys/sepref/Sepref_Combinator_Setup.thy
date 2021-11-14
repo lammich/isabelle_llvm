@@ -59,7 +59,7 @@ context begin
         val free1 = Term.add_tfreesT T1 []
         val free2 = Term.add_tfreesT T2 []
   
-        val _ = subset (=) (free2,free1) orelse raise TYPE("Free variables on RHS must also occur on LHS",[T1,T2],[])
+        val _ = subset (op =) (free2,free1) orelse raise TYPE("Free variables on RHS must also occur on LHS",[T1,T2],[])
   
       in
         Thm.instantiate' [] [
@@ -344,9 +344,9 @@ ML \<open>
         val Lvars = Term.add_tvar_namesT L []
         val Rvars = Term.add_tvar_namesT R []
 
-        val _ = subset (=) (Rvars, Lvars) orelse (
+        val _ = subset (op =) (Rvars, Lvars) orelse (
           let
-            val frees = subtract (=) Lvars Rvars
+            val frees = subtract (op =) Lvars Rvars
               |> map (Term.string_of_vname)
               |> Pretty.str_list "[" "]"
               |> Pretty.string_of
@@ -505,7 +505,7 @@ ML \<open>
         | SOME n => n
       
       val ((_,itype_thm),lthy) = sepref_register_single basename t ty lthy
-      val _ = Thy_Output.pretty_thm lthy itype_thm |> Pretty.string_of |> writeln
+      val _ = Thm.pretty_thm lthy itype_thm |> Pretty.string_of |> writeln
 
     in
       lthy

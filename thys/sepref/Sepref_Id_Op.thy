@@ -7,6 +7,10 @@ imports
   "Refine_Imperative_HOL.Named_Theorems_Rev"
 begin
 
+    (* DO NOT USE IN PRODUCTION VERSION \<rightarrow> SLOWDOWN *)
+    (* declare [[ML_exception_debugger, ML_debugger, ML_exception_trace]] *)
+
+
 text \<open>
   The operation identification phase is adapted from the Autoref tool.
   The basic idea is to have a type system, which works on so called 
@@ -206,7 +210,7 @@ ML \<open>
 
     fun protect_conv ctxt = Refine_Util.f_tac_conv ctxt
       (protect []) 
-      (simp_tac 
+      (fn ctxt => simp_tac 
         (put_simpset HOL_basic_ss ctxt addsimps @{thms PROTECT2_def APP_def}) 1)
 
     fun unprotect_conv ctxt

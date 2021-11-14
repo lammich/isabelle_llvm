@@ -177,7 +177,6 @@ begin
     }" :: "(snat_assn' TYPE(32))\<^sup>k \<rightarrow>\<^sub>a snat_assn' TYPE(32)"
       apply (annot_snat_const "TYPE(32)")
       by sepref
-    
       
     print_named_simpset llvm_pre_simp  
       

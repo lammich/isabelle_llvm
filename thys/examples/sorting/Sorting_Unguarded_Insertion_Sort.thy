@@ -476,7 +476,7 @@ context weak_ordering begin
   lemma gen_insertion_sort_correct: 
     "\<lbrakk>sorted_wrt_lt (\<^bold><) (take i\<^sub>0 xs); \<not>GUARDED \<longrightarrow> 0<i\<^sub>0; i\<^sub>0<h; h\<le>length xs; \<not>GUARDED \<longrightarrow> (\<forall>i\<in>{i\<^sub>0..<h}. \<not>xs!i \<^bold>< xs!0) \<rbrakk> 
       \<Longrightarrow> gen_insertion_sort GUARDED i\<^sub>0 h xs \<le> slice_sort_spec (\<^bold><) xs 0 h"
-    unfolding gen_insertion_sort_def sort_one_more_spec_def slice_sort_spec_def sort_spec_def sorted_sorted_wrt
+    unfolding gen_insertion_sort_def sort_one_more_spec_def slice_sort_spec_def sort_spec_def
     apply (refine_vcg 
       WHILEIT_rule[where R="measure (\<lambda>(_,i). length xs - i)"])       
       

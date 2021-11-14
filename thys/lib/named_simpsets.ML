@@ -52,7 +52,6 @@ structure Data = Generic_Data
 (
   type T = simpset Name_Space.table;
   val empty: T = Name_Space.empty_table "named-simpset";
-  val extend = I;
   val merge : T * T -> T = Name_Space.join_tables (K merge_ss);
 );
 
@@ -133,7 +132,7 @@ end
   
   
 val named_simpset_attr = 
-  (Args.context -- Scan.lift (Parse.position Args.embedded)) 
+  (Args.context -- Scan.lift Args.name_position) 
   :|-- (fn (ctxt,raw_binding) => let val name = check ctxt raw_binding in
        (Scan.lift (Args.$$$ "simp") |-- Attrib.add_del (add_attr name) (del_attr name))
     || (Scan.lift (Args.$$$ "cong") |-- Attrib.add_del (add_cong_attr name) (del_cong_attr name))
@@ -146,7 +145,7 @@ val _ = Theory.setup
   (Attrib.setup \<^binding>\<open>named_ss\<close> named_simpset_attr "Modify named simpsets")
 
 val put_named_simpset_attr =
-  (Args.context -- Scan.lift (Parse.position Args.embedded)) >> (fn (ctxt,raw_binding) => let
+  (Args.context -- Scan.lift Args.name_position) >> (fn (ctxt,raw_binding) => let
     val name = check ctxt raw_binding
     val attr = Thm.declaration_attribute (fn _ => Context.map_proof (put name))
   in attr
@@ -161,7 +160,7 @@ val _ = Theory.setup
 
 val _ = Theory.setup
   (ML_Antiquotation.inline \<^binding>\<open>named_simpset\<close>
-    (Args.context -- Scan.lift (Parse.position Args.embedded) >>
+    (Args.context -- Scan.lift Args.name_position >>
       (fn (ctxt, name) => ML_Syntax.print_string (check ctxt name))));
 
       

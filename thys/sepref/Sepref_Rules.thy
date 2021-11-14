@@ -1130,7 +1130,7 @@ begin
         case Thm.concl_of thm of
           @{mpat "Trueprop ((_,_) \<in> fref _ _ _)"} =>
             (@{thm frefD} OF [thm])
-            |> forall_intr_vars
+            |> Thm.forall_intr_vars
             |> Local_Defs.unfold0 ctxt unf_thms
             |> Variable.gen_all ctxt
         | @{mpat "Trueprop ((_,_) \<in> _)"} =>
@@ -1543,8 +1543,8 @@ begin
           
         (* Hrmpf!: Gone for good from 2015\<rightarrow>2016. Inserting ctxt-based substitute here. *)  
         fun certify_inst ctxt (instT, inst) =
-         (map (apsnd (Thm.ctyp_of ctxt)) instT,
-          map (apsnd (Thm.cterm_of ctxt)) inst);
+         (TVars.map (K (Thm.ctyp_of ctxt)) instT,
+          Vars.map (K (Thm.cterm_of ctxt)) inst);
 
         (*  
         fun mk_RETURN (t,r) = if r then @{mk_term "RETURN o ?t"} else t

@@ -115,9 +115,9 @@ ML \<open>
 
       fun monadify_conv_aux ctxt ct = case Thm.term_of ct of
         @{mpat "EVAL$_"} => let
-          val ss = put_simpset HOL_basic_ss ctxt
-          val ss = (ss addsimps @{thms monadify_simps SP_def})
-          val tac = (simp_tac ss 1)
+          val ctxt = put_simpset HOL_basic_ss ctxt
+          val ctxt = (ctxt addsimps @{thms monadify_simps SP_def})
+          fun tac ctxt = (simp_tac ctxt 1)
         in (*Refine_Util.monitor_conv "monadify"*) (
           Refine_Util.f_tac_conv ctxt (dest_comb #> #2 #> monadify) tac) ct
         end
@@ -166,7 +166,7 @@ ML \<open>
     in  
     fun mark_params_conv ctxt = Refine_Util.f_tac_conv ctxt 
       (mark_params) 
-      (simp_tac (put_simpset HOL_basic_ss ctxt addsimps @{thms PASS_def}) 1)
+      (fn ctxt => simp_tac (put_simpset HOL_basic_ss ctxt addsimps @{thms PASS_def}) 1)
 
     end  
 
@@ -200,7 +200,7 @@ ML \<open>
 
       fun dp_conv ctxt = Refine_Util.f_tac_conv ctxt 
         (#1 o dp ctxt) 
-        (ALLGOALS (simp_tac (put_simpset HOL_basic_ss ctxt addsimps @{thms RET_COPY_PASS_eq}))) 
+        (fn ctxt => ALLGOALS (simp_tac (put_simpset HOL_basic_ss ctxt addsimps @{thms RET_COPY_PASS_eq}))) 
 
 
     in
@@ -238,7 +238,7 @@ ML \<open>
       Sepref_Basic.hn_refine_concl_conv_a monadify_conv ctxt)*)
 
     fun mark_params_tac ctxt = CONVERSION (
-      Refine_Util.HOL_concl_conv (K (mark_params_conv ctxt)) ctxt)
+      Refine_Util.HOL_concl_conv (mark_params_conv) ctxt)
 
     fun contains_eval @{mpat "Trueprop (hn_refine _ _ _ _ _ ?a)"} =   
       Term.exists_subterm (fn @{mpat EVAL} => true | _ => false) a

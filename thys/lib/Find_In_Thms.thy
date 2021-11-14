@@ -2,6 +2,11 @@
   Simple query tool for theorem collections.
   
   Syntax: find_in_thms pattern* in thm+
+  
+  TODO: If Find_Theorems would export an interface to 
+    decouple filtering theorems from acquiring list of theorems to filter,
+    this could re-use code from there, instead of duplicating it!
+    
 *)
 
 theory Find_In_Thms
@@ -25,7 +30,20 @@ ML \<open>
     fun get_names t = Term.add_const_names t (Term.add_free_names t []);
     
     (* Does pat match a subterm of obj? *)
-    fun matches_subterm thy (pat, obj) =
+    fun matches_subterm ctxt (pat, obj) =
+      let
+        val thy = Proof_Context.theory_of ctxt;
+        fun matches obj ctxt' = Pattern.matches thy (pat, obj) orelse
+          (case obj of
+            Abs _ =>
+              let val ((_, t'), ctxt'') = Variable.dest_abs obj ctxt'
+              in matches t' ctxt'' end
+          | t $ u => matches t ctxt' orelse matches u ctxt'
+          | _ => false);
+      in matches obj ctxt end;
+      
+    (*
+    fun matches_subterm ctxt (pat, obj) =
       let
         fun msub bounds obj = Pattern.matches thy (pat, obj) orelse
           (case obj of
@@ -33,11 +51,12 @@ ML \<open>
           | t $ u => msub bounds t orelse msub bounds u
           | _ => false)
       in msub 0 obj end;
+    *)
     
     fun filter_pattern ctxt pat =
       let
         val pat' = (expand_abs o Envir.eta_contract) pat;
-        fun check thm = matches_subterm (Proof_Context.theory_of ctxt) (pat', Thm.full_prop_of thm);
+        fun check thm = matches_subterm ctxt (pat', Thm.full_prop_of thm);
       in check end;
 
       

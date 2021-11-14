@@ -19,29 +19,76 @@ lemma of_bl_eqZ:
   apply auto
   by (metis to_bl_0 to_bl_use_of_bl word_bl_Rep')    
 
-lemma word_clz'_rec: "word_clz' x = (if x <=s 0 then 0 else 1 + word_clz' (x << 1))"  
-  (* TODO: Clean up this mess! *)  
-  apply (clarsimp simp: word_clz'_def word_clz_def)
+(* TODO: Move *)  
+lemma cons_eq_replicate_conv: "x#xs = replicate n y \<longleftrightarrow> (\<exists>n'. n=Suc n' \<and> x=y \<and> xs = replicate n' y)"  
+  by (cases n; simp)
+
+lemma replicate_eq_cons_conv: "x#xs = replicate n y \<longleftrightarrow> (\<exists>n'. n=Suc n' \<and> x=y \<and> xs = replicate n' y)"  
+  by (cases n; simp)
+  
+lemma append_eq_replicate_conv: "xs\<^sub>1@xs\<^sub>2 = replicate n x 
+  \<longleftrightarrow> (\<exists>n\<^sub>1 n\<^sub>2. n=n\<^sub>1+n\<^sub>2 \<and> xs\<^sub>1=replicate n\<^sub>1 x \<and> xs\<^sub>2=replicate n\<^sub>2 x)"
+  apply (auto simp: replicate_add)
+  by (metis append_eq_append_conv length_append length_replicate replicate_add)
+    
+    
+lemma Cons_butlast_replicate: "n>0 \<Longrightarrow> x#butlast (replicate n x) = replicate n x"  
+  by (induction n; auto)
+  
+(* TODO: Move *)  
+lemma rev_bl_order_Nil_simps:
+  "rev_bl_order x xs [] \<longleftrightarrow> x \<and> xs=[]"  
+  "rev_bl_order x [] xs \<longleftrightarrow> x \<and> xs=[]"  
+  unfolding rev_bl_order_def
+  by auto
+  
+lemma rev_bl_order_all_false_conv: "rev_bl_order a xs (replicate n False) \<longleftrightarrow> 
+  a \<and> xs = replicate n False" 
+  unfolding rev_bl_order_def
+  by auto
+  
+lemma rev_eq_replicate_conv: "rev xs = replicate n x \<longleftrightarrow> xs = replicate n x"  
+  by (metis rev_replicate rev_rev_ident)
+  
+    
+lemma sle_zero_bl_conv: "x \<le>s 0 \<longleftrightarrow> hd (to_bl x) = True \<or> to_bl x = replicate (LENGTH('a)) False" for x :: "'a::len word"
   apply (cases "to_bl x")
-  apply auto
-  apply (simp add: word_msb_alt word_sle_msb_le)
-  apply (simp add: word_msb_alt word_sle_msb_le)
-  apply (simp add: word_msb_alt word_sle_msb_le shiftl_bl)
-  apply (subst (asm) of_bl_eqZ)
-  apply (auto) [] 
-  apply (metis length_Cons word_bl_Rep')
-  apply (metis length_append_singleton length_replicate replicate_Suc replicate_append_same rotate1_rl' to_bl_0 word_bl.Rep_eqD)
-  apply (simp add: word_msb_alt word_sle_msb_le)
-  apply (simp add: bl_shiftl shiftl_bl)
-  apply (subst (asm) of_bl_eqZ)
-  apply auto
-  apply (metis length_Cons word_bl_Rep')
-  apply (subst word_bl.Abs_inverse)
-  apply auto 
-  apply (metis length_Cons word_bl_Rep')
-  apply (subgoal_tac "True\<in>set list")
-  apply simp
-  by (simp add: eq_zero_set_bl)
+  subgoal by simp
+  subgoal for a list
+    apply (simp add: word_sle_rbl map_last_def)
+    apply (subst rev_bl_order_rev_simp)
+    subgoal by (metis diff_Suc_1 length_Cons length_butlast length_rev length_to_bl_eq to_bl_0)
+    apply (cases a; simp)
+    apply (cases "LENGTH('a)"; simp)
+    apply (auto simp: 
+      rev_bl_order_simps rev_bl_order_Nil_simps Cons_butlast_replicate rev_bl_order_all_false_conv
+      rev_eq_replicate_conv
+      )
+    done
+  done
+  
+lemma to_bl_eq_rep_False_conv: "to_bl x = replicate n False \<longleftrightarrow> x=0 \<and> n=LENGTH('a)" for x :: "'a::len word"
+  by (simp add: to_bl_use_of_bl)
+  
+lemma eq_z_to_bl_conv: "x=0 \<longleftrightarrow> to_bl x = replicate (LENGTH('a)) False" for x::"'a::len word"
+  by (auto simp: to_bl_eq_rep_False_conv)
+  
+  
+lemma word_clz'_rec: "word_clz' x = (if x <=s 0 then 0 else 1 + word_clz' (x << 1))"  
+  supply [simp del] = shiftl_of_Suc
+  apply (clarsimp simp: word_clz'_def word_clz_def)
+  apply (cases "to_bl x"; simp)
+  subgoal for a list
+    apply (auto simp: sle_zero_bl_conv to_bl_eq_rep_False_conv)
+    subgoal
+      by (auto simp: eq_z_to_bl_conv bl_shiftl cons_eq_replicate_conv append_eq_replicate_conv)
+    subgoal
+      apply (auto simp: eq_z_to_bl_conv bl_shiftl)
+      apply (subgoal_tac "True\<in>set list")
+      subgoal by simp
+      by (metis eq_zero_set_bl set_ConsD to_bl_0)
+    done
+  done
   
 lemma word_clz'_rec2: "word_clz' x = (if 0 <s x then 1 + word_clz' (x << 1) else 0)"  
   by (meson signed.not_le word_clz'_rec)

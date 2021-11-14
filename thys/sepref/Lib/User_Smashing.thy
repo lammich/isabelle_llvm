@@ -40,7 +40,7 @@ ML \<open>
       val ushift = length uas - length Ts;
       val tbs = fold add_bound (enumerate (rev ts)) [] |> map (apfst (fn i => i - tshift));
       val ubs = fold add_bound (enumerate (rev us)) [] |> map (apfst (fn i => i - ushift));
-      val bounds = inter (op =) (map fst tbs) (map fst ubs) |> distinct (=);
+      val bounds = inter (op =) (map fst tbs) (map fst ubs) |> distinct (op =);
       val T' = map (nth Ts) bounds ---> T;
       val v = Var (("simon", idx), T');
       val tbs' = map (fn i => find_first (fn (j, _) => i = j) tbs |> the |> snd |> Bound) bounds;
@@ -48,9 +48,9 @@ ML \<open>
       (* Need to add bounds for superfluous abstractions here *)
       val ubs' = map (fn i => find_first (fn (j, _) => i = j) ubs |> the |> snd |> Bound) bounds;
       val u' = list_comb (v, ubs') |> dummy_abs 0 Us1;
-      val subst = [(Term.dest_Var tx, Thm.cterm_of ctxt' t'), (Term.dest_Var ux, Thm.cterm_of ctxt' u')];
+      val subst = Vars.make [(Term.dest_Var tx, Thm.cterm_of ctxt' t'), (Term.dest_Var ux, Thm.cterm_of ctxt' u')];
     in
-      instantiate_normalize ([], subst) thm
+      instantiate_normalize (TVars.empty, subst) thm
     end;
     fun smash ctxt thm =
       case (Thm.tpairs_of thm) of

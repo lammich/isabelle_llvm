@@ -708,7 +708,7 @@ subsection \<open>ML-Level Declarations\<close>
           val iT = arg_intfs ---> ri
   
           val ((_,itype_thm),lthy) = Sepref_Combinator_Setup.sepref_register_single (Binding.name_of basename) c iT lthy
-          val _ = Thy_Output.pretty_thm lthy itype_thm |> Pretty.string_of |> writeln
+          val _ = Thm.pretty_thm lthy itype_thm |> Pretty.string_of |> writeln
   
         in
           lthy

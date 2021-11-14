@@ -205,7 +205,7 @@ lemma set_slice_conv: "\<lbrakk> h\<le>length xs \<rbrakk> \<Longrightarrow> set
 lemma set_slice_subsetI: "\<lbrakk> l'\<le>l; h\<le>h' \<rbrakk> \<Longrightarrow> set (slice l h xs) \<subseteq> set (slice l' h' xs)"
   unfolding Misc.slice_def
   apply auto
-  by (metis (no_types, hide_lams) drop_take in_mono min.absorb1 set_drop_subset_set_drop set_take_subset subset_eq take_take)
+  by (metis (no_types) drop_take in_mono min.absorb1 set_drop_subset_set_drop set_take_subset subset_eq take_take)
 
   
 lemma slice_singleton[simp]: "l<length xs \<Longrightarrow> slice l (Suc l) xs = [xs!l]"  
@@ -488,7 +488,7 @@ context begin
     unfolding snat_invar_alt
     apply (rule exI[where x = "LENGTH('a) - 1"])
     apply (auto simp: unat_of_nat size_fits_snat_aux)
-    by (simp add: size_fits_snat_aux take_bit_nat_eq_self)
+    done
     
 end    
 

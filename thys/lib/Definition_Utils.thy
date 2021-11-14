@@ -104,7 +104,6 @@ structure Definition_Utils :DEFINITION_UTILS = struct
   structure extractions = Generic_Data (
     type T = extraction list Name_Space.table
     val empty = Name_Space.empty_table "Fixed-Point Extractions"
-    val extend = I
     val merge = Name_Space.join_tables (fn _ => Library.merge eq_extraction)
   )
 
@@ -508,7 +507,7 @@ fun define_concrete_fun gen_code fun_name attribs_def_raw attribs_ref_raw param_
   (orig_lthy:local_theory) = 
 let
   val lthy = orig_lthy;
-  val ((inst,thm'),lthy) = yield_singleton2 (Variable.import true) thm lthy;
+  val (((_,inst),thm'),lthy) = yield_singleton2 (Variable.import true) thm lthy;
 
   val concl = thm' |> Thm.concl_of
 
@@ -517,7 +516,8 @@ let
   val concl = Term_Subst.instantiate (typ_subst,term_subst) concl;
   *)
 
-  val term_subst = #2 inst |> map (apsnd Thm.term_of) 
+  (* TODO/FIXME: Copied blindly&without understanding from corresponding change to Refine_Monadic, on 2021-2021-1 transition *)
+  val term_subst = build (inst |> Vars.fold (cons o apsnd Thm.term_of))  
 
   val param_terms = map (fn name =>
     case AList.lookup (fn (n,v) => n = #1 v) term_subst name of
@@ -654,7 +654,6 @@ end;
   structure cd_patterns = Generic_Data (
     type T = cterm list
     val empty = []
-    val extend = I
     val merge = merge cd_pat_eq
   ) 
 
@@ -735,7 +734,7 @@ setup Definition_Utils.setup
 setup \<open>
   let
     fun parse_cpat cxt = let 
-      val (t, (context, tks)) = Scan.lift Args.embedded_inner_syntax cxt 
+      val (t, (context, tks)) = Scan.lift Parse.embedded_inner_syntax cxt 
       val ctxt = Context.proof_of context
       val t = Proof_Context.read_term_pattern ctxt t
            |> Definition_Utils.prepare_pattern
@@ -767,7 +766,7 @@ ML \<open> Outer_Syntax.local_theory
     -- Parse.opt_attribs
     -- Scan.optional (@{keyword "for"} |-- Scan.repeat1 Args.var) []
     --| @{keyword "is"} -- Parse.opt_attribs -- Parse.thm
-    -- Scan.optional (@{keyword "uses"} |-- Scan.repeat1 Args.embedded_inner_syntax) []
+    -- Scan.optional (@{keyword "uses"} |-- Scan.repeat1 Parse.embedded_inner_syntax) []
   >> (fn (((((name,attribs_def),params),attribs_ref),raw_thm),pats) => fn lthy => let
     val thm = 
       case Attrib.eval_thms lthy [raw_thm] of
@@ -893,7 +892,7 @@ declaration \<open> fn _ =>
 ML \<open>
 val _ = Theory.setup
   (ML_Antiquotation.inline \<^binding>\<open>extraction_group\<close>
-    (Args.context -- Scan.lift (Parse.position Args.embedded) >>
+    (Args.context -- Scan.lift (Parse.position Args.name) >>
       (fn (ctxt, name) => ML_Syntax.print_string (Definition_Utils.check_extraction_group ctxt name))));
 \<close>  
 
