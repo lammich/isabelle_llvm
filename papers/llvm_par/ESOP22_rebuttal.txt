@@ -1,0 +1,381 @@
+Dear reviewers. Thank you for your useful reviews. We'll try to clarify the paper accordingly,
+and make it accessible to a larger audience by using less Isabelle-specific notation.
+With this rebuttal, we're trying to answer your questions and clarify misunderstandings.
+
+The paper finds a sweet spot between expressiveness and simplicity:
+the semantics is simple enough to be integrated into a well-proven scalable
+shallow-embedding approach, and expressive enough for interesting algorithms.
+We now can parallelize some complex and highly optimized algorithms, making
+them more efficient in practice. Instead of many toy examples, we decided for
+one substantial case study.
+If this is not enough contribution for ESOP, we accept that.
+
+@Reviewer A: the hnr predicate and sepref tool is generic. The formalized data structures are typically re-usable.
+The application-specific boilerplate is to set up synthesis of refined versions of the program, procedure by procedure,
+specifying what data structures to use, and making sure the program contains enough assertions to justify
+the refinement (e.g., that computations don't overflow).
+
+@Reviewer B: the main challenge was to find the sweet spot between expressiveness and compatibility with
+  existing techniques. Once found, implementing the tool became practical. As it allows re-use of sequential algorithms,
+  implementing a parallel sorting algorithm based on highly optimized sequential algorithms became feasible.
+
+@Reviewer C: unfortunately, the review is based on a bunch of misunderstandings.
+We will try to clarify the paper accordingly, to make it more readable for the Coq/IRIS community.
+
+Overclaiming:
+  1) we formalize a sufficiently large part of LLVM to generate practical code.
+  Adding additional features would be useless for our application, and unnecessarily increase the trusted code base.
+
+  2) we, indeed, were not aware of the Actris example. It verifies a simple, unoptimized, abstract algorithm, while
+    we verify an optimized concrete implementation. We'll relativise the claim.
+
+  3) [39] handles total correctness of *sequential programs*, and leaves parallel programs for future work.
+
+Comparison with IRIS:
+IRIS and the Isabelle Refinement Framework (IRF) have the same ultimate goal, providing verified software.
+While IRIS tries to be super-expressive, supporting every thinkable feature of concurrency,
+features to the IRF are added in an incremental way, driven by the need of verifying actual implementations.
+While IRIS, eventually, will be able to verify actual implementations of most real-world concurrent algorithms,
+the IRF can verify actual implementations of some important parallel algorithms now.
+
+Misunderstandings about what is verified:
+
+The separation logic rules/Hoare triples *are* proved/defined wrt. the underlying semantics.
+
+The translation to LLVM *is* verified, down to our concise LLVM semantics.
+This goes much further than the typical code extraction to a functional language,
+but not as far as tools like CompCert, that also verify the optimization and machine code generation.
+
+Using sorted and mset is Isabelle's established way of specifying a sorting algorithm.
+arrA and idxA specify the concepts of array / machine word. For correctness statements over low-level code,
+separation of concerns into natural concepts is essential for the readability of the specification.
+
+The parallel combinator, indeed, is asymmetric. However, as also reviewer C acknowledges,
+this approach is sound for the features that we consider. We are aware (and discuss in the paper) that
+extending the supported features will require adjustments. We note that the asymmetry could easily be avoided by
+identifying NTERM and FAIL already in the semantics.
+
+
+
+
+
+
+
+
+
+
+
+
+############### Submitted rebuttal end here #############################
+
+
+
+
+
+Rebuttal strategy:
+
+  Emphasize papers contributions again. (implicitly say:
+    the simplicity and ease of integration is the STRONG point, not the weak one.
+    The obtained result is decent!
+  )
+
+  Address reviewer 3:
+    state difference in approach between this paper and IRIS!
+      this paper: less general, but practical results
+      IRIS: more general, but only much less complex verified algorithms.
+
+    some of their claims are factually false! start with these.
+      adequacy, hoare-triples wrt underlying semantics, verify specification, total correctness iris
+
+    some claims are actually not severe (benign races, LLVM semantics, verify translation to LLVM, *first* verification of par-sort-algo, dubious semantics)
+
+  Then address other reviewers:
+    only one case study --> yes, but substantial one!
+    the other concerns: already addressed in paper, but explain again anyway.
+
+
+TCB:
+  also argument: even if a formalization in IRIS style is considered more elegant,
+  the TCB of my approach is still very small compared to other verification tools
+  like deductive verifiers.
+
+
+
+
+Ideas for rebuttal:
+
+General: this paper finds a sweet spot, where a parallel semantics can be formalized as a simple extension to a sequential one.
+  * the resulting semantics is simple, and thus easy to manually verify.
+  * it's backwards compatible to the existing sequential formalization
+  * and expressive enough for realistic examples
+
+In summary: parallelism for cheap
+
+
+  * existing tools and formalizations for sequential semantics can easily be adapted.
+    If there is a substantial body of sequential verifications, this backwards compatibility is essential,
+    as it allows reuse and thus high (efficiency) gain at low (formalization) cost.
+  * while this approach is less general, it's still expressive enough for practical relevant examples
+
+In the reviews, I see these arguments being turned around and used against the paper.
+
+
+
+case study:
+  decided to go for one substantial case study rather than many small toy examples.
+  The case study shows how the extension seamlessly integrates into the already existing architecture,
+  allowing to parallelize existing verified algorithm at little effort, but with great speed-up effect.
+
+LLVM semantics:
+  the presented framework goes down to a fragment of LLVM that is big enough for code generation.
+  Formalizing anything more of LLVM in this context would
+    1) not be necessary.
+    2) even be disadvantageous, as it would increase the TCB
+  Note that formalizing LLVM optimization passes is an entirely orthogonal endeavour (see VeLLVM project), and
+  this project would immediately profit from a verified LLVM backend.
+  I will tone down the statement, to clarify that only a fragment has been verified.
+
+Read-only memory:
+  the semantics already supports it. Just extending the separation logic is,
+  actually, straightforward and it's well known how to do it.
+  Extending the automation of Sepref accordingly would be less straightforward.
+
+  The contribution of this would mainly focus on technical details of how Sepref works,
+  and how to adjust it to fractional separation logic, and the practical gain would be
+  to perhaps be able to include a toy-example matrix multiplication algorithm.
+  Admittedly, I hoped that the contribution of this paper, including showing how to parallelize
+  a realistic sorting algorithm rather than toy examples, would be sufficient.
+
+#1: benchmark: indeed, industrial strength parallel sorting algorithms are more optimized than this one,
+  and I have also included such an algorithm in the benchmarks.
+  Going the other way round, i.e., starting at an industrial strength sorting algorithm and working upwards, was done for the sequential pdqsort algorithm (that I use as a subroutine).
+  For this paper, while trying to use a realistic example, I also had to keep it simple enough such that it's still suited as
+  an example.
+
+In the description of the Sepref tool, you mention that "The synthesis is automatic, but usually requires some program-specific setup and boilerplate". I'm not sure I fully understand what this program-specific setup is. Are you referring to the refinement assertions and hnr rules for the program operations? Do these have to be provided by the user? I would have thought some of them are fairly generic. Could you clarify everything one would have to provide in order for the sorting algorithm to go through?
+  hnr and the rules for the program operations are generic.
+  What is required is some setup to tell Sepref which concrete data structures to use for the abstract data types in the program, and to ensure the abstract program contains enough assertions
+  such that Sepref can prove the refinement (e.g., indexes are in bounds, numbers must fit into 64 bit words). These are program specific, and require some boilerplate code to set up.
+
+  Sorting algorithm: enough assertions in the abstract algorithm to justify the refinement of lists to arrays and mathematical integers to 64 bit words,
+  plus boilerplate to synthesize the concrete algorithm from the abstract one, subroutine by subroutine.
+
+
+
+
+
+#2
+"Still, I think that the contribution of this paper is too narrow for ESOP. It only considers one algorithm, and it seems that only small extensions of the existing components were actually needed: including disjoint parallelism construct in LLVM syntax and semantics, standard disjoint parallelism rule in separation logic, extensions of the Sepref tool. The latter part was the not sufficiently clear to me, and I was not convinced it will work for other examples."
+
+That's actually the point of the contribution: only small extensions, in particular to the trusted code base,
+are needed to get a great effect, that also integrates well with existing formalizations, and thus allows great speed-up effects by parallelization at low effort!
+
+The approach will work for all algorithms that can be phrased in terms of a parallel combinator on disjoint memory.
+I acknowledge that there may be other "refinement idioms" that are useful for different algorithms,
+but these can be straightforwardly added when needed, without changing anything at the base of the formalization.
+
+Questions for authors’ response
+What were the key technical challenges to overcome in this verification effort?
+> integrating the extension to parallelism without breaking the existing framework nor bloweing up the TCB too much.
+Thus, existing formalizations can be re-used, and parallelism can be added cheaply.
+
+In particular, it is expected that completely disjoint parallelism is captured as a sequential computation. Then, what is needed here beyond syntactic race detection?
+> Semantic race detection. E.g., indexes of array accesses can, typically, not be proved disjoint syntactically.
+  When syntactic race detection can be used to justify disjointness: good, probably the disjointness proof will be easy!
+
+#3
+
+Overclaims.
+  The definition of the parallel combinator is dubious (page 5).
+  The trusted computing base (TCB) is too large.
+
+  Actually, the TCB is only slightly extended (as compared to the TCB for sequential algorithms):
+    the extension to the semantics is straightforward, and explainable with a straightforward and obvious argument.
+    It also maintains the shallow embedding of control flow, which results in an elegant and concise semantics.
+
+    While a semantics that accounts for interleaving or even more sophisticated memory models would
+    work for more general programs (with IO, sync, etc), it would loose the
+    shallow embedding property, and be inherently more complicated, and thus harder to check.
+
+
+Page 2 says this paper presents "the first verification of a parallel sorting algorithm". See Actris: Session-Type Based Reasoning in Separation Logic (POPL 2020).
+   granted, I did not know this work. However: their sorting algorithm is a toy example, which they explicitly do not optimize for efficiency, nor can they extract efficient code.
+   I'll reference the paper and weaken the claim.
+
+Page 22 says "total correctness is a non-trivial endeavour that is subject of active research [39]". But it is unfair. [39] indeed provides a way to prove total correctness, and they can prove termination using almost the same idea employed in this paper, i.e., using the decreasing index.
+  they have not (yet) done it for parallel programs, only for sequential programs. And at the cost of a much more complicated semantics (e.g. TCB).
+
+
+The definition of the parallel combinator is dubious (page 5).
+  it is OK for the proposed (simple) fragment. And as I suggest in the paper, will not work for more complicated semantics with sync/communication.
+  The distinction between NTERM and FAIL is mainly for historical reasons. The Hoare-triple identifies them anyway, so no unsoundness is to be expected here.
+
+
+The current definition doesn't support benign races.
+  no, this was a deliberate decision, as this was not required. Adding such support is easily possible by keeping track of writes as addresses and values.
+  This would slightly increase the complexity of the semantics.
+
+
+The underlying separation logic's adequacy should be proved as in Iris [18].
+  The separation logic is not part of the TCB. All rules are actually proved.
+
+The meaning of Hoare triples should be defined w.r.t. the underlying semantic model as in Iris [18].
+  It actually is!
+
+The arrA, idxA, sorted, mset functions should be verified.
+  Using "sorted" and "mset" is the standard Isabelle way of specifying a sorting algorithm!
+  Other standard specifications can easily be derived from them.
+
+  The relation arrA defines the concept of an array in memory, mapping it to a list of elements.
+  And idxA defines the concept of a fixed-bit word, mapping it to a mathematical integer.
+  While it might be possible to merge their definitions with the definition of sortedness, the resulting
+  specification would be much harder to read. It was a deliberate decision to split the specification into
+  natural, and easy to verify parts, rather than to rely on a monolithic and complex specification.
+
+The translation to LLVM should be verified.
+  It is verified down to the shallowly embedded semantics of LLVM.
+  As any translation can only be verified against a semantics of the target, and the
+  shallowly embedded semantics used in this paper is concise and elegant, and I don't get the point.
+  Formalizing more complete and complicated deeply embedded semantics of LLVM, and translating from
+  the shallow embedding to these deep embedding is an orthogonal issue.
+
+
+Questions for authors’ response
+In my eyes, many of the claimed contributions are actually already made by prior work,
+for the reasons I describe above. Would you please elaborate on your contributions
+so that I can better judge this paper?
+
+  see above.
+
+
+
+
+
+
+
+
+Overall merit
+B.
+OK paper, but I will not champion it
+
+Confidence
+Y.
+I am knowledgeable in this area, but not an expert
+
+Paper summary
+The paper presents a technique for generating verified parallel algorithms in LLVM intermediate representation with total correctness guarantees. This is based in the Isabelle Refinement Framework and makes use of a refinement approach:
+
+The user provides a sequential abstract program. This program contains hints for the subsequent refinement steps. For instance, the npar combinator, which executes two blocks sequentially, is a hint to refine to parallel execution. Conversely, nseq is the same as npar, but it is translated to sequential execution.
+The Sepref tool then refines the abstract program to a concrete LLVM representation. The authors modified the semantics of LLVM to report the read and written memory locations. This allows defining a parallel combinator that fails whenever there is a data race.
+The reasoning infrastructure is based on separation logic. The authors defined a separation algebra, abstraction function from concrete memory to separation algebra, weakest precondition predicate, validity of Hoare triples, and a Verification Condition Generator.
+The result is an LLVM parallel program and a refinement proof.
+
+As a case study, the authors verify total correctness for a parallel sorting algorithm. This algorithm is based on a verified sequential version of Introsort and makes use of a verified pdqsort.
+
+Strengths
+This paper makes progress towards providing total correctness guarantees for parallel algorithms in the Isabelle Refinement Framework.
+
+Weaknesses
+It only discusses one benchmark.
+There is no support for read-only shared memory, meaning that only threads that run on disjoint memory can to be executed in parallel. The authors do discuss this as future work.
+Explanation of your recommendation and comments to authors
+I liked this paper and I think it makes a worthy contribution by taking a step towards providing total correctness guarantees for parallel algorithms. While there are some shortcomings (one single benchmark and no support for shared read-only memory), this paper still makes reasonable progress.
+
+Comments/questions:
+
+It would have been nice to see at least another case study.
+For the definition of the parallel combinator, I think that the definition for "conflict a1 a2" is missing an outer negation?
+With respect to presentation, I think that discussing a bit more about the refinement process (and Sepref) earlier in the paper could better motivate the formalisation. As it is now, I didn't fully understand the big picture and the aim of all the formalisation until quite late in the paper.
+For the performance comparison to the C++ version, I guess ideally you would be using some existing optimised implementation rather than implementing your own. However, I imagine such an implementation doesn't exist. Probably the easiest way is to go the other way around and start from an existing optimised implementation for which you then generate your own LLVM one. That would make for an interesting comparison.
+Typos:
+
+page 3: "separation logic 3" --> "separation logic (Section 3)"
+page 12: "how to refine this two an actual" --> "how to refine this to an actual"
+Questions for authors’ response
+In the description of the Sepref tool, you mention that "The synthesis is automatic, but usually requires some program-specific setup and boilerplate". I'm not sure I fully understand what this program-specific setup is. Are you referring to the refinement assertions and hnr rules for the program operations? Do these have to be provided by the user? I would have thought some of them are fairly generic. Could you clarify everything one would have to provide in order for the sorting algorithm to go through?
+
+Review #100B
+Overall merit
+C.
+Weak paper, though I will not fight strongly against it
+
+Confidence
+Y.
+I am knowledgeable in this area, but not an expert
+
+Paper summary
+This submission reports on a formal verification effort of a parallel sorting algorithm employing disjoint parallelism (race free, and moreover, the forked threads never access the same variables). Verification is carried out in a framework for refinement of sequential programs in Isabelle (IRF) using a pre-existing LLVM model in Isabelle. Some extensions of these frameworks are needed, e.g., with a programming construct for disjoint parallelism, and a Hoare rule for it. Successful verification entails (total) correctness of the LLVM code (assuming its formalized semantics is correct). The (only) case study is parallel quick-sort with certain heuristics for preventing small partitions and for picking a good pivots. Verification is done by using a simple abstract parallel program for sorting which lies between the actual implementation and the sequential abstraction.
+
+Strengths
+correctness is fully verified in Isabelle/HOL
+
+the verified implementation is not so far from standard real worlds ones
+
+Weaknesses
+contribution seems rather narrow given previous work on sequential programs
+
+The main solver Sepref (based on certain heuristics) is not sufficiently clear
+
+The paper is hard to read, composed mostly by Isabelle-style code snippets
+
+Explanation of your recommendation and comments to authors
+I was surprised to see that parallel sorting algorithms were not verified in proof assistants before, and I consider this as a useful contribution.
+
+Still, I think that the contribution of this paper is too narrow for ESOP. It only considers one algorithm, and it seems that only small extensions of the existing components were actually needed: including disjoint parallelism construct in LLVM syntax and semantics, standard disjoint parallelism rule in separation logic, extensions of the Sepref tool. The latter part was the not sufficiently clear to me, and I was not convinced it will work for other examples.
+
+I also found the paper very hard to follow, and not sufficiently accessible for ESOP. The technical contents is given mostly as code with sparse explanations. Even well known notations (e.g., for Hoare triples and points-to assertions) are encoded as predicates as in the Isabelle implementation. This makes the paper look like a documentation of the formalization. Standard mathematical definitions and theorems (preferably in textual environments) and standard notations can help to follow the material, and identify what are the new insights in this submission.
+
+Questions for authors’ response
+What were the key technical challenges to overcome in this verification effort?
+
+In particular, it is expected that completely disjoint parallelism is captured as a sequential computation. Then, what is needed here beyond syntactic race detection?
+
+Review #100C
+Overall merit
+D.
+Reject
+
+Confidence
+X.
+I am an expert in this area
+
+Paper summary
+Designs a verification condition generator (VCG) based on separation logic for parallel algorithms.
+Verifies the total correctness of a parallel sort algorithm.
+Translates the parallel sort algorithm to LLVM.
+Strengths
+Designs a decent VCG for parallel algorithms.
+Weaknesses
+Overclaims.
+The definition of the parallel combinator is dubious (page 5).
+The trusted computing base (TCB) is too large.
+Explanation of your recommendation and comments to authors
+Overclaims.
+
+Page 1 says this paper presents "the first formalization of parallelism for a practically usable LLVM semantics." But the semantics presented in Section 2 is too simple to be called a formalization of LLVM semantics.
+
+Page 2 says this paper presents "the first verification of a parallel sorting algorithm". See Actris: Session-Type Based Reasoning in Separation Logic (POPL 2020).
+
+Page 22 says "total correctness is a non-trivial endeavour that is subject of active research [39]". But it is unfair. [39] indeed provides a way to prove total correctness, and they can prove termination using almost the same idea employed in this paper, i.e., using the decreasing index.
+
+The definition of the parallel combinator is dubious (page 5).
+
+If m1 is NTERM and m2 is FAIL, then the result is NTERM, which is quite wrong because m2 is FAIL. Also, it introduces asymmetry: if m1 and m2 are FAIL and NTERM, respectively, then the result is FAIL.
+
+Identifying NTERM and FAIL is maybe okay for the supposed model of parallelism, where there is no communication, but in the presence of I/O or communication, it is not justified: an NTERM thread may communicate with another thread.
+
+The current definition doesn't support benign races.
+
+The trusted computing base (TCB) is too large.
+
+I think at least:
+
+The underlying separation logic's adequacy should be proved as in Iris [18].
+The meaning of Hoare triples should be defined w.r.t. the underlying semantic model as in Iris [18].
+The arrA, idxA, sorted, mset functions should be verified.
+The translation to LLVM should be verified.
+
+Questions for authors’ response
+In my eyes, many of the claimed contributions are actually already made by prior work,
+for the reasons I describe above. Would you please elaborate on your contributions
+so that I can better judge this paper?
