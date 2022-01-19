@@ -18,7 +18,7 @@ ML \<open>
       fun dest_return @{mpat "return ?x ::_ llM"} = SOME x | dest_return _ = NONE
       fun dest_bind @{mpat "bind ?m ?f ::_ llM"} = SOME (m,f) | dest_bind _ = NONE
       
-      fun dest_monadT (Type (@{type_name M},[T,@{typ unit},@{typ llvm_memory},@{typ err},@{typ llvm_macc}])) = SOME T | dest_monadT _ = NONE
+      fun dest_monadT (Type (@{type_name M},[T,@{typ llvm_memory},@{typ llvm_macc}])) = SOME T | dest_monadT _ = NONE
       val bind_return_thm = @{lemma "bind m return = m" by simp}
       val return_bind_thm = @{lemma "bind (return x) f = f x" by simp}
       val bind_bind_thm = @{lemma "bind (bind m (\<lambda>x. f x)) g = bind m (\<lambda>x. bind (f x) g)" by simp}

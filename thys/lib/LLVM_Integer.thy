@@ -872,7 +872,7 @@ lemma word_to_lint_shl[word_to_lint_convs]: "word_to_lint ((a::_::len word) << n
   apply (auto simp: word_to_lint_def)
   apply transfer'
   apply (auto simp: cnv_uop1_def bin_to_bl_eq_iff bintrunc_mod2p shiftl_t2n uint_word_ariths algebra_simps)
-  by (simp add: mod_mult_right_eq semiring_normalization_rules(7) shiftl_int_def)
+  by (simp add: push_bit_eq_mult mod_mult_right_eq semiring_normalization_rules(7) shiftl_int_def)
   
 lemma word_to_lint_lshr[word_to_lint_convs]: "word_to_lint ((a::_::len word) >> n) = bitLSHR (word_to_lint a) n"
   apply (auto simp: word_to_lint_def)

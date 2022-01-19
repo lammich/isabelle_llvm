@@ -1,7 +1,11 @@
 section \<open>Additional Floating-Point Properties\<close>
 theory IEEE_Fp_Add
-imports IEEE_Floating_Point.Conversion_IEEE_Float IEEE_Floating_Point.FP64
+imports 
+  IEEE_Floating_Point.Conversion_IEEE_Float IEEE_Floating_Point.FP64
+  IEEE_Fp_Add_Basic
 begin
+
+
 
   subsection \<open>Miscellaneous Lemmas\<close>
 
@@ -104,71 +108,15 @@ begin
       apply transfer
       by auto
   
-    subsubsection \<open>Valueizing NaN\<close>
-    text \<open>Make all NaNs a value, tagged by a constant\<close>
-    definition "the_nan x \<equiv> if is_nan x then x else some_nan"
-    
-    lemma ex_nan: "\<exists>x. is_nan x"  
-      unfolding is_nan_def
-      apply transfer
-      apply (auto simp: emax_def)
-      using unat_max_word_pos by blast
-      
-    lemma some_nan_is_nan[simp]: "is_nan some_nan"
-      unfolding some_nan_def 
-      using someI_ex[OF ex_nan] .
-    
-    lemma the_nan_is_nan: "is_nan (the_nan x)"
-      unfolding the_nan_def by auto
-  
-    lemma the_nan_cong[cong]: "the_nan x = the_nan x" by simp
-    
-    lemma some_nan_conv[simp]: "some_nan = the_nan some_nan"
-      unfolding the_nan_def by simp
-        
-    lemma is_nanE[elim!]: assumes "is_nan x" obtains xx where "x = the_nan xx"
-      using assms unfolding the_nan_def by metis
-
       
 
-    subsubsection \<open>Floating point selectors\<close>        
-    lemmas float_sel_simps[simp] = 
-      infinity_simps
-      zero_simps
-      topfloat_simps
-      bottomfloat_simps
-      
-    lemma the_nan_simps[simp]: 
-      "IEEE.exponent (the_nan x::('e, 'f) float) = emax TYPE(('e, 'f) float)"      
-      "IEEE.fraction (the_nan x) \<noteq> 0"
-      subgoal by (meson is_nan_def the_nan_is_nan)
-      subgoal by (meson is_nan_def the_nan_is_nan)
-      done
-      
             
     subsubsection \<open>Floating point classes and constants\<close>  
     (* is_infinity is_nan is_zero is_finite is_normal is_denormal     
        (the_nan x) \<infinity> -\<infinity> 0 -0 topfloat bottomfloat
     *)
     
-    lemma emax_gt1_iff_e_gt1[simp]: "Suc 0 < emax TYPE(('e, 'f) float) \<longleftrightarrow> LENGTH('e)>1"
-      apply (clarsimp simp: emax_def)
-      by (smt (z3) Suc_lessI len_gt_0 mask_1 max_word_mask sint_n1 unat_1 unat_eq_1 unat_max_word_pos word_sint_1)
-    
-    lemma emax_ge1[simp]: "emax TYPE(('e, 'f) float) \<ge> Suc 0"  
-      apply (clarsimp simp: emax_def)
-      by (meson le_zero_eq max_word_not_0 not_less_eq_eq unat_eq_zero)
-
-    lemma emax_eq1_iff[simp]: "emax TYPE(('e, 'f) float) = Suc 0 \<longleftrightarrow> LENGTH('e) = 1"  
-      apply (clarsimp simp: emax_def)
-      by (simp add: unat_eq_1)
-      
-    lemma emax_leq1_iff[simp]: "emax TYPE(('e, 'f) float) \<le> Suc 0 \<longleftrightarrow> LENGTH('e) = 1"  
-      apply (clarsimp simp: emax_def)
-      by (smt (z3) leD le_SucE le_numeral_extra(4) sint_minus1 unat_1 unat_eq_1 unat_max_word_pos word_sint_1)
             
-    lemma pow2N_le1_conv[simp]: "2^n \<le> Suc 0 \<longleftrightarrow> n<1"
-      using le_eq_less_or_eq by force 
       
       
     private lemma class_topfloat_auxs: 
@@ -309,171 +257,6 @@ begin
       done
       
       
-    subsection \<open>Almost-Injectivity of \<^const>\<open>valof\<close>\<close>  
-        
-    lemma valof_nonzero_injective:
-      fixes x\<^sub>1 x\<^sub>2 :: "('e,'f) float"
-      assumes FIN: "is_finite x\<^sub>1" "is_finite x\<^sub>2" and NZ: "\<not>(is_zero x\<^sub>1 \<and> is_zero x\<^sub>2)" 
-      assumes VEQ: "valof x\<^sub>1 = valof x\<^sub>2"
-      shows "x\<^sub>1=x\<^sub>2"
-    proof -
-      define s\<^sub>1 where "s\<^sub>1 = sign x\<^sub>1"
-      define s\<^sub>2 where "s\<^sub>2 = sign x\<^sub>2"
-    
-      define e\<^sub>1 where "e\<^sub>1 = exponent x\<^sub>1"
-      define e\<^sub>2 where "e\<^sub>2 = exponent x\<^sub>2"
-      
-      define f\<^sub>1 where "f\<^sub>1 = real (fraction x\<^sub>1)"
-      define f\<^sub>2 where "f\<^sub>2 = real (fraction x\<^sub>2)"
-      
-      define B where "B = bias TYPE(('e, 'f) IEEE.float)"
-      define F where "F = (2::real)^LENGTH('f)"
-      
-      (*define nv\<^sub>1 where "nv\<^sub>1 = 2 ^ e\<^sub>1 * (1 + f\<^sub>1 / F)"
-      define nv\<^sub>2 where "nv\<^sub>2 = 2 ^ e\<^sub>2 * (1 + f\<^sub>2 / F)"
-      *)
-      
-      note defs = s\<^sub>1_def s\<^sub>2_def e\<^sub>1_def e\<^sub>2_def f\<^sub>1_def f\<^sub>2_def B_def F_def
-    
-      have aux1: "fraction x\<^sub>1 = fraction x\<^sub>2 \<longleftrightarrow> f\<^sub>1=f\<^sub>2" unfolding defs by simp
-        
-      text \<open>Bounds\<close>
-      have [simp]: "F\<noteq>0" unfolding defs by simp
-      
-      have NZ': "\<not>(e\<^sub>1=0 \<and> f\<^sub>1=0 \<and> e\<^sub>2=0 \<and> f\<^sub>2=0)" 
-        using NZ
-        unfolding defs is_zero_def
-        by (auto simp: )
-      
-      have f_bounds: "f\<^sub>1\<in>{0..<F}" "f\<^sub>2\<in>{0..<F}" 
-        unfolding defs by (auto simp: fraction_upper_bound)
-      
-      note [intro] = f_bounds[simplified]
-        
-      have s_bounds: "s\<^sub>1\<in>{0,1}" "s\<^sub>2\<in>{0,1}"  
-        unfolding defs using sign_cases by auto
-      
-      have normal_pos:
-        "0 < 2 ^ e\<^sub>1 * (1 + f\<^sub>1 / F)" 
-        "0 < 2 ^ e\<^sub>2 * (1 + f\<^sub>2 / F)" 
-        using f_bounds apply -
-        apply (smt (verit) atLeastLessThan_iff divide_eq_0_iff divide_pos_pos mult_pos_pos power_eq_0_iff zero_le_power) 
-        by (smt (verit, best) atLeastLessThan_iff divide_nonneg_nonneg zero_less_mult_iff zero_less_power)
-        
-      have nf_bounds: "(1 + f\<^sub>1 / F) \<in> {1..<2}" "(1 + f\<^sub>2 / F) \<in> {1..<2}" 
-        using f_bounds by auto
-        
-        
-      have normal_eq_aux: "f\<^sub>1 = f\<^sub>2 \<and> e\<^sub>1 = e\<^sub>2" if "2 ^ e\<^sub>1 * (1 + f\<^sub>1 / F) = 2 ^ e\<^sub>2 * (1 + f\<^sub>2 / F)"  
-      proof -
-        consider "e\<^sub>1=e\<^sub>2" | "e\<^sub>1<e\<^sub>2" | "e\<^sub>1>e\<^sub>2" by linarith
-        then show ?thesis proof cases
-          case 1 thus ?thesis using that by simp
-        next
-          case 2 then obtain d where [simp]: "e\<^sub>2=Suc (e\<^sub>1+d)"
-            using less_natE by blast
-        
-          from that have False  
-            using nf_bounds
-            apply (clarsimp simp:)
-            by (smt (verit, ccfv_SIG) "2" divide_less_eq le_divide_eq_1_pos nonzero_mult_div_cancel_left not_less_eq plus_1_eq_Suc power_add power_one_right power_strict_increasing_iff that zero_less_power)
-          thus ?thesis ..  
-        next
-          case 3 then obtain d where [simp]: "e\<^sub>1=Suc (e\<^sub>2+d)"
-            using less_natE by blast
-        
-          from that have False  
-            using nf_bounds
-            apply (clarsimp simp:)
-            by (smt (verit, ccfv_SIG) "3" divide_less_eq le_divide_eq_1_pos nonzero_mult_div_cancel_left not_less_eq plus_1_eq_Suc power_add power_one_right power_strict_increasing_iff that zero_less_power)
-          thus ?thesis ..  
-        qed    
-      qed
-        
-      have sign_eqI: "s\<^sub>1=s\<^sub>2 \<and> a=b" if "(-1)^s\<^sub>1 * a = (-1)^s\<^sub>2 * b" "a\<ge>0" "b\<ge>0" "a>0 \<or> b>0" for a b :: real
-        using that s_bounds by auto
-        
-        
-      have G1: "\<lbrakk>e\<^sub>1=0; e\<^sub>2=0; (- 1) ^ s\<^sub>1 * f\<^sub>1 = (- 1) ^ s\<^sub>2 * f\<^sub>2\<rbrakk> \<Longrightarrow> s\<^sub>1 = s\<^sub>2 \<and> f\<^sub>1 = f\<^sub>2"  
-        apply (drule sign_eqI)
-        using NZ' f_bounds by auto
-      
-      have G23_aux1: "2 * f / (2 ^ B * F) < 2/2^B" if B: "f\<in>{0..<F}" for f
-      proof -
-        have "2 * f / (2 ^ B * F) = 2 * (f/F) / 2^B" by simp
-        also have "f/F < 1" using B by simp
-        finally show ?thesis by (simp add: divide_strict_right_mono)
-      qed
-    
-      have G23_aux2: "2 ^ e * (1 + f / F) / 2 ^ B \<ge> 2/2^B" if B: "f\<in>{0..<F}" "0 < e" for e :: nat and f :: real
-      proof -
-        have [simp]: "a/b \<le> c/b \<longleftrightarrow> a\<le>c" if "b>0" for a b c :: real
-          using divide_le_cancel that by auto
-        
-        have "(2::real)^e \<ge> 2" using B
-          by (metis One_nat_def Suc_leI exp_less power_one_right) 
-        moreover have "(1 + f / F) / 2 ^ B \<ge> 1/2^B"
-          using B by (clarsimp)
-        ultimately show ?thesis
-          by (smt (verit, ccfv_SIG) divide_le_cancel le_divide_eq_1_pos nonzero_mult_div_cancel_left zero_le_power)   
-      qed    
-        
-      have G2: "\<lbrakk>0 < e\<^sub>1; (- 1) ^ s\<^sub>1 * 2 ^ e\<^sub>1 * (1 + f\<^sub>1 / F) / 2 ^ B = (- 1) ^ s\<^sub>2 * 2 * f\<^sub>2 / (2 ^ B * F)\<rbrakk> \<Longrightarrow> False"
-        apply (simp only: mult.assoc mult_div_assoc)
-        apply (drule sign_eqI)
-        subgoal using normal_pos f_bounds by simp
-        subgoal using normal_pos f_bounds by simp
-        subgoal using normal_pos f_bounds by simp
-        apply clarsimp
-        apply (drule G23_aux2[OF \<open>f\<^sub>1\<in>{0..<F}\<close>])
-        using G23_aux1[OF \<open>f\<^sub>2\<in>{0..<F}\<close>]
-        by simp
-      
-      have G3: "\<lbrakk>0 < e\<^sub>2; (- 1) ^ s\<^sub>1 * 2 * f\<^sub>1 / (2 ^ B * F) = (- 1) ^ s\<^sub>2 * 2 ^ e\<^sub>2 * (1 + f\<^sub>2 / F) / 2 ^ B\<rbrakk> \<Longrightarrow> False"
-        apply (simp only: mult.assoc mult_div_assoc)
-        apply (drule sign_eqI)
-        subgoal using normal_pos f_bounds by simp
-        subgoal using normal_pos f_bounds by simp
-        subgoal using normal_pos f_bounds by simp
-        apply clarsimp
-        apply (drule G23_aux2[OF \<open>f\<^sub>2\<in>{0..<F}\<close>])
-        using G23_aux1[OF \<open>f\<^sub>1\<in>{0..<F}\<close>]
-        by simp
-        
-      have G4: "\<lbrakk>(- 1) ^ s\<^sub>1 * 2 ^ e\<^sub>1 * (1 + f\<^sub>1 / F) = (- 1) ^ s\<^sub>2 * 2 ^ e\<^sub>2 * (1 + f\<^sub>2 / F)\<rbrakk> \<Longrightarrow> s\<^sub>1 = s\<^sub>2 \<and> f\<^sub>1 = f\<^sub>2 \<and> e\<^sub>1 = e\<^sub>2"  
-        apply (simp only: mult.assoc)
-        apply (drule sign_eqI)
-        using normal_pos
-        apply (auto dest: normal_eq_aux)
-        done
-      
-      
-        
-      from VEQ show ?thesis
-        apply (simp add: valof_eq is_zero_def float_eq_conv aux1 flip: defs cong: if_cong)
-        apply (simp split: if_splits)
-        apply (rule G1; simp)
-        apply (rule G2; simp)
-        apply (rule G3; simp)
-        apply (rule G4; simp)
-        done
-        
-    qed    
-      
-    text \<open> Finite floating point numbers are mapped uniquely to reals,
-      except for zero and negative zero.
-    \<close>
-    theorem valof_almost_injective: 
-      fixes x\<^sub>1 x\<^sub>2 :: "('e,'f) float"
-      assumes FIN: "is_finite x\<^sub>1" "is_finite x\<^sub>2" 
-      assumes VEQ: "valof x\<^sub>1 = valof x\<^sub>2"
-      shows "x\<^sub>1=x\<^sub>2 \<or> (x\<^sub>1=0 \<and> x\<^sub>2=-0) \<or> (x\<^sub>1=-0 \<and> x\<^sub>2=0)"
-      using assms 
-      apply (cases "\<not>(is_zero x\<^sub>1 \<and> is_zero x\<^sub>2)")
-      apply (drule (3) valof_nonzero_injective; simp)
-      apply (auto simp: is_zero_alt)
-      done
-
 
       
     subsection \<open>Rounding\<close>  
@@ -670,7 +453,439 @@ begin
     end
       
       
+
+  subsection \<open>Next Floating Point Number\<close>
+
+  find_consts "_\<Rightarrow>_\<Rightarrow>_ \<Rightarrow> (_,_) float"
+  
+  lift_definition next_float :: "('e,'f) float \<Rightarrow> ('e,'f) float" is
+    "\<lambda>(s,e,f). if s=1 then (
+        if f=0 \<and> e=0 then (0,e,f)
+        else if f=0 then (s,e-1,f-1)
+        else (s,e,f-1)
+      ) else (
+        if f=max_word then (s,e+1,0)
+        else (s,e,f+1)
+      )
+    " .
+
+  lemma sign_next_float: "sign (next_float f) = (if f=-0 then 0 else sign f)"      
+    apply transfer'
+    apply (auto split: if_splits)
+    done
+    
+  find_theorems "unat (_+_)"
+    
+  lemma degenerate_word_ne1: "a\<noteq>1 \<longleftrightarrow> a=0" for a :: "1 word"
+    using degenerate_word by force
+  
+  
+  lemma exp_next_float: "is_finite f \<Longrightarrow> f\<noteq>topfloat \<Longrightarrow> exponent (next_float f) = (if f=-0 then 0 else (
+    if sign f = 1 \<and> fraction f = 0 then exponent f - 1
+    else if sign f = 0 \<and> fraction f = 2^LENGTH('f)-1 then exponent f + 1
+    else exponent f))" for f :: "('e,'f) float"
+    unfolding float_defs
+    apply transfer'
+    apply clarsimp
+    apply (auto split: if_splits simp: unat_eq_0 unat_minus_one degenerate_word_ne1 unat_minus_one_word)
+    subgoal by (metis emax_def less_not_refl2 unat_Suc2)
+    apply (simp add: unat_minus_one_word word_eq_unatI)
+    apply (simp add: unat_minus_one_word word_eq_unatI)
+    done
+    
+  lemma frac_next_float: "is_finite f \<Longrightarrow> f\<noteq>topfloat \<Longrightarrow> fraction (next_float f) = (if f=-0 then 0 else (
+    if sign f = 1 \<and> fraction f = 0 then 2^LENGTH('f)-1
+    else if sign f = 1 then fraction f - 1
+    else if fraction f = 2^LENGTH('f)-1 then 0
+    else fraction f + 1
+  ))" for f :: "('e,'f) float"
+    unfolding float_defs
+    apply transfer'
+    apply clarsimp
+    apply (auto split: if_splits simp: unat_eq_0 unat_minus_one degenerate_word_ne1 unat_minus_one_word)
+    subgoal by (simp add: unat_minus_one_word word_eq_unatI)
+    subgoal using unat_Suc2 by blast
+    subgoal by (simp add: unat_minus_one_word word_eq_unatI)
+    subgoal using unat_Suc2 by auto
+    done
+        
+  lemmas next_float_defs = sign_next_float frac_next_float exp_next_float  
+    
+  lemma next_float_not_inf: "\<lbrakk>is_finite f; f \<noteq> topfloat\<rbrakk> \<Longrightarrow> \<not>is_infinity (next_float f)"
+    unfolding is_infinity_def
+    apply (simp add: next_float_defs)
+    apply (auto simp: is_nan_def float_eq_conv)
+    subgoal by (metis One_nat_def unsigned_1 unsigned_less)
+    subgoal by (metis One_nat_def unsigned_1 unsigned_less)
+    subgoal by (metis One_nat_def unsigned_1 unsigned_less)
+    done
+
+  lemma next_float_not_nan: "\<lbrakk>is_finite f; f \<noteq> topfloat\<rbrakk> \<Longrightarrow> \<not>is_nan (next_float f)"
+    unfolding is_nan_def
+    apply (simp add: next_float_defs)
+    apply (auto simp: is_nan_def float_eq_conv)
+    subgoal by (metis Suc_pred diff_le_self float_exp_le not_less_eq_eq)
+    subgoal by (metis One_nat_def Suc_n_not_le_n Suc_pred emax_pos(1) float_exp_le)
+    subgoal by (metis Suc_pred diff_le_self float_exp_le not_less_eq_eq)
+    subgoal by (metis Suc_pred diff_le_self float_exp_le not_less_eq_eq)
+    subgoal by (metis One_nat_def Suc_n_not_le_n Suc_pred emax_pos(1) float_exp_le)
+    done
+    
+  lemma next_float_minus0: "next_float (-0) = 0"  
+    by (simp add: float_eq_conv next_float_defs)
+    
+    
+  find_theorems sign name: cases  
       
+  lemma nat_gtZ_or_Z: "0<n \<or> n=0" for n :: nat by auto
+  
+  lemma gt_Z_le_1_conv: "0<n \<Longrightarrow> n\<le>Suc 0 \<longleftrightarrow> n=Suc 0" by auto
+  
+  lemma two_plen_gt1: "Suc 0 < 2 ^ LENGTH('f::len)"
+    by (metis One_nat_def unat_lt2p unsigned_1)
+  
+  lemma nat_eqZ_cases: fixes n :: nat obtains "n=0" | "n>0" by blast 
+    
+  lemma next_float_aux:
+    assumes "Suc 0 < e" 
+    shows "2 ^ (e - Suc 0) * (1 + real (2 ^ F - Suc 0) / 2 ^ F) < 2 ^ e" (is "?a < ?b") 
+  proof -
+    have "1 + real (2 ^ F - Suc 0) / 2 ^ F < 2"
+      by (auto simp: divide_less_eq)
+    hence "?a < 2*2^(e-1)" by simp
+    also have "\<dots> = 2^e" using assms by (metis gr_implies_not_zero power_eq_if)
+    finally show ?thesis .
+  qed
+  
+  lemma next_float_increases:
+    fixes f :: "('e,'f) float"
+    assumes "is_finite f" "f\<noteq>topfloat" "f\<noteq>-0" 
+    shows "valof f < valof (next_float f)" 
+    using assms
+    apply (simp add: valof_eq next_float_defs)
+    apply (clarsimp simp: float_defs float_eq_conv two_plen_gt1 nat_gtZ_or_Z)
+    
+    apply (cases f rule: sign_cases; simp)
+    subgoal
+      apply (cases "fraction f = 2 ^ LENGTH('f) - Suc 0"; cases "exponent f = 0"; simp add: nat_gtZ_or_Z)
+      apply (simp_all add: divide_less_eq)
+      done
+    subgoal
+      apply (cases "fraction f = 0"; simp add: gt_Z_le_1_conv)
+      apply (intro conjI impI)
+      apply (simp_all add: divide_less_eq next_float_aux)
+      done
+    done
+    
+    
+  lemma next_float_tight_aux1: "\<lbrakk>f < f'; BF>0\<rbrakk> \<Longrightarrow> BF + real f * (BF) \<le> real f' * (BF)"  
+    by (metis Groups.add_ac(2) Groups.mult_ac(2) Suc_eq_plus1 Suc_leI distrib_left less_eq_real_def mult.right_neutral mult_1s(1) mult_left_mono of_nat_add of_nat_mono of_nat_numeral) 
+    
+    
+  lemma neg_le_posI: "\<lbrakk> a\<ge>0; b\<ge>0 \<rbrakk> \<Longrightarrow> -a\<le>b" for a b :: real by simp
+  lemma not_pos_le_neg_conv: "\<lbrakk> a\<ge>0; b\<ge>0 \<rbrakk> \<Longrightarrow> a\<le>-b \<longleftrightarrow> a=0 \<and> b=0" for a b :: real by argo
+  lemma not_pos_lt_negI: "\<lbrakk> a\<ge>0; b\<ge>0 \<rbrakk> \<Longrightarrow> \<not>a < -b" for a b :: real by argo
+    
+  lemma next_float_tight_aux2: "\<lbrakk>Suc 0 <  2 ^ F; 0<e';
+     2 * real ( 2 ^ F - Suc 0) < real f' * 2 ^ e' + 2 ^ e' *  2 ^ F\<rbrakk>
+    \<Longrightarrow> 2 * 2 ^ F \<le> real f' * 2 ^ e' + 2 ^ F * 2 ^ e'"
+  proof goal_cases
+    case 1
+    
+    from 1 have "(2::real)\<le>2^e'" by (cases e') auto
+    hence "2*2^F \<le> (2^F :: real) * 2^e'" by simp
+    then show ?case by (smt (verit) mult_nonneg_nonneg of_nat_0_le_iff zero_le_power)
+  qed
+  
+  (* Attempt to compare two floats, component-wise *)
+
+  (*  
+  definition "fcc_le_samesign f f' \<longleftrightarrow> (
+    exponent f < exponent f'
+  \<or> (exponent f = exponent f' \<and> fraction f \<le> fraction f')
+  )"
+  
+  definition "fcc_le f f' \<longleftrightarrow> (
+    (is_zero f \<and> is_zero f')
+  \<or> (sign f=1 \<and> sign f'=0)
+  \<or> (sign f = sign f' \<and> sign f' = 0 \<and> fcc_le_samesign f f')  
+  \<or> (sign f = sign f' \<and> sign f' = 1 \<and> fcc_le_samesign f' f)
+  )"
+  *)
+
+  lemma denorm_less_norm_aux: "real (fraction f) * 2 < 2 ^ e * 2 ^ LENGTH('f)" if "0<e"
+    for f :: "('e,'f) float"
+  proof -
+    have "real (fraction f) < 2^LENGTH('f)"
+      by (simp add: fraction_upper_bound)
+    hence "real (fraction f) * 2 < 2*2^LENGTH('f)" by linarith
+    also have "(2::real)\<le>2^e" using \<open>0<e\<close> by (cases e) auto
+    hence "(2::real)*2^LENGTH('f) \<le> 2^e * 2^LENGTH('f)" by auto
+    finally show ?thesis .
+  qed
+  
+  
+  definition "fcc_le_samesign f f' \<longleftrightarrow> (
+    if exponent f < exponent f' then True 
+    else if exponent f = exponent f' then fraction f \<le> fraction f'
+    else False
+  )"
+  
+  definition "fcc_le f f' \<longleftrightarrow> (
+    if is_zero f \<and> is_zero f' then True
+    else if sign f \<noteq> sign f' then sign f = 1 \<and> sign f'=0
+    else if sign f = 0 then fcc_le_samesign f f'
+    else fcc_le_samesign f' f
+  )"
+  
+  lemma fcc_le_cases:
+    obtains 
+      "is_zero f" "is_zero f'"
+    | "\<not>(is_zero f \<and> is_zero f')" "sign f \<noteq> sign f'" 
+    | "\<not>(is_zero f \<and> is_zero f')" "sign f = 0" "sign f'=0"
+    | "\<not>(is_zero f \<and> is_zero f')" "sign f = 1" "sign f'=1"
+    by (metis sign_convs(2))
+
+  lemma fcc_le_aux1: "(a\<longrightarrow>\<not>b) \<Longrightarrow> a\<and>b\<longleftrightarrow>False" by blast 
+    
+  lemma finite_is_zero_iff_valof0: "is_finite f \<Longrightarrow> is_zero f \<longleftrightarrow> valof f = 0"
+    by (auto simp: val_zero valof_eq_zero_conv is_zero_alt)
+  
+  lemma pos_le_ee_conv:
+    fixes f f' :: "('e,'f) float"
+    assumes [simp]: "sign f = 0" "sign f' = 0" "exponent f = exponent f'"
+    shows "valof f \<le> valof f' \<longleftrightarrow> fraction f \<le> fraction f'"
+    apply (auto simp add: valof_eq field_simps)
+    done
+
+  lemma pos_lt_ee_conv:
+    fixes f f' :: "('e,'f) float"
+    assumes [simp]: "sign f = 0" "sign f' = 0" "exponent f = exponent f'"
+    shows "valof f < valof f' \<longleftrightarrow> fraction f < fraction f'"
+    apply (auto simp add: valof_eq field_simps)
+    done
+    
+    
+  lemma exp_less_is_less:
+    fixes f :: "('e,'f) float"
+    assumes "e<e'"
+    shows "2 ^ e * (1 + real (fraction f) / 2 ^ LENGTH('f)) / 2 ^ B
+         < 2 ^ e' * (1 + real (fraction f') / 2 ^ LENGTH('f)) / 2 ^ B"    
+         (is "?l < ?r")
+  proof -
+    have "(1 + real (fraction f) / 2 ^ LENGTH('f)) < 2"
+      by (simp add: fraction_upper_bound) 
+    hence "?l < 2^(e+1)/2^B"
+      by (simp add: divide_strict_right_mono)
+    also have "\<dots> \<le> 2^e'/2^B" using assms
+      by (smt (verit, ccfv_SIG) Suc_leI add.commute divide_right_mono exp_less plus_1_eq_Suc zero_le_power)
+    also have "\<dots> \<le> ?r"
+      by (simp add: divide_le_cancel)  
+    finally show ?thesis .   
+  qed
+          
+    
+    
+  lemma pos_le_eltI:
+    fixes f f' :: "('e,'f) float"
+    assumes [simp]: "sign f = 0" "sign f' = 0" 
+    assumes ELT: "exponent f < exponent f'"
+    shows "valof f \<le> valof f'"
+    using ELT
+    apply (auto simp add: valof_eq exp_less_is_less[THEN less_imp_le])
+    apply (auto simp add: valof_eq field_simps zero_compare_simps denorm_less_norm_aux[THEN less_imp_le]) []
+    done
+
+  lemma pos_lt_eltI:
+    fixes f f' :: "('e,'f) float"
+    assumes [simp]: "sign f = 0" "sign f' = 0" 
+    assumes ELT: "exponent f < exponent f'"
+    shows "valof f < valof f'"
+    using ELT
+    apply (auto simp add: valof_eq exp_less_is_less)
+    apply (auto simp add: valof_eq field_simps zero_compare_simps denorm_less_norm_aux) []
+    done
+    
+            
+  lemma neg_le_ee_conv:
+    fixes f f' :: "('e,'f) float"
+    assumes [simp]: "sign f = 1" "sign f' = 1" "exponent f = exponent f'"
+    shows "valof f \<le> valof f' \<longleftrightarrow> fraction f \<ge> fraction f'"
+    apply (auto simp add: valof_eq field_simps)
+    done
+
+  lemma neg_le_eltI:
+    fixes f f' :: "('e,'f) float"
+    assumes [simp]: "sign f = 1" "sign f' = 1" 
+    and ELT: "exponent f < exponent f'"
+    shows "valof f \<ge> valof f'"
+    using ELT
+    apply (auto simp add: valof_eq exp_less_is_less[THEN less_imp_le])
+    apply (auto simp add: valof_eq field_simps zero_compare_simps denorm_less_norm_aux[THEN less_imp_le])
+    done
+    
+        
+  lemma fcc_le_valof:
+    fixes f f' :: "('e,'f) float"
+    assumes [simp]: "is_finite f" "is_finite f'"  
+    shows "fcc_le f f' \<longleftrightarrow> valof f \<le> valof f'"
+  proof (cases f f' rule: fcc_le_cases; clarsimp simp: fcc_le_def fcc_le_aux1 finite_is_zero_iff_valof0)
+    {
+      assume ZERO: "valof f = 0 \<longrightarrow> valof f' \<noteq> 0"
+      
+      {
+        assume SIGN: "sign f \<noteq> sign f'"
+        show "(sign f = Suc 0 \<and> sign f' = 0) = (valof f \<le> valof f')"
+          by (smt (z3) ZERO SIGN sign_convs(2) sign_convs(3) valof_nonneg valof_nonpos)
+      
+      }
+      
+      {
+        assume S: "sign f = 0" "sign f' = 0"
+        show "fcc_le_samesign f f' = (valof f \<le> valof f')"
+          apply (auto simp add: fcc_le_samesign_def)
+          subgoal by (simp add: S(1) S(2) pos_le_ee_conv)
+          subgoal using S(1) S(2) pos_le_ee_conv by blast
+          subgoal using S(1) S(2) pos_le_eltI by blast
+          by (smt (verit) S(1) S(2) ZERO assms(1) assms(2) neqE pos_le_eltI val_zero valof_nonzero_injective)
+      
+      }
+      
+      {
+        assume S: "sign f = Suc 0" "sign f' = Suc 0"
+        show "fcc_le_samesign f' f = (valof f \<le> valof f')"
+          apply (auto simp add: fcc_le_samesign_def)
+          subgoal by (simp add: S(1) S(2) neg_le_ee_conv)
+          subgoal by (simp add: S(1) S(2) neg_le_ee_conv)
+          subgoal by (simp add: S(1) S(2) neg_le_eltI)
+          by (smt (verit) One_nat_def S(1) S(2) ZERO assms(1) assms(2) neg_le_eltI neqE val_zero valof_nonzero_injective)
+          
+      }
+    }
+  qed      
+  
+
+  definition "fcc_lt_samesign f f' \<longleftrightarrow> (
+    if exponent f < exponent f' then True 
+    else if exponent f = exponent f' then fraction f < fraction f'
+    else False
+  )"
+  
+  definition "fcc_lt f f' \<longleftrightarrow> (
+    if is_zero f \<and> is_zero f' then False
+    else if sign f \<noteq> sign f' then sign f = 1 \<and> sign f'=0
+    else if sign f = 0 then fcc_lt_samesign f f'
+    else fcc_lt_samesign f' f
+  )"
+  
+
+  lemma fcc_lt_valof:
+    fixes f f' :: "('e,'f) float"
+    assumes [simp]: "is_finite f" "is_finite f'"  
+    shows "fcc_lt f f' \<longleftrightarrow> valof f < valof f'"
+  proof (cases f f' rule: fcc_le_cases; clarsimp simp: fcc_lt_def finite_is_zero_iff_valof0)
+    {
+      assume ZERO: "valof f = 0 \<longrightarrow> valof f' \<noteq> 0"
+      
+      {
+        assume SIGN: "sign f \<noteq> sign f'"
+        show "(sign f = Suc 0 \<and> sign f' = 0) = (valof f < valof f')"
+          by (smt (z3) ZERO SIGN sign_convs(2) sign_convs(3) valof_nonneg valof_nonpos)
+      
+      }
+      
+      {
+        assume S: "sign f = 0" "sign f' = 0"
+        show "fcc_lt_samesign f f' = (valof f < valof f')"
+          apply (auto simp add: fcc_lt_samesign_def)
+          subgoal by (simp add: S(1) S(2) pos_lt_ee_conv)
+          subgoal using S(1) S(2) pos_lt_ee_conv by blast
+          subgoal using S(1) S(2) pos_lt_eltI by blast
+          by (meson S(1) S(2) leD nat_neq_iff pos_le_eltI)
+      
+      }
+      
+      {
+        assume S: "sign f = Suc 0" "sign f' = Suc 0"
+        show "fcc_lt_samesign f' f = (valof f < valof f')"
+          apply (auto simp add: fcc_lt_samesign_def)
+          subgoal by (metis One_nat_def S(1) S(2) neg_le_ee_conv not_less)
+          subgoal
+            by (metis One_nat_def S(1) S(2) neg_le_ee_conv verit_comp_simplify1(3))
+          subgoal
+            by (metis One_nat_def S(1) S(2) ZERO assms(1) assms(2) leD neg_le_eltI not_less_iff_gr_or_eq val_zero valof_nonzero_injective)
+          subgoal
+            by (simp add: S(1) S(2) leD neg_le_eltI)
+          done
+      }
+    }
+  qed      
+  
+    
+    
+  
+(*  
+  lemma denorm_less_norm_aux: "real (fraction f) * 2 < 2 ^ e * 2 ^ LENGTH('f)" if "0<e"
+    for f :: "('e,'f) float"
+  proof -
+    have "real (fraction f) < 2^LENGTH('f)"
+      by (simp add: fraction_upper_bound)
+    hence "real (fraction f) * 2 < 2*2^LENGTH('f)" by linarith
+    also have "(2::real)\<le>2^e" using \<open>0<e\<close> by (cases e) auto
+    hence "(2::real)*2^LENGTH('f) \<le> 2^e * 2^LENGTH('f)" by auto
+    finally show ?thesis .
+  qed
+  
+  lemma denorm_less_norm_aux': 
+    "real (fraction f) * 2 < real (fraction f') * 2 ^ e + 2 ^ e * 2 ^ LENGTH('f)" if "0 < e"
+    for f f' :: "('e,'f) float"
+  proof -
+    have "real (fraction f) < 2^LENGTH('f)"
+      by (simp add: fraction_upper_bound)
+    hence "real (fraction f) * 2 < 2*2^LENGTH('f)" by linarith
+    also have "(2::real)\<le>2^e" using \<open>0<e\<close> by (cases e) auto
+    hence "(2::real)*2^LENGTH('f) \<le> 2^e * 2^LENGTH('f)" by auto
+    finally show ?thesis
+      by (smt (verit, best) mult_nonneg_nonneg of_nat_0_le_iff zero_le_power)
+  qed
+*)  
+  lemma pos_le_neg_conv: "\<lbrakk>a\<ge>0; b\<ge>0\<rbrakk> \<Longrightarrow> (a\<le>-b) \<longleftrightarrow> a=b \<and> b=0" for a b :: real by auto
+  
+
+  lemma next_float_finiteI: "\<lbrakk>is_finite f; f\<noteq>topfloat\<rbrakk> \<Longrightarrow> is_finite (next_float f)"
+    apply (clarsimp simp: float_defs next_float_defs float_eq_conv)
+    by (metis (no_types, lifting) Suc_lessI diff_Suc_Suc emax_ge1 less_eq_Suc_le less_imp_diff_less minus_nat.diff_0 two_plen_gt1)
+    
+    
+  lemma float_frac_not_gt: "\<not>(2 ^ LENGTH('f) - Suc 0 < fraction f)" for f :: "('e,'f) float"
+    using float_frac_le linorder_not_less by auto
+    
+  lemma float_frac_le': "fraction f \<le> 2 ^ LENGTH('f) - Suc 0" for f :: "('e,'f) float" 
+    using float_frac_le by auto
+    
+  lemma next_float_tight: 
+    fixes f f' :: "('e,'f) float"
+    assumes "is_finite f" "f\<noteq>topfloat" 
+    assumes "is_finite f'" 
+    assumes "valof f < valof f'"
+    shows "valof (next_float f) \<le> valof f'"
+    
+    using assms
+    apply (simp flip: fcc_le_valof fcc_lt_valof add: next_float_finiteI)
+    
+    apply (cases f f' rule: fcc_le_cases; 
+      clarsimp simp: fcc_lt_def fcc_le_def finite_is_zero_iff_valof0 next_float_defs
+    )
+    apply (auto 
+      simp: fcc_le_samesign_def fcc_lt_samesign_def next_float_defs float_frac_le' float_frac_not_gt 
+      split: if_splits)
+    done
+    
+  xxx, ctd here:
+    clean-up
+    then use to verify rounded results
+        
+          
       
     subsection \<open>Lower and Upper Bounding\<close>  
       
@@ -911,7 +1126,7 @@ begin
     lemma aux1: "2/(B*2^f) \<le> (2^e)*(1+x)/B" if "B>0" "e>0" "x\<ge>0" for B x :: real
     proof -
       have "2/(2^f) \<le> (2^e)*(1+x)"
-        by (smt (verit) divide_numeral_1 field_sum_of_halves le_divide_eq_1_pos less_one nonzero_mult_div_cancel_left numerals(1) power_0 power_eq_0_iff power_less_imp_less_exp power_one_right that(2) that(3)) sorry
+        by (smt (verit) divide_numeral_1 field_sum_of_halves le_divide_eq_1_pos less_one nonzero_mult_div_cancel_left numerals(1) power_0 power_eq_0_iff power_less_imp_less_exp power_one_right that(2) that(3))
       thus ?thesis using \<open>B>0\<close>
         by (metis divide_divide_eq_left' divide_right_mono less_eq_real_def)
     qed

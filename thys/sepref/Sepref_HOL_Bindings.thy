@@ -1193,8 +1193,9 @@ proof -
      by (auto simp: snat_rel_def snat.rel_def in_br_conv) 
    ultimately have \<open>nat (sint (ai << nat (uint bi))) = nat (uint ai * 2 ^ nat (uint bi))\<close>
      using H'[of \<open>uint bi\<close> ai]  le a b
-     by (auto simp: sint_uint word_size uint_shiftl sbintrunc_If shiftl_def
+     apply (auto simp: sint_uint word_size uint_shiftl sbintrunc_If shiftl_def
       shiftl_int_def max_snat_def max_unat_def snat_rel_def snat.rel_def)
+     by (simp add: push_bit_eq_mult signed_take_bit_int_eq_self)
    have [simp]: \<open>\<not> msb (ai << nat (uint bi))\<close>
      apply (subst msb_shiftl_word[OF _])
      using le le' a b state

@@ -77,7 +77,7 @@ subsection \<open>Preprocessor\<close>
       fun dest_return @{mpat "return ?x ::_ llM"} = SOME x | dest_return _ = NONE
       fun dest_bind @{mpat "bind ?m ?f ::_ llM"} = SOME (m,f) | dest_bind _ = NONE
       
-      fun dest_monadT (Type (@{type_name M},[T,@{typ unit},@{typ llvm_memory},@{typ err},@{typ "llvm_macc"}])) = SOME T | dest_monadT _ = NONE
+      fun dest_monadT (Type (@{type_name M},[T,@{typ llvm_memory},@{typ "llvm_macc"}])) = SOME T | dest_monadT _ = NONE
 
       
       fun strip_op _ @{mpat \<open>llc_par ?fa ?fb ?a ?b\<close>} = (@{mk_term "llc_par ?fa ?fb"},[a,b])

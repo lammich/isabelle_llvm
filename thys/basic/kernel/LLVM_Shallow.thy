@@ -6,9 +6,9 @@ begin
 
 
   text \<open>We define a type synonym for the LLVM monad\<close>
-  type_synonym 'a llM = "('a,unit,llvm_memory,err,llvm_macc) M"
+  type_synonym 'a llM = "('a,llvm_memory,llvm_macc) M"
   translations
-    (type) "'a llM" \<leftharpoondown> (type) "('a, unit, llvm_memory, err,llvm_macc) M"
+    (type) "'a llM" \<leftharpoondown> (type) "('a, llvm_memory, llvm_macc) M"
   
     
 
@@ -310,7 +310,7 @@ begin
     else if rm = AVX512_FROUND_TO_NEG_INF_NO_EXC then return To_ninfinity
     else if rm = AVX512_FROUND_TO_POS_INF_NO_EXC then return To_pinfinity
     else if rm = AVX512_FROUND_TO_ZERO_NO_EXC then return float_To_zero
-    else fail (STATIC_ERROR ''Unsupported rounding mode'')"
+    else mfail (STATIC_ERROR ''Unsupported rounding mode'')"
     
   lemma xlate_rounding_mode_simps:  
     "xlate_rounding_mode AVX512_FROUND_TO_NEAREST_NO_EXC = return To_nearest"
@@ -517,7 +517,7 @@ begin
     
   subsubsection \<open>Parallel Combinator\<close>  
   definition llc_par :: "('a \<Rightarrow> 'ar llM) \<Rightarrow> ('b \<Rightarrow> 'br llM) \<Rightarrow> 'a \<Rightarrow> 'b \<Rightarrow> ('ar \<times> 'br) llM" where 
-    "llc_par f g a b \<equiv> par PAR_ERROR (f a) (g b)"
+    "llc_par f g a b \<equiv> par (f a) (g b)"
 
   lemma par_mono[partial_function_mono]:
     "\<lbrakk>\<And>x. monotone M.le_fun M_ord (\<lambda>f. F f x); \<And>x. monotone M.le_fun M_ord (\<lambda>f. G f x)\<rbrakk> \<Longrightarrow> monotone M.le_fun M_ord (\<lambda>f. llc_par (F f) (G f) a b)"
@@ -547,6 +547,9 @@ begin
     unfolding llc_while_def llc_if_def
     apply (rewrite mwhile_unfold)
     by simp
+
+
+  thm partial_function_mono
 
   lemma llc_while_mono[partial_function_mono]:      
     assumes "\<And>x. M_mono (\<lambda>f. b f x)"

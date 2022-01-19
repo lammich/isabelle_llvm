@@ -306,6 +306,7 @@ lemma bintrunc_le: \<open>a \<ge> 0 \<Longrightarrow> a < b \<Longrightarrow> bi
 
 
 lemma msb_shiftr_word [simp]: "r < LENGTH('a) \<Longrightarrow> msb ((x :: 'a :: {len} word) >> r) \<longleftrightarrow> ((r = 0 \<and> msb x))"
+  supply [[smt_trace]]
   apply (cases r)
   apply (auto simp: bl_shiftr word_size msb_word_def 
     simp flip: sint_uint[unfolded One_nat_def] hd_bl_sign_sint)

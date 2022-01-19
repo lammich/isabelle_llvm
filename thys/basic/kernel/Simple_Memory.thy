@@ -252,19 +252,21 @@ begin
 
   abbreviation (input) "TYPE_ERROR \<equiv> STATIC_ERROR ''type''"
   
-  type_synonym 'a if_llM = "('a,_,llvm_memory,err,llvm_macc) M"
-  
+  type_synonym 'a if_llM = "('a,llvm_memory,llvm_macc) M"
+
+  abbreviation "mfail _ \<equiv> fail"
+
   definition llvm_extract_addr :: "llvm_val \<Rightarrow> llvm_addr if_llM" where
-    "llvm_extract_addr v \<equiv> case v of LL_PTR (PTR_ADDR a) \<Rightarrow> return a | LL_PTR PTR_NULL \<Rightarrow> fail MEM_ERROR | _ \<Rightarrow> fail TYPE_ERROR"
+    "llvm_extract_addr v \<equiv> case v of LL_PTR (PTR_ADDR a) \<Rightarrow> return a | LL_PTR PTR_NULL \<Rightarrow> mfail MEM_ERROR | _ \<Rightarrow> mfail TYPE_ERROR"
 
   definition llvm_extract_ptr :: "llvm_val \<Rightarrow> llvm_ptr if_llM" where
-    "llvm_extract_ptr v \<equiv> case v of LL_PTR p \<Rightarrow> return p | _ \<Rightarrow> fail TYPE_ERROR"
+    "llvm_extract_ptr v \<equiv> case v of LL_PTR p \<Rightarrow> return p | _ \<Rightarrow> mfail TYPE_ERROR"
     
   definition llvm_extract_sint :: "llvm_val \<Rightarrow> int if_llM" where
-    "llvm_extract_sint v \<equiv> case v of LL_INT i \<Rightarrow> return (lint_to_sint i) | _ \<Rightarrow> fail TYPE_ERROR" 
+    "llvm_extract_sint v \<equiv> case v of LL_INT i \<Rightarrow> return (lint_to_sint i) | _ \<Rightarrow> mfail TYPE_ERROR" 
         
   definition llvm_extract_unat :: "llvm_val \<Rightarrow> nat if_llM" where
-    "llvm_extract_unat v \<equiv> case v of LL_INT i \<Rightarrow> return (nat (lint_to_uint i)) | _ \<Rightarrow> fail TYPE_ERROR" 
+    "llvm_extract_unat v \<equiv> case v of LL_INT i \<Rightarrow> return (nat (lint_to_uint i)) | _ \<Rightarrow> mfail TYPE_ERROR" 
     
   definition llvm_extract_value :: "llvm_val \<Rightarrow> nat \<Rightarrow> llvm_val if_llM" where 
   "llvm_extract_value v i \<equiv> case v of 
@@ -272,7 +274,7 @@ begin
       fcheck TYPE_ERROR (i<length vs);
       return (vs!i)
     }
-  | _ \<Rightarrow> fail TYPE_ERROR"
+  | _ \<Rightarrow> mfail TYPE_ERROR"
       
   definition llvm_insert_value :: "llvm_val \<Rightarrow> llvm_val \<Rightarrow> nat \<Rightarrow> llvm_val if_llM" where 
   "llvm_insert_value v x i \<equiv> case v of 
@@ -281,7 +283,7 @@ begin
       fcheck TYPE_ERROR (llvm_struct_of_val (vs!i) = llvm_struct_of_val x);
       return (LL_STRUCT (vs[i:=x]))
     }
-  | _ \<Rightarrow> fail TYPE_ERROR"
+  | _ \<Rightarrow> mfail TYPE_ERROR"
 
     
   subsection \<open>Interface functions\<close>
@@ -386,7 +388,7 @@ begin
     return (LL_PTR p)
   }"
 
-  definition "llvm_extract_base_block a \<equiv> case a of ADDR b i \<Rightarrow> if i=0 then return b else fail MEM_ERROR"
+  definition "llvm_extract_base_block a \<equiv> case a of ADDR b i \<Rightarrow> if i=0 then return b else mfail MEM_ERROR"
   
   definition "llvm_free p \<equiv> doM {
     p \<leftarrow> llvm_extract_ptr p;

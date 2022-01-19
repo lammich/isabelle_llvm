@@ -36,7 +36,7 @@ begin
   subsection \<open>General Functions\<close>
   ML \<open> structure LLC_Lib = 
     struct
-      fun dest_llM (Type (@{type_name M},[T,@{typ unit},@{typ llvm_memory},@{typ err},@{typ "llvm_macc"}])) = T
+      fun dest_llM (Type (@{type_name M},[T,@{typ llvm_memory},@{typ "llvm_macc"}])) = T
         | dest_llM ty = raise TYPE("dest_llM",[ty],[]);
       
       val is_llM = can dest_llM

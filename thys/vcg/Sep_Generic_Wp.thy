@@ -33,7 +33,7 @@ begin
     
 end
 
-definition "wp c Q s \<equiv> mwp (run c s) bot bot bot (\<lambda>r i s. Q r i s)"
+definition "wp c Q s \<equiv> mwp (run c s) bot (\<lambda>r i s. Q r i s)"
 
 lemma wp_false[simp]: "\<not>wp c (\<lambda>_ _ _. False) s"
   unfolding wp_def fun_eq_iff mwp_def
@@ -47,7 +47,7 @@ interpretation generic_wp wp
 lemma wp_return[vcg_normalize_simps]: "wp (return x) Q s \<longleftrightarrow> Q x 0 s"  
   by (auto simp: wp_def run_simps)
 
-lemma wp_fail[vcg_normalize_simps]: "\<not> wp (fail x) Q s"  
+lemma wp_fail[vcg_normalize_simps]: "\<not> wp (fail) Q s"  
   by (auto simp: wp_def run_simps)
 
 lemma wp_fcheck[vcg_normalize_simps]: "wp (fcheck e \<Phi>) Q s \<longleftrightarrow> \<Phi> \<and> Q () 0 s"  
@@ -57,15 +57,14 @@ lemma wp_interfer[vcg_normalize_simps]: "wp (interfer i) Q s = Q () i s"
   by (auto simp: wp_def run_simps)
   
 lemma mwp_add_intf_cong:
-  assumes "\<And>e i' s. E' e i' s = E e (i+i') s"
   assumes "\<And>x i' s. S' x i' s = S x (i+i') s"
-  shows "mwp (add_intf i m) N F E S = mwp m N F E' S'"  
+  shows "mwp (add_intf i m) F S = mwp m F S'"  
   using assms apply (cases m; auto) done 
   
 lemma wp_bind[vcg_normalize_simps]: "wp (m\<bind>f) Q s = wp m (\<lambda>x i. wp (f x) (\<lambda>x' i'. Q x' (i+i'))) s"  
   by (auto simp: wp_def run_simps mwp_add_intf_cong)
 
-lemma wp_par: "wp (par E m\<^sub>1 m\<^sub>2) Q s = wp m\<^sub>1 (\<lambda>x\<^sub>1 i\<^sub>1 s. wp m\<^sub>2 (\<lambda>x\<^sub>2 i\<^sub>2 s. nointer i\<^sub>1 i\<^sub>2 \<and> Q (x\<^sub>1,x\<^sub>2) (i\<^sub>1+i\<^sub>2) s) s) s"  
+lemma wp_par: "wp (par m\<^sub>1 m\<^sub>2) Q s = wp m\<^sub>1 (\<lambda>x\<^sub>1 i\<^sub>1 s. wp m\<^sub>2 (\<lambda>x\<^sub>2 i\<^sub>2 s. nointer i\<^sub>1 i\<^sub>2 \<and> Q (x\<^sub>1,x\<^sub>2) (i\<^sub>1+i\<^sub>2) s) s) s"  
   apply (auto simp: wp_def run_simps)
   apply (auto simp: mwp_def split: mres.splits if_splits)
   done
@@ -168,7 +167,7 @@ begin
     assumes "wpa (A \<union> (used_mem s - I\<^sub>1)) c\<^sub>1 (\<lambda>r\<^sub>1 s\<^sub>1. wpa (A \<union> (used_mem s\<^sub>1 - I\<^sub>2)) c\<^sub>2 (\<lambda>r\<^sub>2. Q (r\<^sub>1,r\<^sub>2)) s\<^sub>1) s"
     assumes "I\<^sub>1 \<inter> I\<^sub>2 = {}" 
     assumes "I\<^sub>1 \<subseteq> used_mem s" "I\<^sub>2 \<subseteq> used_mem s"
-    shows "wpa A (par E c\<^sub>1 c\<^sub>2) Q s"
+    shows "wpa A (par c\<^sub>1 c\<^sub>2) Q s"
     using assms
     unfolding wpa_def
     apply (clarsimp simp: wp_par)
@@ -191,7 +190,7 @@ begin
   lemma wpa_false[vcg_normalize_simps]: "\<not>wpa A m (\<lambda>_ _. False) s"  
     by (simp add: wpa_def vcg_normalize_simps)
   
-  lemma wpa_fail[vcg_normalize_simps]: "\<not>wpa A (fail msg) Q s"  
+  lemma wpa_fail[vcg_normalize_simps]: "\<not>wpa A (fail) Q s"  
     by (simp add: wpa_def vcg_normalize_simps)
 
   lemma wpa_fcheck[vcg_normalize_simps]: "wpa A (fcheck msg \<Phi>) Q s \<longleftrightarrow> \<Phi> \<and> Q () s"  
@@ -305,7 +304,7 @@ begin
   lemma ht_par:
     assumes "htriple P\<^sub>1 m\<^sub>1 Q\<^sub>1"  
     assumes "htriple P\<^sub>2 m\<^sub>2 Q\<^sub>2"  
-    shows "htriple (P\<^sub>1**P\<^sub>2) (par E m\<^sub>1 m\<^sub>2) (\<lambda>(r\<^sub>1,r\<^sub>2). Q\<^sub>1 r\<^sub>1 ** Q\<^sub>2 r\<^sub>2)"
+    shows "htriple (P\<^sub>1**P\<^sub>2) (par m\<^sub>1 m\<^sub>2) (\<lambda>(r\<^sub>1,r\<^sub>2). Q\<^sub>1 r\<^sub>1 ** Q\<^sub>2 r\<^sub>2)"
     apply (rule)
     unfolding STATE_def
     apply (clarsimp simp: sep_conj_def)
