@@ -1,6 +1,7 @@
 *~
 *.s
 /html
+obsolete
 obsolete/*
 dist.tgz
 
