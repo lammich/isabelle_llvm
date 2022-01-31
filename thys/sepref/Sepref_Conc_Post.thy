@@ -212,8 +212,11 @@ begin
   definition [CP_defs]: "CP_assm CP \<equiv> (CP::bool)" \<comment> \<open>Assumption on concrete preconds\<close>
   definition [CP_defs]: "CP_cond CP \<equiv> (CP::bool)" \<comment> \<open>Proof obligation on concrete preconds\<close>
   definition [CP_defs]: "CP_simplify A B \<equiv> \<forall>r. A r \<longrightarrow> B r" \<comment> \<open>Intermediate simp-step\<close>
-  
-    
+
+  named_theorems cp_solve_cond_pre
+  lemma [cp_solve_cond_pre]: "CP_cond True"
+    by (auto simp: CP_defs)
+
   lemma cp_simplify_expose_assmI:
     assumes "CP_assm CP"
     assumes "CP \<longrightarrow> CP_TAG CP'"
@@ -226,8 +229,9 @@ begin
     (cp_normalize;fail)
     
   method cp_solve_cond = 
-    (cp_simplify_expose_assm+)?;
-    auto simp: CP_cond_def CP_pred_def CP_simps
+    solves \<open>intro cp_solve_cond_pre\<close> |
+    ((cp_simplify_expose_assm+)?;
+     auto simp: CP_cond_def CP_pred_def CP_simps)
 
   lemma CP_simplify_triv: "CP_simplify (\<lambda>_. True) (\<lambda>_. True)"  
     by (auto simp: CP_defs)    
