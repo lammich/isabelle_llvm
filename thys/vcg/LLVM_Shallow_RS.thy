@@ -12,16 +12,17 @@ ML \<open>
   structure LLVM_VCG_Monadify = struct
     structure Monadify = Gen_Monadify_Cong (
     
-      fun mk_return x = @{mk_term "return ?x ::_ llM"}
-      fun mk_bind m f = @{mk_term "bind ?m ?f ::_ llM"}
+      fun mk_return x = @{mk_term "Mreturn ?x ::_ llM"}
+      fun mk_bind m f = @{mk_term "Mbind ?m ?f ::_ llM"}
     
-      fun dest_return @{mpat "return ?x ::_ llM"} = SOME x | dest_return _ = NONE
-      fun dest_bind @{mpat "bind ?m ?f ::_ llM"} = SOME (m,f) | dest_bind _ = NONE
-      
-      fun dest_monadT (Type (@{type_name M},[T,@{typ llvm_memory},@{typ llvm_macc}])) = SOME T | dest_monadT _ = NONE
-      val bind_return_thm = @{lemma "bind m return = m" by simp}
-      val return_bind_thm = @{lemma "bind (return x) f = f x" by simp}
-      val bind_bind_thm = @{lemma "bind (bind m (\<lambda>x. f x)) g = bind m (\<lambda>x. bind (f x) g)" by simp}
+      fun dest_return @{mpat "Mreturn ?x ::_ llM"} = SOME x | dest_return _ = NONE
+      fun dest_bind @{mpat "Mbind ?m ?f ::_ llM"} = SOME (m,f) | dest_bind _ = NONE
+
+      val dest_monadT = try LLC_Lib.dest_llM  
+
+      val bind_return_thm = @{lemma "Mbind m Mreturn = m" by simp}
+      val return_bind_thm = @{lemma "Mbind (Mreturn x) f = f x" by simp}
+      val bind_bind_thm = @{lemma "Mbind (Mbind m (\<lambda>x. f x)) g = Mbind m (\<lambda>x. Mbind (f x) g)" by simp}
       
     )
     
@@ -349,11 +350,11 @@ subsubsection \<open>Offsetting Pointers\<close>
 *)
 
 (* TODO: Move *)
-lemma extract_sint_to_val[vcg_normalize_simps]: "llvm_extract_sint (to_val i) = return (sint i)"
+lemma extract_sint_to_val[vcg_normalize_simps]: "llvm_extract_sint (to_val i) = Mreturn (sint i)"
   unfolding llvm_extract_sint_def to_val_word_def
   by (simp add: sint_uint)
 
-lemma extract_unat_to_val[vcg_normalize_simps]: "llvm_extract_unat (to_val n) = return (unat n)"
+lemma extract_unat_to_val[vcg_normalize_simps]: "llvm_extract_unat (to_val n) = Mreturn (unat n)"
   unfolding llvm_extract_unat_def to_val_word_def
   by (auto split: llvm_val.split)
   
@@ -415,7 +416,7 @@ lemma llvm_blockv_Nil[simp]: "llvm_blockv [] b = 0"
 lemma block_base_abase[simp]: "llvm_ptr_is_block_base p \<Longrightarrow> abase (PTR p)"  
   by (cases p; auto simp: llvm_ptr_is_block_base_def abase_ptr_def)
   
-lemma llvm_pto_is_ato: "\<lbrakk>llvm_ptr.is_addr p; llvm_addr.idx (llvm_ptr.the_addr p) \<ge> 0\<rbrakk> 
+lemma llvm_pto_is_ato: "\<lbrakk>llvm_ptr.is_addr p; addr.index (llvm_ptr.the_addr p) \<ge> 0\<rbrakk> 
   \<Longrightarrow> llvm_pto x p = EXACT (llvm_ato x (llvm_ptr.the_addr p))"  
   by (cases p; simp add: llvm_pto_def)
   
@@ -431,7 +432,7 @@ lemma range_split_aux: "(\<Union>*i\<in>{0..<int (length xs)}. llvm_pto (to_val 
 lemma is_addr_add[simp]: "llvm_ptr.is_addr (p +\<^sub>a i) \<longleftrightarrow> llvm_ptr.is_addr p"  
   by (cases p; auto)
   
-lemma addr_idx_the_addr_add[simp]: "llvm_ptr.is_addr p \<Longrightarrow> llvm_addr.idx (llvm_ptr.the_addr (p +\<^sub>a i)) = llvm_addr.idx (llvm_ptr.the_addr p) + i"
+lemma addr_idx_the_addr_add[simp]: "llvm_ptr.is_addr p \<Longrightarrow> addr.index (llvm_ptr.the_addr (p +\<^sub>a i)) = addr.index (llvm_ptr.the_addr p) + i"
   by (cases p) auto
   
 lemma blockv_range_conv:
@@ -594,7 +595,7 @@ text \<open>
   succeed.
 \<close>
   
-lemma cond_llvm_htripleI: "x = return y \<Longrightarrow> llvm_htriple \<box> x (\<lambda>r. \<up>(r=y))" by vcg
+lemma cond_llvm_htripleI: "x = Mreturn y \<Longrightarrow> llvm_htriple \<box> x (\<lambda>r. \<up>(r=y))" by vcg
 
 
 locale llvm_prim_arith_setup
@@ -619,15 +620,15 @@ begin
 
 paragraph \<open>Arithmetic\<close>
 
-lemma ll_add_simp[vcg_normalize_simps]: "ll_add a b = return (a + b)" by (auto simp: ll_add_def)
-lemma ll_sub_simp[vcg_normalize_simps]: "ll_sub a b = return (a - b)" by (auto simp: ll_sub_def)
-lemma ll_mul_simp[vcg_normalize_simps]: "ll_mul a b = return (a * b)" by (auto simp: ll_mul_def)
-lemma ll_udiv_simp[vcg_normalize_simps]: "b\<noteq>0 \<Longrightarrow> ll_udiv a b = return (a div b)" by (auto simp: ll_udiv_def)
-lemma ll_urem_simp[vcg_normalize_simps]: "b\<noteq>0 \<Longrightarrow> ll_urem a b = return (a mod b)" by (auto simp: ll_urem_def)
+lemma ll_add_simp[vcg_normalize_simps]: "ll_add a b = Mreturn (a + b)" by (auto simp: ll_add_def)
+lemma ll_sub_simp[vcg_normalize_simps]: "ll_sub a b = Mreturn (a - b)" by (auto simp: ll_sub_def)
+lemma ll_mul_simp[vcg_normalize_simps]: "ll_mul a b = Mreturn (a * b)" by (auto simp: ll_mul_def)
+lemma ll_udiv_simp[vcg_normalize_simps]: "b\<noteq>0 \<Longrightarrow> ll_udiv a b = Mreturn (a div b)" by (auto simp: ll_udiv_def)
+lemma ll_urem_simp[vcg_normalize_simps]: "b\<noteq>0 \<Longrightarrow> ll_urem a b = Mreturn (a mod b)" by (auto simp: ll_urem_def)
 
-lemma ll_sdiv_simp[vcg_normalize_simps]: "\<lbrakk>b\<noteq>0; in_srange (sdiv) a b\<rbrakk> \<Longrightarrow> ll_sdiv a b = return (a sdiv b)" 
+lemma ll_sdiv_simp[vcg_normalize_simps]: "\<lbrakk>b\<noteq>0; in_srange (sdiv) a b\<rbrakk> \<Longrightarrow> ll_sdiv a b = Mreturn (a sdiv b)" 
   by (auto simp: ll_sdiv_def Let_def)
-lemma ll_srem_simp[vcg_normalize_simps]: "\<lbrakk>b\<noteq>0; in_srange (sdiv) a b\<rbrakk> \<Longrightarrow> ll_srem a b = return (a smod b)" 
+lemma ll_srem_simp[vcg_normalize_simps]: "\<lbrakk>b\<noteq>0; in_srange (sdiv) a b\<rbrakk> \<Longrightarrow> ll_srem a b = Mreturn (a smod b)" 
   by (auto simp: ll_srem_def)
 
 lemma ll_udiv_rule[vcg_rules]: "WBOUNDS (b\<noteq>0) \<Longrightarrow> llvm_htriple \<box> (ll_udiv a b) (\<lambda>r. \<up>(r = a div b))" 
@@ -640,23 +641,23 @@ lemma ll_srem_rule[vcg_rules]: "\<lbrakk>WBOUNDS (b\<noteq>0); WBOUNDS (in_srang
   unfolding vcg_tag_defs by vcg
 
 
-lemma ll_fadd_simp[vcg_normalize_simps]: "ll_fadd a b = return (a + b)" by (auto simp: ll_fadd_def) 
-lemma ll_fsub_simp[vcg_normalize_simps]: "ll_fsub a b = return (a - b)" by (auto simp: ll_fsub_def) 
-lemma ll_fmul_simp[vcg_normalize_simps]: "ll_fmul a b = return (a * b)" by (auto simp: ll_fmul_def) 
-lemma ll_fdiv_simp[vcg_normalize_simps]: "ll_fdiv a b = return (a / b)" by (auto simp: ll_fdiv_def) 
-lemma ll_frem_simp[vcg_normalize_simps]: "ll_frem a b = return (drem a b)" by (auto simp: ll_frem_def) 
-lemma ll_sqrt_f64_simp[vcg_normalize_simps]: "ll_sqrt_f64 a = return (dsqrt a)" by (auto simp: ll_sqrt_f64_def) 
+lemma ll_fadd_simp[vcg_normalize_simps]: "ll_fadd a b = Mreturn (a + b)" by (auto simp: ll_fadd_def) 
+lemma ll_fsub_simp[vcg_normalize_simps]: "ll_fsub a b = Mreturn (a - b)" by (auto simp: ll_fsub_def) 
+lemma ll_fmul_simp[vcg_normalize_simps]: "ll_fmul a b = Mreturn (a * b)" by (auto simp: ll_fmul_def) 
+lemma ll_fdiv_simp[vcg_normalize_simps]: "ll_fdiv a b = Mreturn (a / b)" by (auto simp: ll_fdiv_def) 
+lemma ll_frem_simp[vcg_normalize_simps]: "ll_frem a b = Mreturn (drem a b)" by (auto simp: ll_frem_def) 
+lemma ll_sqrt_f64_simp[vcg_normalize_simps]: "ll_sqrt_f64 a = Mreturn (dsqrt a)" by (auto simp: ll_sqrt_f64_def) 
   
 
 lemmas [vcg_normalize_simps] = xlate_rounding_mode_simps
 
 lemma ll_x86_avx512_simps[vcg_normalize_simps]:
-  "ll_x86_avx512_add_sd_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm; return (dradd rm a b)}"
-  "ll_x86_avx512_sub_sd_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm; return (drsub rm a b)}"
-  "ll_x86_avx512_mul_sd_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm; return (drmul rm a b)}"
-  "ll_x86_avx512_div_sd_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm; return (drdiv rm a b)}"
-  "ll_x86_avx512_sqrt_sd      rm a = doM {rm \<leftarrow> xlate_rounding_mode rm; return (drsqrt rm a)}"
-  "ll_x86_avx512_vfmadd_f64   rm a b c = doM {rm \<leftarrow> xlate_rounding_mode rm; return (drfmadd rm a b c)}"
+  "ll_x86_avx512_add_sd_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm; Mreturn (dradd rm a b)}"
+  "ll_x86_avx512_sub_sd_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm; Mreturn (drsub rm a b)}"
+  "ll_x86_avx512_mul_sd_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm; Mreturn (drmul rm a b)}"
+  "ll_x86_avx512_div_sd_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm; Mreturn (drdiv rm a b)}"
+  "ll_x86_avx512_sqrt_sd      rm a = doM {rm \<leftarrow> xlate_rounding_mode rm; Mreturn (drsqrt rm a)}"
+  "ll_x86_avx512_vfmadd_f64   rm a b c = doM {rm \<leftarrow> xlate_rounding_mode rm; Mreturn (drfmadd rm a b c)}"
   unfolding
     ll_x86_avx512_add_sd_round_def
     ll_x86_avx512_sub_sd_round_def
@@ -670,18 +671,18 @@ lemma ll_x86_avx512_simps[vcg_normalize_simps]:
   
 paragraph \<open>Comparison\<close>
 lemma ll_icmp_simps[vcg_normalize_simps]: 
-  "ll_icmp_eq a b = return (from_bool (a = b))" 
-  "ll_icmp_ne a b = return (from_bool (a \<noteq> b))" 
-  "ll_icmp_sle a b = return (from_bool (a <=s b))" 
-  "ll_icmp_slt a b = return (from_bool (a <s b))" 
-  "ll_icmp_ule a b = return (from_bool (a \<le> b))" 
-  "ll_icmp_ult a b = return (from_bool (a < b))" 
+  "ll_icmp_eq a b = Mreturn (from_bool (a = b))" 
+  "ll_icmp_ne a b = Mreturn (from_bool (a \<noteq> b))" 
+  "ll_icmp_sle a b = Mreturn (from_bool (a <=s b))" 
+  "ll_icmp_slt a b = Mreturn (from_bool (a <s b))" 
+  "ll_icmp_ule a b = Mreturn (from_bool (a \<le> b))" 
+  "ll_icmp_ult a b = Mreturn (from_bool (a < b))" 
   unfolding ll_icmp_eq_def ll_icmp_ne_def ll_icmp_sle_def ll_icmp_slt_def ll_icmp_ule_def ll_icmp_ult_def
   by auto
  
   
 definition [vcg_normalize_simps]: "check_ptrs_cmp p\<^sub>1 p\<^sub>2 = (
-  if p\<^sub>1=null \<or> p\<^sub>2=null then return () else doM { vcg_assert_valid_ptr p\<^sub>1; vcg_assert_valid_ptr p\<^sub>2; return ()})"
+  if p\<^sub>1=null \<or> p\<^sub>2=null then Mreturn () else doM { vcg_assert_valid_ptr p\<^sub>1; vcg_assert_valid_ptr p\<^sub>2; Mreturn ()})"
   
   
 lemma word1_to_lint_ltrue: "word_to_lint (1::1 word) = ltrue"  
@@ -691,8 +692,8 @@ lemma word1_to_lint_lfalse: "word_to_lint (0::1 word) = lfalse"
   unfolding word_to_lint_def lfalse_def by auto
     
 lemma ll_ptrcmp_simps[vcg_normalize_simps]: 
-  "ll_ptrcmp_eq a b = doM { check_ptrs_cmp a b; return (from_bool (a = b))}" 
-  "ll_ptrcmp_ne a b = doM { check_ptrs_cmp a b; return (from_bool (a \<noteq> b))}" 
+  "ll_ptrcmp_eq a b = doM { check_ptrs_cmp a b; Mreturn (from_bool (a = b))}" 
+  "ll_ptrcmp_ne a b = doM { check_ptrs_cmp a b; Mreturn (from_bool (a \<noteq> b))}" 
   unfolding ll_ptrcmp_eq_def ll_ptrcmp_ne_def check_ptrs_cmp_def llvm_ptr_eq_def llvm_ptr_neq_def llvm_extract_ptr_def
   unfolding to_val_ptr_def null_def
   subgoal
@@ -712,21 +713,21 @@ lemma ll_ptrcmp_simps[vcg_normalize_simps]:
   done  
   
 lemma ll_fcmp_simp[vcg_normalize_simps]:
-  "ll_fcmp_oeq a b = return (from_bool (\<not>is_nan a \<and> \<not>is_nan b \<and> eq_double a b))"
-  "ll_fcmp_ogt a b = return (from_bool (\<not>is_nan a \<and> \<not>is_nan b \<and> a > b))"
-  "ll_fcmp_oge a b = return (from_bool (\<not>is_nan a \<and> \<not>is_nan b \<and> a \<ge> b))"
-  "ll_fcmp_olt a b = return (from_bool (\<not>is_nan a \<and> \<not>is_nan b \<and> a < b))"
-  "ll_fcmp_ole a b = return (from_bool (\<not>is_nan a \<and> \<not>is_nan b \<and> a \<le> b))"
-  "ll_fcmp_one a b = return (from_bool (\<not>is_nan a \<and> \<not>is_nan b \<and> \<not>eq_double a b))"
-  "ll_fcmp_ord a b = return (from_bool (\<not>is_nan a \<and> \<not>is_nan b))"
+  "ll_fcmp_oeq a b = Mreturn (from_bool (\<not>is_nan a \<and> \<not>is_nan b \<and> eq_double a b))"
+  "ll_fcmp_ogt a b = Mreturn (from_bool (\<not>is_nan a \<and> \<not>is_nan b \<and> a > b))"
+  "ll_fcmp_oge a b = Mreturn (from_bool (\<not>is_nan a \<and> \<not>is_nan b \<and> a \<ge> b))"
+  "ll_fcmp_olt a b = Mreturn (from_bool (\<not>is_nan a \<and> \<not>is_nan b \<and> a < b))"
+  "ll_fcmp_ole a b = Mreturn (from_bool (\<not>is_nan a \<and> \<not>is_nan b \<and> a \<le> b))"
+  "ll_fcmp_one a b = Mreturn (from_bool (\<not>is_nan a \<and> \<not>is_nan b \<and> \<not>eq_double a b))"
+  "ll_fcmp_ord a b = Mreturn (from_bool (\<not>is_nan a \<and> \<not>is_nan b))"
 
-  "ll_fcmp_ueq a b = return (from_bool (is_nan a \<or> is_nan b \<or> eq_double a b))"
-  "ll_fcmp_ugt a b = return (from_bool (is_nan a \<or> is_nan b \<or> a > b))"
-  "ll_fcmp_uge a b = return (from_bool (is_nan a \<or> is_nan b \<or> a \<ge> b))"
-  "ll_fcmp_ult a b = return (from_bool (is_nan a \<or> is_nan b \<or> a < b))"
-  "ll_fcmp_ule a b = return (from_bool (is_nan a \<or> is_nan b \<or> a \<le> b))"
-  "ll_fcmp_une a b = return (from_bool (is_nan a \<or> is_nan b \<or> \<not>eq_double a b))"
-  "ll_fcmp_uno a b = return (from_bool (is_nan a \<or> is_nan b))"
+  "ll_fcmp_ueq a b = Mreturn (from_bool (is_nan a \<or> is_nan b \<or> eq_double a b))"
+  "ll_fcmp_ugt a b = Mreturn (from_bool (is_nan a \<or> is_nan b \<or> a > b))"
+  "ll_fcmp_uge a b = Mreturn (from_bool (is_nan a \<or> is_nan b \<or> a \<ge> b))"
+  "ll_fcmp_ult a b = Mreturn (from_bool (is_nan a \<or> is_nan b \<or> a < b))"
+  "ll_fcmp_ule a b = Mreturn (from_bool (is_nan a \<or> is_nan b \<or> a \<le> b))"
+  "ll_fcmp_une a b = Mreturn (from_bool (is_nan a \<or> is_nan b \<or> \<not>eq_double a b))"
+  "ll_fcmp_uno a b = Mreturn (from_bool (is_nan a \<or> is_nan b))"
   
   unfolding 
     ll_fcmp_oeq_def
@@ -752,17 +753,17 @@ lemma ll_fcmp_simp[vcg_normalize_simps]:
   
 paragraph \<open>Bitwise\<close>
 
-lemma ll_and_simp[vcg_normalize_simps]: "ll_and a b = return (a AND b)" by (auto simp: ll_and_def)
-lemma ll_or_simp[vcg_normalize_simps]: "ll_or a b = return (a OR b)" by (auto simp: ll_or_def)
-lemma ll_xor_simp[vcg_normalize_simps]: "ll_xor a b = return (a XOR b)" by (auto simp: ll_xor_def)
+lemma ll_and_simp[vcg_normalize_simps]: "ll_and a b = Mreturn (a AND b)" by (auto simp: ll_and_def)
+lemma ll_or_simp[vcg_normalize_simps]: "ll_or a b = Mreturn (a OR b)" by (auto simp: ll_or_def)
+lemma ll_xor_simp[vcg_normalize_simps]: "ll_xor a b = Mreturn (a XOR b)" by (auto simp: ll_xor_def)
   
-lemma ll_shl_simp[vcg_normalize_simps]: "unat b < LENGTH ('a) \<Longrightarrow> ll_shl (a::'a::len word) b = return (a << unat b)" 
+lemma ll_shl_simp[vcg_normalize_simps]: "unat b < LENGTH ('a) \<Longrightarrow> ll_shl (a::'a::len word) b = Mreturn (a << unat b)" 
   by (auto simp: ll_shl_def Let_def shift_ovf_def bitSHL'_def)
   
-lemma ll_lshr_simp[vcg_normalize_simps]: "unat b < LENGTH ('a) \<Longrightarrow> ll_lshr (a::'a::len word) b = return (a >> unat b)" 
+lemma ll_lshr_simp[vcg_normalize_simps]: "unat b < LENGTH ('a) \<Longrightarrow> ll_lshr (a::'a::len word) b = Mreturn (a >> unat b)" 
   by (auto simp: ll_lshr_def Let_def shift_ovf_def bitLSHR'_def)
 
-lemma ll_ashr_simp[vcg_normalize_simps]: "unat b < LENGTH ('a) \<Longrightarrow> ll_ashr (a::'a::len word) b = return (a >>> unat b)" 
+lemma ll_ashr_simp[vcg_normalize_simps]: "unat b < LENGTH ('a) \<Longrightarrow> ll_ashr (a::'a::len word) b = Mreturn (a >>> unat b)" 
   by (auto simp: ll_ashr_def Let_def shift_ovf_def bitASHR'_def)
   
 lemma [vcg_rules]:
@@ -776,13 +777,13 @@ lemma [vcg_rules]:
   
 paragraph \<open>Conversion\<close>
     
-lemma ll_trunc_simp[vcg_normalize_simps]: "is_down' UCAST ('a\<rightarrow>'b) \<Longrightarrow> ll_trunc (a::'a::len word) TYPE('b::len word) = return (UCAST ('a\<rightarrow>'b) a)"
+lemma ll_trunc_simp[vcg_normalize_simps]: "is_down' UCAST ('a\<rightarrow>'b) \<Longrightarrow> ll_trunc (a::'a::len word) TYPE('b::len word) = Mreturn (UCAST ('a\<rightarrow>'b) a)"
   by (auto simp: ll_trunc_def llb_trunc_def Let_def)
   
-lemma ll_zext_simp[vcg_normalize_simps]: "is_up' UCAST ('a\<rightarrow>'b) \<Longrightarrow> ll_zext (a::'a::len word) TYPE('b::len word) = return (UCAST ('a\<rightarrow>'b) a)"
+lemma ll_zext_simp[vcg_normalize_simps]: "is_up' UCAST ('a\<rightarrow>'b) \<Longrightarrow> ll_zext (a::'a::len word) TYPE('b::len word) = Mreturn (UCAST ('a\<rightarrow>'b) a)"
   by (auto simp: ll_zext_def llb_zext_def Let_def)
   
-lemma ll_sext_simp[vcg_normalize_simps]: "is_up' SCAST ('a\<rightarrow>'b) \<Longrightarrow> ll_sext (a::'a::len word) TYPE('b::len word) = return (SCAST ('a\<rightarrow>'b) a)"
+lemma ll_sext_simp[vcg_normalize_simps]: "is_up' SCAST ('a\<rightarrow>'b) \<Longrightarrow> ll_sext (a::'a::len word) TYPE('b::len word) = Mreturn (SCAST ('a\<rightarrow>'b) a)"
   by (auto simp: ll_sext_def llb_sext_def Let_def)
 
   
@@ -800,10 +801,10 @@ begin
 
   text \<open>Comparison with null are always simplified\<close>  
   lemma ll_ptrcmp_null_simps[vcg_normalize_simps]: 
-    "ll_ptrcmp_eq a null = doM { return (from_bool (a = null))}" 
-    "ll_ptrcmp_eq null b = doM { return (from_bool (b = null))}" 
-    "ll_ptrcmp_ne a null = doM { return (from_bool (a \<noteq> null))}" 
-    "ll_ptrcmp_ne null b = doM { return (from_bool (b \<noteq> null))}" 
+    "ll_ptrcmp_eq a null = doM { Mreturn (from_bool (a = null))}" 
+    "ll_ptrcmp_eq null b = doM { Mreturn (from_bool (b = null))}" 
+    "ll_ptrcmp_ne a null = doM { Mreturn (from_bool (a \<noteq> null))}" 
+    "ll_ptrcmp_ne null b = doM { Mreturn (from_bool (b \<noteq> null))}" 
     by (vcg_normalize; simp add: eq_commute[of null]; fail)+
   
 end
@@ -846,10 +847,10 @@ end
     
 text \<open>The while command is handled by a standard invariant/variant rule.\<close>  
 
-lemma llc_while_unfold: "llc_while b f \<sigma> = doM { ctd \<leftarrow> b \<sigma>; llc_if ctd (doM { \<sigma>\<leftarrow>f \<sigma>; llc_while b f \<sigma>}) (return \<sigma>)}"
+lemma llc_while_unfold: "llc_while b f \<sigma> = doM { ctd \<leftarrow> b \<sigma>; llc_if ctd (doM { \<sigma>\<leftarrow>f \<sigma>; llc_while b f \<sigma>}) (Mreturn \<sigma>)}"
   unfolding llc_while_def
   unfolding llc_while_def llc_if_def
-  apply (rewrite mwhile_unfold)
+  apply (rewrite Mwhile_unfold)
   apply simp
   done
 
@@ -884,6 +885,7 @@ proof (induction t arbitrary: \<sigma> s)
       apply (erule wpa_monoI; clarsimp; fri_extract)
       apply (rule less.IH; assumption)
       done
+    subgoal by simp  
     subgoal by simp  
     done
 qed          
@@ -926,14 +928,14 @@ end
 
 subsection \<open>LLVM Code Generator Setup\<close>
 
-lemma elim_higher_order_return[llvm_pre_simp]: "doM { x::_\<Rightarrow>_ \<leftarrow> return f; m x } = m f" by simp
+lemma elim_higher_order_return[llvm_pre_simp]: "doM { x::_\<Rightarrow>_ \<leftarrow> Mreturn f; m x } = m f" by simp
 
 
 text \<open>Useful shortcuts\<close>
 
 subsubsection \<open>Direct Arithmetic\<close>
 
-(* TODO: How would we handle conditional rules, like from return (a div b) to ll_udiv?
+(* TODO: How would we handle conditional rules, like from Mreturn (a div b) to ll_udiv?
   We would have to transform the program to a weaker one, that asserts preconditions, and
   then reason about this!
 *)
@@ -942,22 +944,22 @@ context begin
   interpretation llvm_prim_arith_setup .
 
   lemma arith_inlines[llvm_pre_simp, vcg_monadify_xforms]: 
-    "return (a+b) = ll_add a b" 
-    "return (a-b) = ll_sub a b" 
-    "return (a*b) = ll_mul a b" 
+    "Mreturn (a+b) = ll_add a b" 
+    "Mreturn (a-b) = ll_sub a b" 
+    "Mreturn (a*b) = ll_mul a b" 
   
-    "return (a AND b) = ll_and a b" 
-    "return (a OR b) = ll_or a b" 
-    "return (a XOR b) = ll_xor a b" 
+    "Mreturn (a AND b) = ll_and a b" 
+    "Mreturn (a OR b) = ll_or a b" 
+    "Mreturn (a XOR b) = ll_xor a b" 
     by vcg                                           
 
   lemma farith_inlines[llvm_pre_simp, vcg_monadify_xforms]: 
-    "return (a+b) = ll_fadd a b" 
-    "return (a-b) = ll_fsub a b" 
-    "return (a*b) = ll_fmul a b" 
-    "return (a/b) = ll_fdiv a b" 
-    "return (drem a b) = ll_frem a b" 
-    "return (dsqrt a) = ll_sqrt_f64 a" 
+    "Mreturn (a+b) = ll_fadd a b" 
+    "Mreturn (a-b) = ll_fsub a b" 
+    "Mreturn (a*b) = ll_fmul a b" 
+    "Mreturn (a/b) = ll_fdiv a b" 
+    "Mreturn (drem a b) = ll_frem a b" 
+    "Mreturn (dsqrt a) = ll_sqrt_f64 a" 
     by vcg
 
   term sqrt  
@@ -981,12 +983,12 @@ context begin
   lemmas [llvm_pre_simp(*, vcg_monadify_xforms*)] = avx512_rm.simps
   
   lemma avx512_arith_inlines[llvm_pre_simp(*, vcg_monadify_xforms*)]:
-    "return (dradd rm a b) = ll_x86_avx512_add_sd_round (avx512_rm rm) a b"
-    "return (drsub rm a b) = ll_x86_avx512_sub_sd_round (avx512_rm rm) a b"
-    "return (drmul rm a b) = ll_x86_avx512_mul_sd_round (avx512_rm rm) a b"
-    "return (drdiv rm a b) = ll_x86_avx512_div_sd_round (avx512_rm rm) a b"
-    "return (drsqrt rm a) = ll_x86_avx512_sqrt_sd (avx512_rm rm) a"
-    "return (drfmadd rm a b c) = ll_x86_avx512_vfmadd_f64 (avx512_rm rm) a b c"
+    "Mreturn (dradd rm a b) = ll_x86_avx512_add_sd_round (avx512_rm rm) a b"
+    "Mreturn (drsub rm a b) = ll_x86_avx512_sub_sd_round (avx512_rm rm) a b"
+    "Mreturn (drmul rm a b) = ll_x86_avx512_mul_sd_round (avx512_rm rm) a b"
+    "Mreturn (drdiv rm a b) = ll_x86_avx512_div_sd_round (avx512_rm rm) a b"
+    "Mreturn (drsqrt rm a) = ll_x86_avx512_sqrt_sd (avx512_rm rm) a"
+    "Mreturn (drfmadd rm a b c) = ll_x86_avx512_vfmadd_f64 (avx512_rm rm) a b c"
     by (cases rm; vcg)+
   
 end
@@ -995,7 +997,7 @@ end
 
 subsubsection \<open>Direct Comparison\<close>
 abbreviation (input) ll_cmp' :: "bool \<Rightarrow> 1 word" where "ll_cmp' \<equiv> from_bool"
-definition [vcg_monadify_xforms,llvm_inline]: "ll_cmp b \<equiv> return (ll_cmp' b)"
+definition [vcg_monadify_xforms,llvm_inline]: "ll_cmp b \<equiv> Mreturn (ll_cmp' b)"
   
 (* To work with current monadify implementation, 
   we have to replace each operation by a constants
@@ -1036,19 +1038,19 @@ context begin
   interpretation llvm_prim_arith_setup .
 
   lemma ll_cmp'_xforms[vcg_monadify_xforms,llvm_pre_simp]:
-    "return (ll_cmp'_eq  a b) = ll_icmp_eq a b" 
-    "return (ll_cmp'_ne  a b) = ll_icmp_ne a b" 
-    "return (ll_cmp'_ult a b) = ll_icmp_ult a b" 
-    "return (ll_cmp'_ule a b) = ll_icmp_ule a b" 
-    "return (ll_cmp'_slt a b) = ll_icmp_slt a b" 
-    "return (ll_cmp'_sle a b) = ll_icmp_sle a b" 
+    "Mreturn (ll_cmp'_eq  a b) = ll_icmp_eq a b" 
+    "Mreturn (ll_cmp'_ne  a b) = ll_icmp_ne a b" 
+    "Mreturn (ll_cmp'_ult a b) = ll_icmp_ult a b" 
+    "Mreturn (ll_cmp'_ule a b) = ll_icmp_ule a b" 
+    "Mreturn (ll_cmp'_slt a b) = ll_icmp_slt a b" 
+    "Mreturn (ll_cmp'_sle a b) = ll_icmp_sle a b" 
     unfolding ll_cmp_def ll_cmp'_defs
     by (all vcg_normalize)
 
 
   lemma ll_cmp'_double_xforms[vcg_monadify_xforms,llvm_pre_simp]:
-    "return (ll_cmp'_flt  a b) = ll_fcmp_olt a b" 
-    "return (ll_cmp'_fle  a b) = ll_fcmp_ole a b" 
+    "Mreturn (ll_cmp'_flt  a b) = ll_fcmp_olt a b" 
+    "Mreturn (ll_cmp'_fle  a b) = ll_fcmp_ole a b" 
     unfolding ll_cmp'_defs
     apply (all vcg_normalize)
     apply (simp_all add: dcompare_ord_conv)
@@ -1061,8 +1063,8 @@ context begin
   definition "ll_ne_null a \<equiv> ll_cmp'_ne a null"  
     
   lemma ll_ptrcmp'_xforms[vcg_monadify_xforms,llvm_pre_simp]:
-    "return (ll_eq_null a) = ll_ptrcmp_eq a null" 
-    "return (ll_ne_null a) = ll_ptrcmp_ne a null" 
+    "Mreturn (ll_eq_null a) = ll_ptrcmp_eq a null" 
+    "Mreturn (ll_ne_null a) = ll_ptrcmp_ne a null" 
     "ll_cmp'_eq a null = ll_eq_null a" 
     "ll_cmp'_eq null b = ll_eq_null b" 
     "ll_cmp'_ne a null = ll_ne_null a" 
@@ -1095,15 +1097,15 @@ lemma inline_prod_case[llvm_pre_simp]: "(\<lambda>(a,b). f a b) = (\<lambda>x. d
   by (auto simp: prod_ops_simp)
   
 lemma inline_return_prod_case[llvm_pre_simp]: 
-  "return (case x of (a,b) \<Rightarrow> f a b) = (case x of (a,b) \<Rightarrow> return (f a b))" by (rule prod.case_distrib)
+  "Mreturn (case x of (a,b) \<Rightarrow> f a b) = (case x of (a,b) \<Rightarrow> Mreturn (f a b))" by (rule prod.case_distrib)
   
   
-lemma inline_return_prod[llvm_pre_simp]: "return (a,b) = doM { x \<leftarrow> prod_insert_fst init a; x \<leftarrow> prod_insert_snd x b; return x }"  
+lemma inline_return_prod[llvm_pre_simp]: "Mreturn (a,b) = doM { x \<leftarrow> prod_insert_fst init a; x \<leftarrow> prod_insert_snd x b; Mreturn x }"  
   by (auto simp: prod_ops_simp)
   
 lemma ll_extract_pair_pair:
-  "ll_extract_value (a,b) 0 = return a"
-  "ll_extract_value (a,b) 1 = return b" 
+  "ll_extract_value (a,b) 0 = Mreturn a"
+  "ll_extract_value (a,b) 1 = Mreturn b" 
   unfolding ll_extract_value_def llvm_extract_value_def checked_from_val_def
   by auto
   
@@ -1121,9 +1123,9 @@ lemma ins_extr_prod_simp[llvm_pre_simp]: "doM {
   
   
 subsubsection \<open>Marking of constants\<close>    
-definition "ll_const x \<equiv> return x"
+definition "ll_const x \<equiv> Mreturn x"
 
-lemma ll_const_inline[llvm_pre_simp]: "bind (ll_const x) f = f x" by (auto simp: ll_const_def)
+lemma ll_const_inline[llvm_pre_simp]: "Mbind (ll_const x) f = f x" by (auto simp: ll_const_def)
   
 declare [[vcg_const "numeral a"]]
 declare [[vcg_const "ll_const c"]]
@@ -1152,23 +1154,23 @@ lemma vcg_prep_delete_assn[vcg_prep_ext_rules]:
   
 
 definition "is_un_op PRE cop mop aop \<equiv> 
-  (\<forall>a::'c. I a \<and> PRE TYPE('c) (\<alpha> a) \<longrightarrow> I (mop a) \<and> \<alpha> (mop a) = aop (\<alpha> a) \<and> cop a = return (mop a))"
+  (\<forall>a::'c. I a \<and> PRE TYPE('c) (\<alpha> a) \<longrightarrow> I (mop a) \<and> \<alpha> (mop a) = aop (\<alpha> a) \<and> cop a = Mreturn (mop a))"
   
 definition "is_bin_op PRE cop mop aop \<equiv> 
-  (\<forall>a b::'c. I a \<and> I b \<and> PRE TYPE('c) (\<alpha> a) (\<alpha> b) \<longrightarrow> I (mop a b) \<and> \<alpha> (mop a b) = aop (\<alpha> a) (\<alpha> b) \<and> cop a b = return (mop a b))"
+  (\<forall>a b::'c. I a \<and> I b \<and> PRE TYPE('c) (\<alpha> a) (\<alpha> b) \<longrightarrow> I (mop a b) \<and> \<alpha> (mop a b) = aop (\<alpha> a) (\<alpha> b) \<and> cop a b = Mreturn (mop a b))"
 
 abbreviation "is_un_op' cop mop aop \<equiv> is_un_op (dflt_PRE1 aop) cop mop aop"
 abbreviation "is_bin_op' cop mop aop \<equiv> is_bin_op (dflt_PRE2 aop) cop mop aop"
 
 lemma is_un_opI[intro?]:
-  assumes "\<And>a. \<lbrakk>I a; PRE TYPE('c) (\<alpha> a)\<rbrakk> \<Longrightarrow> cop a = return (mop a)"
+  assumes "\<And>a. \<lbrakk>I a; PRE TYPE('c) (\<alpha> a)\<rbrakk> \<Longrightarrow> cop a = Mreturn (mop a)"
   assumes "\<And>a. \<lbrakk>I a; PRE TYPE('c) (\<alpha> a)\<rbrakk> \<Longrightarrow> I (mop a)"
   assumes "\<And>a. \<lbrakk>I a; PRE TYPE('c) (\<alpha> a)\<rbrakk> \<Longrightarrow> \<alpha> (mop a) = aop (\<alpha> a)"
   shows "is_un_op PRE cop mop aop"
   using assms unfolding is_un_op_def by blast
 
 lemma is_bin_opI[intro?]:
-  assumes "\<And>a b. \<lbrakk>I a; I b; PRE TYPE('c) (\<alpha> a) (\<alpha> b)\<rbrakk> \<Longrightarrow> cop a b = return (mop a b)"
+  assumes "\<And>a b. \<lbrakk>I a; I b; PRE TYPE('c) (\<alpha> a) (\<alpha> b)\<rbrakk> \<Longrightarrow> cop a b = Mreturn (mop a b)"
   assumes "\<And>a b. \<lbrakk>I a; I b; PRE TYPE('c) (\<alpha> a) (\<alpha> b)\<rbrakk> \<Longrightarrow> I (mop a b)"
   assumes "\<And>a b. \<lbrakk>I a; I b; PRE TYPE('c) (\<alpha> a) (\<alpha> b)\<rbrakk> \<Longrightarrow> \<alpha> (mop a b) = aop (\<alpha> a) (\<alpha> b)"
   shows "is_bin_op PRE cop mop aop"
@@ -1219,10 +1221,10 @@ interpretation bool: standard_opr_abstraction "to_bool::1 word \<Rightarrow> boo
 context standard_opr_abstraction begin
 
   definition "is_cmp_op cop mop aop \<equiv> 
-    (\<forall>a b. I a \<and> I b \<longrightarrow> (cop a b = return (from_bool (mop a b)) \<and> (mop a b \<longleftrightarrow> aop (\<alpha> a) (\<alpha> b))))"
+    (\<forall>a b. I a \<and> I b \<longrightarrow> (cop a b = Mreturn (from_bool (mop a b)) \<and> (mop a b \<longleftrightarrow> aop (\<alpha> a) (\<alpha> b))))"
   
   lemma is_cmp_opI[intro?]:
-    assumes "\<And>a b. \<lbrakk>I a; I b\<rbrakk> \<Longrightarrow> cop a b = return (from_bool (mop a b))"
+    assumes "\<And>a b. \<lbrakk>I a; I b\<rbrakk> \<Longrightarrow> cop a b = Mreturn (from_bool (mop a b))"
     assumes "\<And>a b. \<lbrakk>I a; I b\<rbrakk> \<Longrightarrow> mop a b \<longleftrightarrow> aop (\<alpha> a) (\<alpha> b)"
     shows "is_cmp_op cop mop aop"
     using assms unfolding is_cmp_op_def by blast
@@ -1261,7 +1263,7 @@ interpretation llvm_prim_arith_setup .
 
 abbreviation (input) ll_not1 :: "1 word \<Rightarrow> 1 word llM" where "ll_not1 x \<equiv> ll_add x 1"  
     
-lemma ll_not1_inline[llvm_pre_simp]: "return (~~x) \<equiv> ll_not1 x"
+lemma ll_not1_inline[llvm_pre_simp]: "Mreturn (~~x) \<equiv> ll_not1 x"
   by (auto simp: word1_NOT_eq arith_inlines)
   
 lemma bool_bin_ops:

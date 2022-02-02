@@ -8,7 +8,7 @@ begin
   interpretation llvm_prim_mem_setup .
 
 definition "ll_bpto \<equiv> mk_assn (\<lambda>x p. \<up>(abase p) ** \<upharpoonleft>ll_pto x p ** ll_malloc_tag 1 p)"
-definition [llvm_code, llvm_inline]: "ll_ref (x::'a::llvm_rep) \<equiv> doM { r \<leftarrow> ll_malloc TYPE('a) (1::1 word); ll_store x r; return r }"
+definition [llvm_code, llvm_inline]: "ll_ref (x::'a::llvm_rep) \<equiv> doM { r \<leftarrow> ll_malloc TYPE('a) (1::1 word); ll_store x r; Mreturn r }"
 definition ll_balloc :: "'a::llvm_rep ptr llM" where [llvm_code, llvm_inline]: "ll_balloc \<equiv> ll_malloc TYPE('a) (1::1 word)"
 abbreviation "ll_balloc' TYPE('a::llvm_rep) \<equiv> ll_balloc :: 'a ptr llM"
 

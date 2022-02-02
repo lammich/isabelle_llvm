@@ -25,7 +25,7 @@ subsection \<open>Operations\<close>
 subsubsection \<open>Allocate Empty List\<close>
 
 definition os_empty :: "_ os_list llM" where [llvm_code, llvm_inline]:
-  "os_empty \<equiv> return null"
+  "os_empty \<equiv> Mreturn null"
 
 lemma os_empty_rule[vcg_rules]: "llvm_htriple \<box> os_empty (\<lambda>r. \<upharpoonleft>os_list_assn [] r)"
   unfolding os_empty_def os_list_assn_def
@@ -34,9 +34,11 @@ lemma os_empty_rule[vcg_rules]: "llvm_htriple \<box> os_empty (\<lambda>r. \<uph
 
 subsubsection \<open>Delete\<close>  
 
-partial_function (ners) os_delete :: "_ os_list \<Rightarrow> unit llM" where
+thm partial_function_mono
+
+partial_function (M) os_delete :: "_ os_list \<Rightarrow> unit llM" where
   "os_delete p = doM { 
-    if p=null then return () 
+    if p=null then Mreturn () 
     else doM {
       n \<leftarrow> ll_load p;
       ll_free p;
@@ -77,7 +79,7 @@ text \<open>A linked list is empty, iff it is the null pointer.\<close>
 find_consts bool "1 word"
 
 definition os_is_empty :: "_ os_list \<Rightarrow> 1 word llM" where [llvm_code, llvm_inline]:
-  "os_is_empty b \<equiv> return (from_bool (b = null))"
+  "os_is_empty b \<equiv> Mreturn (from_bool (b = null))"
 
 lemma os_is_empty_rule[vcg_rules]: 
   "llvm_htriple (\<upharpoonleft>os_list_assn xs b) (os_is_empty b) (\<lambda>r. \<upharpoonleft>os_list_assn xs b ** \<up>(r = from_bool (xs = [])))"
@@ -89,7 +91,7 @@ lemma os_is_empty_rule[vcg_rules]:
 definition os_is_empty' :: "'a os_list \<Rightarrow> 8 word llM"
 where [llvm_code, llvm_inline]: "os_is_empty' xsi \<equiv> doM {
   b \<leftarrow> os_is_empty xsi;
-  if to_bool b then return 1 else return 0
+  if to_bool b then Mreturn 1 else Mreturn 0
 }"
 
 lemma os_is_empty'_rule[vcg_rules]: 
@@ -120,10 +122,10 @@ lemma os_prepend_rule[vcg_rules]:
 
 subsubsection\<open>Pop\<close>
 text \<open>To pop the first element out of the list we look up the value and the
-  reference of the node and return the pair of those.\<close>
+  reference of the node and Mreturn the pair of those.\<close>
 
 definition os_pop :: "'a::llvm_rep os_list \<Rightarrow> ('a \<times> 'a os_list) llM" where
-  [llvm_code]: "os_pop p = doM { n \<leftarrow> ll_load p; ll_free p; return (node.val n, node.next n) }"
+  [llvm_code]: "os_pop p = doM { n \<leftarrow> ll_load p; ll_free p; Mreturn (node.val n, node.next n) }"
 
 lemma os_pop_rule[vcg_rules]:
   "xs \<noteq> [] \<Longrightarrow> llvm_htriple 
@@ -161,11 +163,11 @@ subsubsection \<open>Reverse\<close>
 text \<open>The following reversal function is equivalent to the one from 
   Imperative HOL. And gives a more difficult example.\<close>
 
-partial_function (ners) os_reverse_aux 
+partial_function (M) os_reverse_aux 
   :: "'a::llvm_rep os_list \<Rightarrow> 'a os_list \<Rightarrow> 'a os_list llM" 
   where
   "os_reverse_aux q p = doM {
-    if p=null then return q
+    if p=null then Mreturn q
     else doM {
       v \<leftarrow> ll_load p;
       ll_store (Node (node.val v) q) p;
@@ -176,7 +178,7 @@ partial_function (ners) os_reverse_aux
 lemmas [llvm_code] = os_reverse_aux.simps
   
 lemma os_reverse_aux_simps[simp]:
-  "os_reverse_aux q null = return q"
+  "os_reverse_aux q null = Mreturn q"
   "p\<noteq>null \<Longrightarrow> os_reverse_aux q p = doM {
       v \<leftarrow> ll_load p;
       ll_store (Node (node.val v) q) p;
@@ -229,20 +231,20 @@ subsubsection \<open>Remove\<close>
  
 text \<open>Remove all appearances of an element from a linked list.\<close>
 
-partial_function (ners) os_rem 
+partial_function (M) os_rem 
   :: "'a::llvm_rep \<Rightarrow> 'a node ptr \<Rightarrow> 'a node ptr llM" 
   where 
   "os_rem x p = doM {
-    if p=null then return null
+    if p=null then Mreturn null
     else doM {
       n \<leftarrow> ll_load p;
       q \<leftarrow> os_rem x (node.next n);
       if node.val n = x then doM {
         ll_free p;
-        return q
+        Mreturn q
       } else doM {
         ll_store (Node (node.val n) q) p;
-        return p
+        Mreturn p
       }
     } 
   }"
@@ -250,16 +252,16 @@ partial_function (ners) os_rem
 lemmas [llvm_code] = os_rem.simps  
   
 lemma [simp]: 
-  "os_rem x null = return null"
+  "os_rem x null = Mreturn null"
   "p\<noteq>null \<Longrightarrow> os_rem x p = doM {
       n \<leftarrow> ll_load p;
       q \<leftarrow> os_rem x (node.next n);
       if node.val n = x then doM {
         ll_free p;
-        return q
+        Mreturn q
       } else doM {
         ll_store (Node (node.val n) q) p;
-        return p
+        Mreturn p
       }
     }"
   apply (subst os_rem.simps, simp)+

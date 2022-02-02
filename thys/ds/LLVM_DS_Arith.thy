@@ -108,7 +108,7 @@ definition ll_max_sint :: "'l::len2 word llM" where [llvm_inline]: "ll_max_sint 
   
 context llvm_prim_arith_setup begin  
 
-lemma ll_max_uint_simp[vcg_normalize_simps]: "(ll_max_uint::'l::len word llM) = return (word_of_int (max_uint LENGTH('l) - 1))"
+lemma ll_max_uint_simp[vcg_normalize_simps]: "(ll_max_uint::'l::len word llM) = Mreturn (word_of_int (max_uint LENGTH('l) - 1))"
   unfolding ll_max_uint_def max_uint_def
   apply vcg_normalize
   done
@@ -133,7 +133,7 @@ proof -
   finally show ?thesis .
 qed  
  
-lemma ll_max_sint_simp[vcg_normalize_simps]: "(ll_max_sint::'l::len2 word llM) = return (word_of_int (max_sint LENGTH('l) - 1))"
+lemma ll_max_sint_simp[vcg_normalize_simps]: "(ll_max_sint::'l::len2 word llM) = Mreturn (word_of_int (max_sint LENGTH('l) - 1))"
   unfolding ll_max_sint_def 
   apply vcg_normalize
   by (metis (mono_tags, lifting) One_nat_def arith_simps(1) arith_simps(45) exp_eq_zero_iff mask_eq_decr_exp max_sint_def max_uint_def numeral_code(1) of_int_numeral of_int_power of_nat_numeral semiring_1_class.of_nat_power shiftr_mask2 word_exp_length_eq_0)
@@ -209,7 +209,7 @@ declare [[vcg_const "signed (-1)"]]
 
 
 lemma monadify_signed[vcg_monadify_xforms]: 
-  "return (signed x) = ll_const (signed x)" by (simp add: ll_const_def)
+  "Mreturn (signed x) = ll_const (signed x)" by (simp add: ll_const_def)
 
   
 lemma ll_const_signed_aux: "\<lbrakk>n\<noteq>0; - (2 ^ (n - Suc 0)) \<le> i; i < 2 ^ (n - Suc 0)\<rbrakk>
@@ -297,7 +297,7 @@ declare [[vcg_const "unsigned 0"]]
 declare [[vcg_const "unsigned 1"]]
 
 lemma monadify_unsigned[vcg_monadify_xforms]: 
-  "return (unsigned x) = ll_const (unsigned x)" by (simp add: ll_const_def)
+  "Mreturn (unsigned x) = ll_const (unsigned x)" by (simp add: ll_const_def)
 
   
 lemma ll_const_unsigned_rule[vcg_rules]: 
@@ -382,7 +382,7 @@ declare [[vcg_const "unsigned_nat 0"]]
 declare [[vcg_const "unsigned_nat 1"]]
 
 lemma monadify_unsigned_nat[vcg_monadify_xforms]: 
-  "return (unsigned_nat x) = ll_const (unsigned_nat x)" 
+  "Mreturn (unsigned_nat x) = ll_const (unsigned_nat x)" 
   by (simp add: ll_const_def)
   
 lemma ll_const_unsigned_nat_rule[vcg_rules]: 
@@ -527,7 +527,7 @@ declare [[vcg_const "signed_nat (numeral a)"]]
 declare [[vcg_const "signed_nat 0"]]
 declare [[vcg_const "signed_nat 1"]]
 
-lemma monadify_signed_nat[vcg_monadify_xforms]: "return (signed_nat x) = ll_const (signed_nat x)" by (simp add: ll_const_def)
+lemma monadify_signed_nat[vcg_monadify_xforms]: "Mreturn (signed_nat x) = ll_const (signed_nat x)" by (simp add: ll_const_def)
 
   
 lemma ll_const_signed_nat_aux1: "(w::nat) < 2^(n-1) \<Longrightarrow> w mod (2^n) = w"  
@@ -619,10 +619,10 @@ context begin
   definition [llvm_inline]: "unat_unat_downcast TYPE('a::len) x \<equiv> ll_trunc x TYPE('a word)"
 
   definition unat_snat_conv :: "'l::len2 word \<Rightarrow> 'l word llM" 
-    where [llvm_inline]: "unat_snat_conv x \<equiv> return x"  
+    where [llvm_inline]: "unat_snat_conv x \<equiv> Mreturn x"  
     
   definition snat_unat_conv :: "'l::len2 word \<Rightarrow> 'l word llM" 
-    where [llvm_inline]: "snat_unat_conv x \<equiv> return x"  
+    where [llvm_inline]: "snat_unat_conv x \<equiv> Mreturn x"  
   
   lemma unat_snat_upcast_rule[vcg_rules]:
     "llvm_htriple 

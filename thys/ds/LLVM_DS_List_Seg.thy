@@ -50,25 +50,25 @@ lemma [ll_identified_structures]: "ll_is_identified_structure ''node'' TYPE(_ no
 subsubsection \<open>Code Generator Preprocessor Setup\<close>  
 text \<open>The next two are auxiliary lemmas\<close>
 lemma node_insert_value:
-  "ll_insert_value (Node x n) x' 0 = return (Node x' n)"
-  "ll_insert_value (Node x n) n' (Suc 0) = return (Node x n')"
+  "ll_insert_value (Node x n) x' 0 = Mreturn (Node x' n)"
+  "ll_insert_value (Node x n) n' (Suc 0) = Mreturn (Node x n')"
 
   apply (simp_all add: ll_insert_value_def llvm_insert_value_def Let_def checked_from_val_def 
                 to_val_node_def from_val_node_def)
   done
 
 lemma node_extract_value:
-  "ll_extract_value (Node x n) 0 = return x"  
-  "ll_extract_value (Node x n) (Suc 0) = return n"  
+  "ll_extract_value (Node x n) 0 = Mreturn x"  
+  "ll_extract_value (Node x n) (Suc 0) = Mreturn n"  
   apply (simp_all add: ll_extract_value_def llvm_extract_value_def Let_def checked_from_val_def 
                 to_val_node_def from_val_node_def)
   done
   
 text \<open>Lemmas to translate node construction and destruction\<close>
-lemma inline_return_node[llvm_pre_simp]: "return (Node a x) = doM {
+lemma inline_return_node[llvm_pre_simp]: "Mreturn (Node a x) = doM {
     r \<leftarrow> ll_insert_value init a 0;
     r \<leftarrow> ll_insert_value r x 1;
-    return r
+    Mreturn r
   }"
   apply (auto simp: node_insert_value)
   done
@@ -82,10 +82,10 @@ lemma inline_node_case[llvm_pre_simp]: "(case x of (Node a n) \<Rightarrow> f a 
   apply (auto simp: node_extract_value)
   done
   
-lemma inline_return_node_case[llvm_pre_simp]: "doM {return (case x of (Node a n) \<Rightarrow> f a n)} = doM {
+lemma inline_return_node_case[llvm_pre_simp]: "doM {Mreturn (case x of (Node a n) \<Rightarrow> f a n)} = doM {
   a \<leftarrow> ll_extract_value x 0;
   n \<leftarrow> ll_extract_value x 1;
-  return (f a n)
+  Mreturn (f a n)
 }"  
   apply (cases x)
   apply (auto simp: node_extract_value)

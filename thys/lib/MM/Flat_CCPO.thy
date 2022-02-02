@@ -44,6 +44,21 @@ begin
 
   subsection \<open>Flat Ordering\<close>
     
+  
+  thm partial_function_mono
+  (* Such that we can use \<forall>x. monotone \<dots> in assumptions. Handy as abbreviation!*)
+  lemmas [partial_function_mono] = allI
+
+
+  lemma mono_fun_fun: "monotone (fun_ord le) (fun_ord le) F = (\<forall>x. monotone (fun_ord le) le (\<lambda>D. F D x))"  
+    unfolding monotone_def fun_ord_def by blast
+
+  (* Do not move this inside locale, as it will
+    monomorphise the types of the two le's, which
+  
+  *)  
+  abbreviation (input) gen_is_mono' where "gen_is_mono' orda ordb \<equiv> monotone (fun_ord orda) ordb"
+    
   text \<open>We establish a theory of flat orderings, parameterized with the bottom element\<close>
   locale flat_rec =
     fixes bot :: "'a" 
@@ -109,20 +124,23 @@ begin
       by (rule ord.ccpo_ext_fun)
 
     subsubsection \<open>Recursion combinator\<close>  
-    
-    abbreviation mono :: "(('b \<Rightarrow> 'a) \<Rightarrow> 'b \<Rightarrow> 'a) \<Rightarrow> bool" 
-      where "mono \<equiv> monotone (fun_ord le) (fun_ord le)"
-    definition "REC F \<equiv> if mono F then f_ord.fixp F else (\<lambda>_. bot)"
+    thm partial_function_mono
+
+    abbreviation (input) is_mono_body where "is_mono_body F \<equiv> (\<forall>x. gen_is_mono' le le (\<lambda>D. F D x))"
+  
+        
+    definition "REC F \<equiv> if is_mono_body F then f_ord.fixp F else (\<lambda>_. bot)"
 
     text \<open>Unfold rule\<close>    
-    lemma REC_unfold: "mono F \<Longrightarrow> REC F = F (REC F)"
+    lemma REC_unfold: "is_mono_body F \<Longrightarrow> REC F = F (REC F)"
       unfolding REC_def
-      by (auto intro: f_ord.fixp_unfold)
+      apply simp
+      by (auto intro: f_ord.fixp_unfold simp: mono_fun_fun)
     
     text \<open>Well-founded induction rule\<close>    
     lemma REC_wf_induct: 
       assumes WF: "wf V"
-      assumes MONO: "mono F"
+      assumes MONO: "is_mono_body F"
       assumes STEP: "\<And>x D. \<lbrakk>\<And>y. \<lbrakk>(y,x)\<in>V\<rbrakk> \<Longrightarrow> P y (D y) \<rbrakk> \<Longrightarrow> P x (F D x)"
       shows "P x (REC F x)"
       using WF
@@ -137,9 +155,12 @@ begin
       shows "P x (REC F x)"
       unfolding REC_def
     proof (clarsimp simp: BOT)
-      assume "mono F"
+    
+      note fixp_induct = f_ord.fixp_induct[unfolded mono_fun_fun]
+    
+      assume "is_mono_body F"
       then have "\<forall>x. P x (f_ord.fixp F x)"
-        apply (induction F rule: f_ord.fixp_induct; simp add: BOT fun_lub_empty STEP)
+        apply (induction F rule: fixp_induct; simp add: BOT fun_lub_empty STEP)
         apply (rule ccpo.admissibleI)
         apply clarify
         subgoal for A x
@@ -152,12 +173,12 @@ begin
 
     text \<open>Monotonicity Rule\<close> 
     lemma REC_mono:
-      assumes M: "\<And>D. mono (F D)"
+      assumes M: "\<And>D. is_mono_body (F D)"
       assumes "\<And>x. fun_ord le (F D x) (F D' x)"
       shows "fun_ord le (REC (F D)) (REC (F D'))"
       unfolding REC_def 
       apply (simp add: M)
-      apply (rule f_ord.fixp_mono)
+      apply (rule f_ord.fixp_mono[unfolded mono_fun_fun])
       apply (simp add: M)
       apply (simp add: M)
       by fact
@@ -196,20 +217,23 @@ begin
       unfolding Complete_Partial_Order.chain_def fun_ord_def
       by blast
             
-        
+
+    abbreviation (input) is_mono_body where "is_mono_body F \<equiv> (\<forall>x. monotone (fun_ord le) le (\<lambda>D. F D x))"
+      
+    (*          
     abbreviation fmono :: "(('b \<Rightarrow> 'a) \<Rightarrow> 'b \<Rightarrow> 'a) \<Rightarrow> bool" 
       where "fmono \<equiv> monotone (fun_ord le) (fun_ord le)"
       
     lemma fmono_alt: "fmono F = (\<forall>x y. fun_ord le x y \<longrightarrow> fun_ord le (F x) (F y))"
       unfolding monotone_def ..
+    *)  
       
       
-      
-    definition "REC F \<equiv> if fmono F then f_ord.fixp F else (\<lambda>_. bt)"
+    definition "REC F \<equiv> if is_mono_body F then f_ord.fixp F else (\<lambda>_. bt)"
     
-    lemma REC_unfold: "fmono F \<Longrightarrow> REC F = F (REC F)"
+    lemma REC_unfold: "is_mono_body F \<Longrightarrow> REC F = F (REC F)"
       unfolding REC_def
-      by (auto intro: f_ord.fixp_unfold)
+      by (auto intro: f_ord.fixp_unfold[unfolded mono_fun_fun])
   
     find_theorems "ccpo.admissible" fun_ord
       
@@ -221,9 +245,12 @@ begin
       shows "P x (REC F x)"
       unfolding REC_def
     proof (clarsimp simp: BOT)
-      assume "fmono F"
+    
+      note fixp_induct = f_ord.fixp_induct[unfolded mono_fun_fun]
+    
+      assume "is_mono_body F"
       then have "\<forall>x. P x (f_ord.fixp F x)"
-        apply (induction F rule: f_ord.fixp_induct; simp add: BOT fun_lub_empty STEP)
+        apply (induction F rule: fixp_induct; simp add: BOT fun_lub_empty STEP)
         apply (rule admissible_fun[OF partial_function_definitions])
         apply (rule ADM)
       done
@@ -232,7 +259,7 @@ begin
   
     lemma REC_wf_induct: 
       assumes WF: "wf V"
-      assumes MONO: "fmono F"
+      assumes MONO: "is_mono_body F"
       assumes STEP: "\<And>x D. \<lbrakk>\<And>y. \<lbrakk>(y,x)\<in>V\<rbrakk> \<Longrightarrow> P y (D y) \<rbrakk> \<Longrightarrow> P x (F D x)"
       shows "P x (REC F x)"
       using WF
@@ -242,12 +269,12 @@ begin
     
     
     lemma REC_mono:
-      assumes M: "\<And>D. fmono (F D)"
+      assumes M: "\<And>D. is_mono_body (F D)"
       assumes "\<And>x. fun_ord le (F D x) (F D' x)"
       shows "fun_ord le (REC (F D)) (REC (F D'))"
       unfolding REC_def 
       apply (simp add: M)
-      apply (rule f_ord.fixp_mono)
+      apply (rule f_ord.fixp_mono[unfolded mono_fun_fun])
       apply (simp add: M)
       apply (simp add: M)
       by fact

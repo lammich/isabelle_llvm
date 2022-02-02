@@ -93,7 +93,7 @@ qed
     
   
 lemma woarray_iterator: "random_access_iterator (woarray_assn snat_assn) (eoarray_assn snat_assn) snat_assn 
-  return return
+  Mreturn Mreturn
   eo_extract_impl
   array_upd"  
   apply unfold_locales
@@ -169,7 +169,7 @@ begin
 
   sublocale parameterized_sort_impl_context 
     "woarray_assn size_assn" "eoarray_assn size_assn" size_assn 
-    return return
+    Mreturn Mreturn
     eo_extract_impl
     array_upd
     idx_cdom idx_less "PR_CONST idx_pcmp" idx_pcmp_impl "woarray_slice_assn A"

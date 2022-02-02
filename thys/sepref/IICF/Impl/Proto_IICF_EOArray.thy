@@ -217,7 +217,7 @@ begin
   sepref_decl_impl eo_set_dep: eo_set_hnr_aux by simp  
   sepref_decl_impl (no_register) eo_set_nondep: eo_set_hnr_aux_nondep by simp  
     
-  definition [llvm_inline]: "eo_extract_impl p i \<equiv> doM { r \<leftarrow> array_nth p i; return (r,p) }"
+  definition [llvm_inline]: "eo_extract_impl p i \<equiv> doM { r \<leftarrow> array_nth p i; Mreturn (r,p) }"
 
   
   lemma eo_extract_hnr_aux: "(uncurry eo_extract_impl,uncurry (RETURN oo op_eo_extract)) 
@@ -336,14 +336,14 @@ definition [simp]: "mop_array_to_woarray xs \<equiv> RETURN (xs::_ list)"
 definition [simp]: "mop_woarray_to_array xs \<equiv> RETURN (xs::_ list)"  
 sepref_register mop_array_to_woarray mop_woarray_to_array
 
-lemma mop_array_to_woarray_impl[sepref_fr_rules]: "CONSTRAINT is_pure A \<Longrightarrow> (return,mop_array_to_woarray) \<in> (array_assn A)\<^sup>d \<rightarrow>\<^sub>a woarray_assn A"
+lemma mop_array_to_woarray_impl[sepref_fr_rules]: "CONSTRAINT is_pure A \<Longrightarrow> (Mreturn,mop_array_to_woarray) \<in> (array_assn A)\<^sup>d \<rightarrow>\<^sub>a woarray_assn A"
   unfolding mop_array_to_woarray_def pure_woarray_assn_conv CONSTRAINT_def
   apply sepref_to_hoare
   apply vcg
   done
   
 lemma mop_woarray_to_array_impl[sepref_fr_rules]: "CONSTRAINT is_pure A 
-  \<Longrightarrow> (return,mop_woarray_to_array) \<in> (woarray_assn A)\<^sup>d \<rightarrow>\<^sub>a array_assn A"
+  \<Longrightarrow> (Mreturn,mop_woarray_to_array) \<in> (woarray_assn A)\<^sup>d \<rightarrow>\<^sub>a array_assn A"
   unfolding mop_array_to_woarray_def pure_woarray_assn_conv CONSTRAINT_def
   apply sepref_to_hoare
   apply vcg
@@ -354,7 +354,7 @@ lemma mop_woarray_to_array_impl[sepref_fr_rules]: "CONSTRAINT is_pure A
 definition [simp]: "mop_to_wo_conv xs \<equiv> doN{ ASSERT (None\<notin>set xs); RETURN (map the xs) }"
 sepref_register mop_to_wo_conv 
 
-lemma mop_to_wo_conv_hnr_dep[sepref_fr_rules]: "(return,mop_to_wo_conv) \<in> 
+lemma mop_to_wo_conv_hnr_dep[sepref_fr_rules]: "(Mreturn,mop_to_wo_conv) \<in> 
   [\<lambda>_. True]\<^sub>c (eoarray_assn A)\<^sup>d \<rightarrow> (woarray_assn A) [\<lambda>x r. r=x]\<^sub>c"
   unfolding mop_to_wo_conv_def
   apply sepref_to_hoare
@@ -362,7 +362,7 @@ lemma mop_to_wo_conv_hnr_dep[sepref_fr_rules]: "(return,mop_to_wo_conv) \<in>
   apply vcg
   done
   
-lemma mop_to_wo_conv_hnr_nondep: "(return,mop_to_wo_conv)\<in>(eoarray_assn A)\<^sup>d \<rightarrow>\<^sub>a woarray_assn A"
+lemma mop_to_wo_conv_hnr_nondep: "(Mreturn,mop_to_wo_conv)\<in>(eoarray_assn A)\<^sup>d \<rightarrow>\<^sub>a woarray_assn A"
   unfolding mop_to_wo_conv_def
   apply sepref_to_hoare
   apply (auto simp: refine_pw_simps sep_algebra_simps woarray_assn_conv simp del: pred_lift_extract_simps elim!: None_not_in_set_conv)
@@ -370,12 +370,12 @@ lemma mop_to_wo_conv_hnr_nondep: "(return,mop_to_wo_conv)\<in>(eoarray_assn A)\<
   
 definition [simp]: "mop_to_eo_conv xs \<equiv> RETURN (map Some xs)"
 
-lemma mop_to_eo_conv_hnr_dep[sepref_fr_rules]: "(return,mop_to_eo_conv)\<in> [\<lambda>_. True]\<^sub>c (woarray_assn A)\<^sup>d \<rightarrow> (eoarray_assn A) [\<lambda>x r. r=x]\<^sub>c"
+lemma mop_to_eo_conv_hnr_dep[sepref_fr_rules]: "(Mreturn,mop_to_eo_conv)\<in> [\<lambda>_. True]\<^sub>c (woarray_assn A)\<^sup>d \<rightarrow> (eoarray_assn A) [\<lambda>x r. r=x]\<^sub>c"
   apply sepref_to_hoare
   apply (auto simp: sep_algebra_simps woarray_assn_conv)
   by vcg
 
-lemma mop_to_eo_conv_hnr_nondep: "(return,mop_to_eo_conv)\<in>(woarray_assn A)\<^sup>d \<rightarrow>\<^sub>a eoarray_assn A"
+lemma mop_to_eo_conv_hnr_nondep: "(Mreturn,mop_to_eo_conv)\<in>(woarray_assn A)\<^sup>d \<rightarrow>\<^sub>a eoarray_assn A"
   apply sepref_to_hoare
   apply (auto simp: sep_algebra_simps woarray_assn_conv)
   by vcg
@@ -402,7 +402,7 @@ lemma wo_array_set_hnrs[sepref_fr_rules]:
 definition [simp]: "MOVE \<equiv> RETURN"  
 sepref_register MOVE
   
-lemma MOVE_rl[sepref_fr_rules]: "(return, MOVE)\<in>[\<lambda>_. True]\<^sub>c A\<^sup>d \<rightarrow> A [\<lambda>xi r. r=xi]\<^sub>c"
+lemma MOVE_rl[sepref_fr_rules]: "(Mreturn, MOVE)\<in>[\<lambda>_. True]\<^sub>c A\<^sup>d \<rightarrow> A [\<lambda>xi r. r=xi]\<^sub>c"
   unfolding MOVE_def 
   apply sepref_to_hoare
   by vcg
@@ -436,7 +436,7 @@ definition "forget_cncs x \<equiv> RETURN ()"
 lemma forget_cncs_rule[sepref_comb_rules]:
   assumes FRAME: "\<Gamma> \<turnstile> hn_ctxt R src srci ** hn_invalid R dst dsti ** F"
   assumes [simp]: "vassn_tag \<Gamma> \<Longrightarrow> srci = dsti"
-  shows "hn_refine \<Gamma> (return ()) (hn_invalid R src srci ** hn_ctxt R dst dsti ** F) unit_assn (unborrow$src$dst)"
+  shows "hn_refine \<Gamma> (Mreturn ()) (hn_invalid R src srci ** hn_ctxt R dst dsti ** F) unit_assn (unborrow$src$dst)"
   apply (rule hn_refine_vassn_tagI)
   apply (rule hn_refine_cons_pre[OF FRAME])
   apply (rule hn_refineI)
@@ -601,7 +601,7 @@ lemma pure_woarray_slice_assn_conv:
   by (smt list_rel_compp oelem_some_rel_conv relcomp.simps)
   
   
-lemma mop_to_wos_conv_hnr_dep[sepref_fr_rules]: "(return,mop_to_wo_conv) \<in> 
+lemma mop_to_wos_conv_hnr_dep[sepref_fr_rules]: "(Mreturn,mop_to_wo_conv) \<in> 
   [\<lambda>_. True]\<^sub>c (eoarray_slice_assn A)\<^sup>d \<rightarrow> (woarray_slice_assn A) [\<lambda>x r. r=x]\<^sub>c"
   unfolding mop_to_wo_conv_def
   apply sepref_to_hoare
@@ -609,18 +609,18 @@ lemma mop_to_wos_conv_hnr_dep[sepref_fr_rules]: "(return,mop_to_wo_conv) \<in>
   apply vcg
   done
   
-lemma mop_to_wos_conv_hnr_nondep: "(return,mop_to_wo_conv)\<in>(eoarray_slice_assn A)\<^sup>d \<rightarrow>\<^sub>a woarray_slice_assn A"
+lemma mop_to_wos_conv_hnr_nondep: "(Mreturn,mop_to_wo_conv)\<in>(eoarray_slice_assn A)\<^sup>d \<rightarrow>\<^sub>a woarray_slice_assn A"
   unfolding mop_to_wo_conv_def
   apply sepref_to_hoare
   apply (auto simp: refine_pw_simps sep_algebra_simps woarray_slice_assn_conv simp del: pred_lift_extract_simps elim!: None_not_in_set_conv)
   by vcg
 
-lemma mop_to_eos_conv_hnr_dep[sepref_fr_rules]: "(return,mop_to_eo_conv)\<in> [\<lambda>_. True]\<^sub>c (woarray_slice_assn A)\<^sup>d \<rightarrow> (eoarray_slice_assn A) [\<lambda>x r. r=x]\<^sub>c"
+lemma mop_to_eos_conv_hnr_dep[sepref_fr_rules]: "(Mreturn,mop_to_eo_conv)\<in> [\<lambda>_. True]\<^sub>c (woarray_slice_assn A)\<^sup>d \<rightarrow> (eoarray_slice_assn A) [\<lambda>x r. r=x]\<^sub>c"
   apply sepref_to_hoare
   apply (auto simp: sep_algebra_simps woarray_slice_assn_conv)
   by vcg
 
-lemma mop_to_eos_conv_hnr_nondep: "(return,mop_to_eo_conv)\<in>(woarray_slice_assn A)\<^sup>d \<rightarrow>\<^sub>a eoarray_slice_assn A"
+lemma mop_to_eos_conv_hnr_nondep: "(Mreturn,mop_to_eo_conv)\<in>(woarray_slice_assn A)\<^sup>d \<rightarrow>\<^sub>a eoarray_slice_assn A"
   apply sepref_to_hoare
   apply (auto simp: sep_algebra_simps woarray_slice_assn_conv)
   by vcg

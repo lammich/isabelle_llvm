@@ -26,7 +26,7 @@ lemma cs_list_assn_simps:
 subsection \<open>Operations\<close>
 subsubsection \<open>Allocate Empty List\<close>
 definition cs_empty :: "'a::llvm_rep cs_list llM" where [llvm_code, llvm_inline]:
-  "cs_empty \<equiv> return null"
+  "cs_empty \<equiv> Mreturn null"
 
 lemma cs_empty_rule: "llvm_htriple \<box> cs_empty (\<lambda>r. \<upharpoonleft>cs_list_assn [] r)"
   unfolding cs_empty_def cs_list_assn_def
@@ -39,12 +39,12 @@ definition cs_prepend :: "'a::llvm_rep \<Rightarrow> 'a cs_list \<Rightarrow> 'a
     if p=null then doM {
       p \<leftarrow> ll_balloc;
       ll_store (Node x p) p;
-      return p
+      Mreturn p
     } else doM {
       n \<leftarrow> ll_load p;
       q \<leftarrow> ll_ref (Node (node.val n) (node.next n));
       ll_store (Node x q) p;
-      return p
+      Mreturn p
     }"
 
 lemma cs_prepend_rule: 
@@ -60,12 +60,12 @@ definition cs_append :: "'a::llvm_rep \<Rightarrow> 'a cs_list \<Rightarrow> 'a 
     if p=null then doM {
       p \<leftarrow> ll_balloc;
       ll_store (Node x p) p;
-      return p
+      Mreturn p
     } else doM {
       n \<leftarrow> ll_load p;
       q \<leftarrow> ll_ref (Node (node.val n) (node.next n));
       ll_store (Node x q) p;
-      return q
+      Mreturn q
     }
   }"
 
@@ -85,12 +85,12 @@ definition cs_pop :: "'a::llvm_rep cs_list \<Rightarrow> ('a\<times>'a cs_list) 
     tmp \<leftarrow> ll_ptrcmp_eq p\<^sub>2 p;
     if to_bool tmp then doM {
       ll_free p;
-      return (node.val n\<^sub>1,null) \<comment> \<open>Singleton list becomes empty list\<close>
+      Mreturn (node.val n\<^sub>1,null) \<comment> \<open>Singleton list becomes empty list\<close>
     } else doM {
       n\<^sub>2 \<leftarrow> ll_load p\<^sub>2;
       ll_store n\<^sub>2 p;
       ll_free p\<^sub>2;
-      return (node.val n\<^sub>1,p)
+      Mreturn (node.val n\<^sub>1,p)
     }
   }"
 
@@ -125,9 +125,9 @@ end
 subsubsection \<open>Rotate\<close>
 
 definition cs_rotate :: "'a::llvm_rep cs_list \<Rightarrow> 'a cs_list llM" where [llvm_code]:
-  "cs_rotate p \<equiv> if p=null then return null else doM {
+  "cs_rotate p \<equiv> if p=null then Mreturn null else doM {
     n \<leftarrow> ll_load p;
-    return (node.next n)
+    Mreturn (node.next n)
   }"
 
   
@@ -156,7 +156,7 @@ definition [llvm_code]: "test \<equiv> doM {
   (v2,l)\<leftarrow>cs_pop l;
   (v3,l)\<leftarrow>cs_pop l;
   (v4,l)\<leftarrow>cs_pop l;
-  return (v1,v2,v3,v4)
+  Mreturn (v1,v2,v3,v4)
 }"
 
 (* TODO: Move! *)

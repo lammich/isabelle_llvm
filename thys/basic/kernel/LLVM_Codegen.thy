@@ -32,11 +32,12 @@ begin
   
   ML_val \<open> IntInf.pow (2,64)  \<close>
   
+  typ "_ llM"
   
   subsection \<open>General Functions\<close>
   ML \<open> structure LLC_Lib = 
     struct
-      fun dest_llM (Type (@{type_name M},[T,@{typ llvm_memory},@{typ "llvm_macc"}])) = T
+      fun dest_llM (Type (@{type_name M},[T,@{typ llvm_val}])) = T
         | dest_llM ty = raise TYPE("dest_llM",[ty],[]);
       
       val is_llM = can dest_llM
@@ -61,7 +62,26 @@ begin
           val n = Word64.fromInt n
         in n end
         | dest_double_const t = raise TERM("dest_double_const",[t])
+
+      (* Testing the dest-functions, to make them fail early after forgetting to 
+        adapt them for changes to foundation.
       
+        We use one indirection over a function, to make failed tests visible in stack trace
+      *)  
+      local  
+        fun test_dest_llM () = dest_llM @{typ "_ llM"}  
+        val _ = test_dest_llM ()
+        
+        fun test_dest_ptrT () = dest_ptrT @{typ "_ ptr"}  
+        val _ = test_dest_ptrT ()
+
+        fun test_dest_numeralT () = dest_numeralT @{typ "32"} = 32 orelse error "test_dest_numeralT"
+        val _ = test_dest_numeralT ()
+
+        fun test_dest_wordT () = dest_wordT @{typ "32 word"} = 32 orelse error "test_dest_wordT"
+        val _ = test_dest_wordT ()
+                        
+      in end
       
       fun dest_eqn @{mpat "?lhs\<equiv>?rhs"} = (lhs,rhs)
         | dest_eqn @{mpat \<open>Trueprop (?lhs = ?rhs)\<close>} = (lhs,rhs)
@@ -816,7 +836,7 @@ begin
                   in (CmCall (rty, fname ,ops), ctxt) end
                    
           end
-        and llc_parse_block @{mpat "bind ?m (\<lambda>x. ?f)"} ctxt = 
+        and llc_parse_block @{mpat "Mbind ?m (\<lambda>x. ?f)"} ctxt = 
           let 
             val (rty,ctxt) = llc_parse_vtype x_T ctxt
             val (cmd, ctxt) = llc_parse_cmd rty m ctxt
@@ -827,8 +847,8 @@ begin
           in
             (BlBind (sv,cmd,blk),ctxt)
           end
-          | llc_parse_block @{mpat "return ()"} ctxt = (BlReturn NONE, ctxt)
-          | llc_parse_block @{mpat "return ?x"} ctxt = llc_parse_op x ctxt |>> SOME |>> BlReturn
+          | llc_parse_block @{mpat "Mreturn ()"} ctxt = (BlReturn NONE, ctxt)
+          | llc_parse_block @{mpat "Mreturn ?x"} ctxt = llc_parse_op x ctxt |>> SOME |>> BlReturn
           | llc_parse_block t _ = raise TERM ("llc_parse_block: structural error",[t])
          
           
@@ -1425,11 +1445,6 @@ begin
     
   end\<close> 
                
-  
-  ML_val \<open>
-    open Name
-  \<close>
-
   
   ML \<open>structure C_Interface = struct
     datatype cprim = 

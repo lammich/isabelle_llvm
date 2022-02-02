@@ -78,9 +78,9 @@ context weak_ordering begin
 end    
     
 
-definition "map_res f m \<equiv> doM { x\<leftarrow>m; return (f x) }"
+definition "map_res f m \<equiv> doM { x\<leftarrow>m; Mreturn (f x) }"
 
-lemma map_res_return[sepref_opt_simps2]: "map_res \<phi> (return x) = return (\<phi> x)"
+lemma map_res_return[sepref_opt_simps2]: "map_res \<phi> (Mreturn x) = Mreturn (\<phi> x)"
   unfolding map_res_def by auto
 
 lemma map_res_bind[sepref_opt_simps2]: "map_res \<phi> (doM {x\<leftarrow>m; f x}) = doM {x\<leftarrow>m; map_res \<phi> (f x)}"  
@@ -96,8 +96,9 @@ definition [llvm_inline]: "ars_with_split_nores i a m \<equiv> doM {
   (a\<^sub>1,a\<^sub>2) \<leftarrow> ars_split i a;
   (_,_) \<leftarrow> m a\<^sub>1 a\<^sub>2;
   ars_join a\<^sub>1 a\<^sub>2;
-  return a
+  Mreturn a
 }"
+
 
 lemma ars_with_split_bind_unit[sepref_opt_simps2]: "doM {
   (uu::unit,xs) \<leftarrow> ars_with_split i a m;
@@ -106,9 +107,8 @@ lemma ars_with_split_bind_unit[sepref_opt_simps2]: "doM {
   xs\<leftarrow>ars_with_split_nores i a (\<lambda>xs1 xs2. map_res snd (m xs1 xs2));
   mm () xs
 }"
-  unfolding ars_with_split_def ars_with_split_nores_def map_res_def
-  apply (rule M_eqI)
-  apply (simp add: mwp_def run_simps split!: prod.split mres.split)
+  unfolding ars_with_split_def ars_with_split_nores_def map_res_def 
+  apply pw
   done
     
   

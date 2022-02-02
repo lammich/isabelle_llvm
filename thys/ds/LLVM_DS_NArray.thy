@@ -12,7 +12,7 @@ begin
   term array_new
   
   definition [llvm_inline]: 
-    "narray_new TYPE('a::llvm_rep) n \<equiv> if n=signed_nat 0 then return null else array_new TYPE('a) n"
+    "narray_new TYPE('a::llvm_rep) n \<equiv> if n=signed_nat 0 then Mreturn null else array_new TYPE('a) n"
 
   thm array_new_rule_snat[no_vars]
   
@@ -56,7 +56,7 @@ begin
     apply vcg
     done
     
-  definition [llvm_code]: "narray_free p \<equiv> if p=null then return () else array_free p"
+  definition [llvm_code]: "narray_free p \<equiv> if p=null then Mreturn () else array_free p"
   
   thm array_free_rule[no_vars]
   
@@ -80,7 +80,7 @@ begin
   definition [llvm_code]: "narray_new_init n (c::'a::llvm_rep) \<equiv> doM { 
     r \<leftarrow> narray_new TYPE('a) n; 
     arrayset r c n;
-    return r
+    Mreturn r
   }"
   
   lemma narray_new_init_rule[vcg_rules]: "llvm_htriple   
@@ -116,7 +116,7 @@ begin
     dst \<leftarrow> narray_new TYPE(_) newsz;
     arraycpy dst src oldsz;
     narray_free src;
-    return dst
+    Mreturn dst
   }"  
   
   lemma narray_grow_rule_snat[vcg_rules]: "llvm_htriple 

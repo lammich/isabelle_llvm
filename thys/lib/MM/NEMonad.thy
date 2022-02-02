@@ -2,13 +2,72 @@ section \<open>Nondeterminism Error Monad\<close>
 theory NEMonad
 imports "../Basic_Imports" Flat_CCPO
 begin
+
+  section \<open>Additions to Partial Function\<close>
+  context partial_function_definitions
+  begin
+    lemma monotoneI:
+      "(\<And>x. mono_body (\<lambda>f. F f x)) \<Longrightarrow> monotone le_fun le_fun F"
+      by (auto simp: monotone_def fun_ord_def)
+
+    lemma fp_unfold:
+      assumes "f \<equiv> fixp_fun F"
+      assumes "(\<And>x. mono_body (\<lambda>f. F f x))"
+      shows "f x = F f x"
+      using assms mono_body_fixp[of F] by auto
+
+  end
+
+  lemma fun_ordD: "fun_ord le f g \<Longrightarrow> le (f x) (g x)"
+    by (auto simp: fun_ord_def)
+
+  lemma fun_ord_mono_alt: "monotone le (fun_ord le') f \<longleftrightarrow> (\<forall>x. monotone le le' (\<lambda>y. f y x))"
+    by (metis (mono_tags, lifting) fun_ord_def monotone_def)
+
+
+
+  method_setup pf_mono_prover = \<open>Scan.succeed (SIMPLE_METHOD' o Subgoal.FOCUS_PREMS (fn {context=ctxt,...} => CHANGED (ALLGOALS (Partial_Function.mono_tac ctxt))))\<close>
+
+  ML \<open>
+    fun discharge_monos ctxt thm = let
+      fun aux ctxt thm = let
+        val prems = Thm.prems_of thm
+
+        fun prove_simple tac t ctxt = Goal.prove ctxt [] [] t (fn {context=ctxt, ...} => ALLGOALS (tac ctxt))
+
+
+        (*val mono_tac = Subgoal.FOCUS (fn {context=ctxt,...} => CHANGED (ALLGOALS (Partial_Function.mono_tac ctxt)))*)
+        fun mono_tac ctxt = CHANGED o (Partial_Function.mono_tac ctxt)
+
+        fun cinst (t as @{mpat "\<And>_. monotone (fun_ord _) _ _"}) = the_default asm_rl (try (prove_simple mono_tac t) ctxt)
+          | cinst _ = asm_rl
+
+        val insts = map cinst prems
+
+        val thm = thm OF insts
+      in
+        thm
+      end
+    in
+      (* Avoid surprises with schematic variables being instantiated *)
+      singleton (Variable.trade (map o aux) ctxt) thm
+    end
+
+  \<close>
+
+  attribute_setup discharge_monos
+    = \<open>Scan.succeed (Thm.rule_attribute [] (discharge_monos o Context.proof_of))\<close>
+    \<open>Try to discharge monotonicity premises\<close>
+
+
+
   subsection \<open>Type Definition\<close>
   text \<open>
     The result of a nondeterministic computation
   \<close>
   datatype 'a neM = 
     SPEC (the_spec: "'a \<Rightarrow> bool") \<comment> \<open>May return any value that satisfies a predicate\<close>
-  | FAIL  \<comment> \<open>May fail\<close>
+  | FAIL ("fail\<^sub>n\<^sub>e")  \<comment> \<open>May fail\<close>
 
   fun map_neM where
     "map_neM f (SPEC P) = SPEC (\<lambda>y. \<exists>x. P x \<and> y=f x)"
@@ -233,20 +292,6 @@ begin
   notation ASSUME ("assume\<^sub>n\<^sub>e _" 20)
   
 
-  bundle monad_syntax_ne
-  begin
-    syntax
-      "_doI_block" :: "doI_binds \<Rightarrow> 'a" ("do {//(2  _)//}" [12] 62)
-
-    notation RETURN ("return _" 20)
-    notation SPEC (binder "spec " 10)
-    notation ASSERT ("assert _" 20)
-    notation ASSUME ("assume _" 20)
-    notation PAR (infixr "\<parallel>" 50)
-      
-  end
-  
-    
   subsubsection \<open>Recursion\<close>  
   text \<open>For recursion, we define a fixed-point combinator 
     utilizing a chain-complete partial order (CCPO).
@@ -271,7 +316,13 @@ begin
     text \<open>The function body must be monotone. Intuitively, this means that 
       it terminates at less arguments if the recursive call terminates at less arguments.
     \<close>
+    
+    abbreviation "nres_mono' \<equiv> gen_is_mono' FR.le FR.le"
+    
+    
+    (*
     definition nres_mono :: "(('a \<Rightarrow> 'b neM) \<Rightarrow> 'a \<Rightarrow> 'b neM) \<Rightarrow> bool" where "nres_mono = FR.mono"
+    *)
 (*    
     text \<open>A recursive function can be unfolded, i.e., the body is inlined once.\<close>
     lemma REC_unfold: "nres_mono F \<Longrightarrow> REC F = F (REC F)"
@@ -305,8 +356,21 @@ begin
       programs are build from.
     \<close>
     
-    
+    (*
     named_theorems mono \<open>Monotonicity theorems for nres\<close> 
+    
+    ML \<open>
+      structure NE_Mono_Prover = struct
+        fun mono_tac ctxt = let
+          val rules = Named_Theorems.get ctxt @{named_theorems mono}
+        in 
+          REPEAT_ALL_NEW (match_tac ctxt rules ORELSE' assume_tac ctxt)
+        end
+      end
+    \<close>
+    
+    method_setup ne_mono = \<open>Scan.succeed (SIMPLE_METHOD' o NE_Mono_Prover.mono_tac)\<close>
+    *)
     
     definition "flat_le \<equiv> FR.le"
     
@@ -315,12 +379,15 @@ begin
       apply (auto simp: flat_le_def FR.le_def)
       done
     
+    (*  
     lemma mono_alt: "nres_mono F = (\<forall>x y. fun_ord flat_le x y \<longrightarrow> fun_ord flat_le (F x) (F y))"
       unfolding nres_mono_def monotone_def FR.le_def flat_le_def ..
     
     definition nres_mono' :: "(('a \<Rightarrow> 'b neM) \<Rightarrow> 'c neM) \<Rightarrow> bool"
       where "nres_mono' F \<equiv> \<forall>D D'. fun_ord flat_le D D' \<longrightarrow> flat_le (F D) (F D')"
+    *)
       
+    (*
     lemma nres_monoI[mono]: 
       assumes "\<And>x. nres_mono' (\<lambda>D. F D x)"
       shows "nres_mono F"
@@ -330,26 +397,24 @@ begin
     lemma nres_monoD: "nres_mono F \<Longrightarrow> nres_mono' (\<lambda>D. F D x)"
       unfolding mono_alt nres_mono'_def fun_ord_def
       by simp
+    *)
       
-    lemma mono_const[mono]: 
-      "nres_mono' (\<lambda>_. c)"  
-      "nres_mono' (\<lambda>D. D y)"
-      unfolding nres_mono'_def fun_ord_def
-      apply pw+
-      done
-      
+    (*
     lemma mono_If[mono]: "
       nres_mono' (\<lambda>D. F D) \<Longrightarrow> nres_mono' (\<lambda>D. G D) \<Longrightarrow>
       nres_mono' (\<lambda>D. if b then F D else G D)"  
       unfolding nres_mono'_def fun_ord_def
       apply pw
       done
-      
-    lemma mono_BIND[mono]: "
+    *)
+
+    thm partial_function_mono
+          
+    lemma mono_BIND[partial_function_mono]: "
       nres_mono' (\<lambda>D. F D) \<Longrightarrow> 
-      (\<And>y. nres_mono' (\<lambda>D. G D y)) \<Longrightarrow> 
-      nres_mono' (\<lambda>D. BIND (F D) (G D))"  
-      unfolding nres_mono'_def fun_ord_def
+      (\<And>y. nres_mono' (\<lambda>D. G y D)) \<Longrightarrow> 
+      nres_mono' (\<lambda>D. BIND (F D) (\<lambda>y. G y D))"  
+      unfolding monotone_def fun_ord_def flat_le_def[symmetric]
       apply pw
       apply blast
       apply (smt (verit, ccfv_threshold))
@@ -357,11 +422,11 @@ begin
       apply (smt (verit, ccfv_threshold))
       done
       
-    lemma mono_PAR[mono]: "
+    lemma mono_PAR[partial_function_mono]: "
       nres_mono' (\<lambda>D. F D) \<Longrightarrow> 
       nres_mono' (\<lambda>D. G D) \<Longrightarrow> 
       nres_mono' (\<lambda>D. PAR (F D) (G D))"
-      unfolding nres_mono'_def fun_ord_def
+      unfolding monotone_def fun_ord_def flat_le_def[symmetric]
       by (pw; blast)
      
       
@@ -381,23 +446,20 @@ begin
         done
       done
     *)  
-      
+
+    (*      
     lemma mono_case_prod[mono]:
       assumes "\<And>a b. nres_mono' (\<lambda>D. F D a b)"
       shows "nres_mono' (\<lambda>D. case p of (a,b) \<Rightarrow> F D a b)"
       using assms
-      unfolding nres_mono'_def fun_ord_def
       apply (cases p) by simp
     
     lemma mono_Let[mono]:
       assumes "\<And>x. nres_mono' (\<lambda>D. F D x)"
       shows "nres_mono' (\<lambda>D. let x=v in F D x)"
       using assms
-      unfolding nres_mono'_def fun_ord_def
       by simp
-      
-      
-      
+    *)  
             
   end
     
@@ -497,6 +559,9 @@ begin
   qed  
   *)  
     
+  lemma wlp_FAIL[wp_rule]: "wlp FAIL Q" 
+    by pw
+  
   lemma wlp_RETURN_iff: "wlp (RETURN x) Q \<longleftrightarrow> Q x"
     by pw
 
@@ -617,7 +682,7 @@ begin
   method wp_basic_step = 
     rule wp_rule 
   | rule wp_recursion_rule,(assumption|rprems)
-  | intro mono
+  | pf_mono_prover
   
   method wp_step = find_goal \<open>wp_basic_step\<close>
   method wp = wp_step+
@@ -625,7 +690,23 @@ begin
   
   lemmas [wp_recursion_rule] = wp_cons
       
+
+  subsection \<open>Syntax Bundle\<close>
+  bundle monad_syntax_ne
+  begin
+    syntax
+      "_doI_block" :: "doI_binds \<Rightarrow> 'a" ("do {//(2  _)//}" [12] 62)
+
+    notation FAIL ("fail")  
+    notation RETURN ("return _" 20)
+    notation SPEC (binder "spec " 10)
+    notation ASSERT ("assert _" 20)
+    notation ASSUME ("assume _" 20)
+    notation PAR (infixr "\<parallel>" 50)
+      
+  end
   
+    
   subsection \<open>Summary\<close>
   text \<open>
     We shallowly embed a basic non-deterministic PL.

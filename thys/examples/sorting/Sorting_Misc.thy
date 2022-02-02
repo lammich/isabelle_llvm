@@ -494,14 +494,14 @@ end
 
     
 lemma LENGTH_refine[sepref_fr_rules]: 
-  "LENGTH('a)>2 \<Longrightarrow> (uncurry0 (return (of_nat (LENGTH('a::len2))::'a word)), uncurry0 (RETURN (PR_CONST LENGTH('a)))) \<in> unit_assn\<^sup>k \<rightarrow>\<^sub>a snat_assn"
+  "LENGTH('a)>2 \<Longrightarrow> (uncurry0 (Mreturn (of_nat (LENGTH('a::len2))::'a word)), uncurry0 (RETURN (PR_CONST LENGTH('a)))) \<in> unit_assn\<^sup>k \<rightarrow>\<^sub>a snat_assn"
   apply sepref_to_hoare
   unfolding snat_rel_def snat.rel_def 
   supply [simp] = in_br_conv word_size size_fits_snat_aux2
   apply vcg'
   by (metis n_less_equal_power_2 size_fits_snat_aux2 snat_eq_unat_aux2 unat_of_nat_len)
 
-lemma size_refine[sepref_fr_rules]: "LENGTH('a)>2 \<Longrightarrow> (return o (\<lambda>_. of_nat (LENGTH('a))), RETURN o size) \<in> (word_assn' TYPE('a::len2))\<^sup>k \<rightarrow>\<^sub>a snat_assn' TYPE('a)"
+lemma size_refine[sepref_fr_rules]: "LENGTH('a)>2 \<Longrightarrow> (Mreturn o (\<lambda>_. of_nat (LENGTH('a))), RETURN o size) \<in> (word_assn' TYPE('a::len2))\<^sup>k \<rightarrow>\<^sub>a snat_assn' TYPE('a)"
   apply sepref_to_hoare
   unfolding snat_rel_def snat.rel_def 
   supply [simp] = in_br_conv word_size size_fits_snat_aux2

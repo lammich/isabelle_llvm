@@ -240,7 +240,7 @@ begin
   end  
     
 
-  global_interpretation heap_impl id snat_assn snat_assn return ll_icmp_sle ll_icmp_slt "TYPE('l::len2)" "LENGTH('l)"
+  global_interpretation heap_impl id snat_assn snat_assn Mreturn ll_icmp_sle ll_icmp_slt "TYPE('l::len2)" "LENGTH('l)"
     defines h_update_impl = update_impl
         and h_val_of_impl = val_of_impl
         and h_exch_impl = exch_impl

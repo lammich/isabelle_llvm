@@ -22,7 +22,7 @@ begin
   lemma unborrow_rule[sepref_comb_rules]:
     assumes FRAME: "\<Gamma> \<turnstile> hn_ctxt R src srci ** hn_invalid R dst dsti ** F"
     assumes EQI: "vassn_tag \<Gamma> \<Longrightarrow> CP_cond (srci = dsti)"
-    shows "hn_refine \<Gamma> (return ()) (hn_invalid R src srci ** hn_ctxt R dst dsti ** F) unit_assn (\<lambda>_. True) (unborrow$src$dst)"
+    shows "hn_refine \<Gamma> (Mreturn ()) (hn_invalid R src srci ** hn_ctxt R dst dsti ** F) unit_assn (\<lambda>_. True) (unborrow$src$dst)"
     apply (rule hn_refine_vassn_tagI)
     apply (rule hn_refine_cons_pre[OF FRAME])
     apply (rule hn_refineI)
@@ -65,10 +65,10 @@ begin
     assume "STATE asf P s"
     
     from wpa_comm_conjI[OF assms[THEN htripleD,OF this]]
-    show "wpa (amemory_addrs asf) c (\<lambda>r. STATE asf (\<up>\<Phi> r \<and>* Q r)) s"
+    show "wpa (asf) c (\<lambda>r. STATE asf (\<up>\<Phi> r \<and>* Q r)) s"
       apply (rule wpa_monoI)
       apply (simp add: STATE_extract(2))
-      ..
+      by auto
       
   qed    
   

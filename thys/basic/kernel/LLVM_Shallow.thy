@@ -6,9 +6,6 @@ begin
 
 
   text \<open>We define a type synonym for the LLVM monad\<close>
-  type_synonym 'a llM = "('a,llvm_memory,llvm_macc) M"
-  translations
-    (type) "'a llM" \<leftharpoondown> (type) "('a, llvm_memory, llvm_macc) M"
   
     
 
@@ -131,11 +128,15 @@ begin
   lemma to_val_prod_conv[simp]: "to_val (a,b) = LL_STRUCT [to_val a, to_val b]"
     unfolding to_val_prod_def by auto
   
-  
+  context
+    includes monad_syntax_M
+  begin
+    
+    
   text \<open>Checked conversion from value\<close>  
   definition checked_from_val :: "llvm_val \<Rightarrow> 'a::llvm_rep llM" where
     "checked_from_val v \<equiv> doM {
-      fcheck (STATIC_ERROR ''Type mismatch'') (llvm_struct_of_val v = struct_of TYPE('a));
+      assert (llvm_struct_of_val v = struct_of TYPE('a));
       return (from_val v)
     }" 
 
@@ -155,7 +156,7 @@ begin
     where "op_lift_arith2 ovf f a b \<equiv> doM {
     let a = word_to_lint a;
     let b = word_to_lint b;
-    fcheck (OVERFLOW_ERROR) (\<not>ovf a b);
+    assert (\<not>ovf a b);
     return (lint_to_word (f a b))
   }"
         
@@ -310,13 +311,13 @@ begin
     else if rm = AVX512_FROUND_TO_NEG_INF_NO_EXC then return To_ninfinity
     else if rm = AVX512_FROUND_TO_POS_INF_NO_EXC then return To_pinfinity
     else if rm = AVX512_FROUND_TO_ZERO_NO_EXC then return float_To_zero
-    else mfail (STATIC_ERROR ''Unsupported rounding mode'')"
+    else fail"
     
   lemma xlate_rounding_mode_simps:  
-    "xlate_rounding_mode AVX512_FROUND_TO_NEAREST_NO_EXC = return To_nearest"
-    "xlate_rounding_mode AVX512_FROUND_TO_NEG_INF_NO_EXC = return To_ninfinity"
-    "xlate_rounding_mode AVX512_FROUND_TO_POS_INF_NO_EXC = return To_pinfinity"
-    "xlate_rounding_mode AVX512_FROUND_TO_ZERO_NO_EXC = return float_To_zero"
+    "xlate_rounding_mode AVX512_FROUND_TO_NEAREST_NO_EXC = (return To_nearest)"
+    "xlate_rounding_mode AVX512_FROUND_TO_NEG_INF_NO_EXC = (return To_ninfinity)"
+    "xlate_rounding_mode AVX512_FROUND_TO_POS_INF_NO_EXC = (return To_pinfinity)"
+    "xlate_rounding_mode AVX512_FROUND_TO_ZERO_NO_EXC = (return float_To_zero)"
     unfolding xlate_rounding_mode_def by simp_all
     
   definition op_lift_farith1_rm :: "(roundmode \<Rightarrow> double \<Rightarrow> double) \<Rightarrow> nat \<Rightarrow> double \<Rightarrow> double llM" 
@@ -388,7 +389,7 @@ begin
     
   definition ll_malloc :: "'a::llvm_rep itself \<Rightarrow> _::len word \<Rightarrow> 'a ptr llM" where
     "ll_malloc TYPE('a) n = doM {
-      fcheck MEM_ERROR (unat n > 0); \<comment> \<open>Disallow empty malloc\<close>
+      assert (unat n > 0); \<comment> \<open>Disallow empty malloc\<close>
       r \<leftarrow> llvm_alloc (struct_of TYPE ('a)) (to_val n);
       return (from_val r)
     }"
@@ -452,17 +453,17 @@ begin
   
   subsubsection \<open>Conversion Operations\<close>
   definition "llb_trunc i w \<equiv> doM {
-    fcheck (STATIC_ERROR ''Trunc must go to smaller type'') (width i > w);
+    assert (width i > w);
     return (trunc w i)
   }"
   
   definition "llb_sext i w \<equiv> doM {
-    fcheck (STATIC_ERROR ''Sext must go to greater type'') (width i < w);
+    assert (width i < w);
     return (sext w i)
   }"
   
   definition "llb_zext i w \<equiv> doM {
-    fcheck (STATIC_ERROR ''Zext must go to greater type'') (width i < w);
+    assert (width i < w);
     return (zext w i)
   }"
   
@@ -509,60 +510,53 @@ begin
       if to_bool b then t else e
     }"
   
-  lemma llc_if_mono[partial_function_mono]:      
-    "\<lbrakk>monotone orda ordb F; monotone orda ordb G\<rbrakk> \<Longrightarrow> monotone orda ordb (\<lambda>f. llc_if b (F f) (G f))"
+  lemma mono_llc_If[partial_function_mono]: "
+    \<lbrakk> M_mono' (\<lambda>D. F D); M_mono' (\<lambda>D. G D) \<rbrakk> \<Longrightarrow>
+    M_mono' (\<lambda>D. llc_if b (F D) (G D))"  
     unfolding llc_if_def by pf_mono_prover
-
-  thm partial_function_mono
     
   subsubsection \<open>Parallel Combinator\<close>  
   definition llc_par :: "('a \<Rightarrow> 'ar llM) \<Rightarrow> ('b \<Rightarrow> 'br llM) \<Rightarrow> 'a \<Rightarrow> 'b \<Rightarrow> ('ar \<times> 'br) llM" where 
-    "llc_par f g a b \<equiv> par (f a) (g b)"
+    "llc_par f g a b \<equiv> Mpar (f a) (g b)"
 
-  lemma par_mono[partial_function_mono]:
-    "\<lbrakk>\<And>x. monotone M.le_fun M_ord (\<lambda>f. F f x); \<And>x. monotone M.le_fun M_ord (\<lambda>f. G f x)\<rbrakk> \<Longrightarrow> monotone M.le_fun M_ord (\<lambda>f. llc_par (F f) (G f) a b)"
+  lemma mono_llc_par[partial_function_mono]: "
+    \<lbrakk>\<And>x. M_mono' (\<lambda>D. F D x); \<And>x. M_mono' (\<lambda>D. G D x) \<rbrakk>
+    \<Longrightarrow> M_mono' (\<lambda>D. llc_par (F D) (G D) x\<^sub>1 x\<^sub>2)"
     unfolding llc_par_def 
     by pf_mono_prover
     
   subsubsection \<open>While-Combinator\<close>
   text \<open>
-    Note that we also include the while combinator at this point, as we plan
-    to add direct translation of while to a control flow graph as an optional 
-    feature of the code generator. 
-    
-    In the current state, the code generator will recognize the while combinator, 
-    but refuse to translate it.
-  
-    Note that the standard way of using a while combinator is to translate it to 
-    a tail recursive function call, which the preprocessor can do automatically.
+    Note: later in this development, we introduce a flag to control direct translation.
+      If disabled, the code generator will refuse to accept while, but the 
+      preprocessor will transform it into a tail recursive function.
   \<close>
     
   definition llc_while :: "('a::llvm_repv \<Rightarrow> 1 word llM) \<Rightarrow> ('a \<Rightarrow> 'a llM) \<Rightarrow> 'a \<Rightarrow> 'a llM" where
-    "llc_while b f s\<^sub>0 \<equiv> mwhile (\<lambda>s. b s \<bind> return o to_bool) f s\<^sub>0"
+    "llc_while b f s\<^sub>0 \<equiv> Mwhile (\<lambda>s. doM {bb \<leftarrow> b s; return to_bool bb}) f s\<^sub>0"
       
   lemma gen_code_thm_llc_while:
     assumes "f \<equiv> llc_while b body"
     shows "f s = doM { ctd \<leftarrow> b s; llc_if ctd (doM { s\<leftarrow>body s; f s}) (return s)}"
     unfolding assms
     unfolding llc_while_def llc_if_def
-    apply (rewrite mwhile_unfold)
+    apply (rewrite Mwhile_unfold)
     by simp
 
-
-  thm partial_function_mono
-
   lemma llc_while_mono[partial_function_mono]:      
-    assumes "\<And>x. M_mono (\<lambda>f. b f x)"
-    assumes "\<And>x. M_mono (\<lambda>f. c f x)"
-    shows "M_mono (\<lambda>D. llc_while (b D) (c D) \<sigma>)"
-    using assms unfolding llc_while_def by pf_mono_prover
+    assumes "\<And>x. M_mono' (\<lambda>f. b f x)"
+    assumes "\<And>x. M_mono' (\<lambda>f. c f x)"
+    shows "M_mono' (\<lambda>D. llc_while (b D) (c D) \<sigma>)"
+    using assms unfolding llc_while_def 
+    by pf_mono_prover
     
   (* 'Definition' of llc_while for presentation in paper: *)  
   lemma "llc_while b c s \<equiv> doM { x \<leftarrow> b s; llc_if x (doM {s\<leftarrow>c s; llc_while b c s}) (return s) }"
     unfolding llc_while_def llc_if_def
-    apply (rewrite mwhile_unfold)
+    apply (rewrite Mwhile_unfold)
     by simp
     
       
     
+end
 end

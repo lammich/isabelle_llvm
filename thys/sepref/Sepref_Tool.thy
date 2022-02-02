@@ -158,7 +158,7 @@ method_setup sepref_dbg_keep = \<open>Scan.succeed (fn ctxt => let
 
 subsubsection \<open>Default Optimizer Setup\<close>
 
-lemmas [sepref_opt_simps] = Monad.bind_laws
+lemmas [sepref_opt_simps] = M_monad_laws
 
 text \<open>We allow the synthesized function to contain tagged function applications.
   This is important to avoid higher-order unification problems when synthesizing
@@ -168,24 +168,24 @@ lemmas [sepref_opt_simps] = Autoref_Tagging.APP_def
 
 text {* Revert case-pulling done by monadify *}
 lemma case_prod_return_opt[sepref_opt_simps]:
-  "case_prod (\<lambda>a b. return (f a b)) p = return (case_prod f p)"
+  "case_prod (\<lambda>a b. Mreturn (f a b)) p = Mreturn (case_prod f p)"
   by (simp split: prod.split)
 
 lemma case_option_return_opt[sepref_opt_simps]:
-  "case_option (return fn) (\<lambda>s. return (fs s)) v = return (case_option fn fs v)"
+  "case_option (Mreturn fn) (\<lambda>s. Mreturn (fs s)) v = Mreturn (case_option fn fs v)"
   by (simp split: option.split)
 
 lemma case_list_return[sepref_opt_simps]:
-  "case_list (return fn) (\<lambda>x xs. return (fc x xs)) l = return (case_list fn fc l)"
+  "case_list (Mreturn fn) (\<lambda>x xs. Mreturn (fc x xs)) l = Mreturn (case_list fn fc l)"
   by (simp split: list.split)
 
 lemma if_return[sepref_opt_simps]:
-  "If b (return t) (return e) = return (If b t e)" by simp
+  "If b (Mreturn t) (Mreturn e) = Mreturn (If b t e)" by simp
 
 text {* In some cases, pushing in the returns is more convenient *}
 lemma case_prod_opt2[sepref_opt_simps2]:
-  "(\<lambda>x. return (case x of (a,b) \<Rightarrow> f a b)) 
-  = (\<lambda>(a,b). return (f a b))"
+  "(\<lambda>x. Mreturn (case x of (a,b) \<Rightarrow> f a b)) 
+  = (\<lambda>(a,b). Mreturn (f a b))"
   by auto
 
 
@@ -332,12 +332,12 @@ sepref_register COPY
 
 text \<open>Copy is treated as normal operator, and one can just declare rules for it! \<close>
 lemma hnr_pure_COPY[sepref_fr_rules]:
-  "CONSTRAINT is_pure R \<Longrightarrow> (return, RETURN o COPY) \<in> R\<^sup>k \<rightarrow>\<^sub>a\<^sub>d (\<lambda>_. R)"
+  "CONSTRAINT is_pure R \<Longrightarrow> (Mreturn, RETURN o COPY) \<in> R\<^sup>k \<rightarrow>\<^sub>a\<^sub>d (\<lambda>_. R)"
   apply (intro hfrefI hn_refineI) unfolding is_pure_conv pure_def
   by vcg
   
 
-lemma hn_id[sepref_fr_rules]: "(\<lambda>x. return x,RETURN o id) \<in> [\<lambda>_. True]\<^sub>c A\<^sup>d \<rightarrow> A [\<lambda>x r. r=x]\<^sub>c"
+lemma hn_id[sepref_fr_rules]: "(\<lambda>x. Mreturn x,RETURN o id) \<in> [\<lambda>_. True]\<^sub>c A\<^sup>d \<rightarrow> A [\<lambda>x r. r=x]\<^sub>c"
   apply sepref_to_hoare
   by vcg
   

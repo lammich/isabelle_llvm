@@ -21,10 +21,17 @@ begin
     }
   \<close>
 
+  
+  lemma REC_unfold_extr:
+    assumes DEF: "f \<equiv> REC F"
+    assumes MONO: "\<And>x. M_mono' (\<lambda>fa. F fa x)"
+    shows "f = F f"
+    using DEF MONO REC_unfold by blast
+  
   declaration \<open>fn _ =>
     Definition_Utils.add_extraction (@{extraction_group LLVM},\<^here>) {
       pattern = Logic.varify_global @{term "REC (B::('a \<Rightarrow> 'b llM) \<Rightarrow> 'a \<Rightarrow> 'b llM)"},
-      gen_thm = @{thm REC_unfold},
+      gen_thm = @{thm REC_unfold_extr},
       gen_tac = Partial_Function.mono_tac
     }
   \<close>
@@ -49,8 +56,8 @@ subsection \<open>Preprocessor\<close>
     
   
   lemma llvm_inline_bind_laws[llvm_pre_simp]:
-    "bind m return = m"
-    "bind (bind m (\<lambda>x. f x)) g = bind m (\<lambda>x. bind (f x) g)"
+    "Mbind m Mreturn = m"
+    "Mbind (Mbind m (\<lambda>x. f x)) g = Mbind m (\<lambda>x. Mbind (f x) g)"
     by auto
   
   lemma unit_meta_eq: "x \<equiv> ()" by simp
@@ -71,22 +78,24 @@ subsection \<open>Preprocessor\<close>
       structure BT = Gen_Monadify_Cong_Basis ()
       open BT
 
-      fun mk_return x = @{mk_term "return ?x ::_ llM"}
-      fun mk_bind m f = @{mk_term "bind ?m ?f ::_ llM"}
+      fun mk_return x = @{mk_term "Mreturn ?x ::_ llM"}
+      fun mk_bind m f = @{mk_term "Mbind ?m ?f ::_ llM"}
     
-      fun dest_return @{mpat "return ?x ::_ llM"} = SOME x | dest_return _ = NONE
-      fun dest_bind @{mpat "bind ?m ?f ::_ llM"} = SOME (m,f) | dest_bind _ = NONE
+      fun dest_return @{mpat "Mreturn ?x ::_ llM"} = SOME x | dest_return _ = NONE
+      fun dest_bind @{mpat "Mbind ?m ?f ::_ llM"} = SOME (m,f) | dest_bind _ = NONE
       
-      fun dest_monadT (Type (@{type_name M},[T,@{typ llvm_memory},@{typ "llvm_macc"}])) = SOME T | dest_monadT _ = NONE
+      
+      val dest_monadT = try dest_llM  
+      (*fun dest_monadT (Type (@{type_name M},[T,@{typ llvm_memory},@{typ "llvm_macc"}])) = SOME T | dest_monadT _ = NONE*)
 
       
       fun strip_op _ @{mpat \<open>llc_par ?fa ?fb ?a ?b\<close>} = (@{mk_term "llc_par ?fa ?fb"},[a,b])
       | strip_op ctxt t = BT.strip_op ctxt t  
       
       
-      val bind_return_thm = @{lemma "bind m return = m" by simp}
-      val return_bind_thm = @{lemma "bind (return x) f = f x" by simp}
-      val bind_bind_thm = @{lemma "bind (bind m (\<lambda>x. f x)) g = bind m (\<lambda>x. bind (f x) g)" by simp}
+      val bind_return_thm = @{lemma "Mbind m Mreturn = m" by simp}
+      val return_bind_thm = @{lemma "Mbind (Mreturn x) f = f x" by simp}
+      val bind_bind_thm = @{lemma "Mbind (Mbind m (\<lambda>x. f x)) g = Mbind m (\<lambda>x. Mbind (f x) g)" by simp}
       
       structure T = Gen_Monadify (
         val mk_return = mk_return
@@ -303,19 +312,19 @@ subsection \<open>Preprocessor\<close>
         list_comb (f, args)
       end  
         
-      and normalize @{mpat "bind ?m ?f"} = let
+      and normalize @{mpat "Mbind ?m ?f"} = let
           val m = normalize_bind1 m
           val f = (*ensure_abs f*) expand_eta_all f |> normalize
-        in @{mk_term "bind ?m ?f"} end
+        in @{mk_term "Mbind ?m ?f"} end
       | normalize (Abs (x,T,t)) = Abs (x,T,normalize t)
-      | normalize (t as @{mpat "return _"}) = t
-      | normalize t = let val t = normalize_bind1 t in @{mk_term "bind ?t (\<lambda>x. return x)"} end
+      | normalize (t as @{mpat "Mreturn _"}) = t
+      | normalize t = let val t = normalize_bind1 t in @{mk_term "Mbind ?t (\<lambda>x. Mreturn x)"} end
     
       fun normalize_eq @{mpat "Trueprop (?a = ?b)"} = let val b = normalize b in @{mk_term "Trueprop (?a = ?b)"} end
         | normalize_eq @{mpat "?a \<equiv> ?b"} = let val b = normalize b in @{mk_term "?a \<equiv> ?b"} end
         | normalize_eq t = raise TERM ("format_code_thm: normalize_eq", [t])
     
-      fun norm_tac ctxt = ALLGOALS (simp_tac (put_simpset HOL_ss ctxt addsimps @{thms bind_laws M_CONST_def}))
+      fun norm_tac ctxt = ALLGOALS (simp_tac (put_simpset HOL_ss ctxt addsimps @{thms M_monad_laws M_CONST_def}))
   
       fun cthm_norm_lambda ctxt thm = let
         val thm = Local_Defs.unfold ctxt @{thms pull_lambda_case} thm
@@ -336,7 +345,7 @@ subsection \<open>Preprocessor\<close>
       
     in
       thm 
-      |> (simplify (put_simpset HOL_ss ctxt addsimps @{thms Monad.bind_laws atomize_eq}))
+      |> (simplify (put_simpset HOL_ss ctxt addsimps @{thms M_monad_laws atomize_eq}))
       |> cthm_norm_lambda ctxt
       |> (Conv.fconv_rule (Refine_Util.f_tac_conv ctxt normalize_eq (norm_tac)))
       |> (Conv.fconv_rule (Conv.top_sweep_conv (K (Conv.rewr_conv @{thm unit_meta_eq})) ctxt))
@@ -373,8 +382,8 @@ subsection \<open>Preprocessor\<close>
     val comb_name_prefix = Long_Name.qualify (Long_Name.qualifier @{const_name llc_while}) "llc_"
         
     fun dep_is_ll_comb_name name =
-             name = @{const_name bind}
-      orelse name = @{const_name return}
+             name = @{const_name Mbind}
+      orelse name = @{const_name Mreturn}
       orelse String.isPrefix cmd_name_prefix name
       orelse String.isPrefix comb_name_prefix name
       
@@ -761,10 +770,10 @@ subsection \<open>Code Generator Driver\<close>
   *)
   
   lemma prod_ops_simp:
-    "prod_insert_fst = (\<lambda>(_,b) a. return (a,b))"
-    "prod_insert_snd = (\<lambda>(a,_) b. return (a,b))"
-    "prod_extract_fst = (\<lambda>(a,b). return a)"
-    "prod_extract_snd = (\<lambda>(a,b). return b)"
+    "prod_insert_fst = (\<lambda>(_,b) a. Mreturn (a,b))"
+    "prod_insert_snd = (\<lambda>(a,_) b. Mreturn (a,b))"
+    "prod_extract_fst = (\<lambda>(a,b). Mreturn a)"
+    "prod_extract_snd = (\<lambda>(a,b). Mreturn b)"
     unfolding 
       prod_insert_fst_def prod_insert_snd_def ll_insert_value_def
       prod_extract_fst_def prod_extract_snd_def ll_extract_value_def 
@@ -799,7 +808,7 @@ experiment begin
         s \<leftarrow> prod_insert_fst init c;
         s \<leftarrow> prod_insert_snd s i;
         
-        return s
+        Mreturn s
       })
       s;
   
@@ -809,7 +818,8 @@ experiment begin
   
   definition streq :: "8 word ptr \<Rightarrow> 8 word ptr \<Rightarrow> 1 word llM" where [llvm_code]: "streq s\<^sub>1 s\<^sub>2 = doM {
       x \<leftarrow> ll_load s\<^sub>1;
-      ll_load s\<^sub>2 \<bind> ll_icmp_eq x
+      y \<leftarrow> ll_load s\<^sub>2;
+      ll_icmp_eq x y
     }"
   
   export_llvm streq  
@@ -820,13 +830,13 @@ experiment begin
     p \<leftarrow> ll_ofs_ptr p (5::32 word);
     ll_store 42 p;
     r \<leftarrow> ll_load p; 
-    return r  
+    Mreturn r  
   }"
   
   definition [llvm_code]: "add_add (a::_ word) \<equiv> doM {
     x \<leftarrow> ll_add a a;
     x \<leftarrow> ll_add x x;
-    return x
+    Mreturn x
   }"
 
   definition [llvm_code]: "add_add_driver (a::32 word) (b::64 word) \<equiv> doM {
@@ -834,7 +844,7 @@ experiment begin
     b \<leftarrow> add_add b;
     a \<leftarrow> ll_zext a TYPE(64 word);
     b \<leftarrow> ll_add a b;
-    return b
+    Mreturn b
   }"
   
   export_llvm (debug) add_add_driver
@@ -842,14 +852,14 @@ experiment begin
   definition [llvm_code]: "main (argc::32 word) (argv::8 word ptr ptr) \<equiv> doM {
     r \<leftarrow> test2 argc;
     r \<leftarrow> ll_zext r TYPE(32 word);
-    return r
+    Mreturn r
   }" 
 
   definition [llvm_code]: "main_exp (argc::32 word) (argv::8 word ptr ptr) \<equiv> doM {
     argc \<leftarrow> ll_zext argc TYPE(64 word);
     r \<leftarrow> exp argc;
     r \<leftarrow> ll_trunc r TYPE(32 word);
-    return r
+    Mreturn r
   }" 
 
   
@@ -875,14 +885,14 @@ export_llvm (debug) main is main
 definition [llvm_code]: 
   "test_if_names (n::32 word) \<equiv> doM {
     tmp \<leftarrow> ll_icmp_eq n 0;
-    a \<leftarrow> llc_if tmp (return null) (doM {
+    a \<leftarrow> llc_if tmp (Mreturn null) (doM {
                                      x \<leftarrow> ll_malloc TYPE(8 word) n;
-                                     return x
+                                     Mreturn x
                                    });
     p \<leftarrow> ll_ofs_ptr a (1::32 word);
     ll_store 0x2A p;
     ll_free a;
-    return ()
+    Mreturn ()
   }"
  
 export_llvm test_if_names
@@ -891,14 +901,14 @@ definition fib :: "64 word \<Rightarrow> 64 word llM"
   where [llvm_code]: "fib n \<equiv> REC (\<lambda>fib n. doM { 
     t\<leftarrow>ll_icmp_ule n 1; 
     llc_if t 
-      (return n) 
+      (Mreturn n) 
       (doM { 
         n\<^sub>1 \<leftarrow> ll_sub n 1; 
         a\<leftarrow>fib n\<^sub>1; 
         n\<^sub>2 \<leftarrow> ll_sub n 2; 
         b\<leftarrow>fib n\<^sub>2; 
         c\<leftarrow>ll_add a b; 
-        return c })} ) n"
+        Mreturn c })} ) n"
 
 export_llvm fib is fib
 
@@ -912,18 +922,18 @@ definition triple_sum :: "(64 word \<times> 64 word \<times> 64 word) ptr \<Righ
     c \<leftarrow> ll_extract_value bc 1;
     r \<leftarrow> ll_add a b;
     r \<leftarrow> ll_add r c;
-    return r
+    Mreturn r
    }"
    
 export_llvm triple_sum is \<open>_ triple_sum(triple*)\<close> 
   defines \<open>typedef struct {int64_t a; struct {int64_t b; int64_t c;};} triple;\<close>
  
   
-definition [llvm_code]: "ppar \<equiv> llc_par fib test2 3 3"
+definition [llvm_code]: "test_ppar \<equiv> llc_par fib test2 3 3"
   
 declare [[llc_compile_par_call=true]]
 
-export_llvm ppar file "test_par.ll"
+export_llvm test_ppar file "test_par.ll"
  
   
 (* Higher-Order stuff *)
@@ -945,7 +955,7 @@ definition times3_f :: "double \<Rightarrow> double llM" where [llvm_code]:
     x'\<leftarrow>ll_fadd x x;
     x'\<leftarrow>ll_fadd x' x;
     x'\<leftarrow>ll_fadd x' (double_of_word 0x3FD5555555555555);
-    return x'
+    Mreturn x'
   }"
 
 
@@ -958,7 +968,7 @@ definition times3_pf :: "(double*double) ptr \<Rightarrow> double llM" where [ll
     b \<leftarrow> ll_extract_value x 1;
     x'\<leftarrow>ll_fadd a a;
     x'\<leftarrow>ll_fadd x' b;
-    return x'
+    Mreturn x'
   }"
 
 export_llvm times3_pf is "double times3_f (dpair*)" 
@@ -983,7 +993,7 @@ definition test_double :: "double \<Rightarrow> double \<Rightarrow> double llM"
     t\<^sub>2 \<leftarrow> ll_fadd a b;
     t\<^sub>1 \<leftarrow> ll_frem t\<^sub>1 t\<^sub>2;
   
-    return t\<^sub>1
+    Mreturn t\<^sub>1
   }"
 
   
@@ -1022,7 +1032,7 @@ definition test_avx512f_tmpl :: "nat \<Rightarrow> double \<Rightarrow> double \
   t\<^sub>1 \<leftarrow> ll_x86_avx512_sub_sd_round rm t\<^sub>1 t\<^sub>2;
   t\<^sub>1 \<leftarrow> ll_x86_avx512_add_sd_round rm t\<^sub>1 a;
 
-  return t\<^sub>1
+  Mreturn t\<^sub>1
 }"
 
 definition [llvm_code]: "test_avx512f_to_nearest \<equiv> test_avx512f_tmpl AVX512_FROUND_TO_NEAREST_NO_EXC"

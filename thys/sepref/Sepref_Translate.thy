@@ -323,7 +323,8 @@ structure Sepref_Translate = struct
             | @{mpat "_ \<turnstile> _"} => t_frame
             | @{mpat "INDEP _"} => t_indep     (* TODO: Get rid of this!? *)
             | @{mpat "CONSTRAINT _ _"} => t_constraint
-            | @{mpat "M.mono_body _"} => t_mono
+            | @{mpat "monotone _ _ _"} => t_mono
+            | @{mpat "\<forall>_. monotone _ _ _"} => t_mono
             | @{mpat "PREFER_tag _"} => t_pref_def
             | @{mpat "DEFER_tag _"} => t_pref_def
             | @{mpat "RPREM _"} => t_rprem
@@ -447,7 +448,7 @@ method_setup sepref_bounds = \<open>SIMPLE_METHOD_NOPARAM' (Sepref_Translate.bou
 subsubsection \<open>Basic Setup\<close>
               
 lemma hn_pass[sepref_fr_rules]:
-  shows "hn_refine (hn_ctxt P x x') (return x') (hn_invalid P x x') P (\<lambda>r. r=x') (PASS$x)"
+  shows "hn_refine (hn_ctxt P x x') (Mreturn x') (hn_invalid P x x') P (\<lambda>r. r=x') (PASS$x)"
   apply rule
   apply (subst invalidate_clone') unfolding hn_ctxt_def
   apply vcg
@@ -467,7 +468,7 @@ lemma hn_bind[sepref_comb_rules]:
       hn_refine (hn_ctxt Rh x x' ** \<Gamma>1) (f' x') (\<Gamma>2 x x') R (CP\<^sub>2 x') (f x)"
   assumes IMP: "\<And>x x'. \<Gamma>2 x x' \<turnstile> hn_ctxt Rx x x' ** \<Gamma>'"
   assumes "MK_FREE Rx fr"
-  shows "hn_refine \<Gamma> (doM {x\<leftarrow>m'; r\<leftarrow>f' x; fr x; return r}) \<Gamma>' R (CP_SEQ CP\<^sub>1 CP\<^sub>2) (Refine_Basic.bind$m$(\<lambda>\<^sub>2x. f x))"
+  shows "hn_refine \<Gamma> (doM {x\<leftarrow>m'; r\<leftarrow>f' x; fr x; Mreturn r}) \<Gamma>' R (CP_SEQ CP\<^sub>1 CP\<^sub>2) (Refine_Basic.bind$m$(\<lambda>\<^sub>2x. f x))"
   using assms
   unfolding APP_def PROTECT2_def bind_ref_tag_def CP_defs
   by (rule hnr_bind)
@@ -482,10 +483,10 @@ lemma hn_RECT'[sepref_comb_rules]:
     \<Longrightarrow> hn_refine (hn_ctxt Rx ax px ** F) (cB cf px) (F' ax px) Ry (CP px)
           (aB af ax)"
   assumes FR': "\<And>ax px. F' ax px \<turnstile> hn_ctxt Rx' ax px ** F"
-  assumes M: "(\<And>x. M.mono_body (\<lambda>f. cB f x))"
+  assumes M: "M_mono_body cB"
   (*assumes PREC[unfolded CONSTRAINT_def]: "CONSTRAINT precise Ry"*)
   shows "hn_refine 
-    (P) (Monad.REC cB px) (hn_ctxt Rx' ax px ** F) Ry (CP$px)
+    (P) (MMonad.REC cB px) (hn_ctxt Rx' ax px ** F) Ry (CP$px)
         (RECT$(\<lambda>\<^sub>2D x. aB D x)$ax)"
   unfolding APP_def PROTECT2_def 
   apply (rule hn_refine_cons_pre[OF FR])
@@ -542,10 +543,10 @@ lemma hn_RECT_cp_annot(*[sepref_comb_rules]*):
           (aB af ax)"
   assumes CP: "\<And>px r. CP_assm (CP' px r) \<Longrightarrow> CP_cond (CP px r)"        
   assumes FR': "\<And>ax px. F' ax px \<turnstile> hn_ctxt Rx' ax px ** F"
-  assumes M: "(\<And>x. M.mono_body (\<lambda>f. cB f x))"
+  assumes M: "M_mono_body cB"
   (*assumes PREC[unfolded CONSTRAINT_def]: "CONSTRAINT precise Ry"*)
   shows "hn_refine 
-    (P) (Monad.REC cB px) (hn_ctxt Rx' ax px ** F) Ry (CP$px)
+    (P) (MMonad.REC cB px) (hn_ctxt Rx' ax px ** F) Ry (CP$px)
         (PR_CONST (RECT_cp_annot CP)$(\<lambda>\<^sub>2D x. aB D x)$ax)"
   unfolding APP_def PROTECT2_def RECT_cp_annot_def PR_CONST_def
   apply (rule hn_refine_cons_pre[OF FR])
@@ -574,10 +575,10 @@ lemma hn_RECT_cp_annot_noframe:
           (aB af ax)"
   assumes CP: "\<And>px r. CP_assm (CP' px r) \<Longrightarrow> CP_cond (CP px r)"        
   assumes FR': "\<And>ax px. F' ax px \<turnstile> hn_ctxt Rx' ax px"
-  assumes M: "(\<And>x. M.mono_body (\<lambda>f. cB f x))"
+  assumes M: "M_mono_body cB"
   (*assumes PREC[unfolded CONSTRAINT_def]: "CONSTRAINT precise Ry"*)
   shows "hn_refine 
-    (P) (Monad.REC cB px) (hn_ctxt Rx' ax px ** F) Ry (CP$px)
+    (P) (MMonad.REC cB px) (hn_ctxt Rx' ax px ** F) Ry (CP$px)
         (PR_CONST (RECT_cp_annot CP)$(\<lambda>\<^sub>2D x. aB D x)$ax)"
         
   apply (rule hn_refine_cons_post)
@@ -603,10 +604,10 @@ lemma hn_RECT'_cp[sepref_comb_rules]:
           (aB af ax)"
   assumes CP: "\<And>px r. CP_assm (CP' px r) \<Longrightarrow> CP_cond (CP px r)"        
   assumes FR': "\<And>ax px. F' ax px \<turnstile> hn_ctxt Rx' ax px ** F"
-  assumes M: "(\<And>x. M.mono_body (\<lambda>f. cB f x))"
+  assumes M: "M_mono_body cB"
   (*assumes PREC[unfolded CONSTRAINT_def]: "CONSTRAINT precise Ry"*)
   shows "hn_refine 
-    (P) (Monad.REC cB px) (hn_ctxt Rx' ax px ** F) Ry (CP$px)
+    (P) (MMonad.REC cB px) (hn_ctxt Rx' ax px ** F) Ry (CP$px)
         (PR_CONST (RECT_cp_annot CP)$(\<lambda>\<^sub>2D x. aB D x)$ax)"
   unfolding APP_def PROTECT2_def RECT_cp_annot_def PR_CONST_def
   apply (rule hn_refine_cons_pre[OF FR])
@@ -722,13 +723,13 @@ subsection "Import of Parametricity Theorems"
 lemma pure_hn_refineI:
   assumes "Q \<longrightarrow> (c,a)\<in>R"
   (* TODO: Weak CP copied from Sep-Imp-HOL. *)
-  shows "hn_refine (\<up>Q) (return c) (\<up>Q) (pure R) (\<lambda>_. True) (RETURN a)"
+  shows "hn_refine (\<up>Q) (Mreturn c) (\<up>Q) (pure R) (\<lambda>_. True) (RETURN a)"
   unfolding hn_refine_def pure_def using assms by vcg
 
 lemma pure_hn_refineI_no_asm:
   assumes "(c,a)\<in>R"
   (* TODO: Weak CP copied from Sep-Imp-HOL. *)
-  shows "hn_refine \<box> (return c) \<box> (pure R) (\<lambda>_. True) (RETURN a)"
+  shows "hn_refine \<box> (Mreturn c) \<box> (pure R) (\<lambda>_. True) (RETURN a)"
   unfolding hn_refine_def pure_def using assms by vcg
 
 lemma import_param_0:

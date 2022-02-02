@@ -19,7 +19,7 @@ context begin
   definition [llvm_inline]: "array_new TYPE('a::llvm_rep) n \<equiv> ll_malloc TYPE('a) n"
   definition [llvm_inline]: "array_free a \<equiv> ll_free a"
   definition [llvm_inline]: "array_nth a i \<equiv> doM { p \<leftarrow> ll_ofs_ptr a i; ll_load p }"
-  definition [llvm_inline]: "array_upd a i x \<equiv> doM { p \<leftarrow> ll_ofs_ptr a i; ll_store x p; return a }"
+  definition [llvm_inline]: "array_upd a i x \<equiv> doM { p \<leftarrow> ll_ofs_ptr a i; ll_store x p; Mreturn a }"
 
 
   lemma ll_range_cong: "I=I' \<Longrightarrow> (\<And>i. i\<in>I' \<Longrightarrow> f i = f' i) \<Longrightarrow> p=p' 
@@ -177,9 +177,9 @@ definition "arraycpy dst src (n::'a::len2 word) \<equiv>
         x\<leftarrow>array_nth src i;
         array_upd dst i x;
         i\<leftarrow>ll_add i (signed_nat 1);
-        return i
+        Mreturn i
       }) (signed_nat 0);
-    return ()
+    Mreturn ()
   }"
 
 declare arraycpy_def[llvm_code]
@@ -216,9 +216,9 @@ definition arrayset :: "'b::llvm_rep ptr \<Rightarrow> 'b \<Rightarrow> 'a::len2
       (\<lambda>i. doM {
         array_upd dst i c;
         let i=i+(signed_nat 1);
-        return i
+        Mreturn i
       }) (signed_nat 0);
-    return ()
+    Mreturn ()
   }"  
   
 
@@ -255,7 +255,7 @@ subsubsection \<open>Array-New-Init\<close>
 definition "array_new_init n (c::'a::llvm_rep) \<equiv> doM { 
   r \<leftarrow> array_new TYPE('a) n; 
   arrayset r c n;
-  return r
+  Mreturn r
 }"
 
 lemma array_new_init_rule[vcg_rules]: "llvm_htriple   

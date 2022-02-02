@@ -263,7 +263,7 @@ begin
   lemma fref_to_pure_hfref':
     assumes "(f,g) \<in> [P]\<^sub>f R\<rightarrow>(\<langle>S\<rangle>nres_rel)"
     assumes "\<And>x. x\<in>Domain R \<inter> R\<inverse>``Collect P \<Longrightarrow> f x = RETURN (f' x)"
-    shows "(return o f', g) \<in> [P]\<^sub>a (pure R)\<^sup>k\<rightarrow>\<^sub>d(\<lambda>_. pure S)"
+    shows "(Mreturn o f', g) \<in> [P]\<^sub>a (pure R)\<^sup>k\<rightarrow>\<^sub>d(\<lambda>_. pure S)"
   proof -
   
     {
@@ -611,14 +611,6 @@ begin
     apply auto
     done
     
-  (*lemma xfer_hrr_comp:
-    assumes "\<And>x y a c. \<lbrakk> (x,y)\<in>T \<rbrakk> \<Longrightarrow> R x a c \<turnstile> R' y a c"  
-    shows "hrr_comp T R S x a c \<turnstile> (hr_comp (R' x) S) a c"
-    using assms unfolding hrr_comp_def
-    apply (cases "non_dep R"; simp)
-    subgoal sorry
-    apply (auto simp: sep_algebra_simps pred_lift_extract_simps entails_def hr_comp_def non_dep_simp[of R])
-  *)  
 
   subsubsection \<open>Composition Automation\<close>  
   text \<open>This section contains the lemmas. The ML code is further down. \<close>
@@ -1237,8 +1229,8 @@ begin
           | strip_leading_RETURN args (t as @{mpat "RETURN ?f"}) = check_strip_leading args t f
           | strip_leading_RETURN _ t = (t,false)
     
-        fun strip_leading_return args (t as @{mpat "return$(?f)"}) = check_strip_leading args t f
-            | strip_leading_return args (t as @{mpat "return ?f"}) = check_strip_leading args t f
+        fun strip_leading_return args (t as @{mpat "Mreturn$(?f)"}) = check_strip_leading args t f
+            | strip_leading_return args (t as @{mpat "Mreturn ?f"}) = check_strip_leading args t f
             | strip_leading_return _ t = (t,false)
     
     
@@ -1532,7 +1524,7 @@ begin
             end  
           else t
     
-        fun mk_return (t,r) = if r then @{mk_term "return ?t :: _ llM"}
+        fun mk_return (t,r) = if r then @{mk_term "Mreturn ?t :: _ llM"}
             (*let
               val T = funpow num_args range_type (fastype_of (fst chead))
               val tRETURN = Const (@{const_name return}, T --> Type(@{type_name llvm_memory},[T]))

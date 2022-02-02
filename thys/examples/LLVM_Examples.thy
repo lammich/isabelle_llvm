@@ -22,10 +22,10 @@ definition exp :: "'a::len word \<Rightarrow> 'b::len word llM" where [llvm_code
   (a,r) \<leftarrow> llc_while 
     (\<lambda>(a,r). doM { ll_icmp_ult (unsigned 0) r}) 
     (\<lambda>(a,r). doM {
-      return (a*unsigned 2,r-unsigned 1)
+      Mreturn (a*unsigned 2,r-unsigned 1)
     })
     (a,r);
-  return a
+  Mreturn a
 }"
 
 abbreviation exp32::"32 word \<Rightarrow> 32 word llM" where "exp32 \<equiv> exp"
@@ -65,9 +65,10 @@ lemma exp_correct:
   apply (simp_all add: exp_aux1 exp_aux2)
   done
 
-
+(* TODO: can we restore executability?
 text \<open>Executability of semantics inside Isabelle\<close>
 value "run (exp64 32) llvm_empty_memory"
+*)
 
 subsubsection \<open>Euclid's Algorithm\<close>
 
@@ -75,9 +76,9 @@ subsubsection \<open>Euclid's Algorithm\<close>
 definition [llvm_code]: "euclid (a::'a::len word) b \<equiv> doM {
   (a,b) \<leftarrow> llc_while 
     (\<lambda>(a,b) \<Rightarrow> ll_cmp (a \<noteq> b))
-    (\<lambda>(a,b) \<Rightarrow> if (a\<le>b) then return (a,b-a) else return (a-b,b))
+    (\<lambda>(a,b) \<Rightarrow> if (a\<le>b) then Mreturn (a,b-a) else Mreturn (a-b,b))
     (a,b);
-  return a
+  Mreturn a
 }"
   
 export_llvm (debug) (*no_while*) 
@@ -107,11 +108,11 @@ lemma "llvm_htriple
 subsubsection \<open>Fibonacci Numbers\<close>
 
 definition fib :: "'n::len word \<Rightarrow> 'n word llM" where [llvm_code]: "fib n \<equiv> REC (\<lambda>fib' n. 
-  if n\<le>unsigned 1 then return n 
+  if n\<le>unsigned 1 then Mreturn n 
   else doM { 
     n\<^sub>1 \<leftarrow> fib' (n-unsigned 1); 
     n\<^sub>2 \<leftarrow> fib' (n-unsigned 2); 
-    return (n\<^sub>1+n\<^sub>2)     
+    Mreturn (n\<^sub>1+n\<^sub>2)     
   }) n"
 
 abbreviation fib64 :: "64 word \<Rightarrow> 64 word llM" where "fib64 \<equiv> fib"
@@ -143,10 +144,11 @@ lemma "llvm_htriple (\<upharpoonleft>uint.assn n ni) (fib ni) (\<lambda>ri. \<up
   
 prepare_code_thms (LLVM) [code] fib_def  (* Set up code equation. Required to execute semantics in Isabelle. *)
 
+(*
 term "Abs_memory []"
 
 value "map (\<lambda>n. run (fib64 n) (Abs_memory [])) [0,1,2,3]"
-
+*)
 
 (*
 lemmas [named_ss llvm_inline cong] = refl[of "numeral _"]
@@ -155,7 +157,7 @@ lemmas [named_ss llvm_inline cong] = refl[of "numeral _"]
 definition test :: "64 word \<Rightarrow> 64 word \<Rightarrow> _ llM"
 where [llvm_code]: "test a b \<equiv> doM {
 
-  return (a,b) 
+  Mreturn (a,b) 
 }"
 
 ML_val \<open>
@@ -191,7 +193,7 @@ context begin
     let (x\<^sub>2,y\<^sub>2) = p\<^sub>2;
     let dx = x\<^sub>1 - x\<^sub>2;
     let dy = y\<^sub>1 - y\<^sub>2;
-    return (dsqrt ( dx*dx + dy*dy ))
+    Mreturn (dsqrt ( dx*dx + dy*dy ))
   }"
   
   export_llvm ddist
@@ -251,7 +253,7 @@ definition my_gep_snd :: "('a::llvm_rep,'b::llvm_rep)my_pair ptr \<Rightarrow> '
 definition [llvm_code]: "add_add (a::_ word) \<equiv> doM {
   x \<leftarrow> ll_add a a;
   x \<leftarrow> ll_add x x;
-  return x
+  Mreturn x
 }"
 
 definition [llvm_code]: "test_named (a::32 word) (b::64 word) \<equiv> doM {
@@ -263,7 +265,7 @@ definition [llvm_code]: "test_named (a::32 word) (b::64 word) \<equiv> doM {
   n \<leftarrow> my_ins_fst n init;
   n \<leftarrow> my_ins_snd n init;
   
-  return b
+  Mreturn b
 }"
 
 lemma my_pair_id_struct[ll_identified_structures]: "ll_is_identified_structure ''my_pair'' TYPE((_,_)my_pair)"
@@ -284,7 +286,7 @@ export_llvm (debug) test_named file "code/test_named.ll"
 
 definition test_foo :: "(64 word \<times> 64 word ptr) ptr \<Rightarrow> 64 word \<Rightarrow> 64 word llM" 
   where [llvm_code]:
-  "test_foo a b \<equiv> return 0"
+  "test_foo a b \<equiv> Mreturn 0"
 
   export_llvm test_foo is \<open>int64_t test_foo(larray_t*, elem_t)\<close> 
   defines \<open>
@@ -331,26 +333,26 @@ lemma [ll_identified_structures]: "ll_is_identified_structure ''list_cell'' TYPE
 find_theorems "prod_insert_fst"
 
 lemma cell_insert_value:
-  "ll_insert_value (CELL x n) x' 0 = return (CELL x' n)"
-  "ll_insert_value (CELL x n) n' (Suc 0) = return (CELL x n')"
+  "ll_insert_value (CELL x n) x' 0 = Mreturn (CELL x' n)"
+  "ll_insert_value (CELL x n) n' (Suc 0) = Mreturn (CELL x n')"
 
   apply (simp_all add: ll_insert_value_def llvm_insert_value_def Let_def checked_from_val_def 
                 to_val_list_cell_def from_val_list_cell_def)
   done
 
 lemma cell_extract_value:
-  "ll_extract_value (CELL x n) 0 = return x"  
-  "ll_extract_value (CELL x n) (Suc 0) = return n"  
+  "ll_extract_value (CELL x n) 0 = Mreturn x"  
+  "ll_extract_value (CELL x n) (Suc 0) = Mreturn n"  
   apply (simp_all add: ll_extract_value_def llvm_extract_value_def Let_def checked_from_val_def 
                 to_val_list_cell_def from_val_list_cell_def)
   done
   
 find_theorems "ll_insert_value"
 
-lemma inline_return_cell[llvm_pre_simp]: "return (CELL a x) = doM {
+lemma inline_return_cell[llvm_pre_simp]: "Mreturn (CELL a x) = doM {
     r \<leftarrow> ll_insert_value init a 0;
     r \<leftarrow> ll_insert_value r x 1;
-    return r
+    Mreturn r
   }"
   apply (auto simp: cell_insert_value)
   done
@@ -364,19 +366,19 @@ lemma inline_cell_case[llvm_pre_simp]: "(case x of (CELL a n) \<Rightarrow> f a 
   apply (auto simp: cell_extract_value)
   done
   
-lemma inline_return_cell_case[llvm_pre_simp]: "doM {return (case x of (CELL a n) \<Rightarrow> f a n)} = doM {
+lemma inline_return_cell_case[llvm_pre_simp]: "doM {Mreturn (case x of (CELL a n) \<Rightarrow> f a n)} = doM {
   a \<leftarrow> ll_extract_value x 0;
   n \<leftarrow> ll_extract_value x 1;
-  return (f a n)
+  Mreturn (f a n)
 }"  
   apply (cases x)
   apply (auto simp: cell_extract_value)
   done
 
-definition [llvm_code]: "llist_append x l \<equiv> return (CELL x l)"
+definition [llvm_code]: "llist_append x l \<equiv> Mreturn (CELL x l)"
 definition [llvm_code]: "llist_split l \<equiv> doM {
   c \<leftarrow> ll_load l;
-  return (case c of CELL x n \<Rightarrow> (x,n))
+  Mreturn (case c of CELL x n \<Rightarrow> (x,n))
 }"  
 
 export_llvm 
@@ -390,15 +392,15 @@ definition [llvm_code]: "cr_big_al (n::64 word) \<equiv> doM {
   a \<leftarrow> arl_new TYPE(64 word) TYPE(64);
   (_,a) \<leftarrow> llc_while 
     (\<lambda>(n,a). ll_icmp_ult (signed_nat 0) n) 
-    (\<lambda>(n,a). doM { a \<leftarrow> arl_push_back a n; n \<leftarrow> ll_sub n (signed_nat 1); return (n,a) }) 
+    (\<lambda>(n,a). doM { a \<leftarrow> arl_push_back a n; n \<leftarrow> ll_sub n (signed_nat 1); Mreturn (n,a) }) 
     (n,a);
   
   (_,s) \<leftarrow> llc_while 
     (\<lambda>(n,s). ll_icmp_ult (signed_nat 0) n) 
-    (\<lambda>(n,s). doM { n \<leftarrow> ll_sub n (signed_nat 1); x \<leftarrow> arl_nth a n; s\<leftarrow>ll_add x s; return (n,s) }) 
+    (\<lambda>(n,s). doM { n \<leftarrow> ll_sub n (signed_nat 1); x \<leftarrow> arl_nth a n; s\<leftarrow>ll_add x s; Mreturn (n,s) }) 
     (n,signed_nat 0);
     
-  return s    
+  Mreturn s    
 }"
 
 declare Let_def[llvm_pre_simp]
@@ -411,9 +413,9 @@ definition [llvm_inline]: "llc_for_range l h c s \<equiv> doM {
   (_,s) \<leftarrow> llc_while (\<lambda>(i,s). ll_cmp (i<h)) (\<lambda>(i,s). doM { 
     s\<leftarrow>c i s; 
     i \<leftarrow> ll_add i 1; 
-    return (i,s)}
+    Mreturn (i,s)}
   ) (l,s);
-  return s
+  Mreturn s
 }"
 
 lemma llc_for_range_rule:
@@ -615,8 +617,8 @@ definition [llvm_inline]: "qs_swap A i j \<equiv> doM {
     y \<leftarrow> array_nth A j;
     array_upd A i y;
     array_upd A j x;
-    return ()
-  }) (return ())
+    Mreturn ()
+  }) (Mreturn ())
 }"
 
 definition [llvm_code]: "qs_partition A lo hi \<equiv> doM {
@@ -629,12 +631,12 @@ definition [llvm_code]: "qs_partition A lo hi \<equiv> doM {
     if Aj < pivot then doM {
       qs_swap A i j;
       i \<leftarrow> ll_add i (signed_nat 1);
-      return i
-    } else return i
+      Mreturn i
+    } else Mreturn i
   }) i;
   
   qs_swap A i hi;
-  return i
+  Mreturn i
 }"
 
 
@@ -645,10 +647,10 @@ definition [llvm_code]: "qs_quicksort A lo hi \<equiv> doM {
       quicksort (lo, p-1);
       quicksort (p+1,hi)
     } else
-      return ()
+      Mreturn ()
   
   }) (lo,hi);
-  return ()
+  Mreturn ()
 }"
 
 (* TODO: Prepare-code-thms after inlining! *)

@@ -6,14 +6,14 @@ begin
 
   subsection \<open>Auxiliary Functions\<close>
 
-  definition [llvm_inline]: "arl_initial_size \<equiv> return ((signed_nat (8::_::len word)))"
+  definition [llvm_inline]: "arl_initial_size \<equiv> Mreturn ((signed_nat (8::_::len word)))"
 
   definition arl_push_back' :: "('a::llvm_rep,'l::len2) array_list \<Rightarrow> 'a \<Rightarrow> ('a,'l) array_list llM"    
     where [llvm_inline]: "arl_push_back' al x \<equiv> doM {
       let (l,c,a) = al;
       array_upd a l x;
       l \<leftarrow> ll_add l (signed_nat 1);
-      return (l,c,a)
+      Mreturn (l,c,a)
     }"
   
       
@@ -26,9 +26,9 @@ begin
       llc_if b (doM {
           c \<leftarrow> ll_mul c (signed_nat 2);
           cok \<leftarrow> ll_icmp_sle c' c;
-          llc_if cok (return c) (return c')
+          llc_if cok (Mreturn c) (Mreturn c')
         }) 
-        (return c')
+        (Mreturn c')
     }"
   
   
@@ -39,7 +39,7 @@ begin
       a' \<leftarrow> narray_new TYPE('a) c;
       arraycpy a' a l;
       narray_free a;
-      return (l,c,a')
+      Mreturn (l,c,a')
     }"    
   
       
@@ -47,7 +47,7 @@ begin
     where [llvm_inline]: "arl_ensure_capacity c' al \<equiv> doM {
       let (l,c,a) = al;
       cok \<leftarrow> ll_icmp_sle c' c;
-      llc_if cok (return (l,c,a)) (arl_resize c' (l,c,a))
+      llc_if cok (Mreturn (l,c,a)) (arl_resize c' (l,c,a))
     }"
 
   
@@ -58,7 +58,7 @@ begin
   where [llvm_code,llvm_inline]: "arl_new_raw \<equiv> doM {
     c \<leftarrow> arl_initial_size;
     a \<leftarrow> narray_new TYPE('a) c;
-    return (signed_nat 0,c,a)
+    Mreturn (signed_nat 0,c,a)
   }"
     
   definition arl_new :: "'a::llvm_rep itself \<Rightarrow> 'l::len2 itself \<Rightarrow> ('a,'l) array_list llM"
@@ -68,7 +68,7 @@ begin
   definition arl_new_sz_raw :: "'l::len2 word \<Rightarrow> ('a::llvm_rep,'l) array_list llM"
   where [llvm_code,llvm_inline]: "arl_new_sz_raw n \<equiv> doM {
     a \<leftarrow> narray_new TYPE('a) n;
-    return (n,n,a)
+    Mreturn (n,n,a)
   }"
 
   definition arl_new_sz :: "'a::llvm_rep itself \<Rightarrow> 'l::len2 word \<Rightarrow> ('a,'l) array_list llM" 
@@ -77,14 +77,14 @@ begin
   definition arl_new_repl :: "'l::len2 word \<Rightarrow> 'a::llvm_rep \<Rightarrow> ('a,'l) array_list llM" 
     where [llvm_inline]: "arl_new_repl n x \<equiv> doM {
       a \<leftarrow> narray_new_init n x;
-      return (n,n,a)
+      Mreturn (n,n,a)
     }"
     
           
   definition arl_clear :: "('a::llvm_rep,'l::len2) array_list \<Rightarrow> ('a::llvm_rep,'l) array_list llM"
     where [llvm_code,llvm_inline]: "arl_clear al \<equiv> doM {
       let (l,c,a) = al;
-      return (signed_nat 0,c,a)
+      Mreturn (signed_nat 0,c,a)
     }"  
     
   definition arl_free :: "('a::llvm_rep,'l::len) array_list \<Rightarrow> unit llM" 
@@ -104,11 +104,11 @@ begin
     where [llvm_code,llvm_inline]: "arl_upd al i x \<equiv> doM {
       let (l,c,a) = al;
       array_upd a i x;
-      return (l,c,a)
+      Mreturn (l,c,a)
     }"
   
   definition arl_len :: "('a::llvm_rep,'l::len2) array_list \<Rightarrow> 'l word llM" 
-    where [llvm_code,llvm_inline]: "arl_len al \<equiv> let (l,c,a) = al in return l"
+    where [llvm_code,llvm_inline]: "arl_len al \<equiv> let (l,c,a) = al in Mreturn l"
     
     
   definition [llvm_code,llvm_inline]: "arl_push_back al x \<equiv> doM {
@@ -122,25 +122,25 @@ begin
     let (l,c,a) = al;
     l \<leftarrow> ll_sub l (signed_nat 1);
     r \<leftarrow> array_nth a l;
-    return (r,(l,c,a))
+    Mreturn (r,(l,c,a))
   }"
   
   definition [llvm_code,llvm_inline]: "arl_take l' al \<equiv> doM {
     let (l,c,a) = al;
-    return (l',c,a)
+    Mreturn (l',c,a)
   }"
 
   definition [llvm_code,llvm_inline]: "arl_last al \<equiv> doM {
     let (l,c,a) = al;
     l \<leftarrow> ll_sub l (signed_nat 1);
     r \<leftarrow> array_nth a l;
-    return r
+    Mreturn r
   }"
   
   definition [llvm_code,llvm_inline]: "arl_butlast al \<equiv> doM {
     let (l,c,a) = al;
     l \<leftarrow> ll_sub l (signed_nat 1);
-    return (l,c,a)
+    Mreturn (l,c,a)
   }"
   
     

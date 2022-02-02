@@ -108,7 +108,7 @@ subsection \<open>Arrays that own their Elements\<close>
     supply nao_upd_aux[simp] le_idxe_map_delD[simp] domI[simp]
     by vcg
   
-  definition [llvm_code, llvm_inline]: "nao_rejoin a i \<equiv> return ()"  
+  definition [llvm_code, llvm_inline]: "nao_rejoin a i \<equiv> Mreturn ()"  
   
   lemma nao_rejoin_aux: "i<length xs \<Longrightarrow> {0..<length xs} - (dom R - {i}) = insert i ({0..<length xs} - dom R)" by auto
   
@@ -131,7 +131,7 @@ subsection \<open>Arrays that own their Elements\<close>
     
       
   
-  definition [llvm_inline]: "nao_open a \<equiv> return ()"  
+  definition [llvm_inline]: "nao_open a \<equiv> Mreturn ()"  
     
   lemma nao_open_rl[vcg_rules]: "llvm_htriple (\<upharpoonleft>(nao_assn A R) xss a) (nao_open a) (\<lambda>_. 
     EXS xs. 
@@ -151,7 +151,7 @@ subsection \<open>Arrays that own their Elements\<close>
         x \<leftarrow> nao_nth a i;
         free x;
         i \<leftarrow> ll_add i (signed_nat 1);
-        return i
+        Mreturn i
       })
       (signed_nat 0);
       
@@ -197,7 +197,7 @@ subsection \<open>Arrays that own their Elements\<close>
   
   definition [llvm_code,llvm_inline]: "aal_new_raw n \<equiv> doM {
     a\<leftarrow>nao_new TYPE(('a::llvm_rep,'l::len2) array_list) n;
-    return (n,a)
+    Mreturn (n,a)
   }"
   
   (*abbreviation "aal_new TYPE('ll::len2) TYPE('a::llvm_rep) TYPE('l::len2) n \<equiv> aal_new_raw n :: ('ll,'a,'l) array_array_list llM"*)
@@ -235,7 +235,7 @@ subsection \<open>Arrays that own their Elements\<close>
     aa \<leftarrow> nao_nth a i;
     aa \<leftarrow> arl_push_back aa x;
     a \<leftarrow> nao_upd a i aa;
-    return (n,a)
+    Mreturn (n,a)
   }"  
 
   lemma aal_push_back_rl[vcg_rules]:
@@ -253,7 +253,7 @@ subsection \<open>Arrays that own their Elements\<close>
     aa \<leftarrow> nao_nth a i;
     (r,aa) \<leftarrow> arl_pop_back aa;
     a \<leftarrow> nao_upd a i aa;
-    return (r,(n,a))
+    Mreturn (r,(n,a))
   }"
 
   lemma aal_pop_back_rl[vcg_rules]:
@@ -272,7 +272,7 @@ subsection \<open>Arrays that own their Elements\<close>
     aa \<leftarrow> nao_nth a i;
     r \<leftarrow> arl_nth aa j;
     nao_rejoin a i;
-    return r
+    Mreturn r
   }"    
     
   lemma aal_idx_rl[vcg_rules]: "llvm_htriple 
@@ -287,7 +287,7 @@ subsection \<open>Arrays that own their Elements\<close>
     aa \<leftarrow> nao_nth a i;
     aa \<leftarrow> arl_upd aa j x;
     a \<leftarrow> nao_upd a i aa;
-    return (n,a)
+    Mreturn (n,a)
   }"
 
   lemma aal_upd_rl[vcg_rules]:
@@ -309,7 +309,7 @@ subsection \<open>Arrays that own their Elements\<close>
     aa \<leftarrow> nao_nth a i;
     r \<leftarrow> arl_len aa;
     nao_rejoin a i;
-    return r
+    Mreturn r
   }"    
     
   lemma aal_llen_rl[vcg_rules]: "llvm_htriple 
@@ -321,7 +321,7 @@ subsection \<open>Arrays that own their Elements\<close>
     
   definition [llvm_code, llvm_inline]: "aal_len na \<equiv> doM {
     let (n,a) = na;
-    return n
+    Mreturn n
   }" 
   
   lemma aal_len_rl[vcg_rules]: "llvm_htriple
@@ -336,7 +336,7 @@ subsection \<open>Arrays that own their Elements\<close>
     aa \<leftarrow> nao_nth a i;
     aa \<leftarrow> arl_take l aa;
     a \<leftarrow> nao_upd a i aa;
-    return (n,a)
+    Mreturn (n,a)
   }" 
 
   lemma aal_take_rl[vcg_rules]: "llvm_htriple

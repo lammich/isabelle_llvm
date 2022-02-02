@@ -14,6 +14,7 @@ session Isabelle_LLVM = Refine_Monadic +
     examples
     "examples/sorting"
     lib
+    "lib/MM"
     sepref
     "sepref/IICF"
     "sepref/IICF/Impl"

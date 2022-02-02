@@ -218,9 +218,9 @@ begin
   sepref_decl_impl (ismop) array_slice_swap.refine .
   
   definition ars_split :: "_ word \<Rightarrow> 'a::llvm_rep ptr \<Rightarrow> ('a ptr \<times> 'a ptr) llM" 
-    where [llvm_inline]: "ars_split i p \<equiv> doM { p\<^sub>2 \<leftarrow> ll_ofs_ptr p i; return (p,p\<^sub>2)}"
+    where [llvm_inline]: "ars_split i p \<equiv> doM { p\<^sub>2 \<leftarrow> ll_ofs_ptr p i; Mreturn (p,p\<^sub>2)}"
   definition ars_join :: "'a::llvm_rep ptr \<Rightarrow> 'a ptr \<Rightarrow> 'a ptr llM" 
-    where [llvm_inline]: "ars_join p\<^sub>1 p\<^sub>2 \<equiv> return p\<^sub>1"
+    where [llvm_inline]: "ars_join p\<^sub>1 p\<^sub>2 \<equiv> Mreturn p\<^sub>1"
   
   context begin
     interpretation llvm_prim_mem_setup .  
@@ -296,30 +296,25 @@ begin
       (a\<^sub>1,a\<^sub>2) \<leftarrow> ars_split i a;
       (r,_,_) \<leftarrow> m a\<^sub>1 a\<^sub>2;
       ars_join a\<^sub>1 a\<^sub>2;
-      return (r,a)
+      Mreturn (r,a)
     }"
 
     lemma ars_with_split_for_paper: "ars_with_split i a m = doM {
       p\<^sub>2 \<leftarrow> ll_ofs_ptr a i;
       (r, _, _) \<leftarrow> m a p\<^sub>2;
-      return (r, a)
+      Mreturn (r, a)
     }"
       unfolding ars_with_split_def ars_split_def ars_join_def
       by simp
     
-    
+      
     (* Monotonicity setup *)
     lemma ars_with_split_mono[partial_function_mono]:
-      assumes "\<And>xs\<^sub>1 xs\<^sub>2. M_mono (\<lambda>D. m D xs\<^sub>1 xs\<^sub>2)"
-      shows "M_mono (\<lambda>D. ars_with_split i a (m D))"
+      assumes "\<And>xs\<^sub>1 xs\<^sub>2. M_mono' (\<lambda>D. m D xs\<^sub>1 xs\<^sub>2)"
+      shows "M_mono' (\<lambda>D. ars_with_split i a (m D))"
       unfolding ars_with_split_def using assms
       by pf_mono_prover
-      
     
-    
-    
-    find_theorems case_prod hn_refine
-        
 
     lemma hn_WITH_SPLIT_aux:
       assumes MHN: "\<And>xs\<^sub>1 xsi\<^sub>1 xs\<^sub>2 xsi\<^sub>2. hn_refine (raw_array_slice_assn xs\<^sub>1 xsi\<^sub>1 ** raw_array_slice_assn xs\<^sub>2 xsi\<^sub>2 ** F) (mi xsi\<^sub>1 xsi\<^sub>2) (F') (R \<times>\<^sub>a raw_array_slice_assn \<times>\<^sub>a raw_array_slice_assn) (CP' xsi\<^sub>1 xsi\<^sub>2) (m xs\<^sub>1 xs\<^sub>2)"

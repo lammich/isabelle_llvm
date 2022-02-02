@@ -54,7 +54,7 @@ definition llstrcmp :: "(8 word,size_t)array_list ptr \<Rightarrow> _ \<Rightarr
     a \<leftarrow> ll_load ap;
     b \<leftarrow> ll_load bp;
     r \<leftarrow> strcmp_impl a b;
-    if r\<noteq>0 then return 1 else return 0
+    if r\<noteq>0 then Mreturn 1 else Mreturn 0
   }"
 
   

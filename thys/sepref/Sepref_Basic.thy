@@ -400,8 +400,8 @@ lemma hn_refine_post_other:
 subsubsection \<open>Return\<close>
 
 lemma hnr_RETURN_pass:
-  "hn_refine (hn_ctxt R x p) (return p) (hn_invalid R x p) R (\<lambda>r. r=p) (RETURN x)"
-  \<comment> \<open>Pass on a value from the heap as return value\<close>
+  "hn_refine (hn_ctxt R x p) (Mreturn p) (hn_invalid R x p) R (\<lambda>r. r=p) (RETURN x)"
+  \<comment> \<open>Pass on a value from the heap as Mreturn value\<close>
   apply (subst invalidate_clone')
   apply rule unfolding hn_ctxt_def
   apply vcg
@@ -409,7 +409,7 @@ lemma hnr_RETURN_pass:
 
 lemma hnr_RETURN_pure:
   assumes "(c,a)\<in>R"
-  shows "hn_refine emp (return c) emp (pure R) (\<lambda>r. r=c) (RETURN a)"
+  shows "hn_refine emp (Mreturn c) emp (pure R) (\<lambda>r. r=c) (RETURN a)"
   \<comment> \<open>Return pure value\<close>
   unfolding hn_refine_def using assms
   supply [simp] = pure_def
@@ -442,20 +442,20 @@ lemma MK_FREEI[intro?]: "\<lbrakk>\<And>a c. llvm_htriple (R a c) (f c) (\<lambd
 lemma MK_FREED: "MK_FREE R f \<Longrightarrow> llvm_htriple (R a c) (f c) (\<lambda>_. \<box>)"
   by (auto simp: MK_FREE_def)
   
-lemma mk_free_pure: "MK_FREE (pure R) (\<lambda>_. return ())"
+lemma mk_free_pure: "MK_FREE (pure R) (\<lambda>_. Mreturn ())"
   apply rule unfolding pure_def
   by vcg
 
 (*
   TODO: Should be synthesized once relations are known
 *)
-lemma mk_free_is_pure: "is_pure A \<Longrightarrow> MK_FREE A (\<lambda>_. return ())"
+lemma mk_free_is_pure: "is_pure A \<Longrightarrow> MK_FREE A (\<lambda>_. Mreturn ())"
   apply rule unfolding pure_def is_pure_def
   by vcg
 
   
   
-lemma mk_free_invalid: "MK_FREE (invalid_assn R) (\<lambda>_. return ())"
+lemma mk_free_invalid: "MK_FREE (invalid_assn R) (\<lambda>_. Mreturn ())"
   apply rule unfolding invalid_assn_def
   by vcg
 
@@ -476,7 +476,7 @@ lemma hnr_bind:
     "\<And>x x'. RETURN x \<le> m \<Longrightarrow> CP\<^sub>1 x' \<Longrightarrow> hn_refine (hn_ctxt Rh x x' ** \<Gamma>1) (f' x') (\<Gamma>2 x x') R (CP\<^sub>2 x') (f x)"
   assumes IMP: "\<And>x x'. \<Gamma>2 x x' \<turnstile> hn_ctxt Rx x x' ** \<Gamma>'"
   assumes MKF: "MK_FREE Rx fr"
-  shows "hn_refine \<Gamma> (doM {x\<leftarrow>m'; r \<leftarrow> f' x; fr x; return r}) \<Gamma>' R (\<lambda>r. \<exists>x'. CP\<^sub>1 x' \<and> CP\<^sub>2 x' r) (m\<bind>f)"
+  shows "hn_refine \<Gamma> (doM {x\<leftarrow>m'; r \<leftarrow> f' x; fr x; Mreturn r}) \<Gamma>' R (\<lambda>r. \<exists>x'. CP\<^sub>1 x' \<and> CP\<^sub>2 x' r) (m\<bind>f)"
   apply rule
   supply [vcg_rules] = D1[THEN hn_refineD]
   supply [simp] = pw_bind_nofail
@@ -515,7 +515,7 @@ lemma hnr_bind_manual_free:
   assumes D1: "hn_refine \<Gamma> m' \<Gamma>1 Rh CP\<^sub>1 m"
   assumes D2: 
     "\<And>x x'. RETURN x \<le> m \<Longrightarrow> CP\<^sub>1 x' \<Longrightarrow> hn_refine (hn_ctxt Rh x x' ** \<Gamma>1) (f' x') (\<Gamma>') R (CP\<^sub>2 x') (f x)"
-  shows "hn_refine \<Gamma> (m'\<bind>f') \<Gamma>' R (\<lambda>r. \<exists>x'. CP\<^sub>1 x' \<and> CP\<^sub>2 x' r) (m\<bind>f)"
+  shows "hn_refine \<Gamma> (Mbind m' f') \<Gamma>' R (\<lambda>r. \<exists>x'. CP\<^sub>1 x' \<and> CP\<^sub>2 x' r) (m\<bind>f)"
   apply rule
   supply [vcg_rules] = D1[THEN hn_refineD]
   supply [simp] = pw_bind_nofail
@@ -545,23 +545,20 @@ lemma hn_refine_alt: "hn_refine Fpre c Fpost P CP m \<equiv> nofail m \<longrigh
   by (auto simp: sep_conj_commute)
 
 
-term "Monad.REC  "
-find_theorems "Monad.REC"
-  
 lemma hnr_RECT_cp:
   assumes S: "\<And>cf af ax px. \<lbrakk>C px;
     \<And>ax px. C px \<Longrightarrow> hn_refine (hn_ctxt Rx ax px ** F) (cf px) (F' ax px) Ry (CP px) (af ax)\<rbrakk> 
     \<Longrightarrow> hn_refine (hn_ctxt Rx ax px ** F) (cB cf px) (F' ax px) Ry (CP px) (aB af ax)"
-  assumes M: "(\<And>x. M.mono_body (\<lambda>f. cB f x))"
+  assumes M: "M_mono_body cB"
   assumes C: "C px"
   shows "hn_refine 
-    (hn_ctxt Rx ax px ** F) (Monad.REC cB px) (F' ax px) Ry (CP px) (RECT aB ax)"
-  unfolding RECT_def Monad.REC_def
+    (hn_ctxt Rx ax px ** F) (MMonad.REC cB px) (F' ax px) Ry (CP px) (RECT aB ax)"
+  unfolding RECT_def 
 proof (simp add: , intro conjI impI)
   assume "trimono aB"
   hence "flatf_mono_ge aB" by (simp add: trimonoD)
   have "\<forall>ax px. C px \<longrightarrow>
-    hn_refine (hn_ctxt Rx ax px ** F) (M.fixp_fun cB px) (F' ax px) Ry (CP px)
+    hn_refine (hn_ctxt Rx ax px ** F) (MMonad.REC cB px) (F' ax px) Ry (CP px)
       (flatf_gfp aB ax)"
       
     apply (rule flatf_ord.fixp_induct[OF _ \<open>flatf_mono_ge aB\<close>])  
@@ -573,31 +570,34 @@ proof (simp add: , intro conjI impI)
 
     apply clarsimp
     
-    apply (subst M.mono_body_fixp[of cB, OF M])
+    apply (subst MMonad.REC_unfold[of cB, OF M])
     apply (rule S)
     apply blast
     apply blast
     done
-  thus "hn_refine (hn_ctxt Rx ax px ** F) (M.fixp_fun cB px) (F' ax px) Ry (CP px) (flatf_gfp aB ax)" 
+  thus "hn_refine (hn_ctxt Rx ax px ** F) (MMonad.REC cB px) (F' ax px) Ry (CP px) (flatf_gfp aB ax)" 
     using C
     by simp
 qed
-
-
+  
+  
+  
+  
+    
 
 lemma hnr_RECT:
   assumes S: "\<And>cf af ax px. \<lbrakk>
     \<And>ax px. hn_refine (hn_ctxt Rx ax px ** F) (cf px) (F' ax px) Ry (CP px) (af ax)\<rbrakk> 
     \<Longrightarrow> hn_refine (hn_ctxt Rx ax px ** F) (cB cf px) (F' ax px) Ry (CP px) (aB af ax)"
-  assumes M: "(\<And>x. M.mono_body (\<lambda>f. cB f x))"
+  assumes M: "M_mono_body cB"
   shows "hn_refine 
-    (hn_ctxt Rx ax px ** F) (Monad.REC cB px) (F' ax px) Ry (CP px) (RECT aB ax)"
-  unfolding RECT_def Monad.REC_def
+    (hn_ctxt Rx ax px ** F) (MMonad.REC cB px) (F' ax px) Ry (CP px) (RECT aB ax)"
+  unfolding RECT_def 
 proof (simp, intro conjI impI)
   assume "trimono aB"
   hence "flatf_mono_ge aB" by (simp add: trimonoD)
   have "\<forall>ax px. 
-    hn_refine (hn_ctxt Rx ax px ** F) (M.fixp_fun cB px) (F' ax px) Ry (CP px) 
+    hn_refine (hn_ctxt Rx ax px ** F) (MMonad.REC cB px) (F' ax px) Ry (CP px) 
       (flatf_gfp aB ax)"
       
     apply (rule flatf_ord.fixp_induct[OF _ \<open>flatf_mono_ge aB\<close>])  
@@ -608,11 +608,11 @@ proof (simp, intro conjI impI)
     apply (auto simp: hn_refine_alt) []
 
     apply clarsimp
-    apply (subst M.mono_body_fixp[of cB, OF M])
+    apply (subst MMonad.REC_unfold[of cB, OF M])
     apply (rule S)
     apply blast
     done
-  thus "hn_refine (hn_ctxt Rx ax px ** F) (M.fixp_fun cB px) (F' ax px) Ry (CP px) (flatf_gfp aB ax)" 
+  thus "hn_refine (hn_ctxt Rx ax px ** F) (MMonad.REC cB px) (F' ax px) Ry (CP px) (flatf_gfp aB ax)" 
     by simp
 qed
 
@@ -653,19 +653,19 @@ proof -
   show ?thesis unfolding hn_ctxt_def by rule vcg
 qed  
 
-lemma MERGE_triv: "MERGE \<Gamma> (return ()) \<Gamma> (return ()) \<Gamma>"
+lemma MERGE_triv: "MERGE \<Gamma> (Mreturn ()) \<Gamma> (Mreturn ()) \<Gamma>"
   apply (rule) unfolding FRI_END_def by vcg
 
-lemma MERGE_END: "MERGE FRI_END (return ()) FRI_END (return ()) \<box>"
+lemma MERGE_END: "MERGE FRI_END (Mreturn ()) FRI_END (Mreturn ()) \<box>"
   apply (rule) unfolding FRI_END_def by vcg
 
-lemma MERGE1_eq: "MERGE1 P (\<lambda>_. return ()) P (\<lambda>_. return ()) P"  
+lemma MERGE1_eq: "MERGE1 P (\<lambda>_. Mreturn ()) P (\<lambda>_. Mreturn ()) P"  
   by rule vcg
   
 lemma MERGE1_invalids: 
   assumes "MK_FREE R f"  
-  shows "MERGE1 (invalid_assn R) (\<lambda>_. return ()) R f (invalid_assn R)" (is ?left)
-    and "MERGE1 R f (invalid_assn R) (\<lambda>_. return ()) (invalid_assn R)" (is ?right)
+  shows "MERGE1 (invalid_assn R) (\<lambda>_. Mreturn ()) R f (invalid_assn R)" (is ?left)
+    and "MERGE1 R f (invalid_assn R) (\<lambda>_. Mreturn ()) (invalid_assn R)" (is ?right)
 proof -
   note [vcg_rules] = MK_FREED[OF assms]
 
@@ -688,7 +688,7 @@ qed
 subsection \<open>ML-Level Utilities\<close>
 ML \<open>
   signature SEPREF_BASIC = sig
-    (* Destroy lambda term, return function to reconstruct. Bound var is replaced by free. *)
+    (* Destroy lambda term, Mreturn function to reconstruct. Bound var is replaced by free. *)
     val dest_lambda_rc: Proof.context -> term -> ((term * (term -> term)) * Proof.context)
     (* Apply function under lambda. Bound var is replaced by free. *)
     val apply_under_lambda: (Proof.context -> term -> term) -> Proof.context -> term -> term

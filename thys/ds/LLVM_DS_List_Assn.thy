@@ -34,11 +34,11 @@ begin
   
   subsection \<open>Tags\<close>  
   text \<open>Ghost instructions to guide the VCG and Frame Inference\<close>
-  lemma entails_is_noop_htriple: "(A \<turnstile> B) \<Longrightarrow> llvm_htriple A (return x) (\<lambda>_. B)"
+  lemma entails_is_noop_htriple: "(A \<turnstile> B) \<Longrightarrow> llvm_htriple A (Mreturn x) (\<lambda>_. B)"
     by (auto simp: htriple_def wpa_return elim: STATE_monoI)
 
   lemma tag_op_ruleI: 
-    assumes "tag_op = return x"  
+    assumes "tag_op = Mreturn x"  
     assumes "A\<turnstile>B"
     shows "llvm_htriple A tag_op (\<lambda>_. B)"
     using entails_is_noop_htriple assms by metis
@@ -56,7 +56,7 @@ begin
     by (smt entails_eq_iff entails_pureI extract_pure_assn pure_part_pureD pure_true_conv sep.add.right_neutral)  
     
   definition tag_split_pure :: "'b::llvm_rep \<Rightarrow> unit llM" 
-    where "tag_split_pure x = return ()"  
+    where "tag_split_pure x = Mreturn ()"  
 
   lemma tag_split_pure_rl[vcg_rules]:
     shows "llvm_htriple 
@@ -75,7 +75,7 @@ begin
     
         
   definition tag_bury_pure :: "'b::llvm_rep \<Rightarrow> unit llM" 
-    where "tag_bury_pure x = return ()"  
+    where "tag_bury_pure x = Mreturn ()"  
 
   lemma tag_bury_pure_rl[vcg_rules]:
     shows "llvm_htriple 
@@ -322,7 +322,7 @@ begin
   subsection \<open>Tags for List-Assertion\<close>
   
   definition tag_la_upd :: "'b::llvm_rep \<Rightarrow> 'a word \<Rightarrow> 'd::llvm_rep \<Rightarrow> unit llM" 
-    where "tag_la_upd p i y = return ()"  
+    where "tag_la_upd p i y = Mreturn ()"  
 
   lemma tag_la_upd_rl[vcg_rules]:
     shows "llvm_htriple 
@@ -334,7 +334,7 @@ begin
     
 
   definition tag_la_join :: "'b::llvm_rep \<Rightarrow> 'a word \<Rightarrow> 'd::llvm_rep \<Rightarrow> unit llM" 
-    where "tag_la_join p i y = return ()"
+    where "tag_la_join p i y = Mreturn ()"
     
   lemma tag_la_join_rl[vcg_rules]:
     shows "llvm_htriple 
@@ -344,7 +344,7 @@ begin
     supply [vcg_rules] = tag_op_ruleI[OF tag_la_join_def[where i=ii] list_assn_join[where i=i]]
     by vcg  
     
-  definition "tag_la_extract p i = return ()"  
+  definition "tag_la_extract p i = Mreturn ()"  
 
       
   (*
@@ -363,7 +363,7 @@ begin
     done
 
         
-  definition "tag_la_push_back p x = return ()"    
+  definition "tag_la_push_back p x = Mreturn ()"    
   
   lemma tag_la_push_back_rl[vcg_rules]:
     "llvm_htriple 
@@ -373,7 +373,7 @@ begin
     supply [vcg_rules] = tag_op_ruleI[OF tag_la_push_back_def[where p=p] list_assn_push_back]
     by vcg
 
-  definition "tag_la_pop_back p = return ()"
+  definition "tag_la_pop_back p = Mreturn ()"
   lemma tag_la_pop_back_rl[vcg_rules]:
     "llvm_htriple
       (\<upharpoonleft>AA ys p ** \<upharpoonleft>(list_assn A R) xs ys ** \<up>(xs\<noteq>[] \<and> R (length xs-1) = None))
@@ -386,7 +386,7 @@ begin
   subsection \<open>Pure List Assertion\<close>  
   (* TODO: is_pure list_assn rule *)
   
-  definition "tag_la_exfree_pure p i = return ()"  
+  definition "tag_la_exfree_pure p i = Mreturn ()"  
 
   lemma bury_pure_red: "PRECOND (SOLVE_ASM (is_pure A)) \<Longrightarrow> is_sep_red \<box> \<box> (\<upharpoonleft>A a c) \<box>"
     unfolding vcg_tag_defs

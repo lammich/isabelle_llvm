@@ -281,10 +281,12 @@ context sort_impl_context begin
     
 
   (* Approximation of what would be generated for pure elements *)      
-  thm is_unguarded_insert_impl_def[unfolded eo_extract_impl_def cmpo_v_idx_impl_def, simplified bind_laws split]  
+  thm is_unguarded_insert_impl_def[unfolded eo_extract_impl_def cmpo_v_idx_impl_def, simplified M_monad_laws split]  
   
   (* For presentation in paper *)
-  lemma "is_unguarded_insert_impl \<equiv> \<lambda>xs _ i. doM {
+  lemma 
+    includes monad_syntax_M
+    shows "is_unguarded_insert_impl \<equiv> \<lambda>xs _ i. doM {
      x \<leftarrow> array_nth xs i;
      (xs, i) \<leftarrow> llc_while (\<lambda>(xs, i). doM {
        bi \<leftarrow> ll_sub i 1;
@@ -302,7 +304,7 @@ context sort_impl_context begin
     (xs, i);
     array_upd xs i x
   }"
-    using is_unguarded_insert_impl_def[unfolded M_CONST_def eo_extract_impl_def cmpo_v_idx_impl_def, simplified bind_laws split] 
+    using is_unguarded_insert_impl_def[unfolded M_CONST_def eo_extract_impl_def cmpo_v_idx_impl_def, simplified M_monad_laws split] 
     by simp
     
 end    
@@ -431,18 +433,6 @@ context weak_ordering begin
     apply (safe;clarsimp)
     by (metis add_diff_cancel_left' diff_less_mono le_iff_add)
 
-    (*
-  lemma is_insert_sorts_one_more[param_fo, THEN nres_relD,refine]: 
-    "(is_insert_spec GUARDED, sort_one_more_spec GUARDED) 
-        \<in> \<langle>Id\<rangle>list_rel \<rightarrow> nat_rel \<rightarrow> \<langle>\<langle>Id\<rangle>list_rel\<rangle>nres_rel"
-    apply (intro fun_relI nres_relI; auto)    
-    unfolding sort_one_more_spec_def is_insert_spec_alt is_insert_spec_aux_def
-    apply (clarsimp simp: pw_le_iff refine_pw_simps)
-    apply (intro conjI)
-    subgoal sledgehammer sorry
-    subgoal apply (simp add: list_eq_iff_nth_eq)
-    *)
-    
         
   lemma is_insert_sorts_one_more[param_fo, THEN nres_relD,refine]: 
     "(is_insert_spec GUARDED, sort_one_more_spec GUARDED) 

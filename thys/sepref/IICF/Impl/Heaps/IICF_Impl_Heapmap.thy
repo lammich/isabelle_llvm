@@ -451,7 +451,7 @@ begin
 
     
   global_interpretation 
-    HM: hm_impl id "snat_assn' TYPE('l)" "snat_assn' TYPE('l)" return ll_icmp_sle ll_icmp_slt "TYPE('l::len2)" 
+    HM: hm_impl id "snat_assn' TYPE('l)" "snat_assn' TYPE('l)" Mreturn ll_icmp_sle ll_icmp_slt "TYPE('l::len2)" 
     defines 
            hm_empty_impl = HM.hm_empty_impl
        and hm_append_impl = HM.hm_append_impl
@@ -576,7 +576,7 @@ begin
   begin
   
     definition "snatb (x::nat) \<equiv> x"
-    lemma snatb_hnr: "(return,RETURN o snatb) \<in> [\<lambda>x. x<N]\<^sub>a snat_assn\<^sup>k \<rightarrow> snatb_assn N"
+    lemma snatb_hnr: "(Mreturn,RETURN o snatb) \<in> [\<lambda>x. x<N]\<^sub>a snat_assn\<^sup>k \<rightarrow> snatb_assn N"
       unfolding snatb_def
       by sepref_to_hoare vcg
   

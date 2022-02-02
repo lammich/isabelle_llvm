@@ -10,7 +10,7 @@ definition ASSN_ANNOT :: "('a \<Rightarrow> 'ai \<Rightarrow> assn) \<Rightarrow
 context fixes A :: "'a \<Rightarrow> 'ai \<Rightarrow> assn" begin
   sepref_register "PR_CONST (ASSN_ANNOT A)"
   lemma [def_pat_rules]: "ASSN_ANNOT$A \<equiv> UNPROTECT (ASSN_ANNOT A)" by simp
-  lemma [sepref_fr_rules]: "(return o (\<lambda>x. x), RETURN o PR_CONST (ASSN_ANNOT A)) \<in> A\<^sup>d\<rightarrow>\<^sub>aA"
+  lemma [sepref_fr_rules]: "(Mreturn o (\<lambda>x. x), RETURN o PR_CONST (ASSN_ANNOT A)) \<in> A\<^sup>d\<rightarrow>\<^sub>aA"
     by sepref_to_hoare vcg
     
 end  
@@ -660,7 +660,7 @@ definition ll_not :: "'a::len word \<Rightarrow> 'a word llM" where
   
 context llvm_prim_arith_setup begin
   
-  lemma ll_not_normalize[vcg_normalize_simps]: "ll_not a = return (~~a)"
+  lemma ll_not_normalize[vcg_normalize_simps]: "ll_not a = Mreturn (~~a)"
     unfolding ll_not_def
     supply [simp] = NOT_eq
     by vcg_normalize
@@ -780,23 +780,23 @@ lemma hn_sint_0[sepref_import_param]:
   by (auto simp: sint_rel_def sint.rel_def in_br_conv)
 
 lemma hn_sint_1[sepref_fr_rules]:
-  "LENGTH('a)\<noteq>1 \<Longrightarrow> hn_refine \<box> (return 1) \<box> (sint_assn' TYPE('a::len)) (\<lambda>_. True) (RETURN$PR_CONST (sint_const TYPE('a) 1))"
+  "LENGTH('a)\<noteq>1 \<Longrightarrow> hn_refine \<box> (Mreturn 1) \<box> (sint_assn' TYPE('a::len)) (\<lambda>_. True) (RETURN$PR_CONST (sint_const TYPE('a) 1))"
   apply sepref_to_hoare unfolding sint_rel_def sint.rel_def in_br_conv by vcg
 
 lemma hn_sint_minus_1[sepref_fr_rules]:
-  "hn_refine \<box> (return (-1)) \<box> (sint_assn' TYPE('a::len)) (\<lambda>_. True) (RETURN$PR_CONST (sint_const TYPE('a) (-1)))"
+  "hn_refine \<box> (Mreturn (-1)) \<box> (sint_assn' TYPE('a::len)) (\<lambda>_. True) (RETURN$PR_CONST (sint_const TYPE('a) (-1)))"
   apply sepref_to_hoare unfolding sint_rel_def sint.rel_def in_br_conv by vcg
   
 lemma hn_sint_numeral[sepref_fr_rules]:
   "\<lbrakk>numeral n \<in> sints LENGTH('a)\<rbrakk> \<Longrightarrow> 
-    hn_refine \<box> (return (numeral n)) \<box> (sint_assn' TYPE('a::len)) (\<lambda>_. True) (RETURN$(PR_CONST (sint_const TYPE('a) (numeral n))))"
+    hn_refine \<box> (Mreturn (numeral n)) \<box> (sint_assn' TYPE('a::len)) (\<lambda>_. True) (RETURN$(PR_CONST (sint_const TYPE('a) (numeral n))))"
   apply sepref_to_hoare unfolding sint_rel_def sint.rel_def in_br_conv 
   apply vcg'
   by (auto simp: sbintrunc_mod2p min_sint_def max_sint_def ll_const_signed_aux)
 
 lemma hn_sint_minus_numeral[sepref_fr_rules]:
   "\<lbrakk>-numeral n \<in> sints LENGTH('a)\<rbrakk> \<Longrightarrow> 
-    hn_refine \<box> (return (-numeral n)) \<box> (sint_assn' TYPE('a::len)) (\<lambda>_. True) (RETURN$(PR_CONST (sint_const TYPE('a) (-numeral n))))"
+    hn_refine \<box> (Mreturn (-numeral n)) \<box> (sint_assn' TYPE('a::len)) (\<lambda>_. True) (RETURN$(PR_CONST (sint_const TYPE('a) (-numeral n))))"
   apply sepref_to_hoare unfolding sint_rel_def sint.rel_def in_br_conv 
   apply vcg'
   apply (auto simp: sbintrunc_mod2p min_sint_def max_sint_def ll_const_signed_aux)
@@ -909,14 +909,14 @@ lemma fold_unat:
 
   
 lemma hn_unat_0[sepref_fr_rules]:
-  "hn_refine \<box> (return 0) \<box> (unat_assn' TYPE('a::len)) (\<lambda>_. True) (RETURN$PR_CONST (unat_const TYPE('a) 0))"
+  "hn_refine \<box> (Mreturn 0) \<box> (unat_assn' TYPE('a::len)) (\<lambda>_. True) (RETURN$PR_CONST (unat_const TYPE('a) 0))"
   apply sepref_to_hoare
   unfolding unat_rel_def unat.rel_def in_br_conv
   apply vcg
   done
   
 lemma hn_unat_1[sepref_fr_rules]:
-  "hn_refine \<box> (return 1) \<box> (unat_assn' TYPE('a::len)) (\<lambda>_. True) (RETURN$PR_CONST (unat_const TYPE('a) 1))"
+  "hn_refine \<box> (Mreturn 1) \<box> (unat_assn' TYPE('a::len)) (\<lambda>_. True) (RETURN$PR_CONST (unat_const TYPE('a) 1))"
   apply sepref_to_hoare
   unfolding unat_rel_def unat.rel_def in_br_conv
   apply vcg
@@ -925,7 +925,7 @@ lemma hn_unat_1[sepref_fr_rules]:
   
 lemma hn_unat_numeral[sepref_fr_rules]:
   "\<lbrakk>numeral n \<in> unats LENGTH('a)\<rbrakk> \<Longrightarrow> 
-    hn_refine \<box> (return (numeral n)) \<box> (unat_assn' TYPE('a::len)) (\<lambda>_. True) (RETURN$(PR_CONST (unat_const TYPE('a) (numeral n))))"
+    hn_refine \<box> (Mreturn (numeral n)) \<box> (unat_assn' TYPE('a::len)) (\<lambda>_. True) (RETURN$(PR_CONST (unat_const TYPE('a) (numeral n))))"
   apply sepref_to_hoare unfolding unat_rel_def unat.rel_def in_br_conv 
   apply vcg'
   using max_unat_def take_bit_nat_eq_self by force
@@ -1057,7 +1057,7 @@ lemma snat_invar_numeral: "\<lbrakk> numeral a < max_snat LENGTH('a::len2) \<rbr
   
   
 lemma hn_snat_0[sepref_fr_rules]:
-  "hn_refine \<box> (return 0) \<box> (snat_assn' TYPE('a::len2)) (\<lambda>_. True) (RETURN$PR_CONST (snat_const TYPE('a) 0))"
+  "hn_refine \<box> (Mreturn 0) \<box> (snat_assn' TYPE('a::len2)) (\<lambda>_. True) (RETURN$PR_CONST (snat_const TYPE('a) 0))"
   apply sepref_to_hoare
   unfolding snat_rel_def snat.rel_def in_br_conv
   supply [simp] = snat_invar_0
@@ -1065,7 +1065,7 @@ lemma hn_snat_0[sepref_fr_rules]:
   done
   
 lemma hn_snat_1[sepref_fr_rules]:
-  "hn_refine \<box> (return 1) \<box> (snat_assn' TYPE('a::len2)) (\<lambda>_. True) (RETURN$PR_CONST (snat_const TYPE('a) 1))"
+  "hn_refine \<box> (Mreturn 1) \<box> (snat_assn' TYPE('a::len2)) (\<lambda>_. True) (RETURN$PR_CONST (snat_const TYPE('a) 1))"
   apply sepref_to_hoare
   unfolding snat_rel_def snat.rel_def in_br_conv
   supply [simp] = snat_invar_1
@@ -1075,7 +1075,7 @@ lemma hn_snat_1[sepref_fr_rules]:
   
 lemma hn_snat_numeral[sepref_fr_rules]:
   "\<lbrakk>numeral n \<in> snats LENGTH('a)\<rbrakk> \<Longrightarrow> 
-    hn_refine \<box> (return (numeral n)) \<box> (snat_assn' TYPE('a::len2)) (\<lambda>_. True) (RETURN$(PR_CONST (snat_const TYPE('a) (numeral n))))"
+    hn_refine \<box> (Mreturn (numeral n)) \<box> (snat_assn' TYPE('a::len2)) (\<lambda>_. True) (RETURN$(PR_CONST (snat_const TYPE('a) (numeral n))))"
   apply sepref_to_hoare unfolding snat_rel_def snat.rel_def in_br_conv 
   supply [simp] = snat_invar_numeral
   apply vcg'
@@ -1143,7 +1143,7 @@ proof -
 
   show ?thesis
   proof (sepref_to_hoare, vcg)
-    fix bi ai :: \<open>'a word\<close> and  a b asf and s :: llvm_memory
+    fix bi ai :: \<open>'a word\<close> and  a b asf and s :: "llvm_val memory"
     assume
        le: \<open>b < LENGTH('a)\<close>  \<open>a << b < max_snat LENGTH('a)\<close> and
        a: \<open>(ai, a) \<in> snat_rel\<close> and
@@ -1201,12 +1201,12 @@ proof -
      using le le' a b state
      unfolding snat_rel_def snat.rel_def br_def
      by (auto simp: br_def snat_def ll_shl_def wp_return
-        op_lift_arith2_def Let_def fcheck_def shift_ovf_def word_to_lint_to_uint_conv bitSHL'_def
+        op_lift_arith2_def Let_def shift_ovf_def word_to_lint_to_uint_conv bitSHL'_def
         nat_div_distrib nat_power_eq pred_lift_merge_simps sint_eq_uint max_snat_def
           cnv_snat_to_uint(1) in_br_conv snat.rel_def snat_invar_def
           POSTCOND_def STATE_extract(2) shiftr_div_2n 
        uint_shiftl exists_pure_conv)
-   show \<open>wpa (amemory_addrs asf) (ll_shl ai bi)
+   show \<open>wpa ( asf) (ll_shl ai bi)
          (\<lambda>r. POSTCOND asf
                ((\<up>((ai, a) \<in> snat_rel) \<and>*
                  \<up>((bi, b) \<in> snat_rel) \<and>*
@@ -1216,7 +1216,7 @@ proof -
      using le a b state
      unfolding snat_rel_def snat.rel_def br_def
      apply (auto simp: br_def snat_def ll_shl_def wpa_return
-        op_lift_arith2_def Let_def fcheck_def shift_ovf_def word_to_lint_to_uint_conv bitSHL'_def
+        op_lift_arith2_def Let_def shift_ovf_def word_to_lint_to_uint_conv bitSHL'_def
         nat_div_distrib nat_power_eq pred_lift_merge_simps sint_eq_uint max_snat_def
         cnv_snat_to_uint(1) in_br_conv snat.rel_def snat_invar_def
       simp flip: word_to_lint_shl nat_uint_eq)
@@ -1527,7 +1527,7 @@ lemma hn_if_aux:
   assumes MERGE: "MERGE \<Gamma>2b fb \<Gamma>2c fc \<Gamma>'"
   assumes CP_JOIN: "CP_simplify (CP_JOIN CP\<^sub>1 CP\<^sub>2) CP'"
   shows "hn_refine \<Gamma> 
-    (llc_if a' (doM {r\<leftarrow>b'; fb; return r}) (doM {r\<leftarrow>c'; fc; return r})) 
+    (llc_if a' (doM {r\<leftarrow>b'; fb; Mreturn r}) (doM {r\<leftarrow>c'; fc; Mreturn r})) 
     \<Gamma>' R CP' (if a then b else c)"
   apply (rule hn_refine_nofailI)  
   apply (rule hn_refine_cons_pre[OF P])
@@ -1571,7 +1571,7 @@ lemma hn_if[sepref_comb_rules]:
   assumes MERGE: "TERM If \<Longrightarrow> MERGE \<Gamma>2b fb \<Gamma>2c fc \<Gamma>'"
   assumes CP_JOIN: "CP_simplify (CP_JOIN CP\<^sub>1 CP\<^sub>2) CP'"
   shows "hn_refine \<Gamma> 
-    (llc_if a' (doM {r\<leftarrow>b'; fb; return r}) (doM {r\<leftarrow>c'; fc; return r})) 
+    (llc_if a' (doM {r\<leftarrow>b'; fb; Mreturn r}) (doM {r\<leftarrow>c'; fc; Mreturn r})) 
     \<Gamma>' R CP' (If$a$b$c)"
   using P RT RE MERGE[OF TERMI] CP_JOIN
   unfolding APP_def PROTECT2_def 
@@ -1646,7 +1646,7 @@ lemma hn_monadic_WHILE_aux:
   assumes f_fr: "\<And>s' s. \<Gamma>f s' s \<turnstile> hn_ctxt Rsf s' s ** \<Gamma>"
   assumes free: "MK_FREE Rsf fr"
   (*assumes PREC: "precise Rs"*)
-  shows "hn_refine (P) (llc_while b (\<lambda>s. doM {r \<leftarrow> f s; fr s; return r}) s\<^sub>0) (hn_invalid Rs s' s\<^sub>0 ** \<Gamma>) Rs (CP\<^sup>*\<^sup>* s\<^sub>0) (monadic_WHILEIT I b' f' s')"
+  shows "hn_refine (P) (llc_while b (\<lambda>s. doM {r \<leftarrow> f s; fr s; Mreturn r}) s\<^sub>0) (hn_invalid Rs s' s\<^sub>0 ** \<Gamma>) Rs (CP\<^sup>*\<^sup>* s\<^sub>0) (monadic_WHILEIT I b' f' s')"
   apply1 (rule hn_refine_cons_pre[OF FR])
   apply (rule hn_refine_add_invalid)
   
@@ -1687,7 +1687,7 @@ lemma hn_monadic_WHILE_aux:
     focus apply pf_mono_prover solved
     applyS blast
     solved
-  subgoal by (simp add: llc_while_def mwhile_def llc_if_def cong: if_cong)
+  subgoal by (simp add: llc_while_def Mwhile_def llc_if_def cong: if_cong)
   subgoal ..
   subgoal ..
   done
@@ -1718,7 +1718,7 @@ lemma hn_monadic_WHILE_lin[sepref_comb_rules]:
   assumes free: "TERM (monadic_WHILEIT,''free-old-state'') \<Longrightarrow> MK_FREE Rsf fr"
   shows "hn_refine 
     P 
-    (llc_while b (\<lambda>s. doM {r \<leftarrow> f s; fr s; return r}) s) 
+    (llc_while b (\<lambda>s. doM {r \<leftarrow> f s; fr s; Mreturn r}) s) 
     (hn_invalid Rs s' s ** \<Gamma>)
     Rs 
     (CP'$s)
@@ -1875,13 +1875,13 @@ lemma hn_case_prod_simple'[sepref_comb_rules]:
     
     
 lemma hn_Pair[sepref_fr_rules]: "
-  (uncurry (return oo Pair), uncurry (RETURN oo Pair)) \<in> [\<lambda>_. True]\<^sub>c A\<^sup>d *\<^sub>a B\<^sup>d \<rightarrow> A\<times>\<^sub>aB [\<lambda>(x\<^sub>1,x\<^sub>2) r. r=(x\<^sub>1,x\<^sub>2)]\<^sub>c"
+  (uncurry (Mreturn oo Pair), uncurry (RETURN oo Pair)) \<in> [\<lambda>_. True]\<^sub>c A\<^sup>d *\<^sub>a B\<^sup>d \<rightarrow> A\<times>\<^sub>aB [\<lambda>(x\<^sub>1,x\<^sub>2) r. r=(x\<^sub>1,x\<^sub>2)]\<^sub>c"
   by sepref_to_hoare vcg
     
 (*
-lemma fst_hnr[sepref_fr_rules]: "(return o fst,RETURN o fst) \<in> (prod_assn A B)\<^sup>d \<rightarrow>\<^sub>a A"
+lemma fst_hnr[sepref_fr_rules]: "(Mreturn o fst,RETURN o fst) \<in> (prod_assn A B)\<^sup>d \<rightarrow>\<^sub>a A"
   by sepref_to_hoare vcg
-lemma snd_hnr[sepref_fr_rules]: "(return o snd,RETURN o snd) \<in> (prod_assn A B)\<^sup>d \<rightarrow>\<^sub>a B"
+lemma snd_hnr[sepref_fr_rules]: "(Mreturn o snd,RETURN o snd) \<in> (prod_assn A B)\<^sup>d \<rightarrow>\<^sub>a B"
   by sepref_to_hoare sep_auto
 *)
 
@@ -1913,12 +1913,12 @@ begin
   
   definition "option_assn a c \<equiv> if c=dflt then \<up>(a=None) else EXS aa. \<up>(a=Some aa) ** A aa c"
   
-  lemma hn_None[sepref_fr_rules]: "(uncurry0 (return dflt), uncurry0 (RETURN None)) \<in> unit_assn\<^sup>k \<rightarrow>\<^sub>a option_assn"  
+  lemma hn_None[sepref_fr_rules]: "(uncurry0 (Mreturn dflt), uncurry0 (RETURN None)) \<in> unit_assn\<^sup>k \<rightarrow>\<^sub>a option_assn"  
     apply sepref_to_hoare unfolding option_assn_def 
     apply vcg'
     done
   
-  lemma hn_Some[sepref_fr_rules]: "(return, RETURN o Some) \<in> A\<^sup>d \<rightarrow>\<^sub>a option_assn"  
+  lemma hn_Some[sepref_fr_rules]: "(Mreturn, RETURN o Some) \<in> A\<^sup>d \<rightarrow>\<^sub>a option_assn"  
     apply sepref_to_hoare
     subgoal for a c
       apply (cases "c=dflt")
@@ -1928,7 +1928,7 @@ begin
       done
     done
   
-  lemma hn_the[sepref_fr_rules]: "(return, RETURN o the) \<in> [\<lambda>x. x \<noteq> None]\<^sub>a option_assn\<^sup>d \<rightarrow> A"
+  lemma hn_the[sepref_fr_rules]: "(Mreturn, RETURN o the) \<in> [\<lambda>x. x \<noteq> None]\<^sub>a option_assn\<^sup>d \<rightarrow> A"
     apply sepref_to_hoare
     unfolding option_assn_def 
     apply clarsimp
@@ -1944,7 +1944,7 @@ begin
     apply vcg'
     done
     
-  definition [llvm_inline]: "free_option fr c \<equiv> doM { d\<leftarrow>is_dflt c; llc_if d (return ()) (fr c) }"
+  definition [llvm_inline]: "free_option fr c \<equiv> doM { d\<leftarrow>is_dflt c; llc_if d (Mreturn ()) (fr c) }"
   
   lemma mk_free_option[sepref_frame_free_rules]:
     assumes [THEN MK_FREED, vcg_rules]: "MK_FREE A fr"  
@@ -1981,7 +1981,7 @@ locale dflt_pure_option = dflt_option +
 begin
   find_theorems MK_FREE is_pure
 
-  lemma A_free[sepref_frame_free_rules]: "MK_FREE A (\<lambda>_. return ())"
+  lemma A_free[sepref_frame_free_rules]: "MK_FREE A (\<lambda>_. Mreturn ())"
     by (rule mk_free_is_pure[OF A_pure])
 
 end  
@@ -2017,12 +2017,12 @@ begin
   sepref_register None Some the is_None
   
     
-  lemma hn_None[sepref_fr_rules]: "(uncurry0 (return dflt), uncurry0 (RETURN None)) \<in> unit_assn\<^sup>k \<rightarrow>\<^sub>a option_assn"  
+  lemma hn_None[sepref_fr_rules]: "(uncurry0 (Mreturn dflt), uncurry0 (RETURN None)) \<in> unit_assn\<^sup>k \<rightarrow>\<^sub>a option_assn"  
     apply sepref_to_hoare unfolding option_assn_def None_def
     apply vcg'
     done
   
-  lemma hn_Some[sepref_fr_rules]: "(return, RETURN o Some) \<in> A\<^sup>d \<rightarrow>\<^sub>a option_assn"  
+  lemma hn_Some[sepref_fr_rules]: "(Mreturn, RETURN o Some) \<in> A\<^sup>d \<rightarrow>\<^sub>a option_assn"  
     apply sepref_to_hoare
     subgoal for a c
       apply (cases "c=dflt")
@@ -2032,7 +2032,7 @@ begin
       done
     done
   
-  lemma hn_the[sepref_fr_rules]: "(return, RETURN o the) \<in> [\<lambda>x. x \<noteq> Option.None]\<^sub>a option_assn\<^sup>d \<rightarrow> A"
+  lemma hn_the[sepref_fr_rules]: "(Mreturn, RETURN o the) \<in> [\<lambda>x. x \<noteq> Option.None]\<^sub>a option_assn\<^sup>d \<rightarrow> A"
     apply sepref_to_hoare
     unfolding option_assn_def the_def
     apply clarsimp
@@ -2048,7 +2048,7 @@ begin
     apply vcg'
     done
     
-  definition [llvm_inline]: "free_option fr c \<equiv> doM { d\<leftarrow>is_dflt c; llc_if d (return ()) (fr c) }"
+  definition [llvm_inline]: "free_option fr c \<equiv> doM { d\<leftarrow>is_dflt c; llc_if d (Mreturn ()) (fr c) }"
     
   lemma mk_free_option[sepref_frame_free_rules]:
     assumes [THEN MK_FREED, vcg_rules]: "MK_FREE A fr"  
@@ -2083,7 +2083,7 @@ lemmas [named_ss llvm_pre_simp cong] = refl[of "dflt_option_private.free_option 
 locale dflt_pure_option_private = dflt_option_private +
   assumes A_pure[safe_constraint_rules]: "is_pure A"
 begin
-  lemma A_free[sepref_frame_free_rules]: "MK_FREE A (\<lambda>_. return ())"
+  lemma A_free[sepref_frame_free_rules]: "MK_FREE A (\<lambda>_. Mreturn ())"
     by (rule mk_free_is_pure[OF A_pure])
 
 end  
