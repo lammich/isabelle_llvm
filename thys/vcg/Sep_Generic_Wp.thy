@@ -674,6 +674,7 @@ proof
         done
 
                 
+      \<comment> \<open>The new abstract state covers exactly the addresses of the concrete state\<close>  
       have COVERAGE: 
         "caddrs s' = addrs as\<^sub>1' \<union> addrs as\<^sub>2' \<union> addrs asf"
         "cblocks s' = blocks as\<^sub>1' \<union> blocks as\<^sub>2' \<union> blocks asf"
@@ -723,7 +724,7 @@ proof
         finally show "cblocks s' = blocks as\<^sub>1' \<union> blocks as\<^sub>2' \<union> blocks asf" .
       qed  
       
-        
+      \<comment> \<open>The abstract states from both sides are disjoint\<close>  
       have DISJOINT[simp]: "as\<^sub>1' ## as\<^sub>2'" 
         apply (simp add: disj_iff)
         using ADDRS_DJ BLOCKS_DJ
@@ -736,30 +737,35 @@ proof
         subgoal by (meson alloc_disj disjoint_iff)
         done
 
-        
-      from IEXCL2 have "addrs as\<^sub>1 \<inter> w\<^sub>2 = {}" "addrs asf \<inter> w\<^sub>2 = {}"  
-        unfolding intf_excludes_def by auto
-      then have "addrs as\<^sub>1' \<inter> (w\<^sub>2) = {}" 
-        apply (auto simp add: AS1'_EQ)
-        by (smt (verit, ccfv_threshold) Un_iff alloc_disj c1.allocated_addrs_approx c1.valid_s_not_alloc c2.rw_valid_or_alloc disjoint_iff mem_Collect_eq subset_eq)
-      
-      have "addr.block`addrs as\<^sub>1' \<inter> a\<^sub>2 = {}"
-        apply (auto simp add: AS1'_EQ)
-        subgoal using CA_SPLIT c2.a_dj_valid by auto
-        subgoal using alloc_disj c1.allocated_addrs_approx by blast
-        done
-        
-              
+
+      \<comment> \<open>The new abstract states characterize their concrete counterparts.
+        In the rest of this proof, we will transfer these to \<open>s'\<close>, using
+        the fact that \<open>s'\<close> is equal to \<open>s\<^sub>1\<close>/\<open>s\<^sub>2\<close>/\<open>asf\<close> on the relevant addresses
+       \<close>  
       have "pchar as\<^sub>1' s\<^sub>1" "pchar asf s\<^sub>1" "pchar as\<^sub>2' s\<^sub>2"  
         unfolding pchar_def
         by (auto simp: A12_FMT sep_algebra_simps 
           intro: exI[where x="as\<^sub>2+asf"] exI[where x="as\<^sub>1+asf"] exI[where x="as\<^sub>1'+as\<^sub>2"]
         )
         
-      
+        
+                
       have "pchar as\<^sub>1' s'"
         apply (rule pchar_xfer[OF \<open>pchar as\<^sub>1' s\<^sub>1\<close>]; intro ballI conjI)
       proof -
+      
+        from IEXCL2 have "addrs as\<^sub>1 \<inter> w\<^sub>2 = {}"  
+          unfolding intf_excludes_def by auto
+        then have "addrs as\<^sub>1' \<inter> (w\<^sub>2) = {}" 
+          apply (auto simp add: AS1'_EQ)
+          by (smt (verit, ccfv_threshold) Un_iff alloc_disj c1.allocated_addrs_approx c1.valid_s_not_alloc c2.rw_valid_or_alloc disjoint_iff mem_Collect_eq subset_eq)
+        
+        have "addr.block`addrs as\<^sub>1' \<inter> a\<^sub>2 = {}"
+          apply (auto simp add: AS1'_EQ)
+          subgoal using CA_SPLIT c2.a_dj_valid by auto
+          subgoal using alloc_disj c1.allocated_addrs_approx by blast
+          done
+          
         fix a 
         assume A: "a \<in> addrs as\<^sub>1'"
         thus "is_valid_addr s' a"
@@ -778,13 +784,19 @@ proof
           by (metis A UnCI \<open>is_ALLOC s' b\<close> \<open>pchar as\<^sub>1' s\<^sub>1\<close> block_size_combine c2.is_FREED'_eq cell.disc(2) combine_states_def is_FREED'_eq pchar_alt subset_Collect_conv)
       qed    
 
-      have \<open>addr.block`addrs asf \<inter> a\<^sub>2 = {}\<close>
-        using c2.a_dj_valid
-        unfolding CA_SPLIT by blast
+      moreover
       
       have "pchar asf s'"
         apply (rule pchar_xfer[OF \<open>pchar asf s\<^sub>1\<close>]; intro ballI conjI)
       proof -
+      
+        from IEXCL2 have "addrs asf \<inter> w\<^sub>2 = {}"  
+          unfolding intf_excludes_def by auto
+        
+        have \<open>addr.block`addrs asf \<inter> a\<^sub>2 = {}\<close>
+          using c2.a_dj_valid
+          unfolding CA_SPLIT by blast
+      
         fix a
         assume A: "a \<in> addrs asf"
         thus "is_valid_addr s' a"
@@ -802,22 +814,24 @@ proof
           by (metis A CB'_SPLIT(1) UnI2 Un_upper2 \<open>is_ALLOC s' b\<close> block_size_combine c2.is_FREED'_eq combine_states_def is_ALLOC_conv is_FREED'_eq subset_Collect_conv)
       qed    
         
-      
-      from IEXCL1 have "addrs as\<^sub>2 \<inter> w\<^sub>1 = {}"  
-        unfolding intf_excludes_def by auto
-      then have "addrs as\<^sub>2' \<inter> (w\<^sub>1) = {}" 
-        apply (auto simp add: AS2'_EQ)
-        by (smt (verit, ccfv_threshold) Un_iff alloc_blocks_def alloc_disj c1.intf_w_alloc c1.rw_valid_s c2.allocated_addrs_approx c2.intf_a_alloc disjoint_iff fresh_freed_not_valid(1) image_subset_iff mem_Collect_eq subset_iff)
-      
-      have "addr.block`addrs as\<^sub>2' \<inter> a\<^sub>1 = {}"
-        apply (auto simp add: AS2'_EQ)
-        subgoal using CA_SPLIT c1.a_dj_valid by auto
-        subgoal using alloc_disj c2.allocated_addrs_approx by blast
-        done
+      moreover
       
       have "pchar as\<^sub>2' s'"
         apply (rule pchar_xfer[OF \<open>pchar as\<^sub>2' s\<^sub>2\<close>]; intro ballI conjI)
       proof -
+      
+        from IEXCL1 have "addrs as\<^sub>2 \<inter> w\<^sub>1 = {}"  
+          unfolding intf_excludes_def by auto
+        then have "addrs as\<^sub>2' \<inter> (w\<^sub>1) = {}" 
+          apply (auto simp add: AS2'_EQ)
+          by (smt (verit, ccfv_threshold) Un_iff alloc_blocks_def alloc_disj c1.intf_w_alloc c1.rw_valid_s c2.allocated_addrs_approx c2.intf_a_alloc disjoint_iff fresh_freed_not_valid(1) image_subset_iff mem_Collect_eq subset_iff)
+        
+        have "addr.block`addrs as\<^sub>2' \<inter> a\<^sub>1 = {}"
+          apply (auto simp add: AS2'_EQ)
+          subgoal using CA_SPLIT c1.a_dj_valid by auto
+          subgoal using alloc_disj c2.allocated_addrs_approx by blast
+          done
+      
         fix a 
         assume A: "a \<in> addrs as\<^sub>2'"
         
@@ -840,20 +854,18 @@ proof
           by (metis (no_types, lifting) A UnCI \<open>is_ALLOC s' b\<close> \<open>pchar as\<^sub>2' s\<^sub>2\<close> block_size_combine c1.is_FREED'_eq combine_states_def is_ALLOC_conv is_FREED'_eq par_blocks_same_length pchar_alt subset_Collect_conv)
       qed    
       
+      ultimately
       
-                
-        
-      have "pchar as\<^sub>1' s'" "pchar as\<^sub>2' s'" "pchar asf s'" 
-        apply fact+
-        done
-    
       have "pchar (as\<^sub>1' + as\<^sub>2' + asf) s'"
         apply (intro pchar_add)
-        apply fact+
-        apply simp
-        done
+        by simp_all
+        
+      \<comment> \<open>As these addresses cover all of \<open>s'\<close>, we can write the abstraction of \<open>s'\<close> accordingly\<close>
       from pchar_completeI[OF this] COVERAGE have "\<alpha> s' = as\<^sub>1' + as\<^sub>2' + asf" by simp
       
+      \<comment> \<open>From the correctness of the parallel strands, and disjointness of \<open>as\<^sub>1' ## as\<^sub>2'\<close>,
+        we get that both postconditions hold simultaneously
+      \<close>
       moreover have "(Q\<^sub>1 x\<^sub>1 ** Q\<^sub>2 x\<^sub>2) (as\<^sub>1' + as\<^sub>2')"
         by (meson \<open>Q\<^sub>1 x\<^sub>1 as\<^sub>1'\<close> \<open>Q\<^sub>2 x\<^sub>2 as\<^sub>2'\<close> \<open>as\<^sub>1' ## as\<^sub>2'\<close> sep_conjI)
       
