@@ -1,6 +1,26 @@
-\documentclass[runningheads]{llncs}
+\documentclass[a4paper,UKenglish,cleveref, autoref, thm-restate]{lipics-v2021}
+%This is a template for producing LIPIcs articles.
+%See lipics-v2021-authors-guidelines.pdf for further information.
+%for A4 paper format use option "a4paper", for US-letter use option "letterpaper"
+%for british hyphenation rules use option "UKenglish", for american hyphenation rules use option "USenglish"
+%for section-numbered lemmas etc., use "numberwithinsect"
+%for enabling cleveref support, use "cleveref"
+%for enabling autoref support, use "autoref"
+%for anonymousing the authors (e.g. for double-blind review), add "anonymous"
+%for enabling thm-restate support, use "thm-restate"
+%for enabling a two-column layout for the author/affilation part (only applicable for > 6 authors), use "authorcolumns"
+%for producing a PDF according the PDF/A standard, add "pdfa"
+
+%\pdfoutput=1 %uncomment to ensure pdflatex processing (mandatatory e.g. to submit to arXiv)
+%\hideLIPIcs  %uncomment to remove references to LIPIcs series (logo, DOI, ...), e.g. when preparing a pre-final version to be uploaded to arXiv or another public repository
+
+%\graphicspath{{./graphics/}}%helpful if your graphic files are in another directory
+
 %
 % \documentclass[sigplan,10pt,anonymous,review]{acmart}\settopmatter{printfolios=true,printccs=false,printacmref=false}
+
+\bibliographystyle{plainurl}% the mandatory bibstyle
+
 
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
@@ -85,20 +105,58 @@
 % \overfullrule=8pt
 
 
-\begin{document}
 
 \title{Refinement of Parallel Algorithms down to LLVM}
 
 
 % \author{Peter Lammich}
 % \institute{University of Twente}
-\author{A.~Nonymous}
+% \author{A.~Nonymous}
 % \institute{Institute}
 % \email{p.lammich@utwente.nl}
 %
 % \authorinfo{Peter Lammich}
 %            {The University of Manchester, UK}
 %            {peter.lammich@machester.ac.uk}
+
+\author{Peter Lammich}{University of Twente, Netherlands}{p.lammich@utwente.nl}{https://orcid.org/0000-0003-3576-0504}{}%TODO mandatory, please use full name; only 1 author per \author macro; first two parameters are mandatory, other parameters can be empty. Please provide at least the name of the affiliation and the country. The full address is optional. Use additional curly braces to indicate the correct name splitting when the last name consists of multiple name parts.
+
+\authorrunning{Peter Lammich} %TODO mandatory. First: Use abbreviated first/middle names. Second (only in severe cases): Use first author plus 'et al.'
+
+\Copyright{Peter Lammich} %TODO mandatory, please use full first names. LIPIcs license is "CC-BY";  http://creativecommons.org/licenses/by/3.0/
+
+
+\ccsdesc[500]{Software and its engineering~Formal software verification}
+\ccsdesc[500]{Theory of computation~Semantics and reasoning}
+\ccsdesc[300]{Computing methodologies~Parallel algorithms}
+
+% \ccsdesc[100]{\textcolor{red}{Replace ccsdesc macro with valid one}} %TODO mandatory: Please choose ACM 2012 classifications from https://dl.acm.org/ccs/ccs_flat.cfm
+
+\keywords{Isabelle,Concurrent Separation Logic,Parallel Sorting,LLVM} %TODO mandatory; please add comma-separated list of keywords
+
+% \acknowledgements{I want to thank \dots}%optional
+
+%\nolinenumbers %uncomment to disable line numbering
+
+
+
+%Editor-only macros:: begin (do not touch as author)%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\EventEditors{John Q. Open and Joan R. Access}
+\EventNoEds{2}
+\EventLongTitle{42nd Conference on Very Important Topics (CVIT 2016)}
+\EventShortTitle{CVIT 2016}
+\EventAcronym{CVIT}
+\EventYear{2016}
+\EventDate{December 24--27, 2016}
+\EventLocation{Little Whinging, United Kingdom}
+\EventLogo{}
+\SeriesVolume{42}
+\ArticleNo{23}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+\begin{document}
 
 
 \maketitle
@@ -108,29 +166,29 @@
   verified parallel algorithms, down to efficient LLVM code.
   The resulting algorithms' performance is competitive with their
   counterparts implemented in C/C++.
-
+%
   Our approach is backwards compatible with the Isabelle Refinement Framework,
   such that existing sequential formalizations can easily be adapted
   or re-used.
-
-  As case study, we verify a simple parallel sorting algorithm, and
+%
+  As case study, we verify a parallel quicksort algorithm, and
   show that it performs on par with its C++ implementation,
   and is competitive to state-of-the-art parallel sorting algorithms.
 \end{abstract}
 
 
 \section{Introduction}
-Modern hardware has become faster by getting more parallel, while the
-sequential execution speed has not significantly increased in the last years.
-To keep up with this development, and fully utilize the capabilities of modern hardware,
-parallel algorithms are required.
+% Modern hardware has become faster by getting more parallel, while the
+% sequential execution speed has not significantly increased in the last years.
+% To keep up with this development, and fully utilize the capabilities of modern hardware,
+% parallel algorithms are required.
+%
+% However, parallel algorithms come with new subtle classes of errors, like race conditions,
+% which are particularly hard to find by testing. Thus, formal methods that can guarantee
+% absence of all errors, including the hard-to-find ones, become even more important for
+% parallel algorithms.
 
-However, parallel algorithms come with new subtle classes of errors, like race conditions,
-which are particularly hard to find by testing. Thus, formal methods that can guarantee
-absence of all errors, including the hard-to-find ones, become even more important for
-parallel algorithms.
-
-In this paper, we present a stepwise refinement approach to develop
+We present a stepwise refinement approach to develop
 verified and efficient parallel algorithms. Our method can verify total correctness down to LLVM intermediate code.
 The resulting verified implementations are competitive with state-of-the-art
 unverified implementations. Our approach is backwards compatible to
@@ -141,10 +199,9 @@ This paper adds parallel execution to the IRF's toolbox, without invalidating th
 which can now be used as sequential building blocks for parallel algorithms, or be modified to add
 parallelization.
 
-As a case study, we verify total correctness of a parallel sorting algorithm,
+As a case study, we verify total correctness of a parallel quicksort algorithm,
 re-using an existing verification of state-of-the-art sequential sorting algorithms~\cite{La20}.
-Our verified parallel sorting algorithm is competitive to state-of-the-art parallel sorting algorithms,
-at least on moderately parallel hardware.
+Our verified parallel sorting algorithm is competitive to state-of-the-art parallel sorting algorithms.
 
 
 % The main idea is to add a parallel combinator to an existing
@@ -156,34 +213,35 @@ at least on moderately parallel hardware.
 % and use them as building blocks for parallel algorithms.
 
 
-The contributions of this paper are as follows:
-\begin{itemize}
-  \item a semantics for LLVM that supports parallel execution.
-    Up to our knowledge, this is the first formalization of parallelism for a practically usable LLVM semantics.
+% The contributions of this paper are as follows:
+% \begin{itemize}
+%   \item the (up to our knowledge) first verification method for parallel LLVM programs.
+%
+%   \item a stepwise refinement approach to verify total correctness of parallel programs.
+%
+%   \item the first verified implementation of a parallel sorting algorithm.
+% \end{itemize}
 
-  \item a framework that supports a stepwise refinement approach to verify total correctness of parallel programs.
-
-  \item a verified parallel sorting algorithm. Up to our knowledge, this is the
-    first verification of a parallel sorting algorithm, let alone a competitive implementation.
-
-\end{itemize}
-
-The formalization and benchmark scripts have been submitted as (anonymized) supplementary material.
+\noindent Formalization available at: \url{https://www21.in.tum.de/~lammich/isabelle_llvm_par/}
 
 
 \subsection{Overview}\label{sec:intro_overview}
 This paper is based on the Isabelle Refinement Framework (IRF), a continuing effort
 to verify efficient implementations of complex algorithms, using stepwise refinement techniques.
-In this paragraph, we give a brief overview of the components and versions of the IRF,
-and explain how our work relates to them.
 Figure~\ref{fig:IRF-overview} displays the components of the Isabelle Refinement Framework.
 
 \begin{figure}
+  \definecolor{colA}{RGB}{11, 97,164}
+  \definecolor{colB}{RGB}{204,246,  0}
+  \definecolor{colC}{RGB}{166,  0,166}
+  \definecolor{colD}{RGB}{255,146,  0}
+  \definecolor{colTCB}{RGB}{255, 0, 0}
+
+
   \center
   \begin{tikzpicture}[node distance=.01\textwidth,outer sep=0pt,
-  layerA/.style={
+  basicLayer/.style={
     draw=black,
-    fill=blue!20,
     rounded corners,
     text width=.9\textwidth,
     font={\sffamily\bfseries\color{black}},
@@ -192,72 +250,165 @@ Figure~\ref{fig:IRF-overview} displays the components of the Isabelle Refinement
 %    text height=12pt,
 %    text depth=9pt
     },
-  layerB/.style={layerA,fill=green!20},
-  layerC/.style={layerA,fill=red!20},
-  layerD/.style={layerA,fill=red!30,text width=.2\textwidth},
+  layerA/.style={basicLayer,fill=colA!30},
+  layerB/.style={basicLayer,fill=colB!30},
+  layerC/.style={basicLayer,fill=colC!30},
+  layerD/.style={basicLayer,fill=colD!30},
+  layerDD/.style={basicLayer,fill=colD!40,text width=.2\textwidth},
+  layerTCB/.style={basicLayer,fill=colTCB!30,text width=.2\textwidth},
+  layerTCBB/.style={basicLayer,fill=colTCB!40,text width=.2\textwidth},
   ]
 
   \node[layerA] (AlgDS) {Algorithms and Data Structures};
 
-  \node[layerB, below=of AlgDS.south west, anchor=north west, text width=.437\textwidth] (nres) {Nres-Monad};
-  \node[layerA, right=of nres.north east, anchor=north west, text width=.437\textwidth, minimum height=.067\textheight] (llDS) {Low-Level Algorithms \\and Data Structures};
+  \node[layerB, below=of AlgDS.south west, anchor=north west, text width=.437\textwidth] (ne) {NE-Monad};
+  \node[layerA, right=of ne.north east, anchor=north west, text width=.437\textwidth, minimum height=.067\textheight] (llDS) {Low-Level Algorithms \\and Data Structures};
 
-  \node[layerB, below=of nres.south west, anchor=north west, text width=.437\textwidth] (sepref) {Sepref};
+  \node[layerB, below=of ne.south west, anchor=north west, text width=.437\textwidth] (sepref) {Sepref};
 
   \node[layerC, below=of sepref.south west, anchor=north west] (sepl) {Program Logic and VCG};
-  \node[layerC, below=of sepl.south west, anchor=north west, minimum height=.120\textheight] (sembox) {};
+  \node[layerD, below=of sepl.south west, anchor=north west, minimum height=.13\textheight] (sembox) {};
 
-  \node[below right=of sembox.north west] {Back End Semantics};
+  \node[layerTCB, below left=of sembox.north east, minimum height=.12\textheight, text width=.537\textwidth] (tcbbox) {};
 
 
-  \node[layerD, right=of sembox.west] (isacode) {Isa Codegen};
-  \node[layerD, right=of isacode] (imphol) {Imp HOL};
-  \node[layerD, right=of imphol] (llvm) {LLVM};
-  \node[layerD, right=of llvm] (llvm-par) {LLVM par};
+  \node[right=of sembox.west,text width=.2\textwidth,font={\sffamily\bfseries\color{black}}] {Back\\ End};
 
-  \node[layerD, below=of imphol] (impholtime) {Imp HOL time};
-  \node[layerD, below=of llvm] (llvmtime) {LLVM time};
+  \node[above left=of tcbbox.south east,font={\sffamily\bfseries\color{black}}] {Trusted Code Base};
+
+%   \node[layerD, right=of sembox.west] (preproc) {Preprocessor};
+%   \node[layerD, right=1cm of preproc] (instr) {Instructions};
+%   \node[layerD, right=1cm of instr] (codegen) {Code Generator};
+
+  \node[layerTCBB, below left=of tcbbox.north east] (codegen) {Code Generator};
+  \node[layerTCBB, left=1cm of codegen] (instr) {Instructions};
+  \node[layerDD, left=1cm of instr] (preproc) {Preprocessor};
+
+
+  \node[layerTCBB, below=of instr] (mmodel) {Memory Model};
+  \node[layerTCBB, below=of mmodel] (mmonad) {SE-Monad};
+
+  \draw[->] (preproc) -- (instr);
+  \draw[->] (instr) -- (codegen);
 
 
   \end{tikzpicture}
 
-  \caption{Overview of the different components of the Isabelle Refinement Framework}\label{fig:IRF-overview}
+  \caption{Components of the Isabelle Refinement Framework, with focus on the back end.}\label{fig:IRF-overview}
 \end{figure}
 
-At the basis, there is a semantics of a back end language.
-While the first version of the IRF used Isabelle's code generator to generate purely functional code~\cite{LaTu12,La13},
-this has subsequently been extended to imperative functional code~\cite{La15} using Imperative HOL~\cite{BKHEM08}, and purely imperative LLVM code~\cite{La19-llvm}.
-For the imperative back ends, also versions that can reason about run-time complexity are available~\cite{HaLa19,HaLa21,HaLa21-toplas}.
-The work in this paper is based on the LLVM semantics without time~\cite{La19-llvm}, adding support for parallel programs.
+%   \begin{tikzpicture}[node distance=.01\textwidth,outer sep=0pt,
+%   layerA/.style={
+%     draw=black,
+%     fill=blue!20,
+%     rounded corners,
+%     text width=.9\textwidth,
+%     font={\sffamily\bfseries\color{black}},
+%     align=center,
+%     minimum height=.03\textheight,
+% %    text height=12pt,
+% %    text depth=9pt
+%     },
+%   layerB/.style={layerA,fill=green!20},
+%   layerC/.style={layerA,fill=red!20},
+%   layerD/.style={layerA,fill=red!30,text width=.2\textwidth},
+%   ]
+%
+%   \node[layerA] (AlgDS) {Algorithms and Data Structures};
+%
+%   \node[layerB, below=of AlgDS.south west, anchor=north west, text width=.437\textwidth] (ne) {Nres-Monad};
+%   \node[layerA, right=of ne.north east, anchor=north west, text width=.437\textwidth, minimum height=.067\textheight] (llDS) {Low-Level Algorithms \\and Data Structures};
+%
+%   \node[layerB, below=of ne.south west, anchor=north west, text width=.437\textwidth] (sepref) {Sepref};
+%
+%   \node[layerC, below=of sepref.south west, anchor=north west] (sepl) {Program Logic and VCG};
+%   \node[layerC, below=of sepl.south west, anchor=north west, minimum height=.120\textheight] (sembox) {};
+%
+%   \node[below right=of sembox.north west] {Back End Semantics};
+%
+%
+%   \node[layerD, right=of sembox.west] (isacode) {Isa Codegen};
+%   \node[layerD, right=of isacode] (imphol) {Imp HOL};
+%   \node[layerD, right=of imphol] (llvm) {LLVM};
+%   \node[layerD, right=of llvm] (llvm-par) {LLVM par};
+%
+%   \node[layerD, below=of imphol] (impholtime) {Imp HOL time};
+%   \node[layerD, below=of llvm] (llvmtime) {LLVM time};
+%
+%
+%   \end{tikzpicture}
 
-On the next level, a program logic and verification condition generator is provided.
-While this is trivial when reasoning about purely functional code in Isabelle/HOL,
-the imperative versions use separation logic, and provide automation like frame-inference heuristics.
-While the Imperative HOL versions of the IRF are based on a separation logic formalization
-by Lammich and Meis~\cite{LaMe12}, the LLVM versions are based on a more general framework by Klein et al.~\cite{KKB12,KKB12_afp}.
 
-While this reasoning infrastructure can already be used to verify simple low-level algorithms and data structures,
-more complex developments are typically refined from a purely functional,
-monadic representation of nondeterministic programs (nres-monad), originally introduced in~\cite{LaTu12}.
-A typical development will do multiple refinement steps inside the nres-monad, and then use a
-semi-automatic tool (Sepref) to refine from the nres-monad into the back end semantics.
-While the nres-monad and associated tooling has largely stayed the same since it's first version~\cite{LaTu12},
-the Sepref tool has been continuously adapted and improved with each new back end that was added.
-Again, our work is based on the Sepref tool for LLVM without time~\cite{La19-llvm}.
 
-We have also implemented parallelism for the Imperative HOL back end.
-This was done as a feasibility study, and uses the exactly same ideas and
-techniques as described in this paper for the more efficient LLVM back end.
-While a description of this initial implementation would not add any new
-ideas to this paper, it might still be useful in the context of older developments,
-that have not yet been ported to the LLVM back end.
 
-The rest of this paper is roughly organized along the structure of the Isabelle Refinement Framework:
-We first describe our parallel LLVM semantics (Section~\ref{sec:parsem}) and separation logic~\ref{sec:seplogic}.
-Then, we describe our changes to the refinement infrastructure (Section~\ref{sec:refine_parallel}).
-Section~\ref{sec:parsort} describes our parallel sorting algorithm case study and benchmark results,
-and Section~\ref{sec:concl} concludes the paper and discusses related and future work.
+The back end layer handles the translation from Isabelle/HOL to the actual target language.
+The instructions of the target language are shallowly embedded into Isabelle/HOL, using
+a state-error (SE) monad. An instruction with undefined behaviour,
+or behaviour outside our supported fragment, raises an error.
+The state of the monad is the memory, represented via a memory model.
+The code generator translates the instructions to actual code.
+These components form the trusted code base, while all the remaining components of the
+Isabelle Refinement Framework generate proofs. In the back-end, the preprocessor transforms
+expressions to the syntactically restricted format required by the code generator,
+proving semantic equality of the original and transformed expression.
+While there exist back ends for purely functional code~\cite{LaTu12,La13},
+and sequential imperative code~\cite{La15,La19-llvm}, this paper describes a back end
+for parallel imperative LLVM code (Section~\ref{sec:parsem}).
 
+On top of the back-end, a program logic is used to prove programs correct.
+It uses separation logic, and provides automation like a verification condition generator (VCG).
+In Section~\ref{sec:seplogic}, we describe our formalization of concurrent separation logic~\cite{OH04}, and our VCG.
+
+This basic program logic and VCG can already be used to verify simple low-level algorithms and data structures,
+like dynamic arrays and linked lists. More complex developments typically use a stepwise refinement approach,
+starting at purely functional programs modelled in a nondeterminism-error (NE) monad~\cite{LaTu12}.
+A semi-automatic refinement procedure (Sepref~\cite{La15,La19-llvm}) translates from the purely functional
+code to imperative code, refining abstract functional data types to concrete imperative ones.
+In Section~\ref{sec:refine_parallel}, we describe our extensions to support refinement to parallel executions,
+and a fine-grained tracking of pointer equalities, required to parallelize computations that work on
+disjoint parts of the same array.
+
+Using our approach, complex algorithms and data structures can be developed and
+refined to optimized efficient code. The stepwise refinement ensures a separation of concerns
+between high-level algorithmic ideas and low-level optimizations. We have used this approach to
+verify a wide range of practically efficient algorithms~\cite{ELNN13,BrLa18,WiLa18,La17_CADE,La17_SAT,FBL18,La14,LaSe16,LaSe19,La20}.
+In Section~\ref{sec:parsort}, we use our techniques to verify a parallel sorting algorithm,
+with competitive performance wrt.\ unverified state-of-the-art algorithms.
+
+Section~\ref{sec:concl} concludes the paper and discusses related and future work.
+
+
+%
+% While the ne-monad and associated tooling has largely stayed the same since it's first version~\cite{LaTu12},
+% the Sepref tool has been continuously adapted and improved with each new back end that was added.
+% Again, our work is based on the Sepref tool for LLVM without time~\cite{La19-llvm}.
+%
+%
+% While the Imperative HOL versions of the IRF are based on a separation logic formalization
+% by Lammich and Meis~\cite{LaMe12}, the LLVM versions are based on a more general framework by Klein et al.~\cite{KKB12,KKB12_afp}.
+%
+% While this reasoning infrastructure can already be used to verify simple low-level algorithms and data structures,
+% more complex developments are typically refined from a purely functional,
+% monadic representation of nondeterministic programs (ne-monad), originally introduced in~\cite{LaTu12}.
+% A typical development will do multiple refinement steps inside the ne-monad, and then use a
+% semi-automatic tool (Sepref) to refine from the ne-monad into the back end semantics.
+% While the ne-monad and associated tooling has largely stayed the same since it's first version~\cite{LaTu12},
+% the Sepref tool has been continuously adapted and improved with each new back end that was added.
+% Again, our work is based on the Sepref tool for LLVM without time~\cite{La19-llvm}.
+%
+% We have also implemented parallelism for the Imperative HOL back end.
+% This was done as a feasibility study, and uses the exactly same ideas and
+% techniques as described in this paper for the more efficient LLVM back end.
+% While a description of this initial implementation would not add any new
+% ideas to this paper, it might still be useful in the context of older developments,
+% that have not yet been ported to the LLVM back end.
+%
+% The rest of this paper is roughly organized along the structure of the Isabelle Refinement Framework:
+% We first describe our parallel LLVM semantics (Section~\ref{sec:parsem}) and separation logic~\ref{sec:seplogic}.
+% Then, we describe our changes to the refinement infrastructure (Section~\ref{sec:refine_parallel}).
+% Section~\ref{sec:parsort} describes our parallel sorting algorithm case study and benchmark results,
+% and Section~\ref{sec:concl} concludes the paper and discusses related and future work.
+%
 
 %
 %
@@ -277,194 +428,363 @@ and Section~\ref{sec:concl} concludes the paper and discusses related and future
 
 
 
-\section{Shallow Embedding of Parallel Semantics}\label{sec:parsem}
-  Isabelle LLVM~\cite{La19-llvm} is a shallow embedding of a fragment of the LLVM semantics into the interactive theorem prover Isabelle/HOL~\cite{NPW02}.
-  It comes with a set of tools to facilitate algorithm development, and has been successfully used to verify efficient \emph{sequential} algorithms~\cite{La20}.
-  The shallow embedding of Isabelle LLVM is key to its lightweightness and flexibility. In particular, the control flow is embedded as a state-error monad,
-  and registers are mapped to bound variables. Only the memory model is deeply embedded.
+\section{A Back End for LLVM with Parallel Execution}\label{sec:parsem}
+  We formalize a semantics for parallel execution, shallowly embedded into Isabelle/HOL.
+  As for the existing sequential back ends~\cite{La15,La19-llvm}, the shallow embedding is key
+  to the flexibility and feasibility of the approach.
+  The main idea is to make an execution report the memory that it accesses,
+  and use this information to raise an error when joining executions that
+  would have exhibited a data race. We use this to model an instruction that
+  calls two functions in parallel, and waits until both have returned.
 
-  We now describe an extension of Isabelle LLVM to support parallel algorithms,
-  while keeping the shallow embedding. The resulting framework is backwards compatible to the
-  original sequential Isabelle LLVM, such that porting existing verifications and tools is easy.
-  The basic idea of our extension, which we detail in the following, is to support a parallel
-  combinator \is{f || g}, that executes \is$f$ and \is$g$ in parallel, and fails if there is a possible data race.
+  \subsection{State-Nondeterminism-Error Monad with Access Reports}\label{sec:monad}
+  We define the underlying monad in two steps. We start with a nondeterminism-error monad,
+  and then lift it to a state monad and add access reports.
+  Defining a nondeterminism-error monad is standard:
+  \begin{lstlisting}
+    'a neM == spec ("'a => bool") | fail
+    return x == spec (%r. r=x)
+    bind fail f == fail
+    bind (spec P) f == if ?x. P x & f x = fail then fail
+                      else spec (%r. ?x Q. P x & f x = spec Q & Q r)
+  \end{lstlisting}
+  A program either fails, or yields a possible set of results (\is{spec P}), described by its characteristic function \is{P}.
+  The \is{return} operation yields exactly one result, and \is{bind} combines all possible results,
+  failing if there is a possibility to fail.
+
+  Now assume that we have a state (memory) type \is{'\mu}, and an access report type \is{'\rho}, which forms a monoid (\is{0,+}).
+  With this, we define our state-nondeterminism-error monad with access reports, just called \is{M} for brevity:
+  \begin{lstlisting}
+    'x M == '\mu => ('x \x '\rho \x '\mu) neM
+    return$_M$ x \mu == return$_{ne}$ (x,0,\mu)
+    bind$_M$ m f \mu == (x_1,r_1,\mu) <- m \mu; (x_2,r_2,\mu) <- f x_1 \mu; return$_{ne}$ (x_2,r_1+r_2,\mu)
+  \end{lstlisting}
+  Here, \is{return} does not change the state, and reports no accesses (\is$0$),
+  and \is{bind} sequentially composes the executions, and adds up the access reports.
+
+  Typically, the access report will contain read and written addresses, such that we can detect a data race.
+  Moreover, if parallel executions can allocate memory, we must detect those
+  executions where the memory manager allocated the same block in both parallel strands.
+  As we assume a thread safe memory manager, those \emph{infeasible} executions can safely be ignored.
+  Let \is{norace :: '\rho => '\rho => bool} and \is{feasible :: '\rho => '\rho => bool} be symmetric predicates,
+  and let \is{combine :: ('\rho \x '\mu) => ('\rho \x '\mu) => ('\rho \x '\mu) } be a commutative operator to
+  compose two pairs of access reports and states. Then, we define a parallel composition operator for \is{M}:
+  \begin{lstlisting}
+    (m_1 || m_2) \mu ==
+      (x_1,(r_1,\mu_1)) <- m_1 \mu; (x_2,(r_2,\mu_2)) <- m_2 \mu;  --"\rightcomment{execute both strands}"
+      assume feasible \rho_1 \rho_2;  --"\rightcomment{ignore infeasible combinations}"
+      assert norace \rho_1 \rho_2; --"\rightcomment{fail on data race}"
+      return$_{ne}$ ((x_1,x_2), combine (\rho_1,\mu_1) (\rho_2,\mu_2))  --"\rightcomment{combine results}"
+
+    assume P == if P then return () else spec (%_. False)
+    assert P == if P then return () else fail
+  \end{lstlisting}
+  Here, we use \is{assume} to ignore infeasible executions, and \is{assert} to fail on data races.
+  Note that, if one parallel strand fails, and the other parallel strand has no possible
+  results \is{spec (\<lambda>_. False)}, the behaviour of the parallel composition is not clear.
+  For this reason, we fix an invariant \is{invar$_M$ :: ('\mu => ('x \x '\rho \x '\mu) neM) => bool},
+  which implies that every non-failing execution has at least one possible result.
+  We define the actual type \is{M} as the subtype satisfying \is{invar$_M$}.
+  Thus, we have to prove that every combinator and instruction of our semantics
+  preserves the invariant, which is an important sanity check.
+  As additional sanity check, we prove symmetry of parallel composition:
+  \begin{lstlisting}
+    m_1 || m_2 = mswap (m_2 || m_1)     $\text{where}$    mswap m == (x_1,x_2)<-m; return (x_2,x_1)
+  \end{lstlisting}
+%   where \is|mswap m = (x_1,x_2)<-m; return (x_2,x_1)| swaps the result tuple.
 
   \subsection{Memory Model}
-  We define a simple memory model\footnote{The original formalization~\cite{La19-llvm} also supports pointers into tuples.
-  While complicated to implement, this feature has not been used in practice. To avoid additional complications
-  with conflicting memory accesses from different but overlapping addresses, we dropped this feature.
-  Now, each memory location is uniquely identified by an address, greatly simplifying the definition of data race.},
-  that supports arrays of values, where values can be pointers into arrays, integers, or tuples:
+  Our memory model supports blocks of values, where values can be integers, structures, or pointers into a block:
   \begin{lstlisting}
-    datatype addr = ADDR (block: nat) (idx: int)
-    datatype ptr = PTR_NULL | PTR_ADDR (the_addr: addr)
-    datatype val = LL_STRUCT "val list"  |  LL_INT lint  |  LL_PTR ptr
-    typedef memory = val list option list
-  \end{lstlisting}
-  where \is{\<alpha> option = None | Some \<alpha>} is Isabelle's option type.
+    datatype addr == ADDR (bidx: nat) (idx: nat)
+    datatype ptr == PTR_NULL   |   PTR_ADDR (the_addr: addr)
+    datatype val == LL_INT lint   |   LL_STRUCT val list   |   LL_PTR ptr
 
-  Here, a memory is a list of blocks, where each block is either freed (\is{None}), or a list of values.
-  Newly allocated blocks are simply appended to the end of the block list.
-  An address consists of a block index and a value index, and a pointer is either null, or an address.
+    datatype block == FRESH   |   FREED   |   is_alloc: ALLOC (vals: "val list")
+    typedef memory == { \mu :: nat => block. finite {b. \mu b ~= FRESH} }
+  \end{lstlisting}
+  A block is either fresh, freed, or allocated, and a memory is a mapping from block indexes to blocks,
+  such that only finitely many blocks are not fresh. Every block's state transitions from fresh to
+  allocated to freed. This avoids ever reusing the same block, and thus allows us to semantically detect use after free errors.
+  Every program execution can only allocate finitely many blocks,
+  such that we will never run out of fresh blocks\footnote{If the actual system does run out of memory, we will terminate the program in a defined way.}.
+  An allocated block contains an array of values, modelled as a list. Thus, an address consists of a block number, and an index into the array.
+
+  To access and modify memory, we define the functions \is{valid}, \is{get}, and \is{put}:
+  \begin{lstlisting}
+    valid \mu (ADDR b i) == is_alloc (\mu b) & i<|vals (\mu b)|
+    get \mu (ADDR b i) == vals (\mu b) ! i
+    put \mu (ADDR b i) x == \mu(b := BLOCK ((vals (\mu b))[i:=x]))
+  \end{lstlisting}
+  where \is{|xs|} is the length of list \is{xs}, \is{xs!i} returns the \is$i$th element of list \is$xs$,
+  and \is{xs[i:=x]} replaces the \is$i$th element of \is{xs} by \is{x}.
+
   Note that our LLVM semantics does not support conversion of pointers to integers, nor comparison
   or difference of pointers to different blocks. This way, a program cannot see the internal representation of a pointer,
-  and we can choose a simple abstract representation and deterministic allocation function, while being
+  and we can choose a simple abstract representation, while being
   faithful wrt.\ any actual memory manager implementation.
 
-
-  The control flow is embedded into a state-error monad, which additionally records the memory addresses accessed by a computation\footnote{For technical reasons, we distinguish nontermination (\is{NTERM}) from errors (\is{FAIL}).}:
+  \subsection{Access Reports}
+  We now fix the state of the M-monad to be memory, and the access reports to be sets
+  of read and written addresses, as well as sets of allocated and freed blocks:
   \begin{lstlisting}
-    datatype acc = MACC (reads: "addr set") (writes: "addr set")
-    datatype \<alpha> mres = NTERM | FAIL | SUCC \<alpha> acc memory
-    datatype \<alpha> M = M (run: "memory => \<alpha> mres")
-  \end{lstlisting}
-  Here, a memory access (\is{acc}) records the set of read and written addresses.
-  A monadic result (\is{\<alpha> mres}) describes either a nonterminating (\is{NTERM}) or failed (\is{FAIL})
-  computation, or a successful computation (\is{SUCC x a m}), with result \is{x}, accessed addresses \is{a}, and new memory content \is{m}.
-  A program (\is{\<alpha> M}) is a function from an initial memory to a monadic result.
-
-  For memory accesses, we define the operations \is$0$ and \is$(+)$, and show that they form a commutative monoid:
-  \begin{lstlisting}
-    0 == MACC {} {}"
-    MACC r_1 w_1 + MACC r_2 w_2 == MACC (r_1 \<union> r_2) (w_1 \<union> w_2)"
-  \end{lstlisting}
-  where \is{==} indicates defining equations.
-  Moreover, we extend the $(+)$ operation to monadic results:
-  \begin{lstlisting}
-    (SUCC x a s) + a' == SUCC x (a+a') s
-    FAIL + a == FAIL
-    NTERM + a == NTERM
+    acc == ( r :: addr set; w :: addr set; a :: nat set; f :: nat set )
+    0 == ( {},{},{},{} )
+    (r_1,w_1,a_1,f_1) + (r_2,w_2,a_2,f_2) == ( r_1\union r_2, w_1\union w_2, a_1\union a_2, f_1\union f_2 )
   \end{lstlisting}
 
-  The basic monad combinators are \is{return x}, which returns a result without accessing any memory,
-  and bind (\is{x<-m; f x}), which first executes \is{m}, binds its result to variable \is{x}, and then executes \is{f x}.
-  They are defined as follows:
+  Two parallel executions are feasible if they did not allocate the same block, and they have a data race
+  if one strand accesses addresses or blocks modified by the other strand:
   \begin{lstlisting}
-    return x == M (SUCC x 0)
-  \end{lstlisting}%
-  \vspace*{-1em}
-  \begin{lstlisting}
-    x<-m; f x == M (%s. case run m s of
-      SUCC x a s => (run (f x) s) + a
-    | NTERM => NTERM
-    | FAIL => FAIL)
-  \end{lstlisting}
-  Here, the return operation makes no memory accesses ($0$),
-  and the bind operation adds the memory accesses of both parts.
-  If the second part does not depend on the result of the first part,
-  we write \is{m_1; m_2} as shortcut notation for \is{x<-m_1; m_2}.
+    feasible (r_1,w_1,a_1,f_1) (r_2,w_2,a_2,f_2) == a_1 \inter a_2 = {}
 
-  Using the accessed memory, we can define a parallel combinator \is{m_1 || m_2},
-  which executes the programs \is{m_1} and \is{m_2} in parallel, and returns a pair of the results.
-  When there is a data race, the combinator returns \is{FAIL}.
-  \begin{lstlisting}
-    m_1 || m_2 == M (%s. case run m_1 s of --"\rightcomment{run $m_1$}"
-      SUCC x_1 a_1 s => (case run m_2 s of --"\rightcomment{$m_1$ succeeds, run $m_2$}"
-        SUCC x_2 a_2 s => if conflict a_1 a_2 then FAIL --"\rightcomment{$m_2$ succeeds, check race}"
-                          else SUCC (x_1,x_2) (a_1+a_2) s --"\rightcomment{no race, add mem acc}"
-      | FAIL => FAIL | NTERM => NTERM) --"\rightcomment{$m_2$ fails or diverges}"
-    | FAIL => FAIL | NTERM => NTERM) --"\rightcomment{$m_1$ fails or diverges}"
+    norace (r_1,w_1,a_1,f_1) (r_2,w_2,a_2,f_2) ==
+      let m_1 = w_1 \<union> { ADDR b i. b \<in> a_1 \<union> f_1 } in
+      let m_2 = w_2 \<union> { ADDR b i. b \<in> a_2 \<union> f_2 } in
+        (r_1 \<union> m_1) \<inter> m_2 = {}   &   m_1 \<inter> (r_2 \<union> m_2) = {}
   \end{lstlisting}
-  where
+  The invariant for \is{M} states that blocks transition only from fresh to allocated to free,
+  allocated blocks never change their size, and the access report matches the observable state change (\is{consistent}).
+  It also states, that for each finite set of blocks $B$, there is an execution that does not allocate blocks from $B$.
+  The latter is required to show that we always find feasible parallel executions:
   \begin{lstlisting}
-  conflict a_1 a_2 == writes a_1 \<inter> accs a_2 = {}  \<and>  writes a_2 \<inter> accs a_1 = {}
-  accs a == reads a \<union> writes a
+    invar$_M$ c == \<forall>\mu P. c \mu = spec P ==>
+      (\<forall>x \rho \mu'. P (x,\rho,\mu') ==> consistent \mu \rho \mu')
+    & (\<forall>B. finite B ==> (\<exists>x \rho \mu'. P (x,\rho,\mu') & \rho.a \inter B = {} ))
+  \end{lstlisting}
+  The combine function joins the access reports and memories,
+  preferring allocated over fresh, and freed over allocated memory. When joining two allocated blocks, the written addresses
+  from the access report are used to join the blocks. We skip the rather technical definition of combine, and just state the
+  relevant properties: Let \is{\rho_1=(r_1,w_1,a_1,f_1)} and \is{\rho_2=(r_2,w_2,a_2,f_2)} be feasible and race free access reports,
+  and \is{\mu_1, \mu_2} be memories that have evolved from a common memory \is{\mu}, consistently with
+  the access reports \is{\rho_1, \rho_2}. Let \is{(\rho',\mu') = combine (\rho_1,\mu_1) (\rho_2,\mu_2)}, and \is{addr} a valid address in \is{\mu'}. Then
+  \begin{lstlisting}
+    \mu' b = FRESH <--> if b \in a_2 \union f_2 then \mu_2 b = FRESH else \mu_1 b = FRESH
+    \mu' b = FREED <--> if b \in a_2 \union f_2 then \mu_2 b = FREED else \mu_1 b = FREED
+    is_alloc (\mu' b) <--> if b \in b \in a_2 then is_alloc (\mu_2 b) else is_alloc (\mu_1 b)
+    get \mu' addr = if addr \in w_2 \or addr.bidx \in a_2 \union f_2 then get \mu_2 addr else get \mu_1 addr
   \end{lstlisting}
 
-  Note that we simply execute the programs sequentially on the given memory.
-  As the programs only access disjoint addresses, the order of execution is irrelevant for the result
-  --- as long as the programs do not allocate new memory:
-  in this case, the allocated addresses are different, depending on the order of execution.
-  In particular, we cannot prove \is{par m_1 m_2 = swap(par m_2 m_1)}, where \is{swap} swaps the elements of the result tuple.
-  However, we argue that our formalization is still correct, as the details of pointers,
-  like block addresses, are not visible to the program.
 
-  Formally, this could be proved as follows:
-  we define two states to be similar
-  (\is{s_1 $\approx$ s_2}), iff there exists a bijection \is$f$ on block indexes, such that \is{f s_1 = s_2}.
-  We lift $\approx$ to monadic results (\is{mres}), identifying \is{FAIL} and \is{NTERM}.
-  We call a program \emph{well-formed}, if it behaves similar on similar states,
-  only depends on the addresses reported as read, and only modifies the addresses reported as written.
-%   \begin{lstlisting}
-%     well_formed m ==
-%          !s_1 s_2. s_1 \approx s_2 ==> run m s_1 \approx run m s_2
-%     \and !s x a s'. run m s = SUCC x a s' \and s_2 = s on a
-%   \end{lstlisting}
-  Well-formedness syntactically extends over the basic monad operations. For well-formed programs,
-  we can actually prove \is{par m_1 m_2 $\approx$ swap(par m_2 m_1)}.
-
-  We leave a mechanised formalization of the above sketch to future work.
-
-%   While it is possible to rigorously formalize the above sketch in Isabelle, and it would give a nice sanity check of our semantics,
-%   we believe that the property is intuitive enough to leave such an endeavour to future work.
-
-  \subsection{Extending the LLVM Backend}
-  While the parallel operator gives us a semantics for parallel execution,
-  it is difficult to map it to LLVM in its full generality, as this would mean to parallelly
-  execute two parts of the same procedure, including all captured registers.
-  Thus, our actual LLVM semantics only allows for a slightly more restricted parallel operator,
-  which calls two single-argument functions in parallel, and returns the pair of their results:
+  \subsection{LLVM Instructions}
+  Based on the M-monad, we define shallowly embedded LLVM instructions. For most instructions,
+  this is analogous to the sequential case~\cite{La19-llvm}.
+  The exceptions are memory allocation, which nondeterministically allocates some available
+  block (the original formalization deterministically counted up the block indexes), and an instruction for parallel
+  function call:
   \begin{lstlisting}
-    llc_par f g a b == par (f a) (g b)
+    llc_par f g a b == f a || g b
   \end{lstlisting}
-  where \is{f} and \is{g} must be constants referring to LLVM functions.
-
-  We have extended the code generator to map \is{llc_par} to an external \cs{parallel()} function with the following signature:
-  \begin{lstlisting}[language=C++]
-    void parallel(void (*f1)(void*), void (*f2)(void*), void *x1, void *x2)
-  \end{lstlisting}
-  Its semantics is to perform the calls \cs{f1(x1)} and \cs{f2(x2)} in parallel.
-  Here, the arguments \cs{x1} and \cs{x2} point to some stack-allocated memory
-  containing the actual function arguments, and space for the results.
-  The actual implementation of the \cs{parallel} function has to be provided by a (trusted) support library.
-  For our experiments, we use a very concise C++ implementation, based on the Threading Building Blocks~\cite{TBB} library:
+  The code generator only accepts this, if \is{f} and \is{g} are constants (i.e., function names).
+  It then generates some type-casting boilerplate, and a call to an external
+  \is{parallel} function, which we implement using the Threading Building Blocks~\cite{TBB} library:
   \begin{lstlisting}[language=C++]
   void parallel(void (*f1)(void*), void (*f2)(void*), void *x1, void *x2) {
-    tbb::parallel_invoke([=]{f1(x1);}, [=]{f2(x2);});
-  }
+    tbb::parallel_invoke([=]{f1(x1);}, [=]{f2(x2);}); }
   \end{lstlisting}
+  I.e., the two functions \is{f1(x1)} and \is{f2(x2)} are called in parallel. The generated boilerplate code sets up \is{x1} and \is{x2} to point to both, the actual arguments and space for the results.
 
 
-  %TODO Explain how syntactic restrictions work.
 
 
-%   Prepropessor!
+
+
+
+
+
+
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%   \subsection{Executions}\label{sec:parsem:execs}
+%   To model executions, we use a state-nondeterminism-error monad, where each execution reports the memory that it has accessed.
+%   This information is used to make a parallel execution fail in case of data races.
+%   We start with a standard nondeterminism-error (ne) monad, where an execution either fails, or returns a set of possible results, specified by its characteristic function.
+%   \begin{lstlisting}
+%     'a neM == spec ("'a => bool") | fail
+%     return x == spec (%r. r=x)
+%     bind fail f == fail
+%     bind (spec P) f == if ?x. P x & f x = fail then fail
+%                       else spec (%r. ?x Q. P x & f x = spec Q & Q r)
+%   \end{lstlisting}
+%   We use the shortcut notation \is{x<-m; f x} for \is|bind m (\<lambda>x. f x)|.
+%
+%   In the \is{ne}-monad, we can define the functions for memory management. We define functions for memory allocation,
+%   freeing, loading, and storing. In addition to returning a result and a new memory, these functions also return
+%   information which memory was accessed, i.e., the read and written addresses, as well as the allocated and freed blocks:
+%   \begin{lstlisting}
+%     macc == { r: addr set; w: addr set; a: nat set; f: nat set }
+%   \end{lstlisting}
+%   Memory accesses form a commutative monoid where \is{0} means no accesses, and \is{(+)} joins the accesses.
+%   \begin{lstlisting}
+%     0 == { r={},w={},a={},f={} }
+%     {r_1,w_1,a_1,f_1} + {r_2,w_2,a_2,f_2} == { r=r_1\union r_2, w=w_1\union w_2, a=a_1\union a_2, f=f_1\union f_2 }
+%   \end{lstlisting}
+%
+%   We display the definitions of memory allocation and storing. Freeing and loading are defined analogously:
+%   \begin{lstlisting}
+%     alloc :: val list => memory => (nat \x macc \x memory)
+%     alloc vs \mu ==
+%       b <- spec b. \mu b = FRESH;  --"\rightcomment{Select some fresh block}"
+%       return (b, macc (r={},w={},a={b},f={}), \mu(b:=ALLOC vs))
+%
+%     store :: addr => val => memory => (unit \x macc \x memory)
+%     store addr v \mu ==
+%       assert valid \mu addr;
+%       return ((), macc (r={},w={addr},a={},f={}), put \mu addr v)
+%
+%     assert True == return ()     assert False == fail
+%   \end{lstlisting}
+%   The \is{alloc} function nondeterministically selects a fresh block of memory, and initializes it
+%   with the given list \is{vs} of values. Additionally, it reports an allocation access of the allocated block.
+%   The \is{store} function checks if the given address is valid. Then, it updates the memory and reports a write access.
+%   Here, \is{assert} fails if the argument is false.
+%
+%   Next, we lift these definitions to a monad of type \is{'a M = memory => ('a \x macc \x memory)}.
+%   The return function does not modify the state and reports no memory accesses, and bind sequentially composes
+%   the state change, and joins the reported memory accesses:
+%   \begin{lstlisting}
+%     return$_M$ x \mu == return$_{ne}$ (x,0,\mu)
+%
+%     bind$_M$ m f \mu == (x,acc_1,\mu) <- m \mu; (r,acc_2,\mu) <- f x \mu; return$_{ne}$ (r,acc_1+acc_2,\mu)
+%   \end{lstlisting}
+%   note that we use subscripts ${}_{M}$ and ${}_{ne}$ to disambiguate the monad operations when not clear from context.
+%
+%   Moreover, we define parallel execution:
+%   \begin{lstlisting}
+%     (m_1 || m_2) \mu ==
+%       (x_1,acc_1,\mu_1) <- m_1 \mu; (x_2,acc_2,\mu_2) <- m_2 \mu;  --"\rightcomment{execute both strands}"
+%       assume acc_1.a \inter acc_2.a = {};  --"\rightcomment{Filter out impossible combinations}"
+%       assert norace acc_1 acc_2; --"\rightcomment{fail on data race}"
+%       return$_{ne}$ ((x_1,x_2),acc_1+acc_2, combine \mu_1 acc_2 \mu_2 )  --"\rightcomment{Combine results}"
+%
+%     assume P == if P then return () else spec (%_. False)
+%   \end{lstlisting}
+%   That is, we execute both programs from the initial memory \is{\mu}.
+%   Then, we filter out impossible executions, i.e., where the memory manager allocated the
+%   same block in both branches. For the remaining executions, we fail if there is a data race, i.e.,
+%   if the accessed addresses and blocks of one strand interfere with the modified addresses and blocks
+%   of the other strand:
+%   \begin{lstlisting}
+%     intf_norace acc_1 acc_2 ==
+%       let m_1 = acc_1.w \<union> { ADDR b i. b \<in> acc_1.a \<union> acc_1.f } in
+%       let m_2 = acc_2.w \<union> { ADDR b i. b \<in> acc_2.a \<union> acc_2.f } in
+%       (acc_1.r \<union> m_1) \<inter> m_2 = {}  &   m_1 \<inter> (acc_2.r \<union> m_2) = {}
+%   \end{lstlisting}
+%   Finally, we combine the memories from the two executions, using the reported memory accesses.
+%   The \is{combine \mu_1 acc_2 \mu_2} function combines the memories, amending \is{mu_1}
+%   with values from \is{mu_2} at blocks and addresses contained in \is{acc_2}.
+%   We skip its technical definition, but show the relevant properties instead.
+%   Let \is{\mu' = combine \mu_1 acc_2 \mu_2}, \is{af_2=acc_2.a \union acc_2.f}, and \is{a = ADDR b i}, then
+%   \begin{lstlisting}
+%     \mu' b = FRESH <--> if b \in af_2 then \mu_2 b = FRESH else \mu_1 b = FRESH
+%     \mu' b = FREED <--> if b \in af_2 then \mu_2 b = FREED else \mu_1 b = FREED
+%     is_alloc (\mu' b) <--> if b \in af_2 then is_alloc (\mu_2 b) else is_alloc (\mu_1 b)
+%     valid \mu' a ==> get \mu' a = if a \in acc_2.w \or b \in af_2 then get \mu_2 a else get \mu_1 a
+%   \end{lstlisting}
+%
+%   \subsection{Invariants}
+%   Our execution semantics only make sense if the reported memory accesses actually match the actual memory accesses,
+%   and all programs fail or have at least on possible result. Otherwise, we might miss data-races, or get an unclear meaning
+%   of a failing execution in parallel to one without any results. Note that our code generator will only accept functions that are
+%   constructed from the primitive building blocks of our semantics. Thus, we only have to check these in order to believe in the correctness of any verified program.
+%   To further reduce this trusted code base, we actually define our monad \is{M} as a subtype. Thus, for every primitive function that we define, we have to actually
+%   prove that it satisfies these assumptions:
+%   \begin{lstlisting}
+%     typedef 'a M = "{\mu:: memory => ('a \x macc \x memory) neM. invarM \mu}"
+%   \end{lstlisting}
+%   Here, the invariant ensures that the reported memory accesses are consistent with the observed changes in the memory,
+%   and that there are no empty result sets.
+%
+%   The invariant preservation proof is easy for all primitives but parallel execution.
+%   Here, we have to show that not all executions are filtered out as impossible, which would yield an empty set of results.
+%   For this, we generalize the invariant to include the property that,
+%   for every finite set \is{B} of blocks, there is an execution that does not allocate blocks from \is{B}.
+%   Thus, we will always find compatible parallel executions.
+%
+%   As an additional sanity check of our semantics, we prove that the parallel operator is symmetric:
+%   \begin{lstlisting}
+%     m_1 || m_2 = mswap (m_2 || m_1)
+%   \end{lstlisting}
+%   where \is|mswap m = (x_1,x_2)<-m; return (x_2,x_1)| swaps the result tuple.
+%
+%
+%   \subsection{Extending the LLVM Backend}
+%   We have defined the monad \is{M}, that supports basic primitives for memory access and parallel execution.
+%   Using this monad, we define functions for each supported LLVM instruction, as well as functions for memory management,
+%   that are provided by a small support library. The code generator ensures that everything is composed of only these functions,
+%   and translates them to the corresponding LLVM instructions. For details we refer the reader to~\cite{La19-llvm},
+%   and only describe our new primitive for parallel function call:
+%   \begin{lstlisting}
+%     llc_par f g a b == f a || g b
+%   \end{lstlisting}
+%   The code generator only accepts this, if \is{f} and \is{g} are constants, rather than more complex terms.
+%   It then generates some type-casting boilerplate, and a call to an external
+%   \is{parallel} function, which we implement using the Threading Building Blocks~\cite{TBB} library:
+%   \begin{lstlisting}[language=C++]
+%   void parallel(void (*f1)(void*), void (*f2)(void*), void *x1, void *x2) {
+%     tbb::parallel_invoke([=]{f1(x1);}, [=]{f2(x2);}); }
+%   \end{lstlisting}
+%   I.e., the two functions \is{f1(x1)} and \is{f2(x2)} are called in parallel. The generated boilerplate code sets up the
+%   arguments \is{x1} and \is{x2} to point to both, the actual arguments and space for the results.
+%
+%   %TODO Explain how syntactic restrictions work.
+%
+%
+% %   Prepropessor!
 
   \section{Parallel Separation Logic}\label{sec:seplogic}
-  In order to reason about programs with a parallel operator, we define a parallel separation logic~\cite{OH04}.
-  For our simple parallel combinator that does not allow for communication between parallel threads,
-  a simple parallel rule is sufficient:
-  \[
-    \frac{\{P_1\} ~c_1~ \{Q_1\}~~~\{P_2\} ~c_2~ \{Q_2\}}{ \{P_1 * P_2\} ~c_1 \parallel c_2~ \{Q_1 * Q_2\} }
-  \]
-  That is, two threads $c_1$ and $c_2$ that run on disjoint memory can be executed in parallel. In this section, we briefly sketch the separation logic framework for Isabelle LLVM~\cite{La19-llvm}, and describe its extension to parallel separation logic.
+  In the previous section, we have defined a shallow embedding of LLVM programs into Isabelle/HOL.
+  We now describe how to reason about these programs, using separation logic.
+
+%   We use separation logic in order to reason about programs. As the program itself, also the separation logic is shallowly embedded,
+%   i.e., the notion of Hoare-triple is directly defined wrt.\ the semantics, and a Hoare-rule is proved as a lemma.
+%   Thus, our Hoare-logic is not part of the trusted code base. In this section, we briefly sketch the separation logic of Isabelle-LLVM~\cite{La19-llvm},
+%   and describe how we extend it to prove the standard Hoare-rule for parallel execution~\cite{OH04}, i.e., that two threads that
+%   run on disjoint memory can be executed in parallel:
+%   \[
+%     \frac{\{P_1\} ~c_1~ \{Q_1\}~~~\{P_2\} ~c_2~ \{Q_2\}}{ \{P_1 * P_2\} ~c_1 \parallel c_2~ \{Q_1 * Q_2\} }
+%   \]
+
 
   \subsection{Separation Algebra}
-  In order to reason about memory with separation logic, a standard approach is
-  to define an abstraction function from the memory into a separation algebra.
-  The separation algebra can abstract away from details of the memory model
-  (like our choice of using a list of blocks), and introduce the necessary
-  formalism to support partial memories. This abstraction layer allows to use two different
-  formalizations of the memory model, a concise and simple \emph{concrete memory model} for the semantics,
-  and an \emph{abstract memory model} that forms a separation algebra.
-  Note that the abstract memory model is only used for reasoning, and does not contribute to the
-  trusted code base of our LLVM semantics.
-
-  In the following, we briefly sketch the concepts of separation algebra and our abstract memory model.
-  For a more detailed explanation, we refer to \cite{CHY07,La19-llvm}.
-
-  A separation algebra~\cite{CHY07} is a structure with a zero, a disjointness predicate $a\#b$,
-  and a disjoint union $a+b$.
-  Intuitively, elements describe parts of the memory.
-  Zero describes the empty memory, $a\#b$ means that $a$ and $b$ describe disjoint parts of the memory,
-  and $a+b$ describes the memory described by the union of $a$ and $b$.
+  In order to reason about memory with separation logic, we define an abstraction function from the memory into a separation algebra~\cite{CHY07}.
+  Separation algebras formalize the intuition of combining disjoint parts of memory.
+  They come with a \emph{zero} (\is{0}) that describes the empty part, a \emph{disjointness predicate} $a\#b$
+  describing that the parts $a$ and $b$ do not overlap, and a \emph{disjoint union} $a+b$ that combines two disjoint parts.
   For the exact definition of a separation algebra, we refer to~\cite{CHY07,KKB12}. We note that
   separation algebras naturally extend over functions and pairs, in a pointwise manner.
 
+%   The separation algebra abstracts away from details of the memory model
+%   (like our distinction between fresh and freed blocks), and introduces the necessary
+%   formalism to support partial memories. This abstraction layer allows to use two different
+%   formalizations of the memory model, a concise and simple \emph{concrete memory model} for the semantics,
+%   and an \emph{abstract memory model} that forms a separation algebra.
+%   Note that the abstract memory model is only used for reasoning, and does not contribute to the
+%   trusted code base of our LLVM semantics.
+%
+%   In the following, we briefly sketch the concepts of separation algebra and our abstract memory model.
+%   For a more detailed explanation, we refer to \cite{CHY07,La19-llvm}.
+%
+%   A separation algebra~\cite{CHY07} is a structure with a zero, a disjointness predicate $a\#b$,
+%   and a disjoint union $a+b$.
+%   Intuitively, elements describe parts of the memory.
+%   Zero describes the empty memory, $a\#b$ means that $a$ and $b$ describe disjoint parts of the memory,
+%   and $a+b$ describes the memory described by the union of $a$ and $b$.
+%   For the exact definition of a separation algebra, we refer to~\cite{CHY07,KKB12}. We note that
+%   separation algebras naturally extend over functions and pairs, in a pointwise manner.
+
   \begin{example}(Trivial Separation Algebra)
-    We define the type \is{\<alpha> tsa = 0 | TRIV \<alpha>}. This forms a separation algebra where the operators are defined as follows:
+    The type \is{\alpha option = None | Some \alpha} forms a separation algebra with:
     \begin{lstlisting}
-      a # b == a=0 \or b=0      a + 0 == a     0 + b == b
+      0 == None     a # b == a=0 \or b=0      a + 0 == a     0 + b == b
     \end{lstlisting}
     Intuitively, this separation algebra does not allow for combination of contents, except if one side is zero.
     While it is not very useful on its own, the trivial separation algebra is a useful building block for
@@ -473,25 +793,16 @@ and Section~\ref{sec:concl} concludes the paper and discusses related and future
 
   For our memory model, we define the following abstraction function:
   \begin{lstlisting}
-    \alpha :: memory -> (addr -> val tsa) \x (nat -> nat tsa)
-    \alpha s == (\alpha$_m$ s, \alpha$_b$ s)
+    \alpha :: memory -> (addr -> val option) \x (nat -> nat option)
+    \alpha \mu == (\alpha$_m$ \mu, \alpha$_b$ \mu)
+
+    \alpha$_m$ \mu addr == if valid \mu addr then Some (get \mu addr) else 0
+    \alpha$_b$ \mu b == if is_alloc (\mu b) then TRIV (|vals (\mu b)|) else 0
   \end{lstlisting}
-  where
-  \begin{lstlisting}
-    \alpha$_m$ s a == if valid_addr a s then TRIV get a s else 0
-    \alpha$_b$ s b == if valid_block b s then TRIV (block_size b s) else 0
-    valid_addr (ADDR b i) s == b < |s| \and s!b ~= None \and i<|the (s!b)|
-    get (ADDR b i) s == the (s!b) ! i
-    valid_block b s == b < |s| \and s!b ~= None
-    block_size b s == |the (s!b)|
-  \end{lstlisting}
-  where \is{|xs|} is the length of list \is{xs}, \is{xs!i} is the $i$th element, and \is{the (Some x) == x} is the selector function of the option type.
-  That is, an abstract memory \is{\alpha s} consists of two parts:
-  \begin{enumerate}
-  \item \is{\alpha$_m$ s} is a map from addresses to the values stored there. It is used to reason about load and store operations.
-  \item \is{\alpha$_b$ s} is a map from block indexes to the sizes of the corresponding blocks.
+  An abstract memory \is{\alpha \mu} consists of two parts:
+  \is{\alpha$_m$ \mu} is a map from addresses to the values stored there. It is used to reason about load and store operations.
+  \is{\alpha$_b$ \mu} is a map from block indexes to the sizes of the corresponding blocks.
     It is used to ensure that one owns all addresses of a block when freeing it.
-  \end{enumerate}
 
   We continue to define a separation logic: assertions are predicates over separation algebra elements.
   The basic connectives are defined as follows:
@@ -511,124 +822,75 @@ and Section~\ref{sec:concl} concludes the paper and discusses related and future
 %   , e.g., \is{array xs p * i<|xs|}
 
 
-  \subsection{Weakest Preconditions}
-  We define a \emph{weakest precondition} predicate as usual:
+  \subsection{Weakest Preconditions and Hoare Triples}\label{sec:wp_hoare}
+  We define a \emph{weakest precondition} predicate directly via the semantics:
   \begin{lstlisting}
-    wp m Q s == case run m s of
-      SUCC x a s' => Q x a s' | _ => False
+    wp m Q \mu == case m \mu of spec Q' => \<forall>x \rho \mu'. Q' (x,\rho,\mu') ==> Q x \rho \mu' | fail => False
   \end{lstlisting}
-  That is, \is{wp m Q s} holds, iff program \is$m$ run on state \is$s$ succeeds with a result \is{x}, memory accesses \is{a},
-  and new state \is{s'} that satisfy \emph{postcondition} \is$Q x a s'$.
+  That is, \is{wp m Q \mu} holds, iff program \is$m$ run on memory \is$\mu$ does not fail, and all possible results (return value \is{x}, access report \is{\rho}, new memory \is{\mu'})
+  satisfy the \emph{postcondition} \is{Q}.
 
   To set up a verification condition generator based on separation logic,
-  the postcondition should be a separation logic assertion over the corresponding abstract state, i.e.,
-  we want \is$Q x a s$ to have the form \is{(Q' x) (\alpha s)}, where \is{Q'} is a separation logic assertion that depends on the result.
-  However, it is not clear how to incorporate the accessed addresses \is{a} into this form, as they have no meaning on the level of assertions.
-
-  We observe that, for reasoning about parallel programs, it suffices to ensure that one thread does not access memory that is used by another, parallel thread.
-  Moreover, we require the program to be
-  well-formed in the sense that it only reports accessed memory that was allocated at the start
-  of the program, or got newly allocated during the program's execution, and that an address can
-  only transition from unallocated to allocated to freed. In particular, once freed, an address
-  will never be re-used\footnote{Note that this property is already required for a (deterministic)
-  sequential semantics. Otherwise, internals of the memory model implementation would be visible
-  to the program via pointer comparisons. Giving newly allocated memory a unique block
-  and restricting pointer comparison to pointers to the same block ensures that our memory model is
-  sound wrt.\ any actual implementation.}.
-
-  For our memory model, we define the set of allocated and freed addresses, and the newly
-  allocated memory between two states:
+  we standardize the postcondition: the reported memory accesses must be disjoint
+  from some abstract memory \is{amf}, called the \emph{frame}. We define the
+  \emph{weakest precondition with frame}:
   \begin{lstlisting}
-    valid_addrs s == { a | valid_addr a s }
-    freed_addrs s == { ADDR b i | b<|s| \and s!b = None }
-    used_mem s == valid_addrs s \<union> freed_addrs s
-    new_mem s s' == used_mem s' - used_mem s
-  \end{lstlisting}
-  Note that, for \is{freed_addrs}, we do not keep track of the block size of a freed block, and simply report all addresses with this block index as freed.
-  We also define a predicate to state that memory only transitions from fresh to allocated to freed:
-  \begin{lstlisting}
-    valid_trans s s' == valid_addrs s \<subseteq> valid_addrs s' \<union> freed_addrs s'
-                    \and freed_addrs s \<subseteq> freed_addrs s'
-  \end{lstlisting}
-  Finally, we define the \emph{weakest precondition with access restrictions} as follows:
-  \begin{lstlisting}
-    wpa A c Q s == wp c (%r a s'.
-      Q r s' --"\rightcomment{postcondition holds}"
-      \and accs a \<subseteq> allocated s \<union> new_mem s s' \and valid_trans s s' --"\rightcomment{well formed}"
-      \and accs a \<inter> A = {}) s --"\rightcomment{no addresses in A accessed}"
-  \end{lstlisting}
-  That is, \is{wpa A c Q s} states that execution of program $c$ in state $s$ yields a result \is{r} and a new
-  state \is{s'} that satisfies the postcondition \is$Q r s'$. Moreover, the execution is well-formed,
-  and does not access any addresses in $A$.
+    wpf amf c Q \mu == wp c (%x \rho \mu'. Q x \mu' & disjoint \rho amf) \mu
 
-  \subsection{Hoare-Triples}
-  Equipped with a weakest precondition with access restrictions, we define a Hoare-triple as follows:
-  \begin{lstlisting}
-    STATE asf P s == \<exists>as. as ## asf \and \<alpha> s = as+asf \and P as
-
-    ht P c Q == \<forall>s asf. STATE asf P s
-                      ==> wpa (addrs asf) c (%r s'. STATE asf (Q r) s') s)
+    disjoint (r,w,a,f) (m,b) == (\<forall>addr. m addr ~= 0 ==> addr ~: r \union w & addr.bidx ~: f)
+                                 & (\<forall>i. b i ~= 0 ==> i ~: f)
   \end{lstlisting}
-  Intuitively, the predicate \is{STATE asf P s} specifies that the abstract memory \is$\<alpha> s$ can be
-  split into a part \is$as$ and the given frame \is$asf$, such that \is{as} satisfies assertion $P$.
-  A Hoare-triple specifies that for all states \is$s$ and frames \is$asf$,
-  such that \is$P$ describes \is$s$ wrt.\ the frame (\is{STATE asf P s}), the program \is$c$ will succeed
-  on state \is$s$, not using any addresses of the frame, and the result and new state will satisfy
-  assertion \is$Q$ wrt.\ the original frame (\is{STATE asf (Q r) s'}).
+  that is, when executed on memory \is{\mu}, the program \is{c} does not fail, every return value \is{x} and new memory \is{\mu'} satisfies \is{Q},
+  and no memory described by the frame \is{amf} is accessed.
 
-  Using this notion of Hoare-triple, we can prove the standard Hoare rules, in particular
-  the frame rule and parallel rule:
+  Equipped with a weakest precondition with access restrictions, we define a Hoare-triple:
   \begin{lstlisting}
-    ht P c Q ==> ht (P * F) c (% r. Q r * F)
+    ABS amf P \mu == \<exists>am. am ## amf \and \<alpha> \mu = am+amf \and P am
 
-    ht P_1 c_1 Q_1 \and ht P_2 c_2 Q_2
-    ==> ht (P_1 * P_2) (par c_1 c_2) (%(r_1,r_2). Q_1 r_1 * Q_2 r_2)
+    ht P c Q == \<forall>\mu amf. ABS amf P \mu ==> wpf amf c (%x \mu'. ABS amf (Q x) \mu') \mu
   \end{lstlisting}
+  The predicate \is{ABS amf P \mu} specifies that the abstract memory \is$\<alpha> \mu$ can be
+  split into a part \is$am$ and the given frame \is$amf$, such that \is{am} satisfies the precondition $P$.
+  A Hoare-triple \is{ht P c Q} specifies that for all memories and frames
+  for which the precondition holds (\is{ABS amf P \mu}), the program will succeed,
+  not using any memory of the frame, and every result will satisfy the postcondition
+  wrt.\ the original frame (\is{ABS amf (Q x) \mu'}).
 
   \subsection{Verification Condition Generator}
-  Based on our notion of weakest precondition and Hoare-triples, we implement a verification condition generator (VCG).
-  Like the semantics and separation logic, also the VCG is shallowly embedded into HOL.
-  For technical reasons\footnote{
-    This form simplifies reasoning using Isabelle's standard tactics. In particular, for the Hoare-triple form,
-    an application of a consequence rule may introduce a unification variable for the
-    postcondition. This cannot depend on bound variables introduced later, rendering the goal unprovable.
-  }, our VCG does not work on Hoare-triples, but on subgoals of the form:
+  The verification condition generator is implemented as a proof tactic that works on subgoals of the form:
   \begin{lstlisting}
-    STATE asf P s \and ... ==> wpa A c Q s
+    ABS amf P \mu \and ... ==> wpf amf c Q \mu
   \end{lstlisting}
-  It repeatedly normalizes the state, and then applies rules that decompose the command $c$.
-  Normalization of the state includes moving lifted assertions to HOL assumptions, and eliminating existential quantifiers.
-  For example, the goal
+  The tactic is guided by the syntax of the command \is{c}.
+  Basic monad combinators are broken down using the following rules:
   \begin{lstlisting}
-    STATE asf (\<exists>x. P_1 a x * P_2 x b * \<up>( i < n)) s ==> wpa A c Q s
+    Q r \mu ==> wpf amf (return r) \mu
+    wpf amf m (%x. wpf amf (f x) Q) \mu ==> wpf amf ({x <- m; f x}) Q \mu
   \end{lstlisting}
-  becomes
+  For other instructions and user defined functions, the VCG expects a Hoare-triple to be already proved.
+  It then uses the following rule:
   \begin{lstlisting}
-    !!x. i<n \and STATE asf (P_1 a x * P_2 x b) s ==> wpa A c Q s
+    ht P c Q \and ABS amf P' \mu   --"\rightcomment{match Hoare triple and current state}"
+    \and P' |- P*F --"\rightcomment{infer frame}"
+    \and (!!r \mu. ABS amf (Q r ** F) \mu ==> Q' r \mu) --"\rightcomment{continue with postcondition}"
+    ==> wpf amf c Q' \mu
   \end{lstlisting}
-  There are rules for decomposing the basic monad combinators:
-  \begin{lstlisting}
-    Q r s ==> wpa A (return r) s
+  To process a command \is{c}, the first assumption is instantiated with the Hoare-triple for \is{c},
+  and the second assumption with the assertion \is{P'} for the current state.
+  Then, a simple syntactic heuristics infers a frame \is{F} and proves that the
+  current assertion \is{P'} entails the required precondition \is{P} and the frame.
+  Finally, verification condition generation continues with the postcondition \is{Q} and the frame as current assertion.
 
-    wpa A m (%x. wpa A (f x) Q) s ==> wpa A ({x <- m; f x}) Q s
-  \end{lstlisting}
-  Moreover, any Hoare-triple can be turned into a rule for the VCG.
-  Using the frame rule, it also generates a frame inference proof obligation:
-  \begin{lstlisting}
-    ht P c Q
-    \and STATE asf P' s \and P' |- P*F
-    \and (!!r s. STATE asf (Q r ** F) s ==> Q' r s)
-    ==> wpa (addrs asf) c Q' s
-  \end{lstlisting}
-  That is, if the VCG encounters a proof obligation for a command \is{c}, for which there is a Hoare-triple \is{ht P c Q},
-  it will first generate a frame inference proof obligation from the current state \is{P'} to the precondition \is{P},
-  use a simple heuristics to automatically infer the frame,
-  and then continue to derive the original postcondition \is{Q'} from a state described by the postcondition \is{Q}
-  of the Hoare-triple and the inferred frame \is{F}.
 
-  \subsection{Hoare-Triples for Memory Operations}
-  Finally, we prove Hoare-rules for all basic LLVM instructions, and register them with our VCG infrastructure.
-  We display the rules for memory operations:
+  \subsection{Hoare-Triples for Instructions}
+  To use the VCG to verify LLVM programs, we have to prove Hoare triples for the LLVM instructions.
+  For parallel calls, we prove the well-known disjoint concurrency rule~\cite{OH04}:
+  \begin{lstlisting}
+    ht P_1 c_1 Q_1 \and ht P_2 c_2 Q_2 ==> ht (P_1 * P_2) (par c_1 c_2) (%(r_1,r_2). Q_1 r_1 * Q_2 r_2)
+  \end{lstlisting}
+  That is, commands with disjoint preconditions can be executed in parallel.
+
+  For memory operations, we prove:
   \begin{lstlisting}
   |= {n~=0} ll_malloc TYPE(\<alpha>) n {%p. range {0..<n} (%_. init) p * b_tag n p}
   |= {range {0..<n} xs p * b_tag n p} ll_free p {%_. \<box>}
@@ -641,178 +903,92 @@ and Section~\ref{sec:concl} concludes the paper and discusses related and future
   and a tag. If one possesses both, the whole block and the tag, it can be deallocated by free.
   The rules for load and store are straightforward, where \is{pto x p} describes that $p$ points to value $x$.
 
+
   \section{Refinement for Parallel Programs}\label{sec:refine_parallel}
   At this point, we have described a separation logic framework for parallel programs in LLVM.
   It is largely backwards compatible with the framework for sequential programs described in~\cite{La19-llvm},
-  such that we could easily port the data structures formalized there to our new framework.
-  We also can verify simple parallel programs, using our VCG.
-
+  such that we could easily port the algorithms formalized there to our new framework.
   The next step towards verifying complex programs is to set up a stepwise refinement framework.
   In this section we describe the refinement infrastructure of the
-  Isabelle Refinement Framework (cf.~Section~\ref{sec:intro_overview}), focusing on our changes to support parallel algorithms.
+  Isabelle Refinement Framework, focusing on our changes to support parallel algorithms.
 
   \subsection{Abstract Programs}
-  Abstract programs are shallowly embedded. They are terms of type \is{\<alpha> nres}, representing the result of a nondeterministic stateless computation:
-  \begin{lstlisting}
-    \<alpha> nres == fail | spec (\<alpha> => bool)
-  \end{lstlisting}
-  Here, \is{fail} represents possible non-termination or assertion violation, and \is{spec P} represents
-  a result nondeterministically chosen to satisfy predicate $P$.
-  The \emph{refinement ordering} on \is{nres} is defined by:
+  Abstract programs are shallowly embedded into the nondeterminism error monad \is{'a ne} (cf.\ Section~\ref{sec:monad}).
+  They are purely functional, not modifying memory, or differentiating between sequential and parallel execution.
+  We define a \emph{refinement ordering} on \is{ne}:
   \begin{lstlisting}
     spec P <= spec Q == \<forall>x. P x ==> Q x         fail $\not\le$ spec Q         m <= fail
   \end{lstlisting}
   Intuitively, \is{m_1 <= m_2} means
   that \is{m_1} returns fewer possible results than \is{m_2}, and may only fail if \is{m_2} may fail.
   Note that \is$<=$ is a complete lattice, with top element \is$fail$.
-  The \emph{monad combinators} are defined as:
-  \begin{lstlisting}
-    return x  ==  spec y. y=x
-    x <- spec P; f x  ==  |_|{f x | P x}         x <- fail; f  ==  fail
-  \end{lstlisting}
-  Here, \is{return x} deterministically returns \is{x}, and \is{x<-m; f x} chooses a result of \is$m$, binds it to \is{x},
-  and then executes \is$f x$. If \is$m$ may fail, then the bind may also fail.
-%   We write \is{ x<-m; f x} for \is{bind m (\<lambda>x. f x)}, and \is{m_1; m_2} for \is{bind m_1 (\<lambda>_. m_2)}.
 
-  Arbitrary recursive programs can be defined via a fixed-point construction~\cite{Kr10}.
-  An \emph{assertion} fails if its condition is not met, otherwise it returns the unit value:
-  \begin{lstlisting}
-    assert \<phi> == if \<phi> then return () else fail;
-  \end{lstlisting}
-  Assertions are used to express that a program \is{m} satisfies a specification with
-  precondition \is$P$ and postcondition \is$Q$:
+%   Arbitrary recursive programs can be defined via a fixed-point construction~\cite{Kr10}.
+  We use refinement and assertions to
+  specify that a program \is{m} satisfies a specification with precondition \is$P$ and postcondition \is$Q$:
   \begin{lstlisting}
     m <= assert P; spec x. Q x
   \end{lstlisting}
   If the precondition is false, the right hand side is \is{fail}, and the statement trivially holds.
   Otherwise, $m$ cannot fail, and every possible result $x$ of $m$ must satisfy $Q$.
 
-  \subsection{Specification of Sorting Algorithms}\label{sec:sortspec}
-  The first step to verify a sorting algorithm is to specify the desired result.
-  We specify an algorithm that sorts a list \is{xs} as follows:
-  \begin{lstlisting}
-    sort_spec xs == spec xs'. sorted xs' \and mset xs' = mset xs
-  \end{lstlisting}
-  where \is{mset xs} is the multiset of the elements in the list \is{xs}.
-  That is, the resulting list \is{xs'} is sorted, and a permutation of the original list \is{xs}.
+  For a detailed description on using the \is{ne} monad for stepwise refinement based program verification, we refer the reader to~\cite{LaTu12}.
 
-  For quicksort-like sorting algorithms, the main function is partitioning, which reshuffles a
-  given list into two partitions, such that any element in the first partition is less than or equal
-  to any element in the second partition. We specify a partitioning function that assumes at least four elements,
-  and is guaranteed to return non-empty partitions. The result is returned as a reshuffled list \is{xs'},
-  and the index \is{m} of the first element of the second partition:
-  \begin{lstlisting}
-    partition_spec xs = assert (4 <= length xs);
-      spec (xs',m). mset xs' = mset xs \and 0<m \and m<|xs|
-      \and (\<forall>i\<in>{0..<m}. \<forall>j\<in>{m..<|xs|}. xs'!i <= xs'!j)
-  \end{lstlisting}
 
-  Using the above specifications as building blocks, we can define a simple abstract sorting algorithm:
-  \begin{lstlisting}
-    sort_aux xs d ==
-      if d=0 \or |xs|<100000 then { --"\rightcomment{check depth bound or size threshold}"
-        sort_spec xs --"\rightcomment{sort with some (sequential) algorithm}"
-      } else {
-        (xs,m) <- partition_spec xs;  --"\rightcomment{partition}"
-        with_split m xs (%xs_1 xs_2. { --"\rightcomment{work on partitions $xs_1$ and $xs_2$}"
-          npar sort_aux sort_aux (xs_1,d-1) (xs_2,d-1) --"\rightcomment{recursively sort in parallel}"
-        })
-      }"
-  \end{lstlisting}
-  where
-  \begin{lstlisting}
-    with_split m xs f ==
-      assert (m < |xs|);
-      (xs_1,xs_2) <- f (take m xs) (drop m xs);
-      assert (|xs_1| = m \and |xs_2| = |xs| - m);
-      return (xs_1@xs_2)
-
-    npar f g x y == r1 <- f x; r2 <- g y; return (r1,r2)
-  \end{lstlisting}
-  where \is{@} appends two lists.
-  This algorithm is derived from Introsort~\cite{Muss97}, a quicksort with a depth bound to ensure $O(n\log n)$ worst-case complexity.
-  If the recursion depth bound $d$ is reached, or the list size is below a certain threshold,
-  we sort the list using some yet unspecified sorting algorithm. Otherwise, we partition the list
-  and recursively sort the two partitions.
-
-  Here, we have introduced two new combinators,
-  which are hints for the following refinement steps: (1) the \is{with_split} combinator splits a given list into two parts,
-  and invokes a function that can change the content of these two parts, but not their length. It then returns
-  the concatenation of the two changed parts. It is a hint for the further refinement steps to implement the list as
-  an array that is modified in-place. (2) the \is{npar} combinator simply executes two blocks sequentially.
-  However, it is a hint to the subsequent refinement steps to refine to parallel execution.
-
-  Using the tools of the Isabelle Refinement Framework, and some existing theories copied from~\cite{La19-llvm},
-  it is straightforward to prove that this sorting algorithm is correct, i.e.:
-  \begin{lstlisting}
-    sort_aux xs d <= sort_spec xs
-  \end{lstlisting}
-
-  In the next sections, we will explain how to refine this two an actual parallel sorting algorithm in LLVM,
-  re-using the existing sequential pdqsort algorithm~\cite{La19-llvm} for small or too deep partitions, and a sampling algorithm for finding good pivots for partitioning.
 
   \subsection{The Sepref Tool}
-  The Sepref tool~\cite{La15,La19-llvm} symbolically executes an abstract program in the \is{nres}-monad,
+  The Sepref tool~\cite{La15,La19-llvm} symbolically executes an abstract program in the \is{ne}-monad,
   keeping track of refinements for every abstract variable to a concrete representation, which may use pointers to dynamically allocated memory.
   During the symbolic execution, the tool synthesizes an imperative Isabelle-LLVM program, together with a refinement proof.
-  The synthesis is automatic, but usually requires some program-specific setup and boilerplate.
-  In this section we briefly introduce the Sepref tool, focusing on our extensions.
-  For a more detailed discussion, we refer the reader to~\cite{La15,La19-llvm}.
+  The synthesis is automatic, but requires use annotations to the abstract program.
 
-  The main concept of the Sepref tool is refinement between a functional program \is{m} in the nres monad, and an LLVM program \is{c},
-  as expressed by the \is{hnr}-predicate\footnote{This definition is the same as in \cite{La19-llvm}, except that we added the \is{CP} parameter.}:
+  The main concept of the Sepref tool is refinement between an abstract program \is{c} in the \is{ne} monad,
+  and a concrete program \is{c$_\dagger$} in the \is{M} monad, as expressed by the \is{hnr}-predicate:
   \begin{lstlisting}
-    "hnr \<Gamma> c \<Gamma>' R CP m ==
-    m ~= fail ==> ht \<Gamma> c (%r. \<exists>x. \<Gamma>' * R x r * \<up>(return x <= m \and CP r))"
+    "hnr \<Gamma> c$_\dagger$ \<Gamma>' R CP c ==
+        c ~= fail ==> ht \<Gamma> c$_\dagger$ (%x. \<exists>x$_\dagger$. \<Gamma>' * R x x$_\dagger$ * \<up>(return x <= c \and CP x$_\dagger$))"
   \end{lstlisting}
-  That is, either \is{m} fails, or for a memory described by \is{\<Gamma>}, the LLVM program \is{c} succeeds with concrete result \is{r},
-  such that there is an abstract result \is{x}, the new memory is described by \is{\<Gamma>' * R x r}, and
-  \is{x} is a possible result of \is$m$. Moreover, \is{CP r} holds for the concrete result \is{r}.
-  Note that the refinement trivially holds for a failing abstract program. This makes sense, as we prove that
-  the abstract program does not fail anyway. Moreover, during the refinement proof, we can assume that
-  assertions actually hold, as stated by the following rule:
+  That is, either the abstract program \is{c} fails,
+  or for a memory described by assertion \is{\<Gamma>},
+  the LLVM program \is{c$_\dagger$} succeeds with \is{r$_\dagger$},
+  such that the new memory is described by \is{\<Gamma>' * R x x$_\dagger$},
+  for a possible result \is{x} of the abstract program \is{c}. Moreover, the predicate \is{CP} holds for the concrete result.
+  Note that \is{hnr} trivially holds for a failing abstract program. This makes sense, as we prove that
+  the abstract program does not fail anyway. Moreover it allows us to assume that assertions actually hold during the refinement proof:
   \begin{lstlisting}
-    ( \<phi> ==> hnr \<Gamma> c \<Gamma>' R CP m ) ==> hnr \<Gamma> c \<Gamma>' R CP (assert \<phi>; m)
+    ( \<phi> ==> hnr \<Gamma> c$_\dagger$ \<Gamma>' R CP c ) ==> hnr \<Gamma> c$_\dagger$ \<Gamma>' R CP (assert \<phi>; c)
   \end{lstlisting}
 
   \begin{example}(Refinement of lists to arrays)\label{ex:ref_array}
     We define abstract programs for indexing and updating a list:
     \begin{lstlisting}
-      lget xs i == assert (i<|xs|); return xs!i
-      lset xs i x == assert (i<|xs|); return xs[i:=x]
+      lget xs i == assert (i<|xs|); return xs!i     lset xs i x == assert (i<|xs|); return xs[i:=x]
     \end{lstlisting}
-    That is, these programs assert that the index is in bounds, and then return the accessed element (\is{xs!i})
-    or the updated list (\is{xs[i:=x]}) respectively.
-
-    The following assertion links a pointer to a list of elements stored at the pointed-to location:
+    These programs assert that the index is in bounds, and then return the accessed element (\is{xs!i})
+    or the updated list (\is{xs[i:=x]}) respectively. The following assertion links a pointer to a list of
+    elements stored at the pointed-to location:
     \begin{lstlisting}
       arr$_A$ xs p = range {0..<|xs|} (%i. xs!i) p
     \end{lstlisting}
     That is, for every $i<|xs|$, $p+i$ points to the $i$th element of $xs$.
-
-    The following Isabelle-LLVM programs index and update an array:
+    On arrays, indexing and updating of arrays is implemented by:
     \begin{lstlisting}
-      aget p i == ll_ofs_ptr p i; ll_load p
-      aset p i x == ll_ofs_ptr p i; ll_store x p; return p
+      aget p i == ll_ofs_ptr p i; ll_load p         aset p i x == ll_ofs_ptr p i; ll_store x p; return p
     \end{lstlisting}
-
-    We can link the abstract and concrete programs by the following theorems:
+    And the abstract and concrete programs are linked by the following refinement theorems:
     \begin{lstlisting}
-      hnr (arr$_A$ xs p * idx$_A$ i ii) (aget p ii)
-          (arr$_A$ xs p * idx$_A$ i ii) id$_A$ (%_. True) (lget xs i)
-      hnr (arr$_A$ xs p * idx$_A$ i ii) (aset p ii x)
-          (idx$_A$ i ii) arr$_A$ (%r. r=p) (lset xs i x)
+      hnr (arr$_A$ xs xs$_\dagger$ * idx$_A$ i i$_\dagger$)$\hspace*{-1pt}$ (aget xs$_\dagger$ i$_\dagger$)$\hspace*{-1pt}$ (arr$_A$ xs xs$_\dagger$$\hspace*{1pt}$*$\hspace*{1pt}$idx$_A$ i i$_\dagger$)$\hspace*{-1pt}$ id$_A$$\hspace*{-1pt}$ (%_. True)$\hspace*{-1pt}$ (lget xs i)
+      hnr (arr$_A$ xs xs$_\dagger$ * idx$_A$ i i$_\dagger$) (aset xs$_\dagger$ i$_\dagger$ x) (idx$_A$ i i$_\dagger$) arr$_A$ (%r. r=xs$_\dagger$) (lset xs i x)
     \end{lstlisting}
-    That is, if the list $xs$ is refined by array $p$, and the natural number $i$ is refined
+    That is, if the list \is$xs$ is refined by array \is{xs$_\dagger$}, and the natural number \is$i$ is refined
     by the fixed-width\footnote{We use Isabelle's word library here, which encodes the actual width as a type variable,
-    such that our functions work with any bit width. For code generation, we will fix the width to 64 bit.} word $ii$ (\is{idx$_A$ i ii}),
+    such that our functions work with any bit width. For code generation, we will fix the width to 64 bit.} word \is{i$_\dagger$} (\is{idx$_A$ i i$_\dagger$}),
     the \is{aget} operation will return the same result as the \is{lget} operation (\is{id$_A$}).
     The resulting memory will still contain the original array. Note that there is no explicit precondition that the array access
     is in bounds, as this follows already from the assertion in the abstract \is{lget} operation.
-
     The \is{aset} operation will return a pointer to an array that refines the updated list returned by \is{lset}.
     As the array is updated in place, the original refinement of the array is no longer valid.
-    Moreover, the returned pointer \is{r} will be the same as the argument pointer \is{p}.
+    Moreover, the returned pointer \is{r} will be the same as the argument pointer \is{xs$_\dagger$}.
     This information is important for refining to parallel programs on disjoint parts of an
     array (cf.\ Section~\ref{sec::array_split}).
 
@@ -821,11 +997,13 @@ and Section~\ref{sec:concl} concludes the paper and discusses related and future
   \end{example}
 
   Given refinement assertions for the parameters, and \is{hnr}-rules for all operations in a program,
-  the Sepref tool automatically synthesizes an LLVM program from an abstract \is{nres} program.
+  the Sepref tool automatically synthesizes an LLVM program from an abstract \is{ne} program.
   The tool tries to automatically discharge additional proof obligations, typically arising from
   translating arithmetic operations from unbounded numbers to fixed width numbers. Where automatic proof fails,
-  the user has to add assertions to the abstract program to help the proof. We have only slightly changed the existing Sepref tool,
-  mainly adding a heuristics to keep track of concrete pointer equalities.
+  the user has to add assertions to the abstract program to help the proof.
+  The main difference of our tool wrt.\ the existing Sepref tool~\cite{La19-llvm} is the additional
+  condition (\is{CP}) on the concrete result, which is used to track pointer equalities.
+  We have added a heuristics to automatically synthesize and discharge these equalities.
 
   \subsection{Array Splitting}\label{sec::array_split}
   An important concept for parallel programs is to concurrently operate on disjoint parts of the memory,
@@ -833,196 +1011,468 @@ and Section~\ref{sec:concl} concludes the paper and discusses related and future
   by returning a new list, and there is no way to express that the new list is stored at the same address as the old list.
   Nevertheless, in order to refine a program that updates two disjoint slices of a list to one that updates disjoint
   parts of the array in place, we need to know that the result is stored in the same array as the input.
-  This is handled by the \is{CP} argument to \is{hnr}, as illustrated in Example~\ref{ex:ref_array}.
-
-
-  We now refine the abstract \is{with_split} combinator from Section~\ref{sec:sortspec} to arrays.
-  The corresponding concrete LLVM operation is\footnote{LLVM does not support higher-order functions, such as \is{awith_split}. However, the preprocessor of our code generator can inline such functions, to obtain valid LLVM code for non-recursive functions.}:
+  This is handled by the \is{CP} argument to \is{hnr}. To indicate that operations shall be refined to disjoint parts of the same array, we introduce the
+  combinator \is{with_split} for abstract programs:
   \begin{lstlisting}
-    awith_split i a m ==
-      a_2 <- ll_ofs_ptr a i;
-      m a a_2;
-      return a
+    with_split i xs f ==
+      assert (i < |xs|);
+      (xs_1,xs_2) <- f (take i xs) (drop i xs);
+      assert (|xs_1| = i \and |xs_2| = |xs| - i);
+      return (xs_1@xs_2)
   \end{lstlisting}
-  The abstract and concrete functions are connected by the following rule:
+  Abstractly, this is an annotation that is inlined when proving the abstract program correct.
+  However, Sepref will translate it to the concrete combinator \is{awith_split}:
   \begin{lstlisting}
-    hnr (arr$_A$ xs_1 xsi_1 * arr$_A$ xs_2 xsi_2) (mi xsi_1 xsi_2) \<box>
-        (arr$_A$ \x arr$_A$) (%(xsi_1',xsi_2'). xsi_1'=xsi_1 \and xsi_2' = xsi_2)
-        (m xs_1 xs_2)"
+    awith_split i xs$_\dagger$ f$_\dagger$ == xs$_\dagger$_2 <- ll_ofs_ptr xs$_\dagger$ i; f$_\dagger$ xs$_\dagger$ xs$_\dagger$_2; return xs$_\dagger$
+
+    hnr (arr$_A$ xs_1 xs$_\dagger$_1 * arr$_A$ xs_2 xs$_\dagger$_2) (f$_\dagger$ xs$_\dagger$_1 xs$_\dagger$_2) \<box>
+        (arr$_A$ \x arr$_A$) (%(xs$_\dagger$_1',xs$_\dagger$_2'). xs$_\dagger$_1'=xs$_\dagger$_1 \and xs$_\dagger$_2' = xs$_\dagger$_2)
+        (f xs_1 xs_2)"
     ==>
-    hnr (arr$_A$ xs xsi * idx$_A$ n ni) (awith_split ni xsi mi)
-        (idx$_A$ n ni) (%xs xsi. arr$_A$ xs xsi) (%xsi'. xsi'=xsi)
-        (with_split n xs m)
+    hnr (arr$_A$ xs xs$_\dagger$ * idx$_A$ i i$_\dagger$) (awith_split i$_\dagger$ xs$_\dagger$ f$_\dagger$)
+        (idx$_A$ i i$_\dagger$) (%xs xs$_\dagger$. arr$_A$ xs xs$_\dagger$) (%xs$_\dagger$'. xs$_\dagger$'=xs$_\dagger$)
+        (with_split i xs f)
   \end{lstlisting}
-  That is, in order to refine an abstract \is{with_split n xs m} combinator,
-  we have to refine the inner program \is{m} that operates on the split lists,
-  in a way that the concrete pointers for the result (\is{xsi_1',xsi_2'}) are the
-  same as the arguments (\is{xsi_1, xsi_2}). Thus, when the Sepref tool encounters a
-  \is{with_split} combinator for a list that is refined by an array, it will apply the above rule,
-  i.e., synthesize a refinement for the inner program, and try to prove that the return values are the
-  same as the arguments.
+  The refinement of the function \is{f} to \is{f$_\dagger$} requires an additional proof that the returned pointers
+  are equal to the argument pointers (\is{xs$_\dagger$_1'=xs$_\dagger$_1 \and xs$_\dagger$_2' = xs$_\dagger$_2}).
+  Sepref tries to prove that automatically, using a simple heuristics.
+
 
   \subsection{Refinement to Parallel Execution}
-  In Section~\ref{sec:sortspec}, we have used the nres-combinator \is{npar f g x y} as a
-  mere abbreviation for executing \is{f x} and \is{g y} sequentially. In fact, for purely functional
-  programs, there is no (semantic) difference between sequential or parallel execution,
-  as long as one execution does not depend on the result of the other. For concrete programs that share memory,
-  we have to additionally ensure that the two programs operate on disjoint parts of the memory.
-  As disjointness is given by the separation conjunction, we get the following rule to refine the abstract \is{npar}
-  to actual parallel execution:
+  The purely functional abstract programs have no notion of parallel execution.
+  To indicate that refinement to parallel execution is desired, we define an abstract annotation
+  \is{npar}:
   \begin{lstlisting}
-    ${}$  hnr Ax (fi xi) Ax' Rx CP_1 (f x) \and hnr Ay (gi yi) Ay' Ry CP_2 (g y)"
+    npar f g a b == x <- f a; y <- g b; return (x,y)
+
+    ${}$  hnr Ax (f$_\dagger$ x$_\dagger$) Ax' Rx CP_1 (f x) \and hnr Ay (g$_\dagger$ y$_\dagger$) Ay' Ry CP_2 (g y)"
     ==>
-      hnr (Ax * Ay) (llc_par fi gi xi yi) (Ax' * Ay') (Rx \x Ry)
-        (%(rxi,ryi). CP_1 rxi \and CP_2 ryi) (npar f g x y)"
+      hnr (Ax * Ay) (llc_par f$_\dagger$ g$_\dagger$ x$_\dagger$ y$_\dagger$) (Ax' * Ay') (Rx \x Ry)
+        (%(x$_\dagger'$,y$_\dagger$'). CP_1 x$_\dagger'$ \and CP_2 y$_\dagger'$) (npar f g x y)"
   \end{lstlisting}
-  That is, the Sepref tool will try to refine the argument functions first, and then synthesize a program
-  using \is{llc_par} to execute them in parallel.
+  This rule can be used to automatically parallelize any (independent) abstract computations.
+  For convenience, we also define \is{nseq}. Abstractly, it's the same as \is{npar},
+  but Sepref translates it to sequential execution.
 
 
   \section{A Parallel Sorting Algorithm}\label{sec:parsort}
-  Our version of the Sepref tool is mostly backwards compatible with the original Sepref tool for Isabelle-LLVM~\cite{La19-llvm}.
-  The only difference is the handling of concrete pointer equalities (cf.\ Section~\ref{sec::array_split}).
-  Thus, it was a mainly straightforward task to port the efficient verified Introsort and pdqsort algorithms~\cite{La20} to the new tool,
-  additionally proving that the concrete algorithm is in-place, i.e., the returned array pointer equals the argument pointer.
-  Equipped with these refinements, the Sepref tool can synthesize a parallel sorting algorithm from \is{sort_aux} (Section~\ref{sec:sortspec}), using the already existing partitioning algorithm and the
-  pdqsort algorithm for the abstract \is{partition_spec} and \is{sort_spec} specifications.
-
-  Actually, we used refinement steps on the abstract level to add two optimizations:
-  first, we add an explicit parameter for the length of the list. This allows us to refine the list
-  to just an array pointer\footnote{Alternatively, we could refine a list to a pair of array pointer and explicit length.}.
-  Second, to prevent creation of parallel threads for small partitions, we proceed sequentially if the created partitions
-  are too unbalanced. The following is the algorithm that we input into Sepref\footnote{We have omitted some
-  of the assertions required to prove that the arithmetic operations do not overflow.}:
+  To test the usability of our framework, we verify a parallel sorting algorithm.
+  We start with the abstract specification of an algorithm that sorts a list:
   \begin{lstlisting}
-    par_sort_aux xs n d ==
-      assert n=|xs|
-      if d=0 \or n<100000 then {
-        slice_sort_spec xs 0 n
-      } else {
-        (xs,m) <- slice_partition_spec xs 0 n;
-        let bad = m<n div 8 \or (n-m < n div 8)
-        (_,xs) <- with_split m xs (%xs_1 xs_2. {
-          if bad then nseq par_sort_aux par_sort_aux (xs_1,m,d-1) (xs_2,n-m,d-1)
-          else npar par_sort_aux par_sort_aux (xs_1,m,d-1) (xs_2,n-m,d-1)
-        });
-        return xs
-      }"
-
-    nseq f_1 f_2 x_1 x_2 == r_1 <- f_1 x_1; r_2 <- f_2 x_2; return (x_1,x_2)
-
-    par_sort xs n ==
-      assert n=|xs|
-      if n<=1 then return xs
-      else par_sort_aux xs n (log2 n * 2)
-
+  sort_spec xs = spec xs'. mset xs'=mset xs & sorted xs
   \end{lstlisting}
-  where \is{nseq} is abstractly the same as \is{npar}, but is translated to sequential execution by the Sepref tool.
-  Moreover, \is{slice_sort_spec} and \is{slice_partition_spec} are the specifications for sorting and partitioning
-  only a slice of the array, leaving the rest unchanged. These match the interface of the original sequential algorithms
-  proved correct in~\cite{La20}. Finally, \is{par_sort} wraps the algorithm to run with an initial depth limit of $2\lfloor\log_2 n\rfloor$.
+  That is, we return a sorted permutation of the original list.
+  Note that this is a standard specification of sorting in Isabelle.
+  Reusing the existing development of an abstract introsort algorithm~\cite{La20},
+  we easily prove with a few refinement steps that the following abstract algorithm implements \is{sort_spec}:
+  \begin{lstlisting}[numbers=left,xleftmargin=1.9em,frame=single,framexleftmargin=.5em]
+    psort xs n == assert n=|xs|; if n<=1 then return xs else psort_aux$\hspace*{-1pt}$ xs$\hspace*{-1pt}$ n$\hspace*{-1pt}$ (log2$\hspace*{-1pt}$ n$\hspace*{-1pt}$ *$\hspace*{-1pt}$ 2)
 
-  \subsection{Final Implementation and Correctness Theorem}
-  From this algorithm, the Sepref tool generates an imperative implementation \is{par_sort_impl} and proves the corresponding \is{hnr} refinement lemma.
-  Combining this with the correctness proof of the abstract \is{par_sort} algorithm, and unfolding the definition of \is{hnr},
-  we get the following Hoare-triple, that states correctness of our final algorithm:
+    psort_aux xs n d ==
+      assert n=|xs|
+      if d=0 \or n<100000 then sort_spec xs $\label{l:psort:fallback}$
+      else
+        (xs,m) <- partition_spec xs; $\label{l:psort:partition}$
+        let bad = m<n div 8 \or (n-m < n div 8)  $\label{l:psort:bad}$
+        (_,xs) <- with_split m xs (%xs_1 xs_2.
+          if bad then nseq psort_aux psort_aux (xs_1,m,d-1) (xs_2,n-m,d-1) $\label{l:psort:rec_seq}$
+          else npar psort_aux psort_aux (xs_1,m,d-1) (xs_2,n-m,d-1)  $\label{l:psort:rec_par}$
+        );
+        return xs"
+
+    lemma psort xs |xs| <= sort_spec xs
+  \end{lstlisting}
+  This algorithm is derived from the well-known quicksort and introsort algorithms~\cite{Muss97}:
+  like quicksort, it partitions the list (line~\ref{l:psort:partition}), and then recursively sorts the partitions in parallel (l.~\ref{l:psort:rec_par}).
+  Like introsort, when the recursion gets too deep, or the list too short, we fall back to
+  some (not yet specified) sequential sorting algorithm (l.~\ref{l:psort:fallback}). Similarly, when the partitioning is very unbalanced (l.~\ref{l:psort:bad}),
+  we sort the partitions sequentially (l.~\ref{l:psort:rec_seq}). These optimizations aim at not spawning threads for small sorting tasks, where
+  the overhead of thread creation outweighs the advantages of parallel execution.
+  A more technical aspect is the extra parameter \is{n} that we introduced for the list length.
+  Thus, we can refine the list to just a pointer to an array, and still access its length\footnote{Alternatively, we could refine a list to a pair of array pointer and length.}.
+
+  \subsection{Implementation and Correctness Theorem}\label{sec:impl_corr}
+  Next, we have to provide implementations for the fallback \is{sort_spec}, and for \is{partition_spec}.
+  These implementations must be proved to be in-place, i.e., return a pointer to the same array.
+  It was straightforward to amend our existing formalization of \is{pdqsort}~\cite{La20} with the in-place proofs:
+  once we had amended the refinement statements, and bug-fixed the pointer equality proving heuristics that we added to Sepref,
+  the proofs were automatic.
+
+  Given the implementations of \is{sort_spec} and \is{partition_spec}, the Sepref tool
+  generates an LLVM program \is{psort$_\dagger$} from the abstract \is{psort}, and proves a corresponding refinement lemma:
   \begin{lstlisting}
-  "ht (arr$_A$ xs xsi * idx$_A$ n ni * n = |xs|)
-    (par_sort_impl xsi ni)
-    (%r. r=xsi * \<exists> xs'. arr$_A$ xs' xsi * sorted xs' * mset xs' = mset xs)"
+    hnr (arr$_A$ xs xs$_\dagger$ * idx$_A$ n n$_\dagger$) (psort$_\dagger$ xs$_\dagger$ n$_\dagger$) (idx$_A$ n n$_\dagger$) arr$_A$ (%r. r = xs$_\dagger$) (psort xs n)
   \end{lstlisting}
-  That is, for a pointer \is{xsi} to an array, whose contents are described by list \is{xs} (\is{arr$_A$}), and a fixed-size word \is{ni} representing the natural number \is{n} (\is{idx$_A$}),
-  which must be the number of elements in the list \is{xs}, our sorting algorithm returns the original pointer \is{xsi}, and the array contents are now \is{xs'},
-  which is sorted and a permutation of \is{xs}. The trusted code base (TCB) of this statement is our
-  formalization of separation logic, Hoare-triples, \is{arr$_A$}, \is{idx$_A$}, the \is{sorted} and \is{mset} functions,
-  as well as the LLVM semantics, the code generator, Isabelle's inference kernel, and, finally, the LLVM compiler.
-  While this may seem a lot, we emphasize that it, in particular, does not include the nres-monad, the Sepref tool, the VCG,
-  the Hoare-logic rules, or any high-level proof tactics or automated theorem provers. While all these components are actually used to create the proof,
-  Isabelle's LCF style kernel ensures that they are not part of the TCB.
+  Combining this with the correctness lemma of the abstract \is{psort} algorithm, and unfolding the definition of \is{hnr},
+  we prove the following Hoare-triple for our final implementation:
+  \begin{lstlisting}
+  "ht (arr$_A$ xs xs$_\dagger$ * idx$_A$ n n$_\dagger$ * n = |xs|)
+    (psort$_\dagger$ xs$_\dagger$ n$_\dagger$)
+    (%r. r=xs$_\dagger$ * \<exists> xs'. arr$_A$ xs' xs$_\dagger$ * sorted xs' * mset xs' = mset xs)"
+  \end{lstlisting}
+  That is, for a pointer \is{xs$_\dagger$} to an array, whose contents are described by list \is{xs} (\is{arr$_A$}), and a fixed-size word \is{n$_\dagger$} representing the natural number \is{n} (\is{idx$_A$}),
+  which must be the number of elements in the list \is{xs}, our sorting algorithm returns the original pointer \is{xs$_\dagger$}, and the array contents are now \is{xs'}, which is sorted and a permutation of \is{xs}.
+  Note that this statement uses our semantically defined Hoare triples (cf.\ Section~\ref{sec:wp_hoare}).
+  In particular, its correctness does not depend on the refinement steps, the Sepref tool, or the VCG.
+
+
+
+
+%
+%   For partitioning, we could also use the existing ninther partitioning algorithm that comes with \is{pdqsort}.
+%   However, choosing good partitions is crucial to the degree of parallelization achieved by our algorithm, such that we decided to
+%   implement a more precise sampling partitioner: to find a good pivot, we take a certain number (currently 64) of equidistant samples,
+%   and use their median as pivot. To find the median, we simply use quicksort\footnote{
+%     Using the more efficient quickselect algorithm does not bring any performance advantage here, as the 64 elements are negligible
+%     compared to the size of the whole partition. As we had already formalized sorting algorithms, it was easy to reuse them,
+%     instead of investing the effort of developing a quickselect algorithm from scratch, for no practical performance gain.}.
+%   The efficient partitioning algorithms used by introsort and pdqsort rely on the pivot element to be moved
+%   in front of the elements to be partitioned. Thus, we need an algorithm that determines the index of a pivot element,
+%   rather than just its value. Abstractly, we define the following algorithm:
+%   \begin{lstlisting} sample_pivot xs
+%     let ns = min |xs| 64;
+%     idxs <- equidist |xs| ns;
+%     idxs <- sort_wrt_spec (%i j. xs!i < xs!j) idxs;
+%     RETURN (idxs!(ns div 2))
+%   \end{lstlisting}
+%   here, \is{equidist n ns} computes a list of $ns$ (roughly) equidistant integers in the range ${0..<n}$,
+%   and \is{sort_wrt_spec lt} sorts a list wrt.\ the specified comparison operator.
+%   To refine this algorithm to an imperative version, we need to support a comparison
+%   function that, itself, can access memory (the array where )
+%
+%
+%
+%
+%   , such that
+%   we can then swap it with the first element of the array to be partitioned.
+%
+%
+%   move the pivot element to the front of the array to be sorted,
+%   to have a guard value there, which saves some indexing comparison
 
   \subsection{A Sampling Partitioner}
-  While we could simply re-use the existing partitioning algorithm from the Introsort formalization,
-  which uses a median-of-three pivot selection, we observe that the quality of the pivot is
-  particularly important for a balanced parallelization. Moreover, the partitioning in the \is{par_sort_aux} procedure
+  While we could simply re-use the existing partitioning algorithm from the pdqsort formalization,
+  which uses a pseudomedian of nine pivot selection, we observe that the quality of the pivot is
+  particularly important for a balanced parallelization. Moreover, the partitioning in the \is{psort_aux} procedure
   is only done for arrays above a quite big size threshold. Thus, we can invest a little more work to find
   a good pivot, which is still negligible compared to the cost of sorting the resulting partitions.
+  We choose a sampling approach, using the median of $64$ equidistant samples as pivot.
+  The highly optimized partitioning algorithms that we use swap the pivot to the front of the partition,
+  such that we need to determine its index, rather than just its value. We simply use quicksort to find the median\footnote{
+  We leave verification of efficient median algorithms, e.g., quickselect, to future work. Note that the overhead of sorting $64$ elements is negligible compared to the large partition that has to be sorted.}:
+  \begin{lstlisting}
+    sample xs == $is$ <- equidist |xs| 64; $is$ <- sort_wrt (%i j. xs!i < xs!j) $is$; return ($is$!32)
+  \end{lstlisting}
+  Proving that this algorithm finds a valid pivot index is straightforward. More challenging is to refine it to
+  purely imperative LLVM code, which does not support closures like \is{\<lambda>i j. xs!i < xs!j}.
 
-  We choose a rather simple sampling approach: for an array of size $n$, we take $\min(n,64)$ equidistant samples,
-  and use the median of these samples as pivot.
-
-  Formalization of this sampling algorithm in the Refinement Framework is straightforward.
-  To easily integrate with the existing (highly optimized) implementation of the partitioning algorithm,
-  we have to determine the \emph{index} of the pivot element, swap it with the first element of the array,
-  and then use the existing partitioning algorithm.
-
-  This suggests an algorithm to find the median of a list of sample indexes, comparing each index by looking it up in
-  the list to be sorted, and comparing the corresponding elements.
-  We briefly sketch our approach to formalize such parametrized algorithms using locales, and
-  an extension to Isabelle-LLVM's preprocessor to allow for painless code generation.
-  Note that, for the sake of readability, we have slightly idealized the presentation\footnote{
-    We have omitted some of the fixed parameters, and only describe a parametrized locale.
-    In practice, we have two versions of the locale, one with a parameter, and one without. While they are still based on the same abstract algorithms, they duplicate some boilerplate code.
-  }.
-
-  A \emph{locale}~\cite{KWP99} is a named context that fixes some parameters and makes assumptions about these parameters.
-  Inside a locale, definitions and theorems can depend on the parameters and assumptions.
-  Later, a locale can be instantiated with actual terms for the parameters, proving that they satisfy the assumptions.
-  This makes available instantiated versions of the definitions and theorems proved inside the locale.
-  Instantiations can also be nested, that is, a locale can be instantiated in the context of another locale.
-
-  We define a locale to set up a parametrized compare function as follows:
+  We resolve such closures over the comparison function manually: using Isabelle's locale mechanism~\cite{KWP99},
+  we parametrize over the comparison function. Moreover, we thread through an extra parameter for the data
+  captured by the closure:
   \begin{lstlisting}
     locale pcmp =
-      fixes lt lti par$_A$ elem$_A$
-      assumes weak_ordering (lt p)
-      assumes hnr
-        (par$_A$ p pi * elem$_A$ a ai * elem$_A$ b bi)
-        (lti pi ai bi)
-        (par$_A$ p pi * elem$_A$ a ai * elem$_A$ b bi)  (bool$_A$)  (%_. True)
-        (lt p a b)
-
+      fixes lt :: 'p => 'e => 'e => bool and lt$_\dagger$ :: 'p$_\dagger$ => 'e$_\dagger$ => 'e$_\dagger$ => bool
+        and par$_A$ :: 'p => 'p$_\dagger$ => assn and elem$_A$ :: 'e => 'e$_\dagger$ => assn
+      assumes \<forall>p. weak_ordering (lt p)
+      assumes hnr (par$_A$ p pi * elem$_A$ a ai * elem$_A$ b bi) (lt$_\dagger$ pi ai bi)
+        (par$_A$ p pi * elem$_A$ a ai * elem$_A$ b bi)  (bool$_A$)  (%_. True) (lt p a b)
   \end{lstlisting}
-  that is, we fix an abstract compare function \is{lt}. It takes one extra parameter \is{p},
-  and is a weak ordering\footnote{
-    A weak ordering can be defined by mapping the elements into a total ordering, and is the standard prerequisite for sorting algorithms.
-  } for each such \is{p}. We also fix a concrete compare function \is{lti}, that refines the abstract compare
-  function, with refinement assertion \is{par$_A$} for the parameter, and \is{elem$_A$} for the elements to be sorted.
+  This defines a context in which we have an abstract compare function \is{lt} for the abstract elements of type \is{'e}.
+  It takes an extra parameter of type \is{'p} (e.g.\ the list $xs$), and forms a weak ordering\footnote{
+    A weak ordering is induced by a mapping of the elements into a total ordering. It is the standard prerequisite for sorting algorithms in C++~\cite{Josu12}.
+  }. Moreover, we have a concrete implementation \is{lt$_\dagger$} or the compare function, wrt.\ the refinement assertions
+  \is{par$_A$} for the parameter and \is{elem$_A$} for the elements.
 
-  Inside the \is{pcmp} locale, we define our sorting and median functions, threading through the explicit parameter \is{p}.
-  Among others, this will yield a function \is{median p xs}, which returns the median index of the elements in list \is{xs},
-  comparing wrt.\ \is{lt p}. We also get a corresponding implementation \is{median_impl}\footnote{We simply reused a sequential sorting algorithm to completely sort the list and then obtain the middle element. While this is not the most efficient way of finding a median, the overhead when sorting $64$ element arrays is negligible compared to the time spent for sorting the partitions that are at least $10^5$ elements large. Thus, a more efficient algorithm like quickselect would not have any measurable effect on the overall performance, and we leave its verification to future work.}.
-
-  To implement the sampling algorithm, \is{inside} the \is{pcmp} locale, we define
-  a comparison function for indexes, parametrized with the original parameter and the array to be sorted.
-  For this, we instantiate the \is{pcmp} locale again\footnote{In the actual formalization, we use a slightly more complex locale hierarchy to carefully avoid infinite recursive instantiations.}:
-
+  Our sorting algorithm is developed and verified in the context of this locale (to avoid confusion, our presentation has, up to now, just used \is{<} and \is{sorted} instead of \is{lt p} and \is{sorted_wrt (lt p)}).
+  To get a sorting algorithm for an actual compare function, we have to instantiate the locale,
+  providing an abstract and concrete compare function, along with a proof that the abstract function is a weak ordering,
+  and the concrete function refines the abstract one. For our example of sorting indexes into an array,
+  where the array elements are, themselves, compared by a parametrized function \is{lt}, we get:
   \begin{lstlisting}
-    context pcmp begin
+    interpretation idx: pcmp lt_idx lt_idx$_\dagger$ (par$_A$ \<times> arr$_A$) idx$_A$   \<proof>
 
-      definition "lt_idx (p,xs) i j == lt p (xs!i) (xs!j)"
-      definition "lt_idx_impl == ..."
-
-      sublocale IDX: pcmp lt_idx lt_idx_impl (par$_A$ \<times> arr$_A$) idx$_A$   \<proof>
-
+    lt_idx (p,xs) i j == lt p (xs!i) (xs!j)
+    lt_idx$_\dagger$ (p$_\dagger$,xs$_\dagger$) i$_\dagger$ j$_\dagger$ == x$_\dagger$<-aget xs$_\dagger$ i$_\dagger$; y$_\dagger$<-aget xs$_\dagger$ j$_\dagger$; lt$_\dagger$ p$_\dagger$ x$_\dagger$ y$_\dagger$
   \end{lstlisting}
-  This makes available a function \is{IDX.median} and its implementation, which compares indexes into arrays as desired.
-  This is then used in the partitioning function.
+  this yields sorting algorithms for sorting indexes, taking an extra parameter for the array to index into.
+  For our sampling application, we use \is{idx.introsort xs}.
 
-  Finally, the \is{pcmp} locale is instantiated globally, for example to sort unsigned integers, and the resulting implementation is
-  exported to LLVM text:
+  \subsection{Code Generation}
+  Finally, we instantiate the sorting algorithms to sort unsigned integers and strings:
   \begin{lstlisting}
-    global_interpretation unat: pcmp (<) ll_icmp_ult unat$^{64}_A$   \<proof>
-
-    export_llvm unat.par_sort_impl
+    interpretation unat: pcmp (%_. <) (%_. ll_icmp_ult) unat$^{64}_A$ \<proof>
+    interpretation str: pcmp (%_. <) (%_. strcmp) str$^{64}_A$ \<proof>
   \end{lstlisting}
-  The \is{global_interpretation} command instantiates the locale for comparing natural
-  numbers implemented by 64 bit words (\is{unat$^{64}_A$}). Note that the compare function is not
-  parametrized. Finally, the \is{export_llvm} command generates LLVM text.
-  It first uses a preprocessor to generate and prove correct a set of code equations, which are then pretty printed to actual LLVM text.
-  The preprocessor does not contribute to the trusted code base, as it proves correct its transformations.
-  At this point, we have added a transformation to automatically instantiate the higher-order parameters generated by Isabelle's locale mechanism.
-  This saves a lot of boilerplate code that was necessary in the original sorting algorithm formalization~\cite{La20}, and became unmanageable
-  once we added the sublocale for comparing indexes into an array.
+  This yields implementations \is{unat.psort$_\dagger$} and \is{str.psort$_\dagger$}, and automatically
+  proves instantiated versions of the correctness theorems.
+
+  In a last step, we use our code generator to generate actual LLVM text, as well as a C header file with the
+  signatures of the generated functions\footnote{
+    For technical reasons, we represent the array size as non-negative signed integer, thus the C signature uses \lstinline[language=C]{int64_t}.
+    Moreover, we use a string implementation based on dynamic arrays, rather than C's zero terminated strings.
+  }:
+  \begin{lstlisting}
+    export_llvm
+      unat.psort$_\dagger$ is "uint64_t* psort(uint64_t*, int64_t)"
+      str.psort$_\dagger$ is "llstring* str_psort(llstring*, int64_t)"
+      defines typedef struct {int64_t size; struct {int64_t capacity; char *data;};} llstring;
+      file psort.ll
+  \end{lstlisting}
+  This checks that the specified C signatures are compatible with the actual types, and then
+  generates \is{psort.ll} and \is{psort.h}, which can be used in a standard C/C++ toolchain.
+
+%   This can now be compiled, and linked against other C programs using the generated header.
+%
+%
+%   , parametrizing the sorting algorithm over
+%   the comparison function
+%
+%
+%
+%
+%
+%   : we take $64$ equidistant samples,
+%   and use the median of these samples as pivot.
+%
+%   Formalization of this sampling algorithm in the Refinement Framework is straightforward.
+%   To easily integrate with the existing (highly optimized) implementation of the partitioning algorithm,
+%   we have to determine the \emph{index} of the pivot element, swap it with the first element of the array,
+%   and then use the existing partitioning algorithm.
+%
+%   This suggests an algorithm to find the median of a list of sample indexes, comparing each index by looking it up in
+%   the list to be sorted, and comparing the corresponding elements.
+%   We briefly sketch our approach to formalize such parametrized algorithms using locales, and
+%   an extension to Isabelle-LLVM's preprocessor to allow for painless code generation.
+%   Note that, for the sake of readability, we have slightly idealized the presentation.
+% %   \footnote{
+% %     We have omitted some of the fixed parameters, and only describe a parametrized locale.
+% %     In practice, we have two versions of the locale, one with a parameter, and one without. While they are still based on the same abstract algorithms, they duplicate some boilerplate code.
+% %   }.
+%
+%
+%   A \emph{locale}~\cite{KWP99} is a named context that fixes some parameters and makes assumptions about these parameters.
+%   Inside a locale, definitions and theorems can depend on the parameters and assumptions.
+%   Later, a locale can be instantiated with actual terms for the parameters, proving that they satisfy the assumptions.
+%   This makes available instantiated versions of the definitions and theorems proved inside the locale.
+%   Instantiations can also be nested, that is, a locale can be instantiated in the context of another locale.
+%
+%   We define a locale to set up a parametrized compare function as follows:
+%   \begin{lstlisting}
+%     locale pcmp =
+%       fixes lt lti par$_A$ elem$_A$
+%       assumes weak_ordering (lt p)
+%       assumes hnr
+%         (par$_A$ p pi * elem$_A$ a ai * elem$_A$ b bi)
+%         (lti pi ai bi)
+%         (par$_A$ p pi * elem$_A$ a ai * elem$_A$ b bi)  (bool$_A$)  (%_. True)
+%         (lt p a b)
+%
+%   \end{lstlisting}
+%   that is, we fix an abstract compare function \is{lt}. It takes one extra parameter \is{p},
+%   and is a weak ordering\footnote{
+%     A weak ordering can be defined by mapping the elements into a total ordering, and is the standard prerequisite for sorting algorithms in C++~\cite{Josu12}.
+%   } for each such \is{p}. We also fix a concrete compare function \is{lti}, that refines the abstract compare
+%   function, with refinement assertion \is{par$_A$} for the parameter, and \is{elem$_A$} for the elements to be sorted.
+%
+%   Inside the \is{pcmp} locale, we define our sorting and median functions, threading through the explicit parameter \is{p}.
+%   Among others, this will yield a function \is{median p xs}, which returns the median index of the elements in list \is{xs},
+%   comparing wrt.\ \is{lt p}. We also get a corresponding implementation \is{median_impl}\footnote{We simply reused a sequential sorting algorithm to completely sort the list and then obtain the middle element. While this is not the most efficient way of finding a median, the overhead when sorting $64$ element arrays is negligible compared to the time spent for sorting the partitions that are at least $10^5$ elements large. Thus, a more efficient algorithm like quickselect would not have any measurable effect on the overall performance, and we leave its verification to future work.}.
+%
+%   To implement the sampling algorithm, \is{inside} the \is{pcmp} locale, we define
+%   a comparison function for indexes, parametrized with the original parameter and the array to be sorted.
+%   For this, we instantiate the \is{pcmp} locale again\footnote{In the actual formalization, we use a slightly more complex locale hierarchy to carefully avoid infinite recursive instantiations.}:
+%   \begin{lstlisting}
+%     context pcmp begin
+%
+%       definition "lt_idx (p,xs) i j == lt p (xs!i) (xs!j)"
+%       definition "lt_idx_impl == ..."
+%
+%       sublocale IDX: pcmp lt_idx lt_idx_impl (par$_A$ \<times> arr$_A$) idx$_A$   \<proof>
+%   \end{lstlisting}
+%   This makes available a function \is{IDX.median} and its implementation, which compares indexes into arrays as desired.
+%   This is then used in the partitioning function.
+%
+%   Next, the \is{pcmp} locale is instantiated globally, for example to sort unsigned integers:
+%   \begin{lstlisting}
+%     global_interpretation unat: pcmp (<) ll_icmp_ult unat$^{64}_A$ \<proof>
+%   \end{lstlisting}
+%   The \is{global_interpretation} command instantiates the locale for comparing natural
+%   numbers implemented by 64 bit words (\is{unat$^{64}_A$}). It yields a proof obligation that
+%   the LLVM instruction \is{ll_icmp_ult} actually implements the \is{(<)} operation on natural numbers,
+%   which is easily discharged.
+%
+
+%
+%
+%
+%
+%   For the sake of clarity, we have omitted the fact that our whole development so far has been parametrized
+%   over a weak ordering, and a refinement assertion for the array elements.
+%   A weak ordering is any ordering induced by a mapping into a total ordering.
+%   It is the standard requirement for compare operations used for sorting in C++~\cite{Josu12}.
+%   Before we can generate LLVM code, we have to instantiate the compare operator accordingly.
+%   For example, to sort natural numbers implemented by unsigned integers (\is{unat$_A$}), we instantiate:
+%   \begin{lstlisting}
+%     global_interpretation unat: sort_impl_context "(<)" ll_icmp_ult unat$_A$
+%   \end{lstlisting}
+%   This yields a proof obligation that the LLVM instruction \is{ll_icmp_ult} on LLVM integers
+%   actually implements the \is{(<)} operation on natural numbers, wrt.\ the refinement assertion \is{unat$_A$},
+%   which is easily discharged. We then get instantiated versions of \is{psort$_\dagger$}, and also of the correctness theorem.
+%
+%   In a last step, we use our code generator to generate actual LLVM text, as well as a C header file with the
+%   signatures of the generated functions\footnote{
+%     For technical reasons, we represent the array size as non-negative signed integer, thus the second argument of the C signature has
+%     the signed type \lstinline[language=C]{int64_t}.
+%   }:
+%   \begin{lstlisting}
+%     export_llvm unat.psort$_\dagger$ is "uint64_t* psort(uint64_t*, int64_t)" file psort.ll
+%   \end{lstlisting}
+%   This can now be compiled, and linked against other C programs using the generated header.
+%   A similar instantiation is done for the lexicographic ordering on strings, represented by dynamic arrays of bytes.
+%
+
+
+%
+%
+%
+%
+%
+%
+%
+%
+%   the partition gets too small, or the recursion too deep
+%
+%
+%
+%
+%   That is, for a valid range of indexes \is{l..<h}, the new list is a permutation of the old list,
+%   equal to the old list outside the range, and sorted inside the range.
+%
+%
+%   Our version of the Sepref tool is mostly backwards compatible with the original Sepref tool for Isabelle-LLVM~\cite{La19-llvm}.
+%   The only difference is the handling of concrete pointer equalities (cf.\ Section~\ref{sec::array_split}).
+%   Thus, it was a mainly straightforward task to port the efficient verified Introsort and pdqsort algorithms~\cite{La20} to the new tool,
+%   additionally proving that the concrete algorithm is in-place, i.e., the returned array pointer equals the argument pointer.
+%   Equipped with these refinements, the Sepref tool can synthesize a parallel sorting algorithm from \is{sort_aux} (Section~\ref{sec:sortspec}), using the already existing partitioning algorithm and the
+%   pdqsort algorithm for the abstract \is{partition_spec} and \is{sort_spec} specifications.
+%
+%   Actually, we used refinement steps on the abstract level to add two optimizations:
+%   first, we add an explicit parameter for the length of the list. This allows us to refine the list
+%   to just an array pointer\footnote{Alternatively, we could refine a list to a pair of array pointer and explicit length.}.
+%   Second, to prevent creation of parallel threads for small partitions, we proceed sequentially if the created partitions
+%   are too unbalanced. The following is the algorithm that we input into Sepref\footnote{We have omitted some
+%   of the assertions required to prove that the arithmetic operations do not overflow.}:
+%   \begin{lstlisting}
+%     psort_aux xs n d ==
+%       assert n=|xs|
+%       if d=0 \or n<100000 then {
+%         slice_sort_spec xs 0 n
+%       } else {
+%         (xs,m) <- slice_partition_spec xs 0 n;
+%         let bad = m<n div 8 \or (n-m < n div 8)
+%         (_,xs) <- with_split m xs (%xs_1 xs_2. {
+%           if bad then nseq psort_aux psort_aux (xs_1,m,d-1) (xs_2,n-m,d-1)
+%           else npar psort_aux psort_aux (xs_1,m,d-1) (xs_2,n-m,d-1)
+%         });
+%         return xs
+%       }"
+%
+%     nseq f_1 f_2 x_1 x_2 == r_1 <- f_1 x_1; r_2 <- f_2 x_2; return (x_1,x_2)
+%
+%     psort xs n ==
+%       assert n=|xs|
+%       if n<=1 then return xs
+%       else psort_aux xs n (log2 n * 2)
+%
+%   \end{lstlisting}
+%   where \is{nseq} is abstractly the same as \is{npar}, but is translated to sequential execution by the Sepref tool.
+%   Moreover, \is{slice_sort_spec} and \is{slice_partition_spec} are the specifications for sorting and partitioning
+%   only a slice of the array, leaving the rest unchanged. These match the interface of the original sequential algorithms
+%   proved correct in~\cite{La20}. Finally, \is{psort} wraps the algorithm to run with an initial depth limit of $2\lfloor\log_2 n\rfloor$.
+
+%   \subsection{A Sampling Partitioner}
+%   While we could simply re-use the existing partitioning algorithm from the Introsort formalization,
+%   which uses a median-of-three pivot selection, we observe that the quality of the pivot is
+%   particularly important for a balanced parallelization. Moreover, the partitioning in the \is{psort_aux} procedure
+%   is only done for arrays above a quite big size threshold. Thus, we can invest a little more work to find
+%   a good pivot, which is still negligible compared to the cost of sorting the resulting partitions.
+%
+%   We choose a rather simple sampling approach: for an array of size $n$, we take $\min(n,64)$ equidistant samples,
+%   and use the median of these samples as pivot.
+%
+%   Formalization of this sampling algorithm in the Refinement Framework is straightforward.
+%   To easily integrate with the existing (highly optimized) implementation of the partitioning algorithm,
+%   we have to determine the \emph{index} of the pivot element, swap it with the first element of the array,
+%   and then use the existing partitioning algorithm.
+%
+%   This suggests an algorithm to find the median of a list of sample indexes, comparing each index by looking it up in
+%   the list to be sorted, and comparing the corresponding elements.
+%   We briefly sketch our approach to formalize such parametrized algorithms using locales, and
+%   an extension to Isabelle-LLVM's preprocessor to allow for painless code generation.
+%   Note that, for the sake of readability, we have slightly idealized the presentation\footnote{
+%     We have omitted some of the fixed parameters, and only describe a parametrized locale.
+%     In practice, we have two versions of the locale, one with a parameter, and one without. While they are still based on the same abstract algorithms, they duplicate some boilerplate code.
+%   }.
+%
+%   A \emph{locale}~\cite{KWP99} is a named context that fixes some parameters and makes assumptions about these parameters.
+%   Inside a locale, definitions and theorems can depend on the parameters and assumptions.
+%   Later, a locale can be instantiated with actual terms for the parameters, proving that they satisfy the assumptions.
+%   This makes available instantiated versions of the definitions and theorems proved inside the locale.
+%   Instantiations can also be nested, that is, a locale can be instantiated in the context of another locale.
+%
+%   We define a locale to set up a parametrized compare function as follows:
+%   \begin{lstlisting}
+%     locale pcmp =
+%       fixes lt lti par$_A$ elem$_A$
+%       assumes weak_ordering (lt p)
+%       assumes hnr
+%         (par$_A$ p pi * elem$_A$ a ai * elem$_A$ b bi)
+%         (lti pi ai bi)
+%         (par$_A$ p pi * elem$_A$ a ai * elem$_A$ b bi)  (bool$_A$)  (%_. True)
+%         (lt p a b)
+%
+%   \end{lstlisting}
+%   that is, we fix an abstract compare function \is{lt}. It takes one extra parameter \is{p},
+%   and is a weak ordering\footnote{
+%     A weak ordering can be defined by mapping the elements into a total ordering, and is the standard prerequisite for sorting algorithms.
+%   } for each such \is{p}. We also fix a concrete compare function \is{lti}, that refines the abstract compare
+%   function, with refinement assertion \is{par$_A$} for the parameter, and \is{elem$_A$} for the elements to be sorted.
+%
+%   Inside the \is{pcmp} locale, we define our sorting and median functions, threading through the explicit parameter \is{p}.
+%   Among others, this will yield a function \is{median p xs}, which returns the median index of the elements in list \is{xs},
+%   comparing wrt.\ \is{lt p}. We also get a corresponding implementation \is{median_impl}\footnote{We simply reused a sequential sorting algorithm to completely sort the list and then obtain the middle element. While this is not the most efficient way of finding a median, the overhead when sorting $64$ element arrays is negligible compared to the time spent for sorting the partitions that are at least $10^5$ elements large. Thus, a more efficient algorithm like quickselect would not have any measurable effect on the overall performance, and we leave its verification to future work.}.
+%
+%   To implement the sampling algorithm, \is{inside} the \is{pcmp} locale, we define
+%   a comparison function for indexes, parametrized with the original parameter and the array to be sorted.
+%   For this, we instantiate the \is{pcmp} locale again\footnote{In the actual formalization, we use a slightly more complex locale hierarchy to carefully avoid infinite recursive instantiations.}:
+%
+%   \begin{lstlisting}
+%     context pcmp begin
+%
+%       definition "lt_idx (p,xs) i j == lt p (xs!i) (xs!j)"
+%       definition "lt_idx_impl == ..."
+%
+%       sublocale IDX: pcmp lt_idx lt_idx_impl (par$_A$ \<times> arr$_A$) idx$_A$   \<proof>
+%
+%   \end{lstlisting}
+%   This makes available a function \is{IDX.median} and its implementation, which compares indexes into arrays as desired.
+%   This is then used in the partitioning function.
+%
+%   Finally, the \is{pcmp} locale is instantiated globally, for example to sort unsigned integers, and the resulting implementation is
+%   exported to LLVM text:
+%   \begin{lstlisting}
+%     global_interpretation unat: pcmp (<) ll_icmp_ult unat$^{64}_A$   \<proof>
+%
+%     export_llvm unat.psort$_\dagger$
+%   \end{lstlisting}
+%   The \is{global_interpretation} command instantiates the locale for comparing natural
+%   numbers implemented by 64 bit words (\is{unat$^{64}_A$}). Note that the compare function is not
+%   parametrized. Finally, the \is{export_llvm} command generates LLVM text.
+%   It first uses a preprocessor to generate and prove correct a set of code equations, which are then pretty printed to actual LLVM text.
+%   The preprocessor does not contribute to the trusted code base, as it proves correct its transformations.
+%   At this point, we have added a transformation to automatically instantiate the higher-order parameters generated by Isabelle's locale mechanism.
+%   This saves a lot of boilerplate code that was necessary in the original sorting algorithm formalization~\cite{La20}, and became unmanageable
+%   once we added the sublocale for comparing indexes into an array.
 
 
 %
@@ -1052,13 +1502,307 @@ and Section~\ref{sec:concl} concludes the paper and discusses related and future
 %
 %   \subsection{Array Data Structure}
 
-  \subsection{Benchmarks}
+
+
+
+%   \subsection{Final Implementation and Correctness Theorem}
+%   From this algorithm, the Sepref tool generates an imperative implementation \is{psort$_\dagger$} and proves the corresponding \is{hnr} refinement lemma.
+%   Finally, our code generator translates \is{psort$_\dagger$} to an LLVM function.
+%   Combining the refinement lemma with the correctness lemma of the abstract \is{psort} algorithm, and unfolding the definition of \is{hnr},
+%   we get the following Hoare-triple, that states correctness of our final algorithm:
+%   \begin{lstlisting}
+%   "ht (arr$_A$ xs xsi * idx$_A$ n ni * n = |xs|)
+%     (psort$_\dagger$ xsi ni)
+%     (%r. r=xsi * \<exists> xs'. arr$_A$ xs' xsi * sorted xs' * mset xs' = mset xs)"
+%   \end{lstlisting}
+%   That is, for a pointer \is{xsi} to an array, whose contents are described by list \is{xs} (\is{arr$_A$}), and a fixed-size word \is{ni} representing the natural number \is{n} (\is{idx$_A$}),
+%   which must be the number of elements in the list \is{xs}, our sorting algorithm returns the original pointer \is{xsi}, and the array contents are now \is{xs'},
+%   which is sorted and a permutation of \is{xs}.
+%   Note that, while the trusted code base of this statement includes our LLVM semantics and code generator, as well as Isabelle's inference kernel,
+%   it does not include the refinement steps, verification condition generation, Hoare-rules, or automated theorem provers invoked by sledgehammer~\cite{BBP13},
+%   which we used to prove this statement.
+%
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%
+%
+%   \subsection{Specification of Sorting Algorithms}\label{sec:sortspec}
+%   The first step to verify a sorting algorithm is to specify the desired result.
+%   We specify an algorithm that sorts a list \is{xs} as follows:
+%   \begin{lstlisting}
+%     sort_spec xs == spec xs'. sorted xs' \and mset xs' = mset xs
+%   \end{lstlisting}
+%   where \is{mset xs} is the multiset of the elements in the list \is{xs}.
+%   That is, the resulting list \is{xs'} is sorted, and a permutation of the original list \is{xs}.
+%
+%   For quicksort-like sorting algorithms, the main function is partitioning, which reshuffles a
+%   given list into two partitions, such that any element in the first partition is less than or equal
+%   to any element in the second partition. We specify a partitioning function that assumes at least four elements,
+%   and is guaranteed to return non-empty partitions. The result is returned as a reshuffled list \is{xs'},
+%   and the index \is{m} of the first element of the second partition:
+%   \begin{lstlisting}
+%     partition_spec xs = assert (4 <= length xs);
+%       spec (xs',m). mset xs' = mset xs \and 0<m \and m<|xs|
+%       \and (\<forall>i\<in>{0..<m}. \<forall>j\<in>{m..<|xs|}. xs'!i <= xs'!j)
+%   \end{lstlisting}
+%
+%   Using the above specifications as building blocks, we can define a simple abstract sorting algorithm:
+%   \begin{lstlisting}
+%     sort_aux xs d ==
+%       if d=0 \or |xs|<100000 then { --"\rightcomment{check depth bound or size threshold}"
+%         sort_spec xs --"\rightcomment{sort with some (sequential) algorithm}"
+%       } else {
+%         (xs,m) <- partition_spec xs;  --"\rightcomment{partition}"
+%         with_split m xs (%xs_1 xs_2. { --"\rightcomment{work on partitions $xs_1$ and $xs_2$}"
+%           npar sort_aux sort_aux (xs_1,d-1) (xs_2,d-1) --"\rightcomment{recursively sort in parallel}"
+%         })
+%       }"
+%   \end{lstlisting}
+%   where
+%   \begin{lstlisting}
+%     with_split m xs f ==
+%       assert (m < |xs|);
+%       (xs_1,xs_2) <- f (take m xs) (drop m xs);
+%       assert (|xs_1| = m \and |xs_2| = |xs| - m);
+%       return (xs_1@xs_2)
+%
+%     npar f g x y == r1 <- f x; r2 <- g y; return (r1,r2)
+%   \end{lstlisting}
+%   where \is{@} appends two lists.
+%   This algorithm is derived from Introsort~\cite{Muss97}, a quicksort with a depth bound to ensure $O(n\log n)$ worst-case complexity.
+%   If the recursion depth bound $d$ is reached, or the list size is below a certain threshold,
+%   we sort the list using some yet unspecified sorting algorithm. Otherwise, we partition the list
+%   and recursively sort the two partitions.
+%
+%   Here, we have introduced two new combinators,
+%   which are hints for the following refinement steps: (1) the \is{with_split} combinator splits a given list into two parts,
+%   and invokes a function that can change the content of these two parts, but not their length. It then returns
+%   the concatenation of the two changed parts. It is a hint for the further refinement steps to implement the list as
+%   an array that is modified in-place. (2) the \is{npar} combinator simply executes two blocks sequentially.
+%   Note that, for our stateless abstract programs, there is no difference between parallel and (independent) sequential execution.
+%   However, \is{npar} is a hint to the subsequent refinement steps to refine to parallel execution.
+%
+%   Using the tools of the Isabelle Refinement Framework~\cite{LaTu12}, and some existing theories copied from~\cite{La19-llvm},
+%   it is straightforward to prove that this sorting algorithm is correct, i.e.:
+%   \begin{lstlisting}
+%     sort_aux xs d <= sort_spec xs
+%   \end{lstlisting}
+%
+%   In the next sections, we will explain how to refine this two an actual parallel sorting algorithm in LLVM,
+%   re-using the existing sequential pdqsort algorithm~\cite{La19-llvm} for small or too deep partitions, and a sampling algorithm for finding good pivots for partitioning.
+%
+%
+%
+%   \section{A Parallel Sorting Algorithm}\label{sec:parsort}
+%   Our version of the Sepref tool is mostly backwards compatible with the original Sepref tool for Isabelle-LLVM~\cite{La19-llvm}.
+%   The only difference is the handling of concrete pointer equalities (cf.\ Section~\ref{sec::array_split}).
+%   Thus, it was a mainly straightforward task to port the efficient verified Introsort and pdqsort algorithms~\cite{La20} to the new tool,
+%   additionally proving that the concrete algorithm is in-place, i.e., the returned array pointer equals the argument pointer.
+%   Equipped with these refinements, the Sepref tool can synthesize a parallel sorting algorithm from \is{sort_aux} (Section~\ref{sec:sortspec}), using the already existing partitioning algorithm and the
+%   pdqsort algorithm for the abstract \is{partition_spec} and \is{sort_spec} specifications.
+%
+%   Actually, we used refinement steps on the abstract level to add two optimizations:
+%   first, we add an explicit parameter for the length of the list. This allows us to refine the list
+%   to just an array pointer\footnote{Alternatively, we could refine a list to a pair of array pointer and explicit length.}.
+%   Second, to prevent creation of parallel threads for small partitions, we proceed sequentially if the created partitions
+%   are too unbalanced. The following is the algorithm that we input into Sepref\footnote{We have omitted some
+%   of the assertions required to prove that the arithmetic operations do not overflow.}:
+%   \begin{lstlisting}
+%     psort_aux xs n d ==
+%       assert n=|xs|
+%       if d=0 \or n<100000 then {
+%         slice_sort_spec xs 0 n
+%       } else {
+%         (xs,m) <- slice_partition_spec xs 0 n;
+%         let bad = m<n div 8 \or (n-m < n div 8)
+%         (_,xs) <- with_split m xs (%xs_1 xs_2. {
+%           if bad then nseq psort_aux psort_aux (xs_1,m,d-1) (xs_2,n-m,d-1)
+%           else npar psort_aux psort_aux (xs_1,m,d-1) (xs_2,n-m,d-1)
+%         });
+%         return xs
+%       }"
+%
+%     nseq f_1 f_2 x_1 x_2 == r_1 <- f_1 x_1; r_2 <- f_2 x_2; return (x_1,x_2)
+%
+%     psort xs n ==
+%       assert n=|xs|
+%       if n<=1 then return xs
+%       else psort_aux xs n (log2 n * 2)
+%
+%   \end{lstlisting}
+%   where \is{nseq} is abstractly the same as \is{npar}, but is translated to sequential execution by the Sepref tool.
+%   Moreover, \is{slice_sort_spec} and \is{slice_partition_spec} are the specifications for sorting and partitioning
+%   only a slice of the array, leaving the rest unchanged. These match the interface of the original sequential algorithms
+%   proved correct in~\cite{La20}. Finally, \is{psort} wraps the algorithm to run with an initial depth limit of $2\lfloor\log_2 n\rfloor$.
+%
+% %   \subsection{A Sampling Partitioner}
+% %   While we could simply re-use the existing partitioning algorithm from the Introsort formalization,
+% %   which uses a median-of-three pivot selection, we observe that the quality of the pivot is
+% %   particularly important for a balanced parallelization. Moreover, the partitioning in the \is{psort_aux} procedure
+% %   is only done for arrays above a quite big size threshold. Thus, we can invest a little more work to find
+% %   a good pivot, which is still negligible compared to the cost of sorting the resulting partitions.
+% %
+% %   We choose a rather simple sampling approach: for an array of size $n$, we take $\min(n,64)$ equidistant samples,
+% %   and use the median of these samples as pivot.
+% %
+% %   Formalization of this sampling algorithm in the Refinement Framework is straightforward.
+% %   To easily integrate with the existing (highly optimized) implementation of the partitioning algorithm,
+% %   we have to determine the \emph{index} of the pivot element, swap it with the first element of the array,
+% %   and then use the existing partitioning algorithm.
+% %
+% %   This suggests an algorithm to find the median of a list of sample indexes, comparing each index by looking it up in
+% %   the list to be sorted, and comparing the corresponding elements.
+% %   We briefly sketch our approach to formalize such parametrized algorithms using locales, and
+% %   an extension to Isabelle-LLVM's preprocessor to allow for painless code generation.
+% %   Note that, for the sake of readability, we have slightly idealized the presentation\footnote{
+% %     We have omitted some of the fixed parameters, and only describe a parametrized locale.
+% %     In practice, we have two versions of the locale, one with a parameter, and one without. While they are still based on the same abstract algorithms, they duplicate some boilerplate code.
+% %   }.
+% %
+% %   A \emph{locale}~\cite{KWP99} is a named context that fixes some parameters and makes assumptions about these parameters.
+% %   Inside a locale, definitions and theorems can depend on the parameters and assumptions.
+% %   Later, a locale can be instantiated with actual terms for the parameters, proving that they satisfy the assumptions.
+% %   This makes available instantiated versions of the definitions and theorems proved inside the locale.
+% %   Instantiations can also be nested, that is, a locale can be instantiated in the context of another locale.
+% %
+% %   We define a locale to set up a parametrized compare function as follows:
+% %   \begin{lstlisting}
+% %     locale pcmp =
+% %       fixes lt lti par$_A$ elem$_A$
+% %       assumes weak_ordering (lt p)
+% %       assumes hnr
+% %         (par$_A$ p pi * elem$_A$ a ai * elem$_A$ b bi)
+% %         (lti pi ai bi)
+% %         (par$_A$ p pi * elem$_A$ a ai * elem$_A$ b bi)  (bool$_A$)  (%_. True)
+% %         (lt p a b)
+% %
+% %   \end{lstlisting}
+% %   that is, we fix an abstract compare function \is{lt}. It takes one extra parameter \is{p},
+% %   and is a weak ordering\footnote{
+% %     A weak ordering can be defined by mapping the elements into a total ordering, and is the standard prerequisite for sorting algorithms.
+% %   } for each such \is{p}. We also fix a concrete compare function \is{lti}, that refines the abstract compare
+% %   function, with refinement assertion \is{par$_A$} for the parameter, and \is{elem$_A$} for the elements to be sorted.
+% %
+% %   Inside the \is{pcmp} locale, we define our sorting and median functions, threading through the explicit parameter \is{p}.
+% %   Among others, this will yield a function \is{median p xs}, which returns the median index of the elements in list \is{xs},
+% %   comparing wrt.\ \is{lt p}. We also get a corresponding implementation \is{median_impl}\footnote{We simply reused a sequential sorting algorithm to completely sort the list and then obtain the middle element. While this is not the most efficient way of finding a median, the overhead when sorting $64$ element arrays is negligible compared to the time spent for sorting the partitions that are at least $10^5$ elements large. Thus, a more efficient algorithm like quickselect would not have any measurable effect on the overall performance, and we leave its verification to future work.}.
+% %
+% %   To implement the sampling algorithm, \is{inside} the \is{pcmp} locale, we define
+% %   a comparison function for indexes, parametrized with the original parameter and the array to be sorted.
+% %   For this, we instantiate the \is{pcmp} locale again\footnote{In the actual formalization, we use a slightly more complex locale hierarchy to carefully avoid infinite recursive instantiations.}:
+% %
+% %   \begin{lstlisting}
+% %     context pcmp begin
+% %
+% %       definition "lt_idx (p,xs) i j == lt p (xs!i) (xs!j)"
+% %       definition "lt_idx_impl == ..."
+% %
+% %       sublocale IDX: pcmp lt_idx lt_idx_impl (par$_A$ \<times> arr$_A$) idx$_A$   \<proof>
+% %
+% %   \end{lstlisting}
+% %   This makes available a function \is{IDX.median} and its implementation, which compares indexes into arrays as desired.
+% %   This is then used in the partitioning function.
+% %
+% %   Finally, the \is{pcmp} locale is instantiated globally, for example to sort unsigned integers, and the resulting implementation is
+% %   exported to LLVM text:
+% %   \begin{lstlisting}
+% %     global_interpretation unat: pcmp (<) ll_icmp_ult unat$^{64}_A$   \<proof>
+% %
+% %     export_llvm unat.psort$_\dagger$
+% %   \end{lstlisting}
+% %   The \is{global_interpretation} command instantiates the locale for comparing natural
+% %   numbers implemented by 64 bit words (\is{unat$^{64}_A$}). Note that the compare function is not
+% %   parametrized. Finally, the \is{export_llvm} command generates LLVM text.
+% %   It first uses a preprocessor to generate and prove correct a set of code equations, which are then pretty printed to actual LLVM text.
+% %   The preprocessor does not contribute to the trusted code base, as it proves correct its transformations.
+% %   At this point, we have added a transformation to automatically instantiate the higher-order parameters generated by Isabelle's locale mechanism.
+% %   This saves a lot of boilerplate code that was necessary in the original sorting algorithm formalization~\cite{La20}, and became unmanageable
+% %   once we added the sublocale for comparing indexes into an array.
+%
+%
+% %
+% %   xxx: array splitting
+% %
+% %   then short explanation that proofs are semi-automatic.
+% %
+% %
+% %   also mention optimizations of algorithm (bad-partition)
+% %
+% %
+% %
+% %   Sepref comes with standard setup to refine lists to arrays. List updates are refined to destructive array updates,
+% %   as long as the old version of the list is not used after the update.
+% %   It also provides setup to refine unbounded natural numbers to bounded integers.
+% %   It tries to discharge the resulting in-bounds proof obligations automatically.
+% %   If this is not possible, it relies on hints from the user.
+% %
+% %
+% %     - intro to sepref
+% %     - parallel hnr rule
+% %     - identity tracking
+% %     - array splitting
+%
+% %   \section{Parallel Quicksort}
+% %   \subsection{The Algorithm}
+% %
+% %   \subsection{Array Data Structure}
+%
+%
+%
+%
+%   \subsection{Final Implementation and Correctness Theorem}
+%   From this algorithm, the Sepref tool generates an imperative implementation \is{psort$_\dagger$} and proves the corresponding \is{hnr} refinement lemma.
+%   Finally, our code generator translates \is{psort$_\dagger$} to an LLVM function.
+%   Combining the refinement lemma with the correctness lemma of the abstract \is{psort} algorithm, and unfolding the definition of \is{hnr},
+%   we get the following Hoare-triple, that states correctness of our final algorithm:
+%   \begin{lstlisting}
+%   "ht (arr$_A$ xs xsi * idx$_A$ n ni * n = |xs|)
+%     (psort$_\dagger$ xsi ni)
+%     (%r. r=xsi * \<exists> xs'. arr$_A$ xs' xsi * sorted xs' * mset xs' = mset xs)"
+%   \end{lstlisting}
+%   That is, for a pointer \is{xsi} to an array, whose contents are described by list \is{xs} (\is{arr$_A$}), and a fixed-size word \is{ni} representing the natural number \is{n} (\is{idx$_A$}),
+%   which must be the number of elements in the list \is{xs}, our sorting algorithm returns the original pointer \is{xsi}, and the array contents are now \is{xs'},
+%   which is sorted and a permutation of \is{xs}.
+%   Note that, while the trusted code base of this statement includes our LLVM semantics and code generator, as well as Isabelle's inference kernel,
+%   it does not include the refinement steps, verification condition generation, Hoare-rules, or automated theorem provers invoked by sledgehammer~\cite{BBP13},
+%   which we used to prove this statement.
+%
+
+  \subsection{Benchmarks}\label{sec:benchmark}
   \newcommand{\plottim}[4]{
   \begin{tikzpicture}
     \begin{axis}[
       ymajorgrids,
       title={\large #1},
-      title style={at={(0.15,.75)}},
+      title style={at={(0.1,.75)}},
       ybar=0pt,
       width=\textwidth,
       height=.25\textheight,
@@ -1095,8 +1839,8 @@ and Section~\ref{sec:concl} concludes the paper and discusses related and future
     }{}
 
   \caption{Runtimes in milliseconds for sorting various distributions of unsigned 64 bit integers and strings with
-    C++ standard sorting algorithm, our verified parallel sorting algorithm and Boosts sample sort algorithm.
-    The experiments are performed on a server machine with 22 AMD Opteron 6176 cores and 128GiB of RAM, and a laptop with a
+    our verified parallel sorting algorithm, C++'s standard parallel sorting algorithm, and Boost's parallel sample sort algorithm.
+    The experiments were performed on a server machine with 22 AMD Opteron 6176 cores and 128GiB of RAM, and a laptop with a
     6 core (12 threads) i7-10750H CPU and 32GiB of RAM.
   }\label{fig:benchres}
   \end{figure}
@@ -1115,8 +1859,8 @@ and Section~\ref{sec:concl} concludes the paper and discusses related and future
       ymajorgrids,
       title={\large Laptop},
       title style={at={(0.15,.85)}},
-      width=\columnwidth,
-      height=.4\textheight
+      width=.54\textwidth,
+      height=.3\textheight
     ]
       \input{sudata_laptop}
 
@@ -1126,8 +1870,7 @@ and Section~\ref{sec:concl} concludes the paper and discusses related and future
 
 %       \addplot[black, thin, sharp plot, update limits=false] {\x};
     \end{axis}
-  \end{tikzpicture}
-
+  \end{tikzpicture}\hfill
   \begin{tikzpicture}
     \begin{axis}[
       xlabel near ticks,
@@ -1139,8 +1882,8 @@ and Section~\ref{sec:concl} concludes the paper and discusses related and future
       ymajorgrids,
       title={\large Server},
       title style={at={(0.15,.85)}},
-      width=\columnwidth,
-      height=.4\textheight
+      width=.54\textwidth,
+      height=.3\textheight
     ]
       \input{sudata_server}
 
@@ -1161,30 +1904,26 @@ and Section~\ref{sec:concl} concludes the paper and discusses related and future
   \end{figure}
 
 
-  The resulting parallel sorting algorithm is quite simplistic,
-  ignoring a lot of research on efficient parallel sorting algorithms~\cite{CNLM08},
-  as well as practically well-tested implementations~\cite{boost-sort}.
-  In this section, we report on benchmarking our verified algorithm against unverified algorithms.
 
-  In a first experiment, we implemented the same simplistic algorithm directly in C++, and benchmarked it
-  against its verified counterpart on various sets of distributions.
+
+  We have benchmarked our verified sorting algorithm against a direct implementation of the same algorithm in C++.
   The result was that both implementations have the same runtime, up to some minor noise.
   This indicates that there is no systemic slowdown: algorithms verified with our framework run as fast as their unverified counterparts implemented in C++.
 
-  In a second experiment, we benchmark our verified algorithm against state-of-the-art implementations:
-  we use the parallel \is{std::sort(execution_policy::par_unseq)} from the GNU C++ standard library~\cite{libstdc++}, and the
-  \is{sample_sort} implementation from the Boost C++ libraries~\cite{boost}.
+  We also benchmarked against the state-of-the-art implementations \is{std::sort} with execution policy \is{par_unseq} from the
+  GNU C++ standard library~\cite{libstdc++},
+  and \is{sample_sort} from the Boost C++ libraries~\cite{boost,boost-sort}.
   We have benchmarked the algorithm on two different machines, and various input distributions. The results are shown in Figure~\ref{fig:benchres}.
-  While our simple algorithm is clearly competitive for integer sorting on the less parallel laptop
+  While our verified algorithm is clearly competitive for integer sorting on the less parallel laptop
   machine, it's slightly less efficient for sorting strings on the highly parallel server machine.
-  Nevertheless, we believe that our simple verified algorithm is already useful in practice,
+  Nevertheless, we believe that our verified implementation is already useful in practice,
   and leave further optimizations to future work.
 
-  In a third experiment, we measure the speedup that the algorithm achieves for a certain number of cores.
+  Finally, we measured the speedup that the implementations achieve for a certain number of cores.
   The results are displayed in Figure~\ref{fig:speedup}. While the speedup on the moderately parallel
-  laptop is comparable to the one of the C++ standard library, our simple algorithm
-  achieves lower speedups than the state-of-the-art implementations on the highly parallel server.
-  Again, we leave further optimization of our algorithm to future work.
+  laptop is comparable to the one of the C++ standard library, our implementation
+  achieves lower speedups than the state-of-the-art on the highly parallel server.
+  Again, we leave further optimizations to future work.
 
 
 %   Again, in particular for higher numbers of cores,
@@ -1216,41 +1955,50 @@ and Section~\ref{sec:concl} concludes the paper and discusses related and future
     We have presented a stepwise refinement approach to verify total correctness of efficient parallel algorithms.
     Our approach targets LLVM as back end, and there is no systemic efficiency loss in our approach
     when compared to unverified algorithms implemented in C++.
-    As a case study, we have implemented a simple parallel sorting algorithm.
-    It uses an existing verified pdqsort algorithm as a building block,
+
+    The trusted code base of our approach is relatively small:
+    apart from Isabelle's inference kernel, it contains our shallow embedding of a small fragment of
+    the LLVM semantics, and the code generator.
+    All other tools that we used, e.g., our Hoare logic, Sepref tool, and Refinement Framework for abstract programs,
+    ultimately prove a correctness theorem that only depends on our shallowly embedded semantics.
+
+    As a case study, we have implemented a parallel sorting algorithm.
+    It uses an existing verified sequential pdqsort algorithm as a building block,
     and is competitive with state-of-the-art parallel sorting algorithms,
     at least on moderately parallel hardware.
 
     The main idea of our parallel extension is to shallowly embed the semantics of a
-    parallel combinator into an existing sequential semantics, by making the existing
+    parallel combinator into a sequential semantics, by making the
     semantics report the accessed memory locations, and fail if there is a potential data race.
-    This only changed the lower levels of the existing tooling, while higher-level tools
-    like VCG and Sepref remained largely unchanged and mostly backwards compatible.
-    This allowed us to easily port the verification of already existing sequential algorithms
-    to our parallel framework, where they could be used as building blocks for parallel algorithms.
+    We only needed to changed the lower levels of our existing framework for sequential LLVM~\cite{La19-llvm}.
+    Higher-level tools like the VCG and Sepref remained largely unchanged and backwards compatible.
+    This greatly simplified reusing of existing verification projects, like the sequential pdqsort algorithm~\cite{La20}.
 
-    In our approach, the high-level algorithms are phrased as purely functional and sequential algorithms,
-    that, however, already contain hints how they should be refined to imperative parallel algorithms.
-    Only during the last refinement step, performed by Sepref, actual imperative and parallel code is generated.
 
-    The trusted code base of our approach is relatively small.
-    To the trusted code base of the original Isabelle-LLVM tool, we only added the semantics and code generation for the parallel combinator.
+
+%     In our approach, the high-level algorithms are phrased as purely functional and sequential algorithms,
+%     that, however, already contain hints how they should be refined to imperative parallel algorithms.
+%     Only during the last refinement step, performed by Sepref, actual imperative and parallel code is generated.
+
 
     \subsection{Related Work}
     While there is extensive work on parallel sorting algorithm (e.g.~\cite{CNLM08,AMI21}),
-    there seems to be almost no work on their formal verification. The only work we are
-    aware of~\cite{SaHu20} uses the VerCors deductive verifier to prove the permutation property (\is{mset xs' = mset xs}),
-    but neither the sortedness property nor termination, of odd-even transposition sort~\cite{Ha72}.
+    there seems to be almost no work on their formal verification. The only work we are aware of is
+    a distributed merge sort algorithm~\cite{HKBK20}, for which ''no effort has been made to make it efficient''\cite[Sec.~2]{HKBK20},
+    nor any executable code has been generated or benchmarked. Another verification~\cite{SaHu20} uses
+    the VerCors deductive verifier to prove the permutation property (\is{mset xs' = mset xs})
+    of odd-even transposition sort~\cite{Ha72}, but neither the sortedness property nor termination.
 
     Concurrent separation logic is used by many verification tools such
     as VerCors~\cite{Vercors}, and also formalized in proof assistants, for example in the VST~\cite{VST}
     and IRIS~\cite{JKJA18} projects for Coq~\cite{BeCa10}. These formalizations contain elaborate concepts to
     reason about communication between threads via shared memory, and are typically used to
-    verify subtle concurrent algorithms (e.g.~\cite{MeJo21}).
-    However, they can only reason about partial correctness, and extending them to total correctness
-    is a non-trivial endeavour that is subject of active research~\cite{SGGT21}.
-    On the other hand, our (less expressive) separation logic naturally supports total correctness,
-    and is sufficient for many parallel algorithms.
+    verify partial correctness of subtle concurrent algorithms (e.g.~\cite{MeJo21}).
+    Reasoning about total correctness is more complicated in the step-indexed separation logic provided by IRIS,
+    and currently only supported for sequential programs~\cite{SGGT21}.
+    Our approach is less expressive, but naturally supports total correctness, and is already sufficient for
+    many practically relevant parallel algorithms like sorting, matrix-multiplication, or parallel algorithms from
+    the C++ STL.
 
 
 
@@ -1261,14 +2009,14 @@ and Section~\ref{sec:concl} concludes the paper and discusses related and future
 
 
     \subsection{Future Work}
-      An obvious next step for our work is to implement a fractional separation logic~\cite{BCOP05},
+      An obvious next step is to implement a fractional separation logic~\cite{BCOP05},
       to reason about parallel threads that share read-only memory. While our semantics
       already supports shared read-only memory, our separation logic does not.
       We believe that implementing a fractional separation logic will be straightforward,
-      and mainly pose technical issues for automatic frame inference in our VCG and Sepref tool.
+      and mainly pose technical issues for automatic frame inference.
 
       Another obvious next step is to verify a state-of-the-art parallel sorting algorithm,
-      like Boost's sample sort. As our simple algorithm, sample sort does not require
+      like Boost's sample sort. Like our current algorithm, sample sort does not require
       advanced synchronization concepts, and can be implemented only with a parallel combinator.
 
       Finally, the Sepref framework has recently been extended to reason about complexity of (sequential)
@@ -1277,12 +2025,11 @@ and Section~\ref{sec:concl} concludes the paper and discusses related and future
 
       Extending our approach towards more advanced
       synchronization like locks or atomic operations may be possible: instead of accessed memory addresses,
-      a thread could return a set of possible traces, which are checked for race-freedom and then combined.
-      However, this would require a nondeterministic LLVM semantics instead of the current deterministic one.
+      a thread could report a set of possible traces, which are checked for race-freedom and then combined.
 
-      Finally, our framework currently targets multicore CPUs. Another emerging architecture are general purpose GPUs.
+      Finally, our framework currently targets multicore CPUs. Another important architecture are general purpose GPUs.
       As LLVM is also available for GPUs, porting our framework to this architecture should be possible.
-      We even expect that barrier synchronization, which is important in the GPU context, can be easily integrated into our approach.
+      We even expect that barrier synchronization, which is important in the GPU context, can be integrated into our approach.
 
 
 %
@@ -1308,7 +2055,6 @@ and Section~\ref{sec:concl} concludes the paper and discusses related and future
 \clearpage
 
 
-\bibliographystyle{abbrv}
 \bibliography{bib}
 
 

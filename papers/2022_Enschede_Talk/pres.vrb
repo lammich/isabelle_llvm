@@ -1,0 +1,37 @@
+\frametitle{Parallel Quicksort (Sepref + Code Export)}
+\small
+
+  \begin{itemize}
+   \item<1-> Sepref generates imperative program
+    \begin{itemize}
+     \item using existing sequential \is{pdqsort} for fallback
+     \item using (new) sampling partitioner (proved correct + refined separately)
+
+    \end{itemize}
+   \item<2-> Correctness theorem:
+    {\only<3->{\tiny}
+    \begin{lstlisting}
+    {arr$_A$ xs xs$_\dagger$ * idx$_A$ n n$_\dagger$ * n = |xs|}
+      (psort$_\dagger$ xs$_\dagger$ n$_\dagger$)
+    {%r. r=xs$_\dagger$ * \<exists> xs'. arr$_A$ xs' xs$_\dagger$ * sorted xs' * mset xs' = mset xs}
+    \end{lstlisting}}
+   \item<3-> Instantiation to concrete weak ordering + code export
+    {\only<4->{\tiny}
+    \begin{lstlisting}
+      interpretation unat: pcmp (%_. <) (%_. ll_icmp_ult) unat$^{64}_A$ \<proof>
+      interpretation str: pcmp (%_. <) (%_. strcmp) str$^{64}_A$ \<proof>
+
+      export_llvm
+        unat.psort$_\dagger$ is "uint64_t* psort(uint64_t*, int64_t)"
+        str.psort$_\dagger$ is "llstring* str_psort(llstring*, int64_t)"
+        defines
+          typedef struct {int64_t sz; struct {int64_t cap; char *data;};} llstring;
+        file psort.ll
+    \end{lstlisting}}
+
+   \item<4-> Link against C++ benchmark driver
+    \begin{lstlisting}
+      clang++ [...] lib_isabelle_llvm.cpp psort.ll benchmark.cpp
+    \end{lstlisting}
+
+  \end{itemize}

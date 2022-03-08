@@ -11,13 +11,13 @@
 % \newcommand{\rsem}{\ensuremath{\mathclose{]\!]}}}
 
 \lstdefinelanguage{isabelle}{
-  morekeywords={theorem,theorems,corollary,lemma,lemmas,locale,sublocale,global_interpretation,begin,end,fixes,assumes,shows,and,class,
-    constrains , definition, defines, where, apply, done,unfolding, primrec, fun, using, by, for, uses, file,
-    schematic_lemma, concrete_definition, prepare_code_thms, export_code, datatype, type_synonym, typedef, value,
-    proof, next, qed, show, have, hence, thus, interpretation, fix, context, sepref_definition,is,export_llvm
+  morekeywords={theorem,theorems,corollary,lemma,lemmas,locale,begin,end,fixes,assumes,shows,and,class,
+    constrains , definition, where, apply, done,unfolding, primrec, fun, using, by, for, uses, file,
+    schematic_lemma, concrete_definition, prepare_code_thms, export_code, datatype, type_synonym, typedef, defines, value,
+    proof, next, qed, show, have, hence, thus, interpretation, fix, context, sepref_definition,sepref_def,is,export_llvm
  } ,
   morekeywords=[2]{rec, return, bind, foreach, if, then, else, do, let, in, res, spec, fail, assert, assume, while, case, of,
-    check,with_split,npar,nseq},
+    check, get, set},
 %  morekeywords=[3]{length,mod,insert},
 %   morekeywords=[4]{simp,auto,intro,elim,rprems,refine_mono,refine_rcg},
   sensitive=True,
@@ -35,8 +35,8 @@
     mathescape=true,
     escapeinside={--"}{"},
     basicstyle={\itshape},
-    keywordstyle=\rm\bfseries,
-    keywordstyle=[2]\rm\tt,
+    keywordstyle=\rm\ttfamily\fontseries{b}\selectfont,
+    keywordstyle=[2]\rm\ttfamily\fontseries{m}\selectfont,
     keywordstyle=[3]\rm,
     keywordstyle=[4]\rm,
     showstringspaces=false,
@@ -45,17 +45,13 @@
 \lstset{literate=
   {"}{}0
   {'}{{${}^\prime\!$}}1
-  {~:}{{$\notin$}}1
   {\%}{{$\lambda$}}1
   {\\\%}{{$\lambda$}}1
   {\\\$}{{$\mathbin{\,\$\,}$}}1
-  {&}{{$\wedge$}}1
-  {?}{{$\exists$}}1
-%  {!}{{$\forall$}}1 clashes with nth xs!i
   {->}{{$\rightarrow$}}1
   {<-}{{$\leftarrow$}}1
-%   {<.}{{$\langle$}}1
-%   {.>}{{$\rangle$}}1
+  {<.}{{$\langle$}}1
+  {.>}{{$\rangle$}}1
   {<=}{{$\le$}}1
   {>=}{{$\ge$}}1
   {<->}{{$\leftrightarrow$}}1
@@ -115,7 +111,6 @@
   {\\<A>}{{$\mathcal{A}$}}1
   {\\<O>}{{\sf o}}1
   {\\<Phi>}{{$\Phi$}}1
-  {\\<phi>}{{$\phi$}}1
   {\\<Psi>}{{$\Psi$}}1
   {\\<sigma>}{{$\sigma$}}1
   {\\<cdot>}{{$\cdot$}}1
@@ -144,10 +139,8 @@
   {\\<exists>}{{$\exists$}}1
   {\\<nexists>}{{$\nexists$}}1
   {\\<union>}{{$\cup$}}1
-  {\\<inter>}{{$\cap$}}1
-  {\\in}{$\in$}1
   {\\union}{{$\cup$}}1
-  {\\inter}{{$\cap$}}1
+  {\\<inter>}{{$\cap$}}1
   {\\<subset>}{{$\subset$}}1
   {\\<subseteq>}{{$\subseteq$}}1
   {\\<supset>}{{$\supset$}}1
@@ -158,8 +151,6 @@
   {\\alpha}{{$\alpha$}}1
   {\\beta}{{$\beta$}}1
   {\\gamma}{{$\gamma$}}1
-  {\\rho}{{$\rho$}}1
-  {\\<rho>}{{$\rho$}}1
   {\\<Gamma>}{{$\Gamma$}}1
   {\\<langle>}{{$\langle$}}1
   {\\<rangle>}{{$\rangle$}}1
@@ -169,22 +160,25 @@
   {\\<top>}{{$\top$}}1
   {\\<notin>}{{$\notin$}}1
   {\\<guillemotright>}{{$\gg$}}1
-  {\\approx}{$\approx$}1
-  {\\<approx>}{$\approx$}1
+  {\\in}{$\in$}1
   {\\and}{$\wedge$}1
   {\\or}{$\vee$}1
-  {\\mu}{$\mu$}1
   {\\Phi}{{$\Phi$}}1
   {\\Psi}{{$\Psi$}}1
+  {\\rho}{{$\rho$}}1
+  {\\<rho>}{{$\rho$}}1
+  {\\mu}{{$\mu$}}1
+  {\\<mu>}{{$\mu$}}1
   {\\le}{{$\le$}}1
   {\\Up}{{$\Uparrow$}}1
   {\\Down}{{$\Down$}}1
+  {\\emptyset}{{$\emptyset$}}1
+  {\\<emptyset>}{{$\emptyset$}}1
   {>>}{{$\gg$}}1
   {>>=}{{${\gg}{=}$}}1
   {<*lex*>}{{$\times_{\sf lex}$}}1
   {\\<open>}{{\rm\guilsinglleft}}1
   {\\<close>}{{\rm\guilsinglright}}1
-  {\\<box>}{{$\square$}}1
   {\\<proof>}{{\color{darkgray}$\langle\text{proof}\rangle$}}7
 }
 
@@ -192,7 +186,6 @@
 
 % \newcommand{\is}{\lstinline[language=isabelle,basicstyle=\normalsize\ttfamily\slshape]}
 \newcommand{\is}{\lstinline[language=isabelle]}
-\newcommand{\cs}{\lstinline[language=C++]}
 \newcommand{\q}[1]{\mbox{\guilsinglleft{#1}\hspace{-.0pt}\guilsinglright}}
 % \newcommand{\isai}[1]{\q{\lstinline[language=isabelle,basicstyle=\normalsize\ttfamily\slshape]{#1}}}
 \cMakeRobust\q

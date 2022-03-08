@@ -1,48 +1,53 @@
 This is BibTeX, Version 0.99d (TeX Live 2019/Debian)
 Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
 The top-level auxiliary file: main.aux
-The style file: abbrv.bst
+The style file: plainurl.bst
+Reallocated glb_str_ptr (elt_size=4) to 20 items from 10.
+Reallocated global_strs (elt_size=200001) to 20 items from 10.
+Reallocated glb_str_end (elt_size=4) to 20 items from 10.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
 Database file #1: bib.bib
 Warning--empty year in HaLa21-toplas
-You've used 42 entries,
-            2118 wiz_defined-function locations,
-            781 strings with 10907 characters,
-and the built_in function-call counts, 16203 in all, are:
-= -- 1615
-> -- 665
-< -- 33
-+ -- 263
-- -- 214
-* -- 1052
-:= -- 2439
-add.period$ -- 139
-call.type$ -- 42
-change.case$ -- 227
+You've used 38 entries,
+            2882 wiz_defined-function locations,
+            900 strings with 12217 characters,
+and the built_in function-call counts, 19362 in all, are:
+= -- 2051
+> -- 629
+< -- 28
++ -- 232
+- -- 187
+* -- 1056
+:= -- 2564
+add.period$ -- 135
+call.type$ -- 38
+change.case$ -- 204
 chr.to.int$ -- 0
-cite$ -- 43
-duplicate$ -- 713
-empty$ -- 1359
-format.name$ -- 214
-if$ -- 3623
+cite$ -- 39
+duplicate$ -- 651
+empty$ -- 1883
+format.name$ -- 187
+if$ -- 5139
 int.to.chr$ -- 0
-int.to.str$ -- 42
-missing$ -- 38
-newline$ -- 210
-num.names$ -- 90
-pop$ -- 308
+int.to.str$ -- 38
+missing$ -- 34
+newline$ -- 199
+num.names$ -- 80
+pop$ -- 453
 preamble$ -- 1
-purify$ -- 186
+purify$ -- 166
 quote$ -- 0
-skip$ -- 561
+skip$ -- 1380
 stack$ -- 0
-substring$ -- 988
-swap$ -- 270
-text.length$ -- 33
+substring$ -- 917
+swap$ -- 266
+text.length$ -- 28
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 164
+type$ -- 148
 warning$ -- 1
-while$ -- 154
-width$ -- 44
-write$ -- 472
+while$ -- 139
+width$ -- 40
+write$ -- 449
 (There was 1 warning)
