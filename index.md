@@ -37,10 +37,16 @@ The main features are:
 #### Parallel Paper
   Some starting points, structured according to the parallel paper:
 
-  [Memory Model](Isabelle_LLVM/Simple_Memory.html)
+  [NE Monad](Isabelle_LLVM/NEMonad.html)
+  
+  [M Monad](Isabelle_LLVM/MMonad.html) Includes the parallel combinator
+  
+  [Memory Model](Isabelle_LLVM/Generic_Memory.html) Including access reports
+  
+  [LLVM Values stored in Memory](Isabelle_LLVM/Simple_Memory.html)
 
-  [Monad with Interference](Isabelle_LLVM/Monad.html) A bit more general than described in the paper: the actual monad is parameterized over the type of memory accesses
-
+  [LLVM Instructions](Isabelle_LLVM/LLVM_Shallow.html)
+  
   [Code Generator](Isabelle_LLVM/LLVM_Codegen.html) Including the [template for translating llc_par](Isabelle_LLVM/files/par_wrapper.tmpl.ml.html)
 
   [Separation Logic and VCG](Isabelle_LLVM/LLVM_VCG_Main.html) A bit more general than described in paper, parameterized over memory model.
@@ -55,12 +61,18 @@ The main features are:
 
 
 #### Verified Algorithms
+  [Parallel Quicksort](Isabelle_LLVM/Sorting_Parsort.html)
+  
   [Introsort](Isabelle_LLVM/Sorting_Introsort.html)
 
   [PDQ Sort](Isabelle_LLVM/Sorting_PDQ.html)
 
   [Knuth Morris Pratt String Search](Isabelle_LLVM/KMP.html)
 
+  [Binary Search](Isabelle_LLVM/Bin_Search.html)
+  
+  For the ISA-SAT verified SAT solver, see its own [homepage](https://m-fleury.github.io/isasat/isasat.html)
+  
 #### Isabelle-LLVM
   [IICF (Isabelle-LLVM + Refinement Framework + Collection Framework)](Isabelle_LLVM/IICF.html)
 
@@ -73,7 +85,7 @@ The main features are:
   * To re-check the proofs: Working installation of [Isabelle/HOL](https://isabelle.in.tum.de) 
     with the [Archive of Formal Proofs](https://www.isa-afp.org) installed 
     as as described on [https://www.isa-afp.org/using.shtml](https://www.isa-afp.org/using.shtml). 
-    We require version = Isabelle-2021, which, at the time of writing, is the current version.
+    We require version = Isabelle-2021-1, which, at the time of writing, is the current version.
   * To run the regression tests: [Valgrind](https://www.valgrind.org/) version >= 3.0.0
 
 ## Compiling and running benchmarks

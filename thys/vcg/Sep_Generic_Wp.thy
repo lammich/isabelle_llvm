@@ -1,3 +1,4 @@
+section \<open>General VCG Setup for Separation Logic\<close>
 theory Sep_Generic_Wp
 imports 
   "../lib/Sep_Algebra_Add" 
@@ -5,21 +6,27 @@ imports
   "../lib/MM/MMonad"
 begin
 
+  
+  
+(* TODO: Move *)  
+declare sep_disj_commuteI[sym]  
 
-context intf_consistent_loc begin  
+
+context acc_consistent_loc begin  
   
-  lemma intf_r_alloc: "addr.block`r \<subseteq> Collect (is_ALLOC s) \<union> a"
-    by (smt (verit, best) Un_def cell.exhaust_disc image_subset_iff intf_ref_not_freed intf_ref_not_fresh is_FRESH'_eq mem_Collect_eq sup_ge1)
+  lemma acc_r_alloc: "addr.block`r \<subseteq> Collect (is_ALLOC s) \<union> a"
+    by (smt (verit, best) Un_def block.exhaust_disc image_subset_iff acc_ref_not_freed acc_ref_not_fresh is_FRESH'_eq mem_Collect_eq sup_ge1)
   
-  lemma intf_w_alloc: "addr.block`w \<subseteq> Collect (is_ALLOC s) \<union> a"
-    by (smt (verit, best) Un_def cell.exhaust_disc image_subset_iff intf_ref_not_freed intf_ref_not_fresh is_FRESH'_eq mem_Collect_eq sup_ge1)
+  lemma acc_w_alloc: "addr.block`w \<subseteq> Collect (is_ALLOC s) \<union> a"
+    by (smt (verit, best) Un_def block.exhaust_disc image_subset_iff acc_ref_not_freed acc_ref_not_fresh is_FRESH'_eq mem_Collect_eq sup_ge1)
 
 end
 
-section \<open>General VCG Setup for Separation Logic\<close>
+
+subsection \<open>Weakest Precondition\<close>
 
 locale generic_wp =
-  fixes wp :: "'c \<Rightarrow> ('r \<Rightarrow> intf \<Rightarrow> 's \<Rightarrow> bool) \<Rightarrow> 's \<Rightarrow> bool"
+  fixes wp :: "'c \<Rightarrow> ('r \<Rightarrow> acc \<Rightarrow> 's \<Rightarrow> bool) \<Rightarrow> 's \<Rightarrow> bool"
   assumes wp_comm_inf: "inf (wp c Q) (wp c Q') = wp c (inf Q Q')"
 begin
 
@@ -62,6 +69,8 @@ interpretation generic_wp wp
   unfolding fun_eq_iff inf_fun_def inf_bool_def
   by pw
 
+subsubsection \<open>VCG Setup\<close>  
+  
 lemma wp_return[vcg_normalize_simps]: "wp (Mreturn x) Q s \<longleftrightarrow> Q x 0 s" by pw
 
 lemma wp_fail[vcg_normalize_simps]: "\<not> wp (Mfail) Q s" by pw 
@@ -75,10 +84,10 @@ lemma wp_par:
   assumes "wp m\<^sub>1 Q\<^sub>1 s"
   assumes "wp m\<^sub>2 Q\<^sub>2 s"
   assumes "\<And>r\<^sub>1 s\<^sub>1 i\<^sub>1 r\<^sub>2 s\<^sub>2 i\<^sub>2. \<lbrakk> 
-      intf_consistent s i\<^sub>1 s\<^sub>1; intf_consistent s i\<^sub>2 s\<^sub>2; spar_feasible i\<^sub>1 i\<^sub>2;
+      acc_consistent s i\<^sub>1 s\<^sub>1; acc_consistent s i\<^sub>2 s\<^sub>2; spar_feasible i\<^sub>1 i\<^sub>2;
       Q\<^sub>1 r\<^sub>1 i\<^sub>1 s\<^sub>1; Q\<^sub>2 r\<^sub>2 i\<^sub>2 s\<^sub>2 
     \<rbrakk> 
-    \<Longrightarrow> intf_norace i\<^sub>1 i\<^sub>2 \<and> Q (r\<^sub>1,r\<^sub>2) (i\<^sub>1+i\<^sub>2) (combine_states s\<^sub>1 i\<^sub>2 s\<^sub>2)"
+    \<Longrightarrow> acc_norace i\<^sub>1 i\<^sub>2 \<and> Q (r\<^sub>1,r\<^sub>2) (i\<^sub>1+i\<^sub>2) (combine_states s\<^sub>1 i\<^sub>2 s\<^sub>2)"
   shows "wp (Mpar m\<^sub>1 m\<^sub>2) Q s"
   using assms apply -
   apply pw 
@@ -86,38 +95,39 @@ lemma wp_par:
   apply (meson res_run_consistentI)
   done
   
-lemma wp_malloc[vcg_normalize_simps]: "wp (Mmalloc xs) Q s \<longleftrightarrow> (\<forall>r. is_FRESH s r \<longrightarrow> Q r (intf_a r) (addr_alloc xs r s))"  
+lemma wp_malloc[vcg_normalize_simps]: "wp (Mmalloc xs) Q s \<longleftrightarrow> (\<forall>r. is_FRESH s r \<longrightarrow> Q r (acc_a r) (addr_alloc xs r s))"  
   supply [pw_simp] = malloc_def
   by pw
   
-lemma wp_free[vcg_normalize_simps]: "wp (Mfree b) Q s \<longleftrightarrow> is_ALLOC s b \<and> Q () (intf_f b) (addr_free b s)"  
+lemma wp_free[vcg_normalize_simps]: "wp (Mfree b) Q s \<longleftrightarrow> is_ALLOC s b \<and> Q () (acc_f b) (addr_free b s)"  
   supply [pw_simp] = mfree_def
   by pw
   
-lemma wp_load[vcg_normalize_simps]: "wp (Mload a) Q s \<longleftrightarrow> is_valid_addr s a \<and> Q (get_addr s a) (intf_r a) s"  
+lemma wp_load[vcg_normalize_simps]: "wp (Mload a) Q s \<longleftrightarrow> is_valid_addr s a \<and> Q (get_addr s a) (acc_r a) s"  
   supply [pw_simp] = mload_def
   by pw
 
-lemma wp_mstore[vcg_normalize_simps]: "wp (Mstore a x) Q s \<longleftrightarrow> is_valid_addr s a \<and> Q () (intf_w a) (put_addr s a x)"  
+lemma wp_mstore[vcg_normalize_simps]: "wp (Mstore a x) Q s \<longleftrightarrow> is_valid_addr s a \<and> Q () (acc_w a) (put_addr s a x)"  
   supply [pw_simp] = mstore_def
   by pw
 
-lemma wp_valid_addr[vcg_normalize_simps]: "wp (Mvalid_addr a) Q s \<longleftrightarrow> is_valid_addr s a \<and> Q () (intf_r a) s"  
+lemma wp_valid_addr[vcg_normalize_simps]: "wp (Mvalid_addr a) Q s \<longleftrightarrow> is_valid_addr s a \<and> Q () (acc_r a) s"  
   supply [pw_simp] = mvalid_addr_def
   by pw
   
-(*lemma wp_valid_ptr_addr[vcg_normalize_simps]: "wp (Mvalid_ptr_addr a) Q s \<longleftrightarrow> is_valid_ptr_addr s a \<and> Q () (intf_e (addr.block a)) s"  
+(*lemma wp_valid_ptr_addr[vcg_normalize_simps]: "wp (Mvalid_ptr_addr a) Q s \<longleftrightarrow> is_valid_ptr_addr s a \<and> Q () (acc_e (addr.block a)) s"  
   supply [pw_simp] = mvalid_ptr_addr_def
   by pw
 *)    
 
+subsection \<open>Connecting Separation Algebra and Concrete Memory\<close>
 
 locale abs_sep =  
   fixes \<alpha> :: "'v memory \<Rightarrow> 'a::{stronger_sep_algebra}"
     and addrs :: "'a \<Rightarrow> addr set"    (* Addresses *)
-    and blocks :: "'a \<Rightarrow> block set"  (* Blocks *)
+    and blocks :: "'a \<Rightarrow> block_idx set"  (* Blocks *)
     and aget :: "'a \<Rightarrow> addr \<Rightarrow> 'v"   (* Modeled values *) 
-    and bget :: "'a \<Rightarrow> block \<Rightarrow> nat" (* Modeled block sizes *)
+    and bget :: "'a \<Rightarrow> block_idx \<Rightarrow> nat" (* Modeled block sizes *)
 
   assumes disj_iff: "as\<^sub>1 ## as\<^sub>2 \<longleftrightarrow> (addrs as\<^sub>1 \<inter> addrs as\<^sub>2 = {} \<and> blocks as\<^sub>1 \<inter> blocks as\<^sub>2 = {})"
   assumes zero_char[simp]: "addrs 0 = {}" "blocks 0 = {}"
@@ -276,22 +286,27 @@ begin
     "a##b \<Longrightarrow> x\<in>blocks b \<Longrightarrow> x\<notin>blocks a"  
     by (auto simp: disj_iff)
 
-text \<open>Eliminating the interference, only maintaining a set of forbidden addresses\<close>  
 
-definition "STATE asf P s \<equiv> \<exists>as. as ## asf \<and> \<alpha> s = as+asf \<and> P as"
-
-definition "intf_excludes i asf 
-  \<equiv> intf.r i \<union> intf.w i \<subseteq> -addrs asf \<and> intf.f i \<subseteq> - (addr.block`addrs asf \<union> blocks asf)"
+subsection \<open>Weakest Precondition With Access Report\<close>    
     
-lemma intf_excludes_simps[simp]:
-  "intf_excludes 0 asf"  
-  "intf_excludes i 0"  
-  unfolding intf_excludes_def by auto
+text \<open>Access report does not include blocks and addresses from frame\<close>
+definition "acc_excludes i asf 
+  \<equiv> acc.r i \<union> acc.w i \<subseteq> -addrs asf \<and> acc.f i \<subseteq> - (addr.block`addrs asf \<union> blocks asf)"
+    
+lemma acc_excludes_simps[simp]:
+  "acc_excludes 0 asf"  
+  "acc_excludes i 0"  
+  unfolding acc_excludes_def by auto
   
+lemma "acc_excludes i asf \<longleftrightarrow>
+  (\<forall>a\<in>addrs asf. a\<notin>acc.r i \<and> a\<notin>acc.w i \<and> addr.block a \<notin> acc.f i)
+\<and> (\<forall>b\<in>blocks asf. b\<notin>acc.f i)"  
+  unfolding acc_excludes_def by auto
   
+text \<open>Weakest precondition for program, such that accesses are disjoint from frame\<close>  
 definition wpa where [pw_init]: "wpa asf c Q s \<equiv> wp c (\<lambda>r i s'. 
     Q r s' 
-  \<and> intf_excludes i asf
+  \<and> acc_excludes i asf
 ) s"
 
 lemma wpa_monoI:
@@ -299,10 +314,40 @@ lemma wpa_monoI:
   assumes "\<And>r s'. \<lbrakk> Q r s' \<rbrakk> \<Longrightarrow> Q' r s'"
   assumes "blocks A' \<subseteq> blocks A" "addrs A' \<subseteq> addrs A"
   shows "wpa A' c Q' s"
-  using assms unfolding wpa_def intf_excludes_def
+  using assms unfolding wpa_def acc_excludes_def
   by (blast intro: wp_monoI)
 
+subsubsection \<open>VCG Setup\<close>
+  
+lemma wpa_false[vcg_normalize_simps]: "\<not>wpa A m (\<lambda>_ _. False) s"  
+  by (simp add: wpa_def vcg_normalize_simps)
 
+lemma wpa_return[vcg_normalize_simps]: "wpa asf (Mreturn x) Q s \<longleftrightarrow> Q x s" by pw
+
+lemma wpa_fail[vcg_normalize_simps]: "\<not> wpa asf (Mfail) Q s" by pw 
+
+lemma wpa_assert[vcg_normalize_simps]: "wpa asf (Massert \<Phi>) Q s \<longleftrightarrow> \<Phi> \<and> Q () s" by pw
+
+lemma wpa_bindI[vcg_decomp_rules]: "wpa asf m (\<lambda>x. wpa asf (f x) Q) s \<Longrightarrow> wpa asf (doM {x\<leftarrow>m; f x}) Q s"  
+  unfolding wpa_def acc_excludes_def
+  apply (simp add: vcg_normalize_simps)
+  apply (erule wp_cons)
+  apply clarify
+  apply (erule wp_cons)
+  apply auto
+  done
+  
+lemma wpa_ifI[vcg_decomp_rules]: 
+  assumes "b \<Longrightarrow> wpa asf c Q s"
+  assumes "\<not>b \<Longrightarrow> wpa asf e Q s"
+  shows "wpa asf (if b then c else e) Q s"  
+  using assms by auto
+  
+  
+  
+  
+subsection \<open>Hoare Triples\<close>  
+definition "STATE asf P s \<equiv> \<exists>as. as ## asf \<and> \<alpha> s = as+asf \<and> P as"
 
 definition "htriple P c Q \<equiv> (\<forall>s asf. STATE asf P s 
   \<longrightarrow> wpa asf c (\<lambda>r s'. STATE asf (Q r) s') s)"
@@ -318,34 +363,28 @@ lemma htripleD:
   shows "wpa asf c (\<lambda>r s'. STATE asf (Q r) s') s"
   using assms unfolding htriple_def by blast
 
-
-lemma wpa_false[vcg_normalize_simps]: "\<not>wpa A m (\<lambda>_ _. False) s"  
-  by (simp add: wpa_def vcg_normalize_simps)
-
-lemma wpa_return[vcg_normalize_simps]: "wpa asf (Mreturn x) Q s \<longleftrightarrow> Q x s" by pw
-
-lemma wpa_fail[vcg_normalize_simps]: "\<not> wpa asf (Mfail) Q s" by pw 
-
-lemma wpa_assert[vcg_normalize_simps]: "wpa asf (Massert \<Phi>) Q s \<longleftrightarrow> \<Phi> \<and> Q () s" by pw
-
-lemma wpa_bindI[vcg_decomp_rules]: "wpa asf m (\<lambda>x. wpa asf (f x) Q) s \<Longrightarrow> wpa asf (doM {x\<leftarrow>m; f x}) Q s"  
-  unfolding wpa_def intf_excludes_def
-  apply (simp add: vcg_normalize_simps)
-  apply (erule wp_cons)
-  apply clarify
-  apply (erule wp_cons)
-  apply auto
-  done
-  
-lemma wpa_ifI[vcg_decomp_rules]: 
-  assumes "b \<Longrightarrow> wpa asf c Q s"
-  assumes "\<not>b \<Longrightarrow> wpa asf e Q s"
-  shows "wpa asf (if b then c else e) Q s"  
-  using assms by auto
+subsubsection \<open>Semantic Definition of Hoare-Triples\<close>  
+text \<open>
+  The Hoare-triple is defined wrt. the semantics. 
+  Unfolding all intermediate concepts, a Hoare-triple 
+  implies a statement over the bare-bones semantics \<^const>\<open>run\<close>:
+\<close>
+lemma htriple_semanticsD:
+  assumes "htriple P c Q"
+  assumes "as ## asf" "\<alpha> \<mu> = as+asf" "P as" \<comment> \<open>Given memory that can be split into part that satisfies precondition, and a frame\<close>
+  obtains R where 
+    "run c \<mu> = SPEC R" \<comment> \<open>The program does not fail\<close>
+    "\<forall>x i \<mu>'. R (x,i,\<mu>') \<longrightarrow> \<comment> \<open>And all possible results ...\<close>
+      (\<exists>as'. as'##asf \<and> \<alpha> \<mu>' = as'+asf \<comment> \<open>Can be split into the original frame and another part\<close>
+           \<and> Q x as')" \<comment> \<open>that satisfies the postcondition\<close>
+  using assms
+  unfolding htriple_def wpa_def STATE_def wp_def NEMonad.wp_def is_res_def the_spec_def is_fail_def
+  apply (auto split: neM.splits)
+  by (metis neM.exhaust)
   
   
-(* TODO: Move *)  
-declare sep_disj_commuteI[sym]  
+  
+subsubsection \<open>VCG Setup\<close>
   
 
   lemma STATE_triv[simp]: "\<not>STATE asf sep_false s"
@@ -423,11 +462,13 @@ declare sep_disj_commuteI[sym]
     apply (erule apply_htriple_rule)
     .
     
-    
+subsubsection \<open>Disjoint Concurrency Rule\<close>    
+
+context begin    
 (* This rule is used to show disjointness in the lemma below.
   Just using blast there will be inefficient due to big terms.
 *)    
-lemma dj_subsetXI:    
+private lemma dj_subsetXI:    
   assumes "a\<subseteq>a\<^sub>1\<union>a\<^sub>2"
   assumes "b\<subseteq>b\<^sub>1\<union>b\<^sub>2"
   assumes "a\<^sub>1\<inter>b\<^sub>1 = {}"
@@ -499,18 +540,18 @@ proof
 
     note STATE1 = \<open>STATE (as\<^sub>2 + asf) (Q\<^sub>1 x\<^sub>1) s\<^sub>1\<close>
     note STATE2 = \<open>STATE (as\<^sub>1 + asf) (Q\<^sub>2 x\<^sub>2) s\<^sub>2\<close>
-    note IEXCL1 = \<open>intf_excludes i\<^sub>1 (as\<^sub>2 + asf)\<close>
-    note IEXCL2 = \<open>intf_excludes i\<^sub>2 (as\<^sub>1 + asf)\<close>
+    note IEXCL1 = \<open>acc_excludes i\<^sub>1 (as\<^sub>2 + asf)\<close>
+    note IEXCL2 = \<open>acc_excludes i\<^sub>2 (as\<^sub>1 + asf)\<close>
 
     
-    from IEXCL1 IEXCL2 have G_EXCL: "intf_excludes (i\<^sub>1 + i\<^sub>2) asf"
-      unfolding intf_excludes_def
+    from IEXCL1 IEXCL2 have G_EXCL: "acc_excludes (i\<^sub>1 + i\<^sub>2) asf"
+      unfolding acc_excludes_def
       by auto
         
       
       
     \<comment> \<open>Prove race freedom\<close>
-    have G1: "intf_norace i\<^sub>1 i\<^sub>2"
+    have G1: "acc_norace i\<^sub>1 i\<^sub>2"
     proof -
     
       text \<open>From consistency, we know that interference only talks about valid addresses.
@@ -518,12 +559,12 @@ proof
       \<close>
       have SS1: "r\<^sub>1 \<union> w\<^sub>1 \<subseteq> addrs as\<^sub>1 \<union> c1.allocated_addrs_approx" "f\<^sub>1 \<subseteq> blocks as\<^sub>1 \<union> a\<^sub>1"
         using c1.rw_valid_or_alloc IEXCL1 ADDRS_DJ c1.f_valid_or_alloc BLOCKS_DJ
-        unfolding CA_SPLIT CB_SPLIT intf_excludes_def
+        unfolding CA_SPLIT CB_SPLIT acc_excludes_def
         by auto
         
       have SS2: "r\<^sub>2 \<union> w\<^sub>2 \<subseteq> addrs as\<^sub>2 \<union> c2.allocated_addrs_approx" "f\<^sub>2 \<subseteq> blocks as\<^sub>2 \<union> a\<^sub>2"
         using c2.rw_valid_or_alloc IEXCL2 ADDRS_DJ c2.f_valid_or_alloc BLOCKS_DJ
-        unfolding CA_SPLIT CB_SPLIT intf_excludes_def
+        unfolding CA_SPLIT CB_SPLIT acc_excludes_def
         by auto
     
       text \<open>The allocations are disjoint by feasibility assumption\<close>  
@@ -556,7 +597,7 @@ proof
       have G3: "addr.block`(r\<^sub>1\<union>w\<^sub>1) \<inter> f\<^sub>2 = {}"
       proof -
         have "f\<^sub>2 \<subseteq> -addr.block`(addrs as\<^sub>1 \<union> addrs asf)"  
-          using IEXCL2 unfolding intf_excludes_def by simp
+          using IEXCL2 unfolding acc_excludes_def by simp
         moreover have "addr.block`(r\<^sub>1\<union>w\<^sub>1) \<subseteq> addr.block`(addrs as\<^sub>1 \<union> addrs asf) \<union> a\<^sub>1"  
           using SS1(1) by auto
         ultimately show ?thesis  
@@ -567,7 +608,7 @@ proof
       have G4: "addr.block`(r\<^sub>2\<union>w\<^sub>2) \<inter> f\<^sub>1 = {}"
       proof -
         have "f\<^sub>1 \<subseteq> -addr.block`(addrs as\<^sub>2 \<union> addrs asf)"  
-          using IEXCL1 unfolding intf_excludes_def by simp
+          using IEXCL1 unfolding acc_excludes_def by simp
         moreover have "addr.block`(r\<^sub>2\<union>w\<^sub>2) \<subseteq> addr.block`(addrs as\<^sub>2 \<union> addrs asf) \<union> a\<^sub>2"  
           using SS2(1) by auto
         ultimately show ?thesis  
@@ -575,8 +616,8 @@ proof
           by blast
       qed  
         
-      show "intf_norace i\<^sub>1 i\<^sub>2"
-        unfolding intf_norace_def Let_def
+      show "acc_norace i\<^sub>1 i\<^sub>2"
+        unfolding acc_norace_def Let_def
         apply simp
         using G1 G2 G3 G4
         by blast
@@ -755,7 +796,7 @@ proof
       proof -
       
         from IEXCL2 have "addrs as\<^sub>1 \<inter> w\<^sub>2 = {}"  
-          unfolding intf_excludes_def by auto
+          unfolding acc_excludes_def by auto
         then have "addrs as\<^sub>1' \<inter> (w\<^sub>2) = {}" 
           apply (auto simp add: AS1'_EQ)
           by (smt (verit, ccfv_threshold) Un_iff alloc_disj c1.allocated_addrs_approx c1.valid_s_not_alloc c2.rw_valid_or_alloc disjoint_iff mem_Collect_eq subset_eq)
@@ -781,7 +822,7 @@ proof
           using CB'_SPLIT COVERAGE(2) by auto
         show "block_size s' b = block_size s\<^sub>1 b"
           (* TODO: That's a generic lemma from valid-combination! *)
-          by (metis A UnCI \<open>is_ALLOC s' b\<close> \<open>pchar as\<^sub>1' s\<^sub>1\<close> block_size_combine c2.is_FREED'_eq cell.disc(2) combine_states_def is_FREED'_eq pchar_alt subset_Collect_conv)
+          by (metis A UnCI \<open>is_ALLOC s' b\<close> \<open>pchar as\<^sub>1' s\<^sub>1\<close> block_size_combine c2.is_FREED'_eq block.disc(2) combine_states_def is_FREED'_eq pchar_alt subset_Collect_conv)
       qed    
 
       moreover
@@ -791,7 +832,7 @@ proof
       proof -
       
         from IEXCL2 have "addrs asf \<inter> w\<^sub>2 = {}"  
-          unfolding intf_excludes_def by auto
+          unfolding acc_excludes_def by auto
         
         have \<open>addr.block`addrs asf \<inter> a\<^sub>2 = {}\<close>
           using c2.a_dj_valid
@@ -821,10 +862,10 @@ proof
       proof -
       
         from IEXCL1 have "addrs as\<^sub>2 \<inter> w\<^sub>1 = {}"  
-          unfolding intf_excludes_def by auto
+          unfolding acc_excludes_def by auto
         then have "addrs as\<^sub>2' \<inter> (w\<^sub>1) = {}" 
           apply (auto simp add: AS2'_EQ)
-          by (smt (verit, ccfv_threshold) Un_iff alloc_blocks_def alloc_disj c1.intf_w_alloc c1.rw_valid_s c2.allocated_addrs_approx c2.intf_a_alloc disjoint_iff fresh_freed_not_valid(1) image_subset_iff mem_Collect_eq subset_iff)
+          by (smt (verit, ccfv_threshold) Un_iff alloc_blocks_def alloc_disj c1.acc_w_alloc c1.rw_valid_s c2.allocated_addrs_approx c2.acc_a_alloc disjoint_iff fresh_freed_not_valid(1) image_subset_iff mem_Collect_eq subset_iff)
         
         have "addr.block`addrs as\<^sub>2' \<inter> a\<^sub>1 = {}"
           apply (auto simp add: AS2'_EQ)
@@ -879,10 +920,15 @@ proof
     show ?case using G1 G2 G_EXCL by blast
   qed 
 qed        
+
+end
    
 
   
 subsection \<open>Realizable abstract Predicates\<close>    
+  text \<open>Auxiliary concept, stating that there is actually a concrete memory on 
+    part of which an assertion can be satisfied. This follows from the precondition of a Hoare-triple.
+  \<close>
   definition "realizable P \<equiv> \<exists>s as asf. P as \<and> \<alpha> s = as + asf \<and> as ## asf"
   
   lemma realizable_conjD: "realizable (P**Q) \<Longrightarrow> realizable P \<and> realizable Q"

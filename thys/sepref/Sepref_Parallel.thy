@@ -1,10 +1,13 @@
-section \<open>Parallel Execution\<close>
+section \<open>Automatic Refinement to Parallel Execution\<close>
 theory Sepref_Parallel
 imports Sepref_Tool
 begin
-  
+
+  text \<open>Abstractly, we define an annotation, that maps to sequnetial execution\<close>
   definition "nres_par f g x y \<equiv> do { r1\<leftarrow>f x; r2\<leftarrow>g y; RETURN (r1,r2) }"
 
+  subsection \<open>Setup Boilerplate\<close>
+  text \<open>Boilerplate required by the IRF to set up higher-order combinator\<close>
   lemma nres_par_arity[sepref_monadify_arity]:
     "nres_par \<equiv> \<lambda>\<^sub>2f g x y. SP nres_par $ (\<lambda>\<^sub>2x. f$x) $ (\<lambda>\<^sub>2y. g$y) $ x $ y" 
     by (simp_all)
@@ -27,7 +30,40 @@ begin
     unfolding nres_par_def
     by (simp_all add: refine_pw_simps)
     
+  lemma nres_par_vcg[refine_vcg]:
+    assumes "f x \<le> SPEC (\<lambda>r\<^sub>1. g y \<le> SPEC (\<lambda>r\<^sub>2. \<Phi> (r\<^sub>1,r\<^sub>2)))"
+    shows "nres_par f g x y \<le> SPEC \<Phi>"
+    using assms by (auto simp: refine_pw_simps pw_le_iff nres_par_def)
     
+  lemma nres_par_refine[refine]:
+    assumes "f x \<le> \<Down>Rx (f' x')"
+    assumes "g y \<le> \<Down>Ry (g' y')"
+    assumes "\<And>rx rx' ry ry'. (rx,rx')\<in>Rx \<Longrightarrow> (ry,ry')\<in>Ry \<Longrightarrow> ((rx,ry), (rx',ry'))\<in>R"
+    shows "nres_par f g x y \<le>\<Down>R (nres_par f' g' x' y')"
+    using assms 
+    by (simp add: refine_pw_simps pw_le_iff nres_par_def; blast)
+
+
+  lemma nres_par_mono[refine_mono]:
+    assumes "\<And>x. f x \<le> f' x" 
+    assumes "\<And>y. g y \<le> g' y"  
+    shows "nres_par f g x y \<le> nres_par f' g' x y"
+    using assms 
+    by (simp add: refine_pw_simps pw_le_iff nres_par_def; blast)
+    
+  lemma nres_par_flat_mono[refine_mono]:
+    assumes "\<And>x. flat_ge (f x) (f' x)" 
+    assumes "\<And>y. flat_ge (g y) (g' y)"  
+    shows "flat_ge (nres_par f g x y) (nres_par f' g' x y)"
+    using assms 
+    by (simp add: refine_pw_simps pw_flat_ge_iff nres_par_def; blast)
+
+
+    
+  subsection \<open>Refinement Rule\<close>        
+  
+  text \<open>Refinement rule from annotation to actual parallel execution\<close>
+  
   (* TODO: Move *)
   lemma ht_llc_par:
     assumes "llvm_htriple P\<^sub>1 (m\<^sub>1 x\<^sub>1) Q\<^sub>1"  
@@ -36,7 +72,6 @@ begin
     unfolding llc_par_def
     supply [vcg_rules] = ht_par[OF assms]
     by (vcg)
-    
     
     
   lemma hnr_nres_par_aux:
@@ -80,33 +115,5 @@ begin
     subgoal unfolding hn_ctxt_def by (auto simp: algebra_simps)
     done
   
-
-  lemma nres_par_vcg[refine_vcg]:
-    assumes "f x \<le> SPEC (\<lambda>r\<^sub>1. g y \<le> SPEC (\<lambda>r\<^sub>2. \<Phi> (r\<^sub>1,r\<^sub>2)))"
-    shows "nres_par f g x y \<le> SPEC \<Phi>"
-    using assms by (auto simp: refine_pw_simps pw_le_iff nres_par_def)
-    
-  lemma nres_par_refine[refine]:
-    assumes "f x \<le> \<Down>Rx (f' x')"
-    assumes "g y \<le> \<Down>Ry (g' y')"
-    assumes "\<And>rx rx' ry ry'. (rx,rx')\<in>Rx \<Longrightarrow> (ry,ry')\<in>Ry \<Longrightarrow> ((rx,ry), (rx',ry'))\<in>R"
-    shows "nres_par f g x y \<le>\<Down>R (nres_par f' g' x' y')"
-    using assms 
-    by (simp add: refine_pw_simps pw_le_iff nres_par_def; blast)
-
-
-  lemma nres_par_mono[refine_mono]:
-    assumes "\<And>x. f x \<le> f' x" 
-    assumes "\<And>y. g y \<le> g' y"  
-    shows "nres_par f g x y \<le> nres_par f' g' x y"
-    using assms 
-    by (simp add: refine_pw_simps pw_le_iff nres_par_def; blast)
-    
-  lemma nres_par_flat_mono[refine_mono]:
-    assumes "\<And>x. flat_ge (f x) (f' x)" 
-    assumes "\<And>y. flat_ge (g y) (g' y)"  
-    shows "flat_ge (nres_par f g x y) (nres_par f' g' x y)"
-    using assms 
-    by (simp add: refine_pw_simps pw_flat_ge_iff nres_par_def; blast)
 
 end

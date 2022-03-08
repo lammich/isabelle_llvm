@@ -1,73 +1,32 @@
+section \<open>State-Exception-Nondeterminism Monad with Access Reports\<close>
 theory MMonad
 imports NEMonad Generic_Memory
 begin
 
-  subsection \<open>Base Type Monad Combinators\<close>
-  text \<open>State monad combinators, built on ne-monad\<close>
-
-  context
-    includes monad_syntax_ne
-  begin
+  (* TODO: Move *)
+  lemma fresh_freed_not_valid[simp]:
+    "is_FRESH s (addr.block a) \<Longrightarrow> \<not>is_valid_addr s a"
+    "is_FREED s (addr.block a) \<Longrightarrow> \<not>is_valid_addr s a"
+    "is_FRESH s (addr.block a) \<Longrightarrow> \<not>is_valid_ptr_addr s a"
+    "is_FREED s (addr.block a) \<Longrightarrow> \<not>is_valid_ptr_addr s a"
+    by (auto simp: is_valid_addr_def is_valid_ptr_addr_def split: addr.split)
   
-    definition "malloc vs s = do {
-      b \<leftarrow> spec b. is_FRESH s b;
-      return (b, intf_a b, addr_alloc vs b s)
-    }"
-    
-    definition "mfree b s = do {
-      assert is_ALLOC s b;
-      return ((), intf_f b, addr_free b s)
-    }"  
 
-    definition "mvalid_addr a s = do {
-      assert is_valid_addr s a;
-      return ((), intf_r a, s)
-    }"
 
-    (*definition "mvalid_ptr_addr a s = do {
-      assert is_valid_ptr_addr s a;
-      return ((), intf_e (addr.block a), s)
-    }"*)
+  text \<open>We define this Monad directly over our memory model, 
+    but still generic in the stored values.
     
-        
-    definition "mload a s = do {
-      assert is_valid_addr s a;
-      return (get_addr s a, intf_r a, s)
-    }"
-    
-    definition "mstore a v s = do {
-      assert is_valid_addr s a;
-      return ((), intf_w a, put_addr s a v)
-    }"
-    
-    definition "preturn x s = (return (x,0::intf,s))"
-    
-    definition "pspec P s = (if P\<noteq>bot then SPEC (\<lambda>(r,i,s'). P r \<and> i=0 \<and> s'=s) else FAIL)"
-    
-    definition "pbind m f s \<equiv> do {
-      (x,i\<^sub>1,s) \<leftarrow> m s;
-      (r,i\<^sub>2,s) \<leftarrow> f x s;
-      return (r,i\<^sub>1+i\<^sub>2 ::intf,s)
-    }"  
-  
-    definition "ppar m\<^sub>1 m\<^sub>2 s \<equiv> do {
-      ((r\<^sub>1,i\<^sub>1,s\<^sub>1),(r\<^sub>2,i\<^sub>2,s\<^sub>2)) \<leftarrow> m\<^sub>1 s \<parallel> m\<^sub>2 s;
-      assert intf_consistent s i\<^sub>1 s\<^sub>1 \<and> intf_consistent s i\<^sub>2 s\<^sub>2; \<comment> \<open>Ensure reported interference is 
-        consistent with observable modifications on state. This will later be enforced by subtyping.\<close>
-      assume spar_feasible i\<^sub>1 i\<^sub>2; \<comment> \<open>Filter out impossible combinations (where malloc did not sync)\<close>
-      assert intf_norace i\<^sub>1 i\<^sub>2; \<comment> \<open>Fail on data races\<close>
-      let s = combine_states s\<^sub>1 i\<^sub>2 s\<^sub>2; \<comment> \<open>Combine states\<close>
-      return ((r\<^sub>1,r\<^sub>2),i\<^sub>1+i\<^sub>2,s) 
-    }"
-      
+    The definition of the operations is done in two layers: first, we define the operations in the 
+    ne-monad, prove that they preserve the consistency and non-emptiness invariant, and then
+    lift them to the subtype for the actual M-monad.
+  \<close>
 
-  end    
 
-  subsection \<open>Invariant\<close>  
+  subsection \<open>Invariant and Subtype\<close>
   text \<open>
-    We prove the following invariants
+    Our monad requires the following invariants, which will be enforced by a subtype
   
-    \<^enum> the reported interference is consistent with the observable changes on the state. 
+    \<^enum> the reported ACC_REPORT is consistent with the observable changes on the state. 
       This is a sanity check property, which also enables us to show commutativity of par.
     \<^enum> each program returns at least one possible result.
       This is a sanity check property, which ensures that we don't accidentally verify a 
@@ -78,13 +37,13 @@ begin
   
   \<close>
   
-  definition "consistentM m \<equiv> \<forall>s. wlp (m s) (\<lambda>(_,i,s'). intf_consistent s i s')"
-  definition "consistentM_pw s m \<equiv> wlp m (\<lambda>(_,i,s'). intf_consistent s i s')"
+  definition "consistentM m \<equiv> \<forall>s. wlp (m s) (\<lambda>(_,i,s'). acc_consistent s i s')"
+  definition "consistentM_pw s m \<equiv> wlp m (\<lambda>(_,i,s'). acc_consistent s i s')"
   
   definition "non_emptyM_pw s m \<equiv> \<not>is_fail m \<longrightarrow> 
-    (\<forall>A. finite A \<longrightarrow> (\<exists>x i s'. is_res m (x,i,s') \<and> intf.a i \<inter> A = {} ))"
+    (\<forall>B. finite B \<longrightarrow> (\<exists>x i s'. is_res m (x,i,s') \<and> acc.a i \<inter> B = {} ))"
   definition "non_emptyM m \<equiv> \<forall>s. \<not>is_fail (m s) \<longrightarrow> 
-    (\<forall>A. finite A \<longrightarrow> (\<exists>x i s'. is_res (m s) (x,i,s') \<and> intf.a i \<inter> A = {} ))"
+    (\<forall>B. finite B \<longrightarrow> (\<exists>x i s'. is_res (m s) (x,i,s') \<and> acc.a i \<inter> B = {} ))"
   
   lemma non_emptyM_pw: "non_emptyM m = (\<forall>s. non_emptyM_pw s (m s))"
     unfolding non_emptyM_def non_emptyM_pw_def by simp
@@ -99,106 +58,142 @@ begin
   lemma invarM_pw: "invarM m = (\<forall>s. invarM_pw s (m s))"
     unfolding invarM_def invarM_pw_def
     by (auto simp add: consistentM_pw non_emptyM_pw)
-  
-  
-  
+ 
+  (* For presentation in paper *)   
+  lemma "invarM c = (\<forall>\<mu> P. c \<mu> = SPEC P \<longrightarrow>
+    (\<forall>x \<rho> \<mu>'. P (x,\<rho>,\<mu>') \<longrightarrow> acc_consistent \<mu> \<rho> \<mu>')
+  \<and> (\<forall>B. finite B \<longrightarrow> (\<exists>x \<rho> \<mu>'. P (x,\<rho>,\<mu>') \<and> acc.a \<rho> \<inter> B = {} ))
+  )"
+    unfolding invarM_def consistentM_def non_emptyM_def wlp_def
+    unfolding is_fail_def is_res_def
+    apply (safe;clarsimp)
+    apply (metis neM.sel neM.simps(3))
+    by (metis neM.collapse)
+    
+  lemma 
+    assumes "\<rho>=ACC_REPORT r w a f"  
+    shows "acc_consistent \<mu> \<rho> \<mu>' \<longleftrightarrow> (
+      (\<forall>addr\<in>r \<union> w. addr.block addr \<notin> a \<longrightarrow> is_valid_addr \<mu> addr) \<and>
+      (\<forall>addr\<in>r \<union> w. addr.block addr \<notin> f \<longrightarrow> is_valid_addr \<mu>' addr) \<and>
+      (\<forall>b. valid_block_trans \<mu> \<mu>' b) \<and>
+      a = alloc_blocks \<mu> \<mu>' \<and>
+      f = freed_blocks \<mu> \<mu>' \<and> 
+      (\<forall>addr. is_valid_addr \<mu> addr \<and> is_valid_addr \<mu>' addr \<and> addr \<notin> w \<longrightarrow> get_addr \<mu> addr = get_addr \<mu>' addr))"  
+    unfolding acc_consistent_def valid_block_trans_def alloc_blocks_def freed_blocks_def assms
+    apply (clarsimp simp: is_ALLOC_conv)
+    apply (safe)
+    apply blast
+    apply blast
+    apply blast
+    apply blast
+    apply blast
+    apply blast
+    apply blast
+    apply blast
+    apply (smt (verit, best) UnI1 addr.case_eq_if block.disc(1) block.distinct(1) is_valid_addr_alt mem_Collect_eq)
+    subgoal by (simp add: addr.case_eq_if is_valid_addr_alt)
+    subgoal by (metis (no_types, lifting) UnI2 addr.case_eq_if block.disc(1) block.distinct(1) is_valid_addr_alt mem_Collect_eq)
+    subgoal by (simp add: addr.case_eq_if is_valid_addr_alt)
+    apply blast
+    apply blast
+    apply blast
+    apply blast
+    apply blast
+    apply blast
+    done
+    
+  lemma 
+    assumes "\<rho>=ACC_REPORT r w a f"  
+    shows "acc_consistent \<mu> \<rho> \<mu>' \<longleftrightarrow> (
+      (\<forall>addr\<in>r \<union> w. addr.block addr \<notin> a \<longrightarrow> is_valid_addr \<mu> addr) \<and>
+      (\<forall>addr\<in>r \<union> w. addr.block addr \<notin> f \<longrightarrow> is_valid_addr \<mu>' addr) \<and>
+      (\<forall>b. valid_block_trans \<mu> \<mu>' b) \<and>
+      a = alloc_blocks \<mu> \<mu>' \<and>
+      f = freed_blocks \<mu> \<mu>' \<and> 
+      (\<forall>addr. is_valid_addr \<mu> addr \<and> is_valid_addr \<mu>' addr \<and> addr \<notin> w \<longrightarrow> get_addr \<mu> addr = get_addr \<mu>' addr))"  
+    unfolding acc_consistent_def valid_block_trans_def alloc_blocks_def freed_blocks_def assms
+    apply (clarsimp simp: is_ALLOC_conv)
+    apply (safe)
+    apply blast
+    apply blast
+    apply blast
+    apply blast
+    apply blast
+    apply blast
+    apply blast
+    apply blast
+    apply (smt (verit, best) UnI1 addr.case_eq_if block.disc(1) block.distinct(1) is_valid_addr_alt mem_Collect_eq)
+    subgoal by (simp add: addr.case_eq_if is_valid_addr_alt)
+    subgoal by (metis (no_types, lifting) UnI2 addr.case_eq_if block.disc(1) block.distinct(1) is_valid_addr_alt mem_Collect_eq)
+    subgoal by (simp add: addr.case_eq_if is_valid_addr_alt)
+    apply blast
+    apply blast
+    apply blast
+    apply blast
+    apply blast
+    apply blast
+    done
+    
+    
   
   
       
   lemma consistentMI[intro?]:
-    assumes "\<And>s. wlp (m s) (\<lambda>(_,i,s'). intf_consistent s i s')"
+    assumes "\<And>s. wlp (m s) (\<lambda>(_,i,s'). acc_consistent s i s')"
     shows "consistentM m"
     using assms unfolding consistentM_def ..
     
   lemma consistentMD:
     assumes "consistentM m"
-    shows "wlp (m s) (\<lambda>(_,i,s'). intf_consistent s i s')"
+    shows "wlp (m s) (\<lambda>(_,i,s'). acc_consistent s i s')"
     using assms unfolding consistentM_def ..
 
-  lemma consistent_wlp: "consistentM m \<Longrightarrow> (\<And>x i s'. intf_consistent s i s' \<Longrightarrow> Q (x,i,s')) \<Longrightarrow> (wlp (m s) Q)"  
+  lemma consistent_wlp: "consistentM m \<Longrightarrow> (\<And>x i s'. acc_consistent s i s' \<Longrightarrow> Q (x,i,s')) \<Longrightarrow> (wlp (m s) Q)"  
     unfolding consistentM_def by pw
 
   lemma invarM_pw_FAIL[simp]: "invarM_pw s FAIL" 
     unfolding invarM_pw_def consistentM_pw_def non_emptyM_pw_def
     by pw
-          
-    
-    
-            
-  subsubsection \<open>Invariant Preservation\<close>
-    
-  (* TODO: Move *)
-  lemma fresh_freed_not_valid[simp]:
-    "is_FRESH s (addr.block a) \<Longrightarrow> \<not>is_valid_addr s a"
-    "is_FREED s (addr.block a) \<Longrightarrow> \<not>is_valid_addr s a"
-    "is_FRESH s (addr.block a) \<Longrightarrow> \<not>is_valid_ptr_addr s a"
-    "is_FREED s (addr.block a) \<Longrightarrow> \<not>is_valid_ptr_addr s a"
-    by (auto simp: is_valid_addr_def is_valid_ptr_addr_def split: addr.split)
   
-  
-  context begin \<comment> \<open>This context will be closed after lifting is completed\<close>
-  
-    qualified named_theorems invarM_lemmas 
-  
+  subsubsection \<open>Subtype Definition\<close>
     
+  typedef ('r,'v) M = "{m::'v memory \<Rightarrow> ('r\<times>acc\<times>'v memory) neM. invarM m}" 
+    morphisms run Abs_M
+    unfolding invarM_def consistentM_def non_emptyM_def
+    by pw
     
-    
-    lemma [invarM_lemmas]: "consistentM (malloc v)"
-      unfolding consistentM_def malloc_def
-      apply rule
-      apply wp
-      apply (auto simp: intf_consistent_def alloc_blocks_def freed_blocks_def)
-      done
-      
-    lemma [invarM_lemmas]: "consistentM (mfree a)"
-      unfolding consistentM_def mfree_def
-      apply rule
-      apply wp
-      apply auto
-      unfolding intf_consistent_def alloc_blocks_def freed_blocks_def
-      by (auto)
+  setup_lifting type_definition_M
 
-    lemma [invarM_lemmas]: "consistentM (mvalid_addr a)"
-      unfolding consistentM_def mvalid_addr_def
-      apply rule
-      apply wp
-      apply auto
-      unfolding intf_consistent_def
-      by (auto)
+  lemma invarM_run: "invarM (run m)"
+    using run by force
+    
+  
+  subsection \<open>Basic Monad Combinators\<close>
+  context
+    includes monad_syntax_ne
+  begin
+
+    qualified named_theorems invarM_lemmas \<open>Monad invariant preservation lemmas\<close>
       
-    (*lemma [invarM_lemmas]: "consistentM (mvalid_ptr_addr a)"
-      unfolding consistentM_def mvalid_ptr_addr_def
-      apply rule
-      apply wp
-      apply auto
-      unfolding intf_consistent_def
-      by (auto)
-    *)
-      
-        
-    lemma [invarM_lemmas]: "consistentM (mload a)"
-      unfolding consistentM_def mload_def
-      apply rule
-      apply wp
-      apply auto
-      unfolding intf_consistent_def
-      by (auto simp: )
-      
-    lemma [invarM_lemmas]: "consistentM (mstore a v)"
-      unfolding consistentM_def mstore_def
-      apply rule
-      apply wp
-      apply auto
-      unfolding intf_consistent_def alloc_blocks_def freed_blocks_def
-      by (auto split: cell.split)
+    declare invarM_def[invarM_lemmas]      
   
   
+    definition "preturn x s = (return (x,0::acc,s))"
+    
+    definition "pspec P s = (if P\<noteq>bot then SPEC (\<lambda>(r,i,s'). P r \<and> i=0 \<and> s'=s) else FAIL)"
+    
+    definition "pbind m f s \<equiv> do {
+      (x,i\<^sub>1,s) \<leftarrow> m s;
+      (r,i\<^sub>2,s) \<leftarrow> f x s;
+      return (r,i\<^sub>1+i\<^sub>2 ::acc,s)
+    }"  
+
     lemma [invarM_lemmas]: "consistentM (preturn x)"
       unfolding consistentM_def preturn_def
       apply rule
       apply wp
       apply auto
-      unfolding intf_consistent_def
+      unfolding acc_consistent_def
       by (auto simp: )
 
     lemma [invarM_lemmas]: "consistentM (pspec P)"
@@ -206,7 +201,7 @@ begin
       apply rule
       apply wp
       apply auto
-      unfolding intf_consistent_def
+      unfolding acc_consistent_def
       apply (auto simp:  wlp_FAIL) (* TODO: wlp_FAIL should be applied by wp, but isn't! *)
       done
             
@@ -215,20 +210,45 @@ begin
       unfolding pbind_def
       apply rule
       apply wp
-      apply (clarsimp simp: intf_consistent_trans)
+      apply (clarsimp simp: acc_consistent_trans)
       done
       
+    
+    lemma [invarM_lemmas]: "non_emptyM (preturn x)"  
+      unfolding non_emptyM_def preturn_def
+      by pw
       
-    (*lemma cell_combine_eq_iffs:
-      "cell_combine c A c' = FRESH \<longleftrightarrow> c=FRESH \<and> c'=FRESH"  
-      "cell_combine c A c' = FREED \<longleftrightarrow> c=FREED \<or> c'=FREED"
-      by (cases c; cases c'; simp)+
-    *)
+    lemma [invarM_lemmas]: "non_emptyM (pspec P)"  
+      unfolding non_emptyM_def pspec_def
+      by pw
+              
+    lemma [invarM_lemmas]: "non_emptyM m \<Longrightarrow> (\<And>x. non_emptyM (f x)) \<Longrightarrow> non_emptyM (pbind m f)"  
+      unfolding non_emptyM_def pbind_def
+      apply pw
+      by (metis inf_sup_distrib2 acc_plus_simps(3) sup.idem)
+      
+    
+      
 
-    (*lemma "cell_combine c\<^sub>1 I c\<^sub>2 = VALID vs \<longleftrightarrow> (\<exists>vs\<^sub>1 vs\<^sub>2. c\<^sub>1=VALID vs\<^sub>1 \<and> c\<^sub>2=VALID vs\<^sub>2 \<and> vs = (\<lambda>i. if i\<in>I then vs\<^sub>2 i else vs\<^sub>1 i))"  
-      by (cases c\<^sub>1; cases c\<^sub>2; simp)
-    *)
-                  
+    lift_definition Mreturn :: "'r \<Rightarrow> ('r,'v) M" is preturn by (simp add: invarM_lemmas)
+    lift_definition Mspec :: "('r\<Rightarrow>bool) \<Rightarrow> ('r,'v) M" is pspec by (simp add: invarM_lemmas)
+    lift_definition Mbind :: "('x,'v) M \<Rightarrow> ('x \<Rightarrow> ('r,'v) M) \<Rightarrow> ('r,'v) M"
+      is pbind by (auto simp add: invarM_lemmas intro!: invarM_pw[THEN iffD1])
+    
+        
+  subsection \<open>Parallel Combinator\<close>
+    
+    
+    definition "ppar m\<^sub>1 m\<^sub>2 s \<equiv> do {
+      ((r\<^sub>1,i\<^sub>1,s\<^sub>1),(r\<^sub>2,i\<^sub>2,s\<^sub>2)) \<leftarrow> m\<^sub>1 s \<parallel> m\<^sub>2 s;
+      assert acc_consistent s i\<^sub>1 s\<^sub>1 \<and> acc_consistent s i\<^sub>2 s\<^sub>2; \<comment> \<open>Ensure reported ACC_REPORT is 
+        consistent with observable modifications on state. This will later be enforced by subtyping.\<close>
+      assume spar_feasible i\<^sub>1 i\<^sub>2; \<comment> \<open>Filter out impossible combinations (where malloc did not sync)\<close>
+      assert acc_norace i\<^sub>1 i\<^sub>2; \<comment> \<open>Fail on data races\<close>
+      let s = combine_states s\<^sub>1 i\<^sub>2 s\<^sub>2; \<comment> \<open>Combine states\<close>
+      return ((r\<^sub>1,r\<^sub>2),i\<^sub>1+i\<^sub>2,s) 
+    }"
+  
     lemma [invarM_lemmas]: "consistentM m\<^sub>1 \<Longrightarrow> consistentM m\<^sub>2 \<Longrightarrow> consistentM (ppar m\<^sub>1 m\<^sub>2)"    
       supply [wp_recursion_rule] = consistent_wlp
       supply [wp_rule] = wlp_PAR[OF consistentMD consistentMD]
@@ -241,56 +261,13 @@ begin
       by (simp add: feasible_parallel_execution.consistent' feasible_parallel_execution.intro)
       
       
-    lemma [invarM_lemmas]: "non_emptyM (malloc v)"  
-      unfolding non_emptyM_def malloc_def alloc_blocks_def
-      apply pw
-      using ex_fresh by fastforce
-  
-    lemma [invarM_lemmas]: "non_emptyM (mfree a)"  
-      unfolding non_emptyM_def mfree_def alloc_blocks_def
-      by pw
-
-    lemma [invarM_lemmas]: "non_emptyM (mvalid_addr a)"  
-      unfolding non_emptyM_def mvalid_addr_def alloc_blocks_def
-      by pw
-
-    (*  
-    lemma [invarM_lemmas]: "non_emptyM (mvalid_ptr_addr a)"  
-      unfolding non_emptyM_def mvalid_ptr_addr_def alloc_blocks_def
-      by pw
-    *)
-                  
-    lemma [invarM_lemmas]: "non_emptyM (mload a)"  
-      unfolding non_emptyM_def mload_def
-      by pw
-      
-    lemma [invarM_lemmas]: "non_emptyM (mstore a v)"  
-      unfolding non_emptyM_def mstore_def alloc_blocks_def
-      by pw
-  
-    lemma [invarM_lemmas]: "non_emptyM (preturn x)"  
-      unfolding non_emptyM_def preturn_def
-      by pw
-      
-    lemma [invarM_lemmas]: "non_emptyM (pspec P)"  
-      unfolding non_emptyM_def pspec_def
-      by pw
-              
-    lemma [invarM_lemmas]: "non_emptyM m \<Longrightarrow> (\<And>x. non_emptyM (f x)) \<Longrightarrow> non_emptyM (pbind m f)"  
-      unfolding non_emptyM_def pbind_def
-      apply pw
-      by (metis inf_sup_distrib2 intf_plus_simps(3) sup.idem)
-      
-      
+    text \<open>To show that our parallel combinator does not rule out all executions,
+      we need to exploit that, for any finite set of blocks, we always find an execution 
+      that does not allocate this set of blocks.
+    \<close>  
     lemma finite_alloc_blocks[simp, intro]: "finite (alloc_blocks s s')"  
       unfolding alloc_blocks_def
       by (simp add: finite_non_fresh)
-      
-    (*lemma alloc_blocks_combine_eq: "alloc_blocks s (combine_states s\<^sub>1 i\<^sub>2 s\<^sub>2) = alloc_blocks s s\<^sub>1 \<union> alloc_blocks s s\<^sub>2"  
-      unfolding alloc_blocks_def combine_states_def
-      by (auto simp: cell_combine_eq_iffs)
-    *)
-    
       
     lemma [invarM_lemmas]: "\<lbrakk>non_emptyM m\<^sub>1; consistentM m\<^sub>1; non_emptyM m\<^sub>2; consistentM m\<^sub>2 \<rbrakk> \<Longrightarrow> non_emptyM (ppar m\<^sub>1 m\<^sub>2)"
       unfolding non_emptyM_def ppar_def
@@ -298,29 +275,29 @@ begin
     proof goal_cases
       case (1 s A)
       
-      obtain x\<^sub>1 i\<^sub>1 s\<^sub>1 where R1: "is_res (m\<^sub>1 s) (x\<^sub>1, i\<^sub>1, s\<^sub>1)" and I1: "intf.a i\<^sub>1 \<inter> A = {}" using 1 by meson
+      obtain x\<^sub>1 i\<^sub>1 s\<^sub>1 where R1: "is_res (m\<^sub>1 s) (x\<^sub>1, i\<^sub>1, s\<^sub>1)" and I1: "acc.a i\<^sub>1 \<inter> A = {}" using 1 by meson
       
-      hence "intf_consistent s i\<^sub>1 s\<^sub>1" using \<open>consistentM m\<^sub>1\<close> \<open>m\<^sub>1 s \<noteq> FAIL\<close>
+      hence "acc_consistent s i\<^sub>1 s\<^sub>1" using \<open>consistentM m\<^sub>1\<close> \<open>m\<^sub>1 s \<noteq> FAIL\<close>
         unfolding consistentM_def wlp_def by pw 
 
-      interpret c1: intf_consistent_loc s i\<^sub>1 s\<^sub>1 apply unfold_locales by fact 
+      interpret c1: acc_consistent_loc s i\<^sub>1 s\<^sub>1 apply unfold_locales by fact 
                 
       have "finite (alloc_blocks s s\<^sub>1 \<union> A)" using 1 by auto
-      hence "finite (intf.a i\<^sub>1 \<union> A)"
-        using c1.intf_a_alloc by presburger
-      then obtain x\<^sub>2 i\<^sub>2 s\<^sub>2 where R2: "is_res (m\<^sub>2 s) (x\<^sub>2, i\<^sub>2, s\<^sub>2)" and I2: "intf.a i\<^sub>2 \<inter> (intf.a i\<^sub>1 \<union> A) = {}"  
+      hence "finite (acc.a i\<^sub>1 \<union> A)"
+        using c1.acc_a_alloc by presburger
+      then obtain x\<^sub>2 i\<^sub>2 s\<^sub>2 where R2: "is_res (m\<^sub>2 s) (x\<^sub>2, i\<^sub>2, s\<^sub>2)" and I2: "acc.a i\<^sub>2 \<inter> (acc.a i\<^sub>1 \<union> A) = {}"  
         using 1 by metis
       hence NF2: "m\<^sub>2 s \<noteq> FAIL" using 1 by metis
-      with R2 have "intf_consistent s i\<^sub>2 s\<^sub>2" using \<open>consistentM m\<^sub>2\<close>
+      with R2 have "acc_consistent s i\<^sub>2 s\<^sub>2" using \<open>consistentM m\<^sub>2\<close>
         unfolding consistentM_def wlp_def by pw 
   
-      interpret c2: intf_consistent_loc s i\<^sub>2 s\<^sub>2 apply unfold_locales by fact 
+      interpret c2: acc_consistent_loc s i\<^sub>2 s\<^sub>2 apply unfold_locales by fact 
         
         
       from I2 have "spar_feasible i\<^sub>1 i\<^sub>2"
-        unfolding spar_feasible_def by (auto simp: c1.intf_a_alloc c2.intf_a_alloc)
+        unfolding spar_feasible_def by (auto simp: c1.acc_a_alloc c2.acc_a_alloc)
       
-      with I1 I2 R1 R2 NF2 have NI: "intf_norace i\<^sub>1 i\<^sub>2" using 1
+      with I1 I2 R1 R2 NF2 have NI: "acc_norace i\<^sub>1 i\<^sub>2" using 1
         by metis
         
       interpret valid_parallel_execution s s\<^sub>1 i\<^sub>1 s\<^sub>2 i\<^sub>2 apply unfold_locales by fact+
@@ -350,42 +327,113 @@ begin
         done
         
     qed
-
-      
-    declare invarM_def[invarM_lemmas]      
-
-subsection \<open>Subtyping to Invariant\<close>    
-  text \<open>We create a subtype that satisfies the invariant, and 
-    lift the monad combinators
-  \<close>
-
-    typedef ('r,'v) M = "{m::'v memory \<Rightarrow> ('r\<times>intf\<times>'v memory) neM. invarM m}" 
-      morphisms run Abs_M
-      unfolding invarM_def consistentM_def non_emptyM_def
-      by pw
-      
-    setup_lifting type_definition_M
-
-    lemma invarM_run: "invarM (run m)"
-      using run by force
-        
-    lift_definition Mreturn :: "'r \<Rightarrow> ('r,'v) M" is preturn by (simp add: invarM_lemmas)
-    lift_definition Mspec :: "('r\<Rightarrow>bool) \<Rightarrow> ('r,'v) M" is pspec by (simp add: invarM_lemmas)
-    lift_definition Mbind :: "('x,'v) M \<Rightarrow> ('x \<Rightarrow> ('r,'v) M) \<Rightarrow> ('r,'v) M"
-      is pbind by (auto simp add: invarM_lemmas intro!: invarM_pw[THEN iffD1])
+  
+    
     
     lift_definition Mpar :: "('x,'v) M \<Rightarrow> (('y,'v) M) \<Rightarrow> ('x\<times>'y,'v) M"
       is ppar by (simp add: invarM_lemmas)
     
-    lift_definition Mmalloc :: "('v list) \<Rightarrow> (block,'v) M" is malloc by (simp add: invarM_lemmas)
-    lift_definition Mfree :: "block \<Rightarrow> (unit,'v) M" is mfree by (simp add: invarM_lemmas)
+    
+    subsection \<open>Memory Operations\<close>
+  
+    definition "malloc vs s = do {
+      b \<leftarrow> spec b. is_FRESH s b;
+      return (b, acc_a b, addr_alloc vs b s)
+    }"
+    
+    definition "mfree b s = do {
+      assert is_ALLOC s b;
+      return ((), acc_f b, addr_free b s)
+    }"  
+
+    definition "mvalid_addr a s = do {
+      assert is_valid_addr s a;
+      return ((), acc_r a, s)
+    }"
+        
+    definition "mload a s = do {
+      assert is_valid_addr s a;
+      return (get_addr s a, acc_r a, s)
+    }"
+    
+    definition "mstore a v s = do {
+      assert is_valid_addr s a;
+      return ((), acc_w a, put_addr s a v)
+    }"
+    
+      
+    lemma [invarM_lemmas]: "consistentM (malloc v)"
+      unfolding consistentM_def malloc_def
+      apply rule
+      apply wp
+      apply (auto simp: acc_consistent_def alloc_blocks_def freed_blocks_def)
+      done
+      
+    lemma [invarM_lemmas]: "consistentM (mfree a)"
+      unfolding consistentM_def mfree_def
+      apply rule
+      apply wp
+      apply auto
+      unfolding acc_consistent_def alloc_blocks_def freed_blocks_def
+      by (auto)
+
+    lemma [invarM_lemmas]: "consistentM (mvalid_addr a)"
+      unfolding consistentM_def mvalid_addr_def
+      apply rule
+      apply wp
+      apply auto
+      unfolding acc_consistent_def
+      by (auto)
+      
+    lemma [invarM_lemmas]: "consistentM (mload a)"
+      unfolding consistentM_def mload_def
+      apply rule
+      apply wp
+      apply auto
+      unfolding acc_consistent_def
+      by (auto simp: )
+      
+    lemma [invarM_lemmas]: "consistentM (mstore a v)"
+      unfolding consistentM_def mstore_def
+      apply rule
+      apply wp
+      apply auto
+      unfolding acc_consistent_def alloc_blocks_def freed_blocks_def
+      by (auto split: block.split)
+      
+    lemma [invarM_lemmas]: "non_emptyM (malloc v)"  
+      unfolding non_emptyM_def malloc_def alloc_blocks_def
+      apply pw
+      using ex_fresh by fastforce
+  
+    lemma [invarM_lemmas]: "non_emptyM (mfree a)"  
+      unfolding non_emptyM_def mfree_def alloc_blocks_def
+      by pw
+
+    lemma [invarM_lemmas]: "non_emptyM (mvalid_addr a)"  
+      unfolding non_emptyM_def mvalid_addr_def alloc_blocks_def
+      by pw
+                  
+    lemma [invarM_lemmas]: "non_emptyM (mload a)"  
+      unfolding non_emptyM_def mload_def
+      by pw
+      
+    lemma [invarM_lemmas]: "non_emptyM (mstore a v)"  
+      unfolding non_emptyM_def mstore_def alloc_blocks_def
+      by pw
+    
+    lift_definition Mmalloc :: "('v list) \<Rightarrow> (block_idx,'v) M" is malloc by (simp add: invarM_lemmas)
+    lift_definition Mfree :: "block_idx \<Rightarrow> (unit,'v) M" is mfree by (simp add: invarM_lemmas)
     lift_definition Mvalid_addr :: "addr \<Rightarrow> (unit,'v) M" is mvalid_addr by (simp add: invarM_lemmas)
     (*lift_definition Mvalid_ptr_addr :: "addr \<Rightarrow> (unit,'v) M" is mvalid_ptr_addr by (simp add: invarM_lemmas)*)
     lift_definition Mload :: "addr \<Rightarrow> ('v,'v) M" is mload by (simp add: invarM_lemmas)
     lift_definition Mstore :: "addr \<Rightarrow> 'v \<Rightarrow> (unit,'v) M" is mstore by (simp add: invarM_lemmas)
+    
+    
   end    
 
-subsubsection \<open>Pointwise Reasoning Setup\<close>    
+
+subsection \<open>Pointwise Reasoning Setup\<close>    
 
   lemma M_eq_iff[pw_init]: "m=m' \<longleftrightarrow> (\<forall>s. run m s = run m' s)"
     apply transfer
@@ -418,7 +466,7 @@ subsubsection \<open>Pointwise Reasoning Setup\<close>
     by blast
   
   lemma invarM_pw_iff: "invarM m \<longleftrightarrow> (\<forall>s. 
-      (\<forall>r i s'. is_res (m s) (r,i,s') \<longrightarrow> intf_consistent s i s')
+      (\<forall>r i s'. is_res (m s) (r,i,s') \<longrightarrow> acc_consistent s i s')
     \<and> non_emptyM_pw s (m s)
   )"  
     unfolding invarM_def consistentM_def non_emptyM_pw
@@ -429,7 +477,7 @@ subsubsection \<open>Pointwise Reasoning Setup\<close>
   lemma pw_Mpar1[pw_simp]:
     "run (Mpar m\<^sub>1 m\<^sub>2) s = FAIL \<longleftrightarrow> (is_fail (run m\<^sub>1 s) \<or> is_fail (run m\<^sub>2 s) 
       \<or> (\<exists>r\<^sub>1 i\<^sub>1 s\<^sub>1 r\<^sub>2 i\<^sub>2 s\<^sub>2. is_res (run m\<^sub>1 s) (r\<^sub>1,i\<^sub>1,s\<^sub>1) \<and> is_res (run m\<^sub>2 s) (r\<^sub>2,i\<^sub>2,s\<^sub>2) 
-          \<and> spar_feasible i\<^sub>1 i\<^sub>2 \<and> \<not>intf_norace i\<^sub>1 i\<^sub>2 ))"
+          \<and> spar_feasible i\<^sub>1 i\<^sub>2 \<and> \<not>acc_norace i\<^sub>1 i\<^sub>2 ))"
     apply transfer
     unfolding ppar_def invarM_pw_iff
     apply pw
@@ -438,7 +486,7 @@ subsubsection \<open>Pointwise Reasoning Setup\<close>
   lemma pw_Mpar2[pw_simp]:
     "is_res (run (Mpar m\<^sub>1 m\<^sub>2) s) ris \<longleftrightarrow> (case ris of (r,i,s') \<Rightarrow> 
         (\<forall>r\<^sub>1 i\<^sub>1 s\<^sub>1 r\<^sub>2 i\<^sub>2 s\<^sub>2. is_res (run m\<^sub>1 s) (r\<^sub>1,i\<^sub>1,s\<^sub>1) \<and> is_res (run m\<^sub>2 s) (r\<^sub>2,i\<^sub>2,s\<^sub>2) \<and> spar_feasible i\<^sub>1 i\<^sub>2 
-          \<longrightarrow> intf_norace i\<^sub>1 i\<^sub>2)
+          \<longrightarrow> acc_norace i\<^sub>1 i\<^sub>2)
       \<and> (\<exists>r\<^sub>1 i\<^sub>1 s\<^sub>1 r\<^sub>2 i\<^sub>2 s\<^sub>2. is_res (run m\<^sub>1 s) (r\<^sub>1,i\<^sub>1,s\<^sub>1) \<and> is_res (run m\<^sub>2 s) (r\<^sub>2,i\<^sub>2,s\<^sub>2) 
           \<and> spar_feasible i\<^sub>1 i\<^sub>2 \<and> r=(r\<^sub>1,r\<^sub>2) \<and> i=i\<^sub>1+i\<^sub>2 \<and> s' = combine_states s\<^sub>1 i\<^sub>2 s\<^sub>2  ))"
     apply transfer
@@ -712,22 +760,6 @@ subsubsection \<open>Monotonicity Prover Setup\<close>
           done
         done
         
-      (*  
-      lemma mono_case_prod[mono]:
-        assumes "\<And>a b. nres_mono' (\<lambda>D. F D a b)"
-        shows "nres_mono' (\<lambda>D. case p of (a,b) \<Rightarrow> F D a b)"
-        using assms
-        unfolding nres_mono'_def fun_ord_def
-        apply (cases p) by simp
-      
-      lemma mono_Let[mono]:
-        assumes "\<And>x. nres_mono' (\<lambda>D. F D x)"
-        shows "nres_mono' (\<lambda>D. let x=v in F D x)"
-        using assms
-        unfolding nres_mono'_def fun_ord_def
-        by simp
-      *)
-        
     end          
 
     
@@ -775,7 +807,7 @@ subsection \<open>Partial Function Setup\<close>
       apply (thin_tac "_=_")+
       subgoal
         apply pw
-        using spar_feasible_sym intf_norace_sym
+        using spar_feasible_sym acc_norace_sym
         apply -
         apply blast
         apply blast
@@ -784,25 +816,25 @@ subsection \<open>Partial Function Setup\<close>
         apply blast
         apply blast
         apply blast
-        apply (smt (verit, best) add.commute combine_states_sym intf_consistent_loc.intro)
+        apply (smt (verit, best) add.commute combine_states_sym acc_consistent_loc.intro)
         apply blast
-        by (smt (verit, best) add.commute combine_states_sym intf_consistent_loc.intro)
+        by (smt (verit, best) add.commute combine_states_sym acc_consistent_loc.intro)
       apply (metis invarM_pw)
       apply (metis invarM_pw)
       done
     done
     
-  lemma res_run_consistentI: "is_res (run m s) (x,i,s') \<Longrightarrow> intf_consistent s i s'"  
+  lemma res_run_consistentI: "is_res (run m s) (x,i,s') \<Longrightarrow> acc_consistent s i s'"  
     using invarM_pw_iff invarM_run by fastforce
         
     
   lemma Mpar_sym: "Mpar m\<^sub>1 m\<^sub>2 = Mbind (Mpar m\<^sub>2 m\<^sub>1) (\<lambda>(r\<^sub>1,r\<^sub>2). Mreturn (r\<^sub>2,r\<^sub>1))"  
     apply pw
-    using spar_feasible_sym intf_norace_sym apply blast
-    using spar_feasible_sym intf_norace_sym apply blast
-    using spar_feasible_sym intf_norace_sym apply blast
+    using spar_feasible_sym acc_norace_sym apply blast
+    using spar_feasible_sym acc_norace_sym apply blast
+    using spar_feasible_sym acc_norace_sym apply blast
     apply (metis (no_types, opaque_lifting) add.commute combine_states_sym spar_feasible_sym res_run_consistentI)
-    using spar_feasible_sym intf_norace_sym apply blast
+    using spar_feasible_sym acc_norace_sym apply blast
     apply (metis (no_types, opaque_lifting) add.commute combine_states_sym spar_feasible_sym res_run_consistentI)
     done
    
@@ -965,9 +997,6 @@ end
     \<rightarrow> will change admissibility proof, but should be OK!
     \<rightarrow> will need a simulation relation spanning results, too. As results
       can contain pointers to changed memory layout.
-    
-        
-    use this infrastructure to build LL-monad!
-    
+      
 *)    
     

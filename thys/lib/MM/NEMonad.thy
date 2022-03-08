@@ -1,9 +1,17 @@
 section \<open>Nondeterminism Error Monad\<close>
+
+text \<open>
+  The NE monad used as basis for the state-error monad in our LLVM semantics.
+  Note: for abstract programs, we use an (equivalent) monad (nres), defined in
+  the original Monadic Refinement Framework. 
+  That's for legacy reasons, and needs to be unified at some point!
+\<close>
+
 theory NEMonad
 imports "../Basic_Imports" Flat_CCPO
 begin
 
-  section \<open>Additions to Partial Function\<close>
+  subsection \<open>Additions to Partial Function\<close>
   context partial_function_definitions
   begin
     lemma monotoneI:

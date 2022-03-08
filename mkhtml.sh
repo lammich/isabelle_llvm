@@ -2,6 +2,8 @@
 
 set -e
 
+ISABELLE=isabelle
+
 BASEDIR=$PWD
 
 REBUILD=false
@@ -56,7 +58,7 @@ if $REBUILD; then
   cd $BASEDIR
 
   cd thys
-  isabelle build -v -D .
+  $ISABELLE build -v -D .
 #   isabelle build -v -d '$AFP' -D .
   cd $BASEDIR
 
@@ -67,7 +69,7 @@ fi
 rm -rf html
 mkdir -p html
 
-ISABELLE_BROWSER_INFO=$(isabelle getenv ISABELLE_BROWSER_INFO | sed -re 's/.*=//')
+ISABELLE_BROWSER_INFO=$($ISABELLE getenv ISABELLE_BROWSER_INFO | sed -re 's/.*=//')
 
 cp -a $ISABELLE_BROWSER_INFO/Unsorted/Isabelle_LLVM html/
 cp index.md html/
@@ -96,7 +98,7 @@ pandoc -V pagetitle="Isabelle LLVM Parallel" -s index.md > html/index.html
 
 
 if $UPLOAD; then
-  LOCAL_DEST=~/devel/www21-lammich/isabelle_llvm
+  LOCAL_DEST=~/devel/www21-lammich/isabelle_llvm_par
   rm -rf $LOCAL_DEST
   cp -a html $LOCAL_DEST
   cd $LOCAL_DEST

@@ -2,7 +2,17 @@ theory IICF_Array
 imports "../Intf/IICF_List" 
 begin
 
-
+(* TODO: Move *)
+    lemma list_rel_take: "(xs,ys)\<in>\<langle>A\<rangle>list_rel \<Longrightarrow> (take n xs, take n ys) \<in> \<langle>A\<rangle>list_rel"  
+      unfolding list_rel_def by auto
+      
+    lemma list_rel_drop: "(xs,ys)\<in>\<langle>A\<rangle>list_rel \<Longrightarrow> (drop n xs, drop n ys) \<in> \<langle>A\<rangle>list_rel"  
+      unfolding list_rel_def by auto
+      
+    lemma list_rel_append: "(xs\<^sub>1,ys\<^sub>1)\<in> \<langle>A\<rangle>list_rel \<Longrightarrow> (xs\<^sub>2,ys\<^sub>2)\<in> \<langle>A\<rangle>list_rel \<Longrightarrow> (xs\<^sub>1@xs\<^sub>2,ys\<^sub>1@ys\<^sub>2)\<in> \<langle>A\<rangle>list_rel"  
+      unfolding list_rel_def 
+      using list_all2_appendI by blast
+    
 
 
 section \<open>Plain Arrays Implementing List Interface\<close>
@@ -289,6 +299,39 @@ begin
       "WITH_SPLIT$xs$n$f = Refine_Basic.bind$(EVAL$xs)$(\<lambda>\<^sub>2xs. Refine_Basic.bind$(EVAL$n)$(\<lambda>\<^sub>2n. SP WITH_SPLIT$xs$n$f))"
       by simp
     
+    lemma WITH_SPLIT_mono_flat[refine_mono]: 
+      "\<lbrakk>\<And>a b. flat_ge (f a b) (f' a b)\<rbrakk> \<Longrightarrow> flat_ge (WITH_SPLIT xs n f) (WITH_SPLIT xs n f')"
+      unfolding WITH_SPLIT_def
+      by refine_mono
+    
+    lemma WITH_SPLIT_rule[refine_vcg]:
+      assumes "n<length xs"
+      assumes "\<And>xs\<^sub>1 xs\<^sub>2. \<lbrakk>xs=xs\<^sub>1@xs\<^sub>2; length xs\<^sub>1=n \<rbrakk> \<Longrightarrow> 
+        m xs\<^sub>1 xs\<^sub>2 \<le> SPEC (\<lambda>(r',xs\<^sub>1',xs\<^sub>2'). 
+                      length xs\<^sub>1'=length xs\<^sub>1 
+                    \<and> length xs\<^sub>2'=length xs\<^sub>2 
+                    \<and> P (r', xs\<^sub>1'@xs\<^sub>2'))"
+      shows "WITH_SPLIT n xs m \<le> SPEC P"  
+      using assms(1) unfolding WITH_SPLIT_def
+      apply (refine_vcg assms(2)[of "take n xs" "drop n xs"])
+      apply auto
+      done
+
+    lemma WITH_split_refine[refine]:
+      assumes "(n',n)\<in>Id"
+      assumes "(xs',xs) \<in> \<langle>A\<rangle>list_rel"
+      assumes [refine]: "\<lbrakk>n < length xs; n' < length xs'\<rbrakk> \<Longrightarrow> m' (take n' xs') (drop n' xs') \<le> \<Down>(R\<times>\<^sub>r\<langle>A\<rangle>list_rel\<times>\<^sub>r\<langle>A\<rangle>list_rel) (m (take n xs) (drop n xs))"
+      shows "WITH_SPLIT n' xs' m' \<le>\<Down>(R \<times>\<^sub>r \<langle>A\<rangle>list_rel) (WITH_SPLIT n xs m)"
+      unfolding WITH_SPLIT_def
+      apply refine_rcg
+      using assms(1,2)
+      apply (auto simp: list_rel_imp_same_length list_rel_append)
+      done
+      
+
+      
+      
+      
     thm sepref_monadify_comb  
       
       
@@ -365,16 +408,6 @@ begin
       by blast
       
       
-    lemma list_rel_take: "(xs,ys)\<in>\<langle>A\<rangle>list_rel \<Longrightarrow> (take n xs, take n ys) \<in> \<langle>A\<rangle>list_rel"  
-      unfolding list_rel_def by auto
-      
-    lemma list_rel_drop: "(xs,ys)\<in>\<langle>A\<rangle>list_rel \<Longrightarrow> (drop n xs, drop n ys) \<in> \<langle>A\<rangle>list_rel"  
-      unfolding list_rel_def by auto
-      
-    lemma list_rel_append: "(xs\<^sub>1,ys\<^sub>1)\<in> \<langle>A\<rangle>list_rel \<Longrightarrow> (xs\<^sub>2,ys\<^sub>2)\<in> \<langle>A\<rangle>list_rel \<Longrightarrow> (xs\<^sub>1@xs\<^sub>2,ys\<^sub>1@ys\<^sub>2)\<in> \<langle>A\<rangle>list_rel"  
-      unfolding list_rel_def 
-      using list_all2_appendI by blast
-    
     (*  
     lemma hn_WITH_SPLIT_array_slice:
       assumes MHN: "\<And>xs\<^sub>1 xs\<^sub>2 xsi\<^sub>2. hn_refine 

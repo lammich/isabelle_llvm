@@ -1,6 +1,12 @@
+section \<open>Arrays that Own their Elements\<close>
 theory Proto_IICF_EOArray
 imports IICF_Array "../../../ds/Proto_EOArray" "../../../sepref/Proto_Sepref_Borrow" "../Intf/IICF_List"
 begin
+
+text \<open>We set up arrays that can also refine their elements, 
+  and support splitting via \<open>WITH_SPLIT\<close>
+\<close>
+
 
 (* TODO: Move. Generalization of hr_comp *)
 definition "assn_comp A B a c \<equiv> EXS b. A a b ** B b c"
