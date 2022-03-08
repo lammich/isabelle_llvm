@@ -16,7 +16,7 @@ define void @__isabelle_llvm_par_wrapper_0_1 (i8 * %clpv) {
   %resp = extractvalue {i64 *, i64} %cl, 0
   %arg = extractvalue {i64 *, i64} %cl, 1
 
-  %res = call i64 @LLVM_Codegen_Preproc_experiment10274318_fib (i64 %arg)
+  %res = call i64 @LLVM_Codegen_Preproc_experiment7808214_fib (i64 %arg)
 
   store i64 %res, i64 *%resp
 
@@ -33,7 +33,7 @@ define void @__isabelle_llvm_par_wrapper_0_2 (i8 * %clpv) {
   %resp = extractvalue {i16 *, i32} %cl, 0
   %arg = extractvalue {i16 *, i32} %cl, 1
 
-  %res = call i16 @LLVM_Codegen_Preproc_experiment10274318_test2 (i32 %arg)
+  %res = call i16 @LLVM_Codegen_Preproc_experiment7808214_test2 (i32 %arg)
 
   store i16 %res, i16 *%resp
 
@@ -79,14 +79,14 @@ define {i64, i16} @__isabelle_llvm_par_call_0(i64 %arg1, i32 %arg2) {
 
 
 
-define i64 @LLVM_Codegen_Preproc_experiment10274318_fib(i64 %n) {
+define i64 @LLVM_Codegen_Preproc_experiment7808214_fib(i64 %n) {
 
   start:
-    %x = call i64 @LLVM_Codegen_Preproc_experiment10274318_fib_f_010290260 (i64 %n)
+    %x = call i64 @LLVM_Codegen_Preproc_experiment7808214_fib_f_07858342 (i64 %n)
     ret i64 %x
 }
 
-define i16 @LLVM_Codegen_Preproc_experiment10274318_test2(i32 %n) {
+define i16 @LLVM_Codegen_Preproc_experiment7808214_test2(i32 %n) {
 
   start:
     %n1 = add i32 %n, 42
@@ -101,14 +101,14 @@ define i16 @LLVM_Codegen_Preproc_experiment10274318_test2(i32 %n) {
     ret i16 %x
 }
 
-define { i64, i16 } @LLVM_Codegen_Preproc_experiment10274318_test_ppar() {
+define { i64, i16 } @LLVM_Codegen_Preproc_experiment7808214_test_ppar() {
 
   start:
     %x = call { i64, i16 } @__isabelle_llvm_par_call_0 (i64 3, i32 3)
     ret { i64, i16 } %x
 }
 
-define i64 @LLVM_Codegen_Preproc_experiment10274318_fib_f_010290260(i64 %x) {
+define i64 @LLVM_Codegen_Preproc_experiment7808214_fib_f_07858342(i64 %x) {
 
   start:
     %t = icmp ule i64 %x, 1
@@ -119,9 +119,9 @@ define i64 @LLVM_Codegen_Preproc_experiment10274318_fib_f_010290260(i64 %x) {
 
   else:
     %n_1 = sub i64 %x, 1
-    %a = call i64 @LLVM_Codegen_Preproc_experiment10274318_fib_f_010290260 (i64 %n_1)
+    %a = call i64 @LLVM_Codegen_Preproc_experiment7808214_fib_f_07858342 (i64 %n_1)
     %n_2 = sub i64 %x, 2
-    %x1 = call i64 @LLVM_Codegen_Preproc_experiment10274318_fib_f_010290260 (i64 %n_2)
+    %x1 = call i64 @LLVM_Codegen_Preproc_experiment7808214_fib_f_07858342 (i64 %n_2)
     %x2 = add i64 %a, %x1
     br label %ctd_if
 
