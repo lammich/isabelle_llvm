@@ -100,7 +100,7 @@ begin
       unfolding some_nan_def 
       using someI_ex[OF ex_nan] .
     
-    lemma the_nan_is_nan: "is_nan (the_nan x)"
+    lemma the_nan_is_nan[simp, intro!]: "is_nan (the_nan x)"
       unfolding the_nan_def by auto
   
     lemma the_nan_cong[cong]: "the_nan x = the_nan x" by simp
@@ -132,7 +132,7 @@ begin
   subsubsection \<open>Conmponent-Wise Equality\<close>
   lemma float_eq_conv: "a=b \<longleftrightarrow> sign a = sign b \<and> fraction a = fraction b \<and> exponent a = exponent b"
     apply (transfer)
-    by auto
+    by (auto simp flip: word_unat_eq_iff)
     
         
   subsection \<open>Almost-Injectivity of \<^const>\<open>valof\<close>\<close>  

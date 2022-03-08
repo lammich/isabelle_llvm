@@ -2,6 +2,18 @@ theory Sorting_Quicksort_Scheme
 imports Sorting_Setup Sorting_Partially_Sorted
 begin
 
+    (* TODO: Move *)
+    
+    lemma slice_complete': "h=length xs \<Longrightarrow> slice 0 h xs = xs"
+      by simp
+    
+    lemma slice_append1': "h = length xs\<^sub>1 \<Longrightarrow> slice 0 h (xs\<^sub>1@xs\<^sub>2) = xs\<^sub>1"  
+      by (simp add: Misc.slice_def)
+      
+    lemma slice_append2': "l = length xs\<^sub>1 \<Longrightarrow> h = length xs\<^sub>1+length xs\<^sub>2 \<Longrightarrow> slice l h (xs\<^sub>1@xs\<^sub>2) = xs\<^sub>2"  
+      by (simp add: Misc.slice_def)
+      
+
 
   abbreviation "is_threshold \<equiv> 16::nat"
 
@@ -356,73 +368,6 @@ begin
       
       
           
-      
-      
-      
-    subsection \<open>Parallel Sorting\<close>
-      
-    (* TODO: Move *)
-    lemma WITH_SPLIT_mono_flat[refine_mono]: 
-      "\<lbrakk>\<And>a b. flat_ge (f a b) (f' a b)\<rbrakk> \<Longrightarrow> flat_ge (WITH_SPLIT xs n f) (WITH_SPLIT xs n f')"
-      unfolding WITH_SPLIT_def
-      by refine_mono
-    
-    lemma WITH_SPLIT_rule[refine_vcg]:
-      assumes "n<length xs"
-      assumes "\<And>xs\<^sub>1 xs\<^sub>2. \<lbrakk>xs=xs\<^sub>1@xs\<^sub>2; length xs\<^sub>1=n \<rbrakk> \<Longrightarrow> 
-        m xs\<^sub>1 xs\<^sub>2 \<le> SPEC (\<lambda>(r',xs\<^sub>1',xs\<^sub>2'). 
-                      length xs\<^sub>1'=length xs\<^sub>1 
-                    \<and> length xs\<^sub>2'=length xs\<^sub>2 
-                    \<and> P (r', xs\<^sub>1'@xs\<^sub>2'))"
-      shows "WITH_SPLIT n xs m \<le> SPEC P"  
-      using assms(1) unfolding WITH_SPLIT_def
-      apply (refine_vcg assms(2)[of "take n xs" "drop n xs"])
-      apply auto
-      done
-      
-    definition bad_partition :: "nat \<Rightarrow> nat \<Rightarrow> bool nres" where 
-    "bad_partition m n \<equiv> do {
-      ASSERT (m\<le>n);
-      RETURN (m < n div 8 \<or> n-m < n div 8)
-    }"
-  
-    lemma bad_partition_triv: "m\<le>n \<Longrightarrow> bad_partition m n \<le> SPEC (\<lambda>_. True)"
-      unfolding bad_partition_def
-      apply refine_vcg
-      by simp
-    
-    abbreviation "par_sort_seq_threshold::nat \<equiv> 100000"  
-      
-    definition "par_sort_aux xs d \<equiv> RECT (\<lambda>par_sort_aux (xs,d::nat). doN {
-      let n = length xs;
-      if d=0 \<or> n<par_sort_seq_threshold then
-        slice_sort_spec (\<^bold><) xs 0 n
-      else doN {
-        (xs',m) \<leftarrow> partition3_spec xs 0 n;
-        bad \<leftarrow> bad_partition m n;
-        
-        ASSERT (length xs' = length xs);
-        (_,xs'') \<leftarrow> WITH_SPLIT m xs' (\<lambda>xs\<^sub>1 xs\<^sub>2. doN {
-          ASSERT (length xs' = length xs\<^sub>1 + length xs\<^sub>2);
-          (xs\<^sub>1',xs\<^sub>2') \<leftarrow> if bad then doN {
-            xs\<^sub>1' \<leftarrow> par_sort_aux (xs\<^sub>1,d-1);
-            ASSERT (length xs\<^sub>1' = length xs\<^sub>1);
-            xs\<^sub>2' \<leftarrow> par_sort_aux (xs\<^sub>2,d-1);
-            ASSERT (length xs\<^sub>2' = length xs\<^sub>2);
-            RETURN (xs\<^sub>1',xs\<^sub>2')
-          } else doN {
-            xs\<^sub>1' \<leftarrow> par_sort_aux (xs\<^sub>1,d-1);
-            ASSERT (length xs\<^sub>1' = length xs\<^sub>1);
-            xs\<^sub>2' \<leftarrow> par_sort_aux (xs\<^sub>2,d-1);
-            ASSERT (length xs\<^sub>2' = length xs\<^sub>2);
-            RETURN (xs\<^sub>1',xs\<^sub>2')
-          };
-          RETURN ((),xs\<^sub>1',xs\<^sub>2')
-        });
-        RETURN xs''
-      }
-    }) (xs,d)"
-    
     lemma partition3_spec_for_paper: "partition3_spec xs 0 (length xs) = doN { 
       ASSERT (4\<le>length xs); 
       SPEC (\<lambda>(xs',m). mset xs'=mset xs \<and> 0<m \<and> m<length xs \<and> (\<forall>i\<in>{0..<m}. \<forall>j\<in>{m..<length xs}. xs'!i \<^bold>\<le> xs'!j))
@@ -449,100 +394,9 @@ begin
       subgoal 
         by (metis Misc.slice_len add.commute le_add1 less_diff_conv less_or_eq_imp_le size_mset slice_nth)
     done
-    
-    (* TODO: Move *)
-    
-    lemma slice_complete': "h=length xs \<Longrightarrow> slice 0 h xs = xs"
-      by simp
-    
-    lemma slice_append1': "h = length xs\<^sub>1 \<Longrightarrow> slice 0 h (xs\<^sub>1@xs\<^sub>2) = xs\<^sub>1"  
-      by (simp add: Misc.slice_def)
-      
-    lemma slice_append2': "l = length xs\<^sub>1 \<Longrightarrow> h = length xs\<^sub>1+length xs\<^sub>2 \<Longrightarrow> slice l h (xs\<^sub>1@xs\<^sub>2) = xs\<^sub>2"  
-      by (simp add: Misc.slice_def)
-      
-    lemma par_sort_aux_correct: "par_sort_aux xs d \<le> slice_sort_spec (\<^bold><) xs 0 (length xs)"
-      unfolding par_sort_aux_def 
-      apply (subst if_cancel)
-      apply (refine_vcg RECT_rule_arb[where V="measure (\<lambda>(_,d). d)" and pre="\<lambda>xss (xs,d). xss=xs"])
-      apply simp_all [2]
-      unfolding slice_sort_spec_def partition3_spec_def
-      apply (refine_vcg bad_partition_triv)
-      apply simp_all
-      apply (clarsimp simp: slice_eq_mset_eq_length)
-      apply (rule order_trans) apply (rprems)
-      apply simp
-      apply simp
-      apply refine_vcg
-      apply (clarsimp)
-      apply (rule order_trans) apply (rprems)
-      apply simp
-      apply simp
-      apply refine_vcg
-      apply (clarsimp_all)
-      subgoal for xs' xs\<^sub>2' xs\<^sub>1 xs\<^sub>2 xc x1b
-        
-        unfolding sort_spec_def slice_eq_mset_def slice_LT_def
-        apply (auto simp: slice_complete' sorted_wrt_append le_by_lt slice_append1' slice_append2')
-        by (metis set_mset_mset)
-      done
       
       
-    definition "par_sort_aux2 xs n d \<equiv> RECT (\<lambda>par_sort_aux (xs,n,d::nat). doN {
-      ASSERT (n = length xs);
-      if d=0 \<or> n<par_sort_seq_threshold then
-        slice_sort_spec (\<^bold><) xs 0 n
-      else doN {
-        (xs,m) \<leftarrow> partition3_spec xs 0 n;
-        bad \<leftarrow> bad_partition m n;
-        (_,xs) \<leftarrow> WITH_SPLIT m xs (\<lambda>xs\<^sub>1 xs\<^sub>2. doN {
-          ASSERT (length xs\<^sub>2 = length xs - m);
-          ASSERT (n\<ge>m);
-          (xs\<^sub>1,xs\<^sub>2) \<leftarrow> if bad then doN {
-            xs\<^sub>1 \<leftarrow> par_sort_aux (xs\<^sub>1,m,d-1);
-            xs\<^sub>2 \<leftarrow> par_sort_aux (xs\<^sub>2,n-m,d-1);
-            RETURN (xs\<^sub>1,xs\<^sub>2)
-          } else doN {
-            nres_par par_sort_aux par_sort_aux (xs\<^sub>1,m,d-1) (xs\<^sub>2,n-m,d-1)
-          };
-          RETURN ((),xs\<^sub>1,xs\<^sub>2)
-        });
-        RETURN xs
-      }
-    }) (xs,n,d)"
-
-    
-    (* TODO: Move *)  
-    lemma WITH_split_refine[refine]:
-      assumes "(n',n)\<in>Id"
-      assumes "(xs',xs) \<in> \<langle>A\<rangle>list_rel"
-      assumes [refine]: "\<lbrakk>n < length xs; n' < length xs'\<rbrakk> \<Longrightarrow> m' (take n' xs') (drop n' xs') \<le> \<Down>(R\<times>\<^sub>r\<langle>A\<rangle>list_rel\<times>\<^sub>r\<langle>A\<rangle>list_rel) (m (take n xs) (drop n xs))"
-      shows "WITH_SPLIT n' xs' m' \<le>\<Down>(R \<times>\<^sub>r \<langle>A\<rangle>list_rel) (WITH_SPLIT n xs m)"
-      unfolding WITH_SPLIT_def
-      apply refine_rcg
-      using assms(1,2)
-      apply (auto simp: list_rel_imp_same_length list_rel_append)
-      done
       
-    (* TODO: Move *)  
-    lemma nres_par_inline: "doN {
-        (ra,rb) \<leftarrow> nres_par f g a b;
-        m ra rb
-      } = doN {
-        ra \<leftarrow> f a;
-        rb \<leftarrow> g b;
-        m ra rb
-      }"
-      by (auto simp: pw_eq_iff refine_pw_simps) 
-      
-    lemma par_sort_aux2_refine: "n=length xs \<Longrightarrow> par_sort_aux2 xs n d \<le> \<Down>(\<langle>Id\<rangle>list_rel) (par_sort_aux xs d)"
-      unfolding par_sort_aux2_def par_sort_aux_def nres_par_def
-      apply (refine_rcg)
-      supply [refine_dref_RELATES] = RELATESI[where R="{((xs,n,d),(xs',d')). xs'=xs \<and> d'=d \<and> length xs'=n}"]
-      apply refine_dref_type
-      apply (simp_all (no_asm_use)) (* TODO: This is a hack against a yet unidentified simplifier loop *)
-      apply auto
-      done
       
   end  
 

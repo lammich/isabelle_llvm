@@ -1,6 +1,6 @@
 (* Parts copied from: afp/IEEE_Floating_Point/Double.thy by Lei Yu, University of Cambridge *)
 theory LLVM_Double
-imports IEEE_Floating_Point.Conversion_IEEE_Float IEEE_Floating_Point.FP64
+imports IEEE_Floating_Point.Conversion_IEEE_Float IEEE_Floating_Point.FP64 LLVM_More_Word
 begin
 
 
@@ -69,12 +69,6 @@ lift_definition is_nan::"double \<Rightarrow> bool" is IEEE.is_nan .
 
 lift_definition double_of_word :: "64 word \<Rightarrow> double" is float_of_fp64 .
 lift_definition word_of_double :: "double \<Rightarrow> 64 word" is fp64_of_float .
-
-
-
-
-lemma word_split_0[simp]: "word_split 0 = (0,0)"
-  by (auto simp: word_split_def)
 
 lemma float_of_fp64_zero[simp]: "float_of_fp64 0 = 0"
   unfolding zero_float_def float_of_fp64_def

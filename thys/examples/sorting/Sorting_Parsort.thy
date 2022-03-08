@@ -1,10 +1,123 @@
+section \<open>Parallel Quicksort\<close>
 theory Sorting_Parsort
 imports Sorting_Introsort Sorting_PDQ Sorting_Sample_Partition
 begin
 
-find_theorems nres_par
+
+
 context weak_ordering begin
+
+    subsection \<open>Abstract Algorithm\<close>
+    text \<open>We use a few straightforward refinement steps to develop the abstract parallel 
+      quicksort algorithm\<close>
+            
+    definition bad_partition :: "nat \<Rightarrow> nat \<Rightarrow> bool nres" where 
+    "bad_partition m n \<equiv> do {
+      ASSERT (m\<le>n);
+      RETURN (m < n div 8 \<or> n-m < n div 8)
+    }"
   
+    lemma bad_partition_triv: "m\<le>n \<Longrightarrow> bad_partition m n \<le> SPEC (\<lambda>_. True)"
+      unfolding bad_partition_def
+      apply refine_vcg
+      by simp
+    
+    abbreviation "par_sort_seq_threshold::nat \<equiv> 100000"  
+      
+    definition "par_sort_aux xs d \<equiv> RECT (\<lambda>par_sort_aux (xs,d::nat). doN {
+      let n = length xs;
+      if d=0 \<or> n<par_sort_seq_threshold then
+        slice_sort_spec (\<^bold><) xs 0 n
+      else doN {
+        (xs',m) \<leftarrow> partition3_spec xs 0 n;
+        bad \<leftarrow> bad_partition m n;
+        
+        ASSERT (length xs' = length xs);
+        (_,xs'') \<leftarrow> WITH_SPLIT m xs' (\<lambda>xs\<^sub>1 xs\<^sub>2. doN {
+          ASSERT (length xs' = length xs\<^sub>1 + length xs\<^sub>2);
+          (xs\<^sub>1',xs\<^sub>2') \<leftarrow> if bad then doN {
+            xs\<^sub>1' \<leftarrow> par_sort_aux (xs\<^sub>1,d-1);
+            ASSERT (length xs\<^sub>1' = length xs\<^sub>1);
+            xs\<^sub>2' \<leftarrow> par_sort_aux (xs\<^sub>2,d-1);
+            ASSERT (length xs\<^sub>2' = length xs\<^sub>2);
+            RETURN (xs\<^sub>1',xs\<^sub>2')
+          } else doN {
+            xs\<^sub>1' \<leftarrow> par_sort_aux (xs\<^sub>1,d-1);
+            ASSERT (length xs\<^sub>1' = length xs\<^sub>1);
+            xs\<^sub>2' \<leftarrow> par_sort_aux (xs\<^sub>2,d-1);
+            ASSERT (length xs\<^sub>2' = length xs\<^sub>2);
+            RETURN (xs\<^sub>1',xs\<^sub>2')
+          };
+          RETURN ((),xs\<^sub>1',xs\<^sub>2')
+        });
+        RETURN xs''
+      }
+    }) (xs,d)"
+    
+    
+    lemma par_sort_aux_correct: "par_sort_aux xs d \<le> slice_sort_spec (\<^bold><) xs 0 (length xs)"
+      unfolding par_sort_aux_def 
+      apply (subst if_cancel)
+      apply (refine_vcg RECT_rule_arb[where V="measure (\<lambda>(_,d). d)" and pre="\<lambda>xss (xs,d). xss=xs"])
+      apply simp_all [2]
+      unfolding slice_sort_spec_def partition3_spec_def
+      apply (refine_vcg bad_partition_triv)
+      apply simp_all 
+      apply (meson slice_eq_mset_all slice_eq_mset_def)
+      apply (rule order_trans) apply (rprems)
+      apply simp
+      apply simp
+      apply refine_vcg
+      apply (clarsimp)
+      apply (rule order_trans) apply (rprems)
+      apply simp
+      apply simp
+      apply refine_vcg
+      apply (clarsimp_all)
+      subgoal for xs' xs\<^sub>2' xs\<^sub>1 xs\<^sub>2 xc x1b
+        
+        unfolding sort_spec_def slice_eq_mset_def slice_LT_def
+        apply (auto simp: slice_complete' sorted_wrt_append le_by_lt slice_append1' slice_append2')
+        by (metis set_mset_mset)
+      done
+      
+    text \<open>Introducing explicit parameter for list length\<close>  
+    definition "par_sort_aux2 xs n d \<equiv> RECT (\<lambda>par_sort_aux (xs,n,d::nat). doN {
+      ASSERT (n = length xs);
+      if d=0 \<or> n<par_sort_seq_threshold then
+        slice_sort_spec (\<^bold><) xs 0 n
+      else doN {
+        (xs,m) \<leftarrow> partition3_spec xs 0 n;
+        bad \<leftarrow> bad_partition m n;
+        (_,xs) \<leftarrow> WITH_SPLIT m xs (\<lambda>xs\<^sub>1 xs\<^sub>2. doN {
+          ASSERT (length xs\<^sub>2 = length xs - m);
+          ASSERT (n\<ge>m);
+          (xs\<^sub>1,xs\<^sub>2) \<leftarrow> if bad then doN {
+            xs\<^sub>1 \<leftarrow> par_sort_aux (xs\<^sub>1,m,d-1);
+            xs\<^sub>2 \<leftarrow> par_sort_aux (xs\<^sub>2,n-m,d-1);
+            RETURN (xs\<^sub>1,xs\<^sub>2)
+          } else doN {
+            nres_par par_sort_aux par_sort_aux (xs\<^sub>1,m,d-1) (xs\<^sub>2,n-m,d-1)
+          };
+          RETURN ((),xs\<^sub>1,xs\<^sub>2)
+        });
+        RETURN xs
+      }
+    }) (xs,n,d)"
+
+    
+    lemma par_sort_aux2_refine: "n=length xs \<Longrightarrow> par_sort_aux2 xs n d \<le> \<Down>(\<langle>Id\<rangle>list_rel) (par_sort_aux xs d)"
+      unfolding par_sort_aux2_def par_sort_aux_def nres_par_def
+      apply (refine_rcg)
+      supply [refine_dref_RELATES] = RELATESI[where R="{((xs,n,d),(xs',d')). xs'=xs \<and> d'=d \<and> length xs'=n}"]
+      apply refine_dref_type
+      apply (simp_all (no_asm_use)) (* TODO: This is a hack against a yet unidentified simplifier loop *)
+      apply auto
+      done
+
+
+
+  text \<open>Fixing concrete algorithms to be used\<close>
   definition "par_sort_aux3 xs n d \<equiv> RECT (\<lambda>par_sort_aux (xs,n,d::nat). doN {
     ASSERT (n = length xs);
     if d=0 \<or> n<par_sort_seq_threshold then
@@ -62,6 +175,8 @@ context weak_ordering begin
     finally show ?thesis by simp 
   qed
     
+  
+  text \<open>Initializing depth bound\<close>
   definition "par_sort xs n \<equiv> doN {
     if n>1 then doN {
       par_sort_aux3 xs n (Discrete.log n * 2)
@@ -77,7 +192,9 @@ context weak_ordering begin
         
 end    
     
+subsection \<open>Refining to LLVM\<close>
 
+(* TODO: Move *)
 definition "map_res f m \<equiv> doM { x\<leftarrow>m; Mreturn (f x) }"
 
 lemma map_res_return[sepref_opt_simps2]: "map_res \<phi> (Mreturn x) = Mreturn (\<phi> x)"
@@ -134,6 +251,9 @@ context sort_impl_context begin
   apply (rewrite RECT_cp_annot[where CP="\<lambda>(ai,_,_) r. r=ai"])
   
   supply [sepref_comb_rules] = hn_RECT_cp_annot_noframe
+  apply sepref
+(* 
+  (* debugging boilerplate: *)
   apply sepref_dbg_preproc
   apply sepref_dbg_cons_init
   apply sepref_dbg_id
@@ -145,6 +265,7 @@ context sort_impl_context begin
   apply sepref_dbg_cons_solve
   apply sepref_dbg_cons_solve_cp
   apply sepref_dbg_constraints
+*)  
   done
   
 
@@ -156,11 +277,15 @@ context sort_impl_context begin
     supply [intro!] = introsort_depth_limit_in_bounds_aux 
     by sepref
   
-
+  thm par_sort_impl.refine[to_hnr, unfolded hn_ctxt_def, of xs xsi n ni]
+    
+  subsection \<open>Final Correctness Theorem as Hoare-Triple\<close>
+  
   lemma par_sort_refine_aux: "(uncurry par_sort, uncurry (\<lambda>xs n. doN {ASSERT (n=length xs); SPEC (sort_spec (\<^bold><) xs) })) \<in> Id \<times>\<^sub>r Id \<rightarrow> \<langle>Id\<rangle>nres_rel"  
     using par_sort_correct[OF refl]
     by (auto simp: pw_nres_rel_iff pw_le_iff refine_pw_simps)
         
+  text \<open>We unfold the definition of \<open>hnr\<close>, to extract a correctness statement as Hoare-Triple\<close>  
   theorem par_sort_impl_correct: "llvm_htriple (arr_assn xs xsi ** snat_assn n ni ** \<up>(n = length xs)) 
     (par_sort_impl xsi ni) 
     (\<lambda>r. \<up>(r=xsi) ** (EXS xs'. arr_assn xs' xsi ** \<up>(sort_spec (\<^bold><) xs xs')))"
@@ -174,6 +299,19 @@ context sort_impl_context begin
     apply (auto simp add: hn_ctxt_def sep_algebra_simps pure_def invalid_assn_def)
     done
   
+  text \<open>With the sorting specification unfolded, too. 
+    Note that \<^const>\<open>mset\<close> and \<^const>\<open>sorted_wrt\<close> are standard concepts from Isabelle's library.
+  \<close>  
+  theorem par_sort_impl_correct': "llvm_htriple (arr_assn xs xsi ** snat_assn n ni ** \<up>(n = length xs)) 
+    (par_sort_impl xsi ni) 
+    (\<lambda>r. \<up>(r=xsi) ** (EXS xs'. arr_assn xs' xsi ** \<up>(mset xs' = mset xs \<and> sorted_wrt (\<^bold>\<le>) xs')))"
+    apply (rule cons_rule[OF par_sort_impl_correct])
+    apply simp
+    apply (clarsimp simp add: sep_algebra_simps)
+    apply (auto simp: sort_spec_def le_by_lt)
+    done
+    
+    
 
 end
 

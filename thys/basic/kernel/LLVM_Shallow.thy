@@ -5,10 +5,6 @@ imports Main
 begin
 
 
-  text \<open>We define a type synonym for the LLVM monad\<close>
-  
-    
-
   subsection \<open>Shallow Embedding of Values\<close>  
 
   text \<open>We use a type class to characterize types that can be injected into the value type.
@@ -81,6 +77,20 @@ begin
       
   end
 
+  instantiation single :: llvm_rep begin
+    definition "to_val w \<equiv> LL_SINGLE w"
+    definition "from_val v \<equiv> llvm_val.the_single v"
+    definition [simp]: "struct_of_single (_::single itself) \<equiv> VS_SINGLE"
+    definition [simp]: "init_single \<equiv> 0::single"
+
+    instance
+      apply standard
+      apply (simp_all add: fun_eq_iff from_val_single_def to_val_single_def)
+      subgoal for v by (cases v; simp)
+      done
+      
+  end
+  
   instantiation double :: llvm_rep begin
     definition "to_val w \<equiv> LL_DOUBLE w"
     definition "from_val v \<equiv> llvm_val.the_double v"
@@ -180,29 +190,50 @@ begin
     It is parameterized by an error condition.
   \<close> (* TODO: Use precondition instead of negated precondition! *)
   
-  definition op_lift_farith1 :: "_ \<Rightarrow> double \<Rightarrow> double llM"
-    where "op_lift_farith1 f a \<equiv> doM {
+  definition op_lift_farith1_d :: "_ \<Rightarrow> double \<Rightarrow> double llM"
+    where "op_lift_farith1_d f a \<equiv> doM {
     return (f a)
   }"
   
-  definition op_lift_farith2 :: "_ \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double llM"
-    where "op_lift_farith2 f a b \<equiv> doM {
+  definition op_lift_farith2_d :: "_ \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double llM"
+    where "op_lift_farith2_d f a b \<equiv> doM {
     return (f a b)
   }"
 
-  definition op_lift_farith3 :: "_ \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double llM"
-    where "op_lift_farith3 f a b c \<equiv> doM {
+  definition op_lift_farith3_d :: "_ \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double llM"
+    where "op_lift_farith3_d f a b c \<equiv> doM {
     return (f a b c)
   }"
   
-          
-  definition "ll_fadd \<equiv> op_lift_farith2 (+)"
-  definition "ll_fsub \<equiv> op_lift_farith2 (-)"
-  definition "ll_fmul \<equiv> op_lift_farith2 (*)"
-  definition "ll_fdiv \<equiv> op_lift_farith2 (/)"
-  definition "ll_frem \<equiv> op_lift_farith2 (drem)"     
-  definition "ll_sqrt_f64 \<equiv> op_lift_farith1 (dsqrt)"
+  definition op_lift_farith1_f :: "_ \<Rightarrow> single \<Rightarrow> single llM"
+    where "op_lift_farith1_f f a \<equiv> doM {
+    return (f a)
+  }"
   
+  definition op_lift_farith2_f :: "_ \<Rightarrow> single \<Rightarrow> single \<Rightarrow> single llM"
+    where "op_lift_farith2_f f a b \<equiv> doM {
+    return (f a b)
+  }"
+
+  definition op_lift_farith3_f :: "_ \<Rightarrow> single \<Rightarrow> single \<Rightarrow> single \<Rightarrow> single llM"
+    where "op_lift_farith3_f f a b c \<equiv> doM {
+    return (f a b c)
+  }"
+          
+  definition "ll_fadd_d \<equiv> op_lift_farith2_d (+)"
+  definition "ll_fsub_d \<equiv> op_lift_farith2_d (-)"
+  definition "ll_fmul_d \<equiv> op_lift_farith2_d (*)"
+  definition "ll_fdiv_d \<equiv> op_lift_farith2_d (/)"
+  definition "ll_frem_d \<equiv> op_lift_farith2_d (drem)"     
+  definition "ll_sqrt_f64 \<equiv> op_lift_farith1_d (dsqrt)"
+
+  definition "ll_fadd_f \<equiv> op_lift_farith2_f (+)"
+  definition "ll_fsub_f \<equiv> op_lift_farith2_f (-)"
+  definition "ll_fmul_f \<equiv> op_lift_farith2_f (*)"
+  definition "ll_fdiv_f \<equiv> op_lift_farith2_f (/)"
+  definition "ll_frem_f \<equiv> op_lift_farith2_f (srem)"     
+  definition "ll_sqrt_f32 \<equiv> op_lift_farith1_f (ssqrt)"
+    
   subsubsection \<open>Compare Operations\<close>
   definition op_lift_cmp :: "_ \<Rightarrow> 'a::len word \<Rightarrow> 'a word \<Rightarrow> 1 word llM"
     where "op_lift_cmp f a b \<equiv> doM {
@@ -219,12 +250,20 @@ begin
   definition "ll_icmp_ult \<equiv> op_lift_cmp (<)"
 
   subsubsection \<open>Floating Point Compare Operations\<close>
-  definition op_lift_fcmp :: "bool \<Rightarrow> _ \<Rightarrow> double \<Rightarrow> double \<Rightarrow> 1 word llM"
-    where "op_lift_fcmp ordered f a b \<equiv> doM {
+  definition op_lift_fcmp_d :: "bool \<Rightarrow> _ \<Rightarrow> double \<Rightarrow> double \<Rightarrow> 1 word llM"
+    where "op_lift_fcmp_d ordered f a b \<equiv> doM {
       if ordered then
-        return (lint_to_word (bool_to_lint (\<not>is_nan a \<and> \<not>is_nan b \<and> f a b)))
+        return (lint_to_word (bool_to_lint (\<not>LLVM_Double.is_nan a \<and> \<not>LLVM_Double.is_nan b \<and> f a b)))
       else
-        return (lint_to_word (bool_to_lint (is_nan a \<or> is_nan b \<or> f a b)))
+        return (lint_to_word (bool_to_lint (LLVM_Double.is_nan a \<or> LLVM_Double.is_nan b \<or> f a b)))
+    
+  }"
+  definition op_lift_fcmp_f :: "bool \<Rightarrow> _ \<Rightarrow> single \<Rightarrow> single \<Rightarrow> 1 word llM"
+    where "op_lift_fcmp_f ordered f a b \<equiv> doM {
+      if ordered then
+        return (lint_to_word (bool_to_lint (\<not>LLVM_Single.is_nan a \<and> \<not>LLVM_Single.is_nan b \<and> f a b)))
+      else
+        return (lint_to_word (bool_to_lint (LLVM_Single.is_nan a \<or> LLVM_Single.is_nan b \<or> f a b)))
     
   }"
     
@@ -245,22 +284,37 @@ begin
     uno: yields true if either operand is a QNAN.
   *)
   
-  definition "ll_fcmp_oeq \<equiv> op_lift_fcmp True (eq_double)"
-  definition "ll_fcmp_ogt \<equiv> op_lift_fcmp True (>)"
-  definition "ll_fcmp_oge \<equiv> op_lift_fcmp True (\<ge>)"
-  definition "ll_fcmp_olt \<equiv> op_lift_fcmp True (<)"
-  definition "ll_fcmp_ole \<equiv> op_lift_fcmp True (\<le>)"
-  definition "ll_fcmp_one \<equiv> op_lift_fcmp True (Not oo eq_double)"
-  definition "ll_fcmp_ord \<equiv> op_lift_fcmp True (\<lambda>_ _. True)"
+  definition "ll_fcmp_oeq_d \<equiv> op_lift_fcmp_d True (eq_double)"
+  definition "ll_fcmp_ogt_d \<equiv> op_lift_fcmp_d True (>)"
+  definition "ll_fcmp_oge_d \<equiv> op_lift_fcmp_d True (\<ge>)"
+  definition "ll_fcmp_olt_d \<equiv> op_lift_fcmp_d True (<)"
+  definition "ll_fcmp_ole_d \<equiv> op_lift_fcmp_d True (\<le>)"
+  definition "ll_fcmp_one_d \<equiv> op_lift_fcmp_d True (Not oo eq_double)"
+  definition "ll_fcmp_ord_d \<equiv> op_lift_fcmp_d True (\<lambda>_ _. True)"
 
-  definition "ll_fcmp_ueq \<equiv> op_lift_fcmp False (eq_double)"
-  definition "ll_fcmp_ugt \<equiv> op_lift_fcmp False (>)"
-  definition "ll_fcmp_uge \<equiv> op_lift_fcmp False (\<ge>)"
-  definition "ll_fcmp_ult \<equiv> op_lift_fcmp False (<)"
-  definition "ll_fcmp_ule \<equiv> op_lift_fcmp False (\<le>)"
-  definition "ll_fcmp_une \<equiv> op_lift_fcmp False (Not oo eq_double)"
-  definition "ll_fcmp_uno \<equiv> op_lift_fcmp False (\<lambda>_ _. False)"
+  definition "ll_fcmp_ueq_d \<equiv> op_lift_fcmp_d False (eq_double)"
+  definition "ll_fcmp_ugt_d \<equiv> op_lift_fcmp_d False (>)"
+  definition "ll_fcmp_uge_d \<equiv> op_lift_fcmp_d False (\<ge>)"
+  definition "ll_fcmp_ult_d \<equiv> op_lift_fcmp_d False (<)"
+  definition "ll_fcmp_ule_d \<equiv> op_lift_fcmp_d False (\<le>)"
+  definition "ll_fcmp_une_d \<equiv> op_lift_fcmp_d False (Not oo eq_double)"
+  definition "ll_fcmp_uno_d \<equiv> op_lift_fcmp_d False (\<lambda>_ _. False)"
   
+  definition "ll_fcmp_oeq_f \<equiv> op_lift_fcmp_f True (eq_single)"
+  definition "ll_fcmp_ogt_f \<equiv> op_lift_fcmp_f True (>)"
+  definition "ll_fcmp_oge_f \<equiv> op_lift_fcmp_f True (\<ge>)"
+  definition "ll_fcmp_olt_f \<equiv> op_lift_fcmp_f True (<)"
+  definition "ll_fcmp_ole_f \<equiv> op_lift_fcmp_f True (\<le>)"
+  definition "ll_fcmp_one_f \<equiv> op_lift_fcmp_f True (Not oo eq_single)"
+  definition "ll_fcmp_ord_f \<equiv> op_lift_fcmp_f True (\<lambda>_ _. True)"
+
+  definition "ll_fcmp_ueq_f \<equiv> op_lift_fcmp_f False (eq_single)"
+  definition "ll_fcmp_ugt_f \<equiv> op_lift_fcmp_f False (>)"
+  definition "ll_fcmp_uge_f \<equiv> op_lift_fcmp_f False (\<ge>)"
+  definition "ll_fcmp_ult_f \<equiv> op_lift_fcmp_f False (<)"
+  definition "ll_fcmp_ule_f \<equiv> op_lift_fcmp_f False (\<le>)"
+  definition "ll_fcmp_une_f \<equiv> op_lift_fcmp_f False (Not oo eq_single)"
+  definition "ll_fcmp_uno_f \<equiv> op_lift_fcmp_f False (\<lambda>_ _. False)"
   
   subsubsection "AVX512f: sd-operations with rounding mode"
   text \<open>The code generator creates the insertion/extraction into vector type.\<close>
@@ -320,19 +374,34 @@ begin
     "xlate_rounding_mode AVX512_FROUND_TO_ZERO_NO_EXC = (return float_To_zero)"
     unfolding xlate_rounding_mode_def by simp_all
     
-  definition op_lift_farith1_rm :: "(roundmode \<Rightarrow> double \<Rightarrow> double) \<Rightarrow> nat \<Rightarrow> double \<Rightarrow> double llM" 
-    where "op_lift_farith1_rm f rm a \<equiv> doM { rm \<leftarrow> xlate_rounding_mode rm; return (f rm a) }"
-  definition op_lift_farith2_rm :: "(roundmode \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double) \<Rightarrow> nat \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double llM" 
-    where "op_lift_farith2_rm f rm a b \<equiv> doM { rm \<leftarrow> xlate_rounding_mode rm; return (f rm a b) }"
-  definition op_lift_farith3_rm :: "(roundmode \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double) \<Rightarrow> nat \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double llM" 
-    where "op_lift_farith3_rm f rm a b c \<equiv> doM { rm \<leftarrow> xlate_rounding_mode rm; return (f rm a b c) }"
+  definition op_lift_farith1_rm_d :: "(roundmode \<Rightarrow> double \<Rightarrow> double) \<Rightarrow> nat \<Rightarrow> double \<Rightarrow> double llM" 
+    where "op_lift_farith1_rm_d f rm a \<equiv> doM { rm \<leftarrow> xlate_rounding_mode rm; return (f rm a) }"
+  definition op_lift_farith2_rm_d :: "(roundmode \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double) \<Rightarrow> nat \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double llM" 
+    where "op_lift_farith2_rm_d f rm a b \<equiv> doM { rm \<leftarrow> xlate_rounding_mode rm; return (f rm a b) }"
+  definition op_lift_farith3_rm_d :: "(roundmode \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double) \<Rightarrow> nat \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double llM" 
+    where "op_lift_farith3_rm_d f rm a b c \<equiv> doM { rm \<leftarrow> xlate_rounding_mode rm; return (f rm a b c) }"
+
+  definition op_lift_farith1_rm_f :: "(roundmode \<Rightarrow> single \<Rightarrow> single) \<Rightarrow> nat \<Rightarrow> single \<Rightarrow> single llM" 
+    where "op_lift_farith1_rm_f f rm a \<equiv> doM { rm \<leftarrow> xlate_rounding_mode rm; return (f rm a) }"
+  definition op_lift_farith2_rm_f :: "(roundmode \<Rightarrow> single \<Rightarrow> single \<Rightarrow> single) \<Rightarrow> nat \<Rightarrow> single \<Rightarrow> single \<Rightarrow> single llM" 
+    where "op_lift_farith2_rm_f f rm a b \<equiv> doM { rm \<leftarrow> xlate_rounding_mode rm; return (f rm a b) }"
+  definition op_lift_farith3_rm_f :: "(roundmode \<Rightarrow> single \<Rightarrow> single \<Rightarrow> single \<Rightarrow> single) \<Rightarrow> nat \<Rightarrow> single \<Rightarrow> single \<Rightarrow> single \<Rightarrow> single llM" 
+    where "op_lift_farith3_rm_f f rm a b c \<equiv> doM { rm \<leftarrow> xlate_rounding_mode rm; return (f rm a b c) }"
     
-  definition "ll_x86_avx512_add_sd_round \<equiv> op_lift_farith2_rm dradd"
-  definition "ll_x86_avx512_sub_sd_round \<equiv> op_lift_farith2_rm drsub"
-  definition "ll_x86_avx512_mul_sd_round \<equiv> op_lift_farith2_rm drmul"
-  definition "ll_x86_avx512_div_sd_round \<equiv> op_lift_farith2_rm drdiv"
-  definition "ll_x86_avx512_sqrt_sd \<equiv> op_lift_farith1_rm drsqrt"
-  definition "ll_x86_avx512_vfmadd_f64 \<equiv> op_lift_farith3_rm drfmadd"
+        
+  definition "ll_x86_avx512_add_sd_round \<equiv> op_lift_farith2_rm_d dradd"
+  definition "ll_x86_avx512_sub_sd_round \<equiv> op_lift_farith2_rm_d drsub"
+  definition "ll_x86_avx512_mul_sd_round \<equiv> op_lift_farith2_rm_d drmul"
+  definition "ll_x86_avx512_div_sd_round \<equiv> op_lift_farith2_rm_d drdiv"
+  definition "ll_x86_avx512_sqrt_sd \<equiv> op_lift_farith1_rm_d drsqrt"
+  definition "ll_x86_avx512_vfmadd_f64 \<equiv> op_lift_farith3_rm_d drfmadd"
+
+  definition "ll_x86_avx512_add_ss_round \<equiv> op_lift_farith2_rm_f sradd"
+  definition "ll_x86_avx512_sub_ss_round \<equiv> op_lift_farith2_rm_f srsub"
+  definition "ll_x86_avx512_mul_ss_round \<equiv> op_lift_farith2_rm_f srmul"
+  definition "ll_x86_avx512_div_ss_round \<equiv> op_lift_farith2_rm_f srdiv"
+  definition "ll_x86_avx512_sqrt_ss \<equiv> op_lift_farith1_rm_f srsqrt"
+  definition "ll_x86_avx512_vfmadd_f32 \<equiv> op_lift_farith3_rm_f srfmadd"
   
   subsubsection \<open>Bitwise Binary Operations\<close>                                      
   definition "shift_ovf a n \<equiv> nat (lint_to_uint n) \<ge> width a"

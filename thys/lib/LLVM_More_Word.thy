@@ -81,6 +81,9 @@ lemma word1_NOT_eq: "~~(x::1 word) = x+1"
 lemma upcast_no_msb[simp]: "LENGTH('small::len) < LENGTH('big::len) \<Longrightarrow> \<not>msb (UCAST('small \<rightarrow> 'big) x)" 
   by (simp add: bit_word_ucast_iff msb_word_eq)
 
+lemma word_split_0[simp]: "word_split 0 = (0,0)"
+  by (auto simp: word_split_def)
+  
 subsection \<open>Integer Division with Rounding Towards Zero\<close>
 
 text \<open>Division with rounding towards zero\<close>

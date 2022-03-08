@@ -1,8 +1,9 @@
 section \<open>Simple Memory Model\<close>
 theory Simple_Memory
-imports "../../lib/LLVM_Integer" "../../lib/LLVM_Double"  "../../lib/MM/MMonad" 
+imports "../../lib/LLVM_Integer" "../../lib/LLVM_Single" "../../lib/LLVM_Double"  "../../lib/MM/MMonad" 
 begin
 
+  text \<open>Here, we combine a model of LLVM values, with our generic block-based memory model\<close>
 
   datatype llvm_ptr = is_null: PTR_NULL | is_addr: PTR_ADDR (the_addr: addr)
   hide_const (open) llvm_ptr.is_null llvm_ptr.is_addr llvm_ptr.the_addr
@@ -16,6 +17,7 @@ begin
   datatype llvm_val = 
     is_struct: LL_STRUCT (the_fields: "llvm_val list") 
   | is_int: LL_INT (the_int: lint) 
+  | is_single: LL_SINGLE (the_single: single)
   | is_double: LL_DOUBLE (the_double: double) (* 
       TODO: Similar to lint, we could encode different floating-point layouts here, 
         and restrict the code-generator to only accept the ones supported by LLVM.
@@ -24,6 +26,7 @@ begin
   hide_const (open) 
     llvm_val.is_struct llvm_val.the_fields
     llvm_val.is_int llvm_val.the_int
+    llvm_val.is_single llvm_val.the_single
     llvm_val.is_double llvm_val.the_double
     llvm_val.is_ptr llvm_val.the_ptr
   
@@ -31,11 +34,13 @@ begin
   datatype llvm_struct = 
     is_struct: VS_STRUCT (the_fields: "llvm_struct list") 
   | is_int: VS_INT (the_width: nat)
+  | is_single: VS_SINGLE
   | is_double: VS_DOUBLE
   | is_ptr: VS_PTR 
   hide_const (open) 
     llvm_struct.is_struct llvm_struct.the_fields
     llvm_struct.is_ptr
+    llvm_struct.is_single
     llvm_struct.is_double
     llvm_struct.is_int llvm_struct.the_width
   
@@ -44,12 +49,14 @@ begin
   fun llvm_struct_of_val where
     "llvm_struct_of_val (LL_STRUCT vs) = VS_STRUCT (map llvm_struct_of_val vs)"
   | "llvm_struct_of_val (LL_INT i) = VS_INT (width i)"
+  | "llvm_struct_of_val (LL_SINGLE _) = VS_SINGLE"
   | "llvm_struct_of_val (LL_DOUBLE _) = VS_DOUBLE"
   | "llvm_struct_of_val (LL_PTR _) = VS_PTR"
 
   fun llvm_zero_initializer where
     "llvm_zero_initializer (VS_STRUCT vss) = LL_STRUCT (map llvm_zero_initializer vss)"
   | "llvm_zero_initializer (VS_INT w) = LL_INT (lconst w 0)"
+  | "llvm_zero_initializer (VS_SINGLE) = LL_SINGLE (single_of_word 0)"
   | "llvm_zero_initializer (VS_DOUBLE) = LL_DOUBLE (double_of_word 0)"
   | "llvm_zero_initializer VS_PTR = LL_PTR PTR_NULL"
   

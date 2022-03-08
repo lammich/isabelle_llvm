@@ -1,0 +1,47 @@
+#!/bin/bash
+
+echo "structure FP_test_defs = struct "
+echo "  open FP_test_base"
+
+
+
+for i in fpgen32_testsuite/Basic-Types-Inputs.fptest; do
+# for i in fpgen32_testsuite/*.fptest; do
+  STEM="${i#*/}"
+  STEM="${STEM%.*}"
+  STEM=$(echo $STEM | sed -re 's/-/_/g')
+
+  TMP=$(tempfile)
+
+  egrep '^b32([-+*/]|\*\+) ' $i \
+  | egrep -v -- '#' \
+  | sed -re 's/^b32//;s/^\*\+ /check_fmul_add32 /;s/^\* /check_fmul32 /;s/^\+ /check_fadd32 /;s/^- /check_fsub32 /;s|^/ |check_fdiv32 |' \
+  | sed -re 's/([+-])[01]\.([0-9A-F]+)P(-?[0-9]+)/(fp32 \1 (0x\2) (\3))/g;s/fp32 \+/fp32 0/g;s/fp32 -/fp32 1/g' \
+  | sed -re 's/\bS\b/sNaN32/g;s/\bQ\b/qNaN32/g' \
+  | sed -re 's/-Zero\b/minus_zero32/g;s/\+Zero\b/plus_zero32/g;s/-Inf\b/minus_inf32/g;s/\+Inf\b/plus_inf32/g;' \
+  | sed -re 's/ -> /, /;s/[ xuvwozi]+$//' \
+  | gawk '$2=="=0" {$2="To_nearest"} $2=="0" {$2="float_To_zero"} $2=="<" {$2="To_ninfinity"} $2==">" {$2="To_pinfinity"}   {print}' \
+  | sed -re 's/-([0-9]+)/~\1/g' \
+  | gawk '$3~/[xuozi]+/ {$3=""} {print}' \
+  > "$TMP"
+
+
+  if [ -s "$TMP" ]; then
+
+    CNAME="fptest_$STEM"
+
+    echo "val $CNAME = "
+
+    cat "$TMP" \
+    | gawk 'BEGIN {print "["; count=0; first=1} !first {print ","} {printf ("(%d, %s)",count, $0); first=0; count++} END{print "\n]"}'
+
+    echo
+    echo
+
+  fi
+
+  rm -f "%TMP"
+done
+
+echo "end"
+

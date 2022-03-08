@@ -1,3 +1,4 @@
+subsection \<open>Reasoning About LLVM's Memory Model\<close>
 theory LLVM_Simple_Memory_RS
 imports "../basic/kernel/Simple_Memory" "Sep_Generic_Wp"
 begin
@@ -9,6 +10,10 @@ begin
   
   subsection \<open>Abstract Memory Separation Algebra\<close>
 
+  text \<open>We define the actual separation algebra, and instantiate the formalization, that, so far, 
+    has been generic over the separation algebra\<close>
+
+  
   typedef 'a amemory = "UNIV :: ((addr \<Rightarrow> 'a tsa_opt) \<times> (nat \<Rightarrow> nat tsa_opt)) set" by simp
 
   setup_lifting type_definition_amemory
@@ -42,10 +47,10 @@ begin
   lift_definition llvm_\<alpha> :: "'a memory \<Rightarrow> 'a amemory" is "\<lambda>m. (llvm_\<alpha>m m, llvm_\<alpha>b m)" .
   
   lift_definition amemory_addrs :: "'a amemory \<Rightarrow> addr set" is "\<lambda>(m,b). {a. m a \<noteq> 0}" .
-  lift_definition amemory_blocks :: "'a amemory \<Rightarrow> block set" is "\<lambda>(m,b). {x. b x \<noteq> 0}" .
+  lift_definition amemory_blocks :: "'a amemory \<Rightarrow> block_idx set" is "\<lambda>(m,b). {x. b x \<noteq> 0}" .
   
   lift_definition amemory_aget :: "'a amemory \<Rightarrow> addr \<Rightarrow> 'a" is "\<lambda>(m,_) a. the_tsa (m a)" .
-  lift_definition amemory_bget :: "'a amemory \<Rightarrow> block \<Rightarrow> nat" is "\<lambda>(_,b) bl. the_tsa (b bl)" .
+  lift_definition amemory_bget :: "'a amemory \<Rightarrow> block_idx \<Rightarrow> nat" is "\<lambda>(_,b) bl. the_tsa (b bl)" .
 
 
   (* TODO: Move *)
@@ -199,12 +204,12 @@ begin
   lemma wpa_Mload[vcg_normalize_simps]: 
     "wpa asf (Mload a) Q' s = (is_valid_addr s a \<and> Q' (get_addr s a) s \<and> a \<notin> amemory_addrs asf)"
     unfolding wpa_def
-    by (simp add: vcg_normalize_simps intf_excludes_def)
+    by (simp add: vcg_normalize_simps acc_excludes_def)
     
   lemma wpa_Mstore[vcg_normalize_simps]: 
     "wpa asf (Mstore a x) Q' s = (is_valid_addr s a \<and> Q' () (put_addr s a x) \<and> a \<notin> amemory_addrs asf)"
     unfolding wpa_def
-    by (simp add: vcg_normalize_simps intf_excludes_def)
+    by (simp add: vcg_normalize_simps acc_excludes_def)
 
     
             
@@ -354,7 +359,7 @@ begin
   (* TODO: Move *)
   lemma wpa_Mmalloc[vcg_normalize_simps]: 
     "wpa asf (Mmalloc xs) Q s \<longleftrightarrow> (\<forall>r. is_FRESH s r \<longrightarrow> Q r (addr_alloc xs r s))"
-    unfolding wpa_def intf_excludes_def
+    unfolding wpa_def acc_excludes_def
     by vcg_normalize
     
   lemma llvmt_alloc_rule[vcg_rules]: "htriple \<box> (llvmt_alloc s n) (\<lambda>b. 
@@ -428,7 +433,7 @@ begin
     
   lemma wpa_Mfree[vcg_normalize_simps]: 
     "wpa asf (Mfree b) Q s \<longleftrightarrow> is_ALLOC s b \<and> Q () (addr_free b s) \<and> b \<notin> addr.block ` amemory_addrs asf \<and> b \<notin> amemory_blocks asf"  
-    unfolding wpa_def intf_excludes_def
+    unfolding wpa_def acc_excludes_def
     apply vcg_normalize
     done
     
@@ -623,7 +628,7 @@ begin
   (* TODO: Move *)
   lemma wpa_Mvalid_addr[vcg_normalize_simps]: 
     "wpa asf (Mvalid_addr a) Q s \<longleftrightarrow> is_valid_addr s a \<and> Q () s \<and> a \<notin> amemory_addrs asf"
-    unfolding wpa_def intf_excludes_def
+    unfolding wpa_def acc_excludes_def
     by vcg_normalize
   
   

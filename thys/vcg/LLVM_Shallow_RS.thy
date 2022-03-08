@@ -610,8 +610,10 @@ definition "vcg_assert_valid_ptr p \<equiv> llvmt_check_ptr (the_raw_ptr p)"
 context llvm_prim_arith_setup begin
 context 
   notes [simp] = op_lift_arith2'_def op_lift_arith2_def 
-                 op_lift_farith1_def op_lift_farith2_def
-                 op_lift_farith1_rm_def op_lift_farith2_rm_def op_lift_farith3_rm_def
+                 op_lift_farith1_f_def op_lift_farith2_f_def
+                 op_lift_farith1_d_def op_lift_farith2_d_def
+                 op_lift_farith1_rm_f_def op_lift_farith2_rm_f_def op_lift_farith3_rm_f_def
+                 op_lift_farith1_rm_d_def op_lift_farith2_rm_d_def op_lift_farith3_rm_d_def
                  op_lift_cmp_def op_lift_iconv_def 
   notes [simp] = word_to_lint_convs[symmetric]
   notes [simp] = from_bool_lint_conv udivrem_is_undef_word_conv sdivrem_is_undef_word_conv
@@ -641,17 +643,40 @@ lemma ll_srem_rule[vcg_rules]: "\<lbrakk>WBOUNDS (b\<noteq>0); WBOUNDS (in_srang
   unfolding vcg_tag_defs by vcg
 
 
-lemma ll_fadd_simp[vcg_normalize_simps]: "ll_fadd a b = Mreturn (a + b)" by (auto simp: ll_fadd_def) 
-lemma ll_fsub_simp[vcg_normalize_simps]: "ll_fsub a b = Mreturn (a - b)" by (auto simp: ll_fsub_def) 
-lemma ll_fmul_simp[vcg_normalize_simps]: "ll_fmul a b = Mreturn (a * b)" by (auto simp: ll_fmul_def) 
-lemma ll_fdiv_simp[vcg_normalize_simps]: "ll_fdiv a b = Mreturn (a / b)" by (auto simp: ll_fdiv_def) 
-lemma ll_frem_simp[vcg_normalize_simps]: "ll_frem a b = Mreturn (drem a b)" by (auto simp: ll_frem_def) 
+lemma ll_fadd_f_simp[vcg_normalize_simps]:     "ll_fadd_f a b = Mreturn (a + b)" by (auto    simp: ll_fadd_f_def) 
+lemma ll_fsub_f_simp[vcg_normalize_simps]:     "ll_fsub_f a b = Mreturn (a - b)" by (auto    simp: ll_fsub_f_def) 
+lemma ll_fmul_f_simp[vcg_normalize_simps]:     "ll_fmul_f a b = Mreturn (a * b)" by (auto    simp: ll_fmul_f_def) 
+lemma ll_fdiv_f_simp[vcg_normalize_simps]:     "ll_fdiv_f a b = Mreturn (a / b)" by (auto    simp: ll_fdiv_f_def) 
+lemma ll_frem_f_simp[vcg_normalize_simps]:     "ll_frem_f a b = Mreturn (srem a b)" by (auto simp: ll_frem_f_def) 
+lemma ll_sqrt_f_f64_simp[vcg_normalize_simps]: "ll_sqrt_f32 a = Mreturn (ssqrt a)" by (auto simp:  ll_sqrt_f32_def)
+  
+lemma ll_fadd_d_simp[vcg_normalize_simps]: "ll_fadd_d a b = Mreturn (a + b)" by (auto simp: ll_fadd_d_def) 
+lemma ll_fsub_d_simp[vcg_normalize_simps]: "ll_fsub_d a b = Mreturn (a - b)" by (auto simp: ll_fsub_d_def) 
+lemma ll_fmul_d_simp[vcg_normalize_simps]: "ll_fmul_d a b = Mreturn (a * b)" by (auto simp: ll_fmul_d_def) 
+lemma ll_fdiv_d_simp[vcg_normalize_simps]: "ll_fdiv_d a b = Mreturn (a / b)" by (auto simp: ll_fdiv_d_def) 
+lemma ll_frem_d_simp[vcg_normalize_simps]: "ll_frem_d a b = Mreturn (drem a b)" by (auto simp: ll_frem_d_def) 
 lemma ll_sqrt_f64_simp[vcg_normalize_simps]: "ll_sqrt_f64 a = Mreturn (dsqrt a)" by (auto simp: ll_sqrt_f64_def) 
   
 
 lemmas [vcg_normalize_simps] = xlate_rounding_mode_simps
 
-lemma ll_x86_avx512_simps[vcg_normalize_simps]:
+lemma ll_x86_avx512_ss_simps[vcg_normalize_simps]:
+  "ll_x86_avx512_add_ss_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm; Mreturn (sradd rm a b)}"
+  "ll_x86_avx512_sub_ss_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm; Mreturn (srsub rm a b)}"
+  "ll_x86_avx512_mul_ss_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm; Mreturn (srmul rm a b)}"
+  "ll_x86_avx512_div_ss_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm; Mreturn (srdiv rm a b)}"
+  "ll_x86_avx512_sqrt_ss      rm a = doM {rm \<leftarrow> xlate_rounding_mode rm; Mreturn (srsqrt rm a)}"
+  "ll_x86_avx512_vfmadd_f32   rm a b c = doM {rm \<leftarrow> xlate_rounding_mode rm; Mreturn (srfmadd rm a b c)}"
+  unfolding
+    ll_x86_avx512_add_ss_round_def
+    ll_x86_avx512_sub_ss_round_def
+    ll_x86_avx512_mul_ss_round_def
+    ll_x86_avx512_div_ss_round_def
+    ll_x86_avx512_sqrt_ss_def
+    ll_x86_avx512_vfmadd_f32_def
+  by auto  
+
+lemma ll_x86_avx512_sd_simps[vcg_normalize_simps]:
   "ll_x86_avx512_add_sd_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm; Mreturn (dradd rm a b)}"
   "ll_x86_avx512_sub_sd_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm; Mreturn (drsub rm a b)}"
   "ll_x86_avx512_mul_sd_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm; Mreturn (drmul rm a b)}"
@@ -712,44 +737,82 @@ lemma ll_ptrcmp_simps[vcg_normalize_simps]:
     done
   done  
   
-lemma ll_fcmp_simp[vcg_normalize_simps]:
-  "ll_fcmp_oeq a b = Mreturn (from_bool (\<not>is_nan a \<and> \<not>is_nan b \<and> eq_double a b))"
-  "ll_fcmp_ogt a b = Mreturn (from_bool (\<not>is_nan a \<and> \<not>is_nan b \<and> a > b))"
-  "ll_fcmp_oge a b = Mreturn (from_bool (\<not>is_nan a \<and> \<not>is_nan b \<and> a \<ge> b))"
-  "ll_fcmp_olt a b = Mreturn (from_bool (\<not>is_nan a \<and> \<not>is_nan b \<and> a < b))"
-  "ll_fcmp_ole a b = Mreturn (from_bool (\<not>is_nan a \<and> \<not>is_nan b \<and> a \<le> b))"
-  "ll_fcmp_one a b = Mreturn (from_bool (\<not>is_nan a \<and> \<not>is_nan b \<and> \<not>eq_double a b))"
-  "ll_fcmp_ord a b = Mreturn (from_bool (\<not>is_nan a \<and> \<not>is_nan b))"
+lemma ll_fcmp_f_simp[vcg_normalize_simps]:
+  "ll_fcmp_oeq_f a b = Mreturn (from_bool (\<not>LLVM_Single.is_nan a \<and> \<not>LLVM_Single.is_nan b \<and> eq_single a b))"
+  "ll_fcmp_ogt_f a b = Mreturn (from_bool (\<not>LLVM_Single.is_nan a \<and> \<not>LLVM_Single.is_nan b \<and> a > b))"
+  "ll_fcmp_oge_f a b = Mreturn (from_bool (\<not>LLVM_Single.is_nan a \<and> \<not>LLVM_Single.is_nan b \<and> a \<ge> b))"
+  "ll_fcmp_olt_f a b = Mreturn (from_bool (\<not>LLVM_Single.is_nan a \<and> \<not>LLVM_Single.is_nan b \<and> a < b))"
+  "ll_fcmp_ole_f a b = Mreturn (from_bool (\<not>LLVM_Single.is_nan a \<and> \<not>LLVM_Single.is_nan b \<and> a \<le> b))"
+  "ll_fcmp_one_f a b = Mreturn (from_bool (\<not>LLVM_Single.is_nan a \<and> \<not>LLVM_Single.is_nan b \<and> \<not>eq_single a b))"
+  "ll_fcmp_ord_f a b = Mreturn (from_bool (\<not>LLVM_Single.is_nan a \<and> \<not>LLVM_Single.is_nan b))"
 
-  "ll_fcmp_ueq a b = Mreturn (from_bool (is_nan a \<or> is_nan b \<or> eq_double a b))"
-  "ll_fcmp_ugt a b = Mreturn (from_bool (is_nan a \<or> is_nan b \<or> a > b))"
-  "ll_fcmp_uge a b = Mreturn (from_bool (is_nan a \<or> is_nan b \<or> a \<ge> b))"
-  "ll_fcmp_ult a b = Mreturn (from_bool (is_nan a \<or> is_nan b \<or> a < b))"
-  "ll_fcmp_ule a b = Mreturn (from_bool (is_nan a \<or> is_nan b \<or> a \<le> b))"
-  "ll_fcmp_une a b = Mreturn (from_bool (is_nan a \<or> is_nan b \<or> \<not>eq_double a b))"
-  "ll_fcmp_uno a b = Mreturn (from_bool (is_nan a \<or> is_nan b))"
+  "ll_fcmp_ueq_f a b = Mreturn (from_bool (LLVM_Single.is_nan a \<or> LLVM_Single.is_nan b \<or> eq_single a b))"
+  "ll_fcmp_ugt_f a b = Mreturn (from_bool (LLVM_Single.is_nan a \<or> LLVM_Single.is_nan b \<or> a > b))"
+  "ll_fcmp_uge_f a b = Mreturn (from_bool (LLVM_Single.is_nan a \<or> LLVM_Single.is_nan b \<or> a \<ge> b))"
+  "ll_fcmp_ult_f a b = Mreturn (from_bool (LLVM_Single.is_nan a \<or> LLVM_Single.is_nan b \<or> a < b))"
+  "ll_fcmp_ule_f a b = Mreturn (from_bool (LLVM_Single.is_nan a \<or> LLVM_Single.is_nan b \<or> a \<le> b))"
+  "ll_fcmp_une_f a b = Mreturn (from_bool (LLVM_Single.is_nan a \<or> LLVM_Single.is_nan b \<or> \<not>eq_single a b))"
+  "ll_fcmp_uno_f a b = Mreturn (from_bool (LLVM_Single.is_nan a \<or> LLVM_Single.is_nan b))"
   
   unfolding 
-    ll_fcmp_oeq_def
-    ll_fcmp_ogt_def
-    ll_fcmp_oge_def
-    ll_fcmp_olt_def
-    ll_fcmp_ole_def
-    ll_fcmp_one_def
-    ll_fcmp_ord_def
+    ll_fcmp_oeq_f_def
+    ll_fcmp_ogt_f_def
+    ll_fcmp_oge_f_def
+    ll_fcmp_olt_f_def
+    ll_fcmp_ole_f_def
+    ll_fcmp_one_f_def
+    ll_fcmp_ord_f_def
   
-    ll_fcmp_ueq_def
-    ll_fcmp_ugt_def
-    ll_fcmp_uge_def
-    ll_fcmp_ult_def
-    ll_fcmp_ule_def
-    ll_fcmp_une_def
-    ll_fcmp_uno_def
+    ll_fcmp_ueq_f_def
+    ll_fcmp_ugt_f_def
+    ll_fcmp_uge_f_def
+    ll_fcmp_ult_f_def
+    ll_fcmp_ule_f_def
+    ll_fcmp_une_f_def
+    ll_fcmp_uno_f_def
   
-  apply (auto simp: op_lift_fcmp_def)
+  apply (auto simp: op_lift_fcmp_f_def)
   done
     
-    
+
+lemma ll_fcmp_d_simp[vcg_normalize_simps]:
+  "ll_fcmp_oeq_d a b = Mreturn (from_bool (\<not>LLVM_Double.is_nan a \<and> \<not>LLVM_Double.is_nan b \<and> eq_double a b))"
+  "ll_fcmp_ogt_d a b = Mreturn (from_bool (\<not>LLVM_Double.is_nan a \<and> \<not>LLVM_Double.is_nan b \<and> a > b))"
+  "ll_fcmp_oge_d a b = Mreturn (from_bool (\<not>LLVM_Double.is_nan a \<and> \<not>LLVM_Double.is_nan b \<and> a \<ge> b))"
+  "ll_fcmp_olt_d a b = Mreturn (from_bool (\<not>LLVM_Double.is_nan a \<and> \<not>LLVM_Double.is_nan b \<and> a < b))"
+  "ll_fcmp_ole_d a b = Mreturn (from_bool (\<not>LLVM_Double.is_nan a \<and> \<not>LLVM_Double.is_nan b \<and> a \<le> b))"
+  "ll_fcmp_one_d a b = Mreturn (from_bool (\<not>LLVM_Double.is_nan a \<and> \<not>LLVM_Double.is_nan b \<and> \<not>eq_double a b))"
+  "ll_fcmp_ord_d a b = Mreturn (from_bool (\<not>LLVM_Double.is_nan a \<and> \<not>LLVM_Double.is_nan b))"
+
+  "ll_fcmp_ueq_d a b = Mreturn (from_bool (LLVM_Double.is_nan a \<or> LLVM_Double.is_nan b \<or> eq_double a b))"
+  "ll_fcmp_ugt_d a b = Mreturn (from_bool (LLVM_Double.is_nan a \<or> LLVM_Double.is_nan b \<or> a > b))"
+  "ll_fcmp_uge_d a b = Mreturn (from_bool (LLVM_Double.is_nan a \<or> LLVM_Double.is_nan b \<or> a \<ge> b))"
+  "ll_fcmp_ult_d a b = Mreturn (from_bool (LLVM_Double.is_nan a \<or> LLVM_Double.is_nan b \<or> a < b))"
+  "ll_fcmp_ule_d a b = Mreturn (from_bool (LLVM_Double.is_nan a \<or> LLVM_Double.is_nan b \<or> a \<le> b))"
+  "ll_fcmp_une_d a b = Mreturn (from_bool (LLVM_Double.is_nan a \<or> LLVM_Double.is_nan b \<or> \<not>eq_double a b))"
+  "ll_fcmp_uno_d a b = Mreturn (from_bool (LLVM_Double.is_nan a \<or> LLVM_Double.is_nan b))"
+  
+  unfolding 
+    ll_fcmp_oeq_d_def
+    ll_fcmp_ogt_d_def
+    ll_fcmp_oge_d_def
+    ll_fcmp_olt_d_def
+    ll_fcmp_ole_d_def
+    ll_fcmp_one_d_def
+    ll_fcmp_ord_d_def
+  
+    ll_fcmp_ueq_d_def
+    ll_fcmp_ugt_d_def
+    ll_fcmp_uge_d_def
+    ll_fcmp_ult_d_def
+    ll_fcmp_ule_d_def
+    ll_fcmp_une_d_def
+    ll_fcmp_uno_d_def
+  
+  apply (auto simp: op_lift_fcmp_d_def)
+  done
+  
+      
   
 paragraph \<open>Bitwise\<close>
 
@@ -953,15 +1016,24 @@ context begin
     "Mreturn (a XOR b) = ll_xor a b" 
     by vcg                                           
 
-  lemma farith_inlines[llvm_pre_simp, vcg_monadify_xforms]: 
-    "Mreturn (a+b) = ll_fadd a b" 
-    "Mreturn (a-b) = ll_fsub a b" 
-    "Mreturn (a*b) = ll_fmul a b" 
-    "Mreturn (a/b) = ll_fdiv a b" 
-    "Mreturn (drem a b) = ll_frem a b" 
-    "Mreturn (dsqrt a) = ll_sqrt_f64 a" 
+  lemma farith_inlines_f[llvm_pre_simp, vcg_monadify_xforms]: 
+    "Mreturn (a+b) = ll_fadd_f a b" 
+    "Mreturn (a-b) = ll_fsub_f a b" 
+    "Mreturn (a*b) = ll_fmul_f a b" 
+    "Mreturn (a/b) = ll_fdiv_f a b" 
+    "Mreturn (srem a b) = ll_frem_f a b" 
+    "Mreturn (ssqrt a) = ll_sqrt_f32 a" 
     by vcg
 
+  lemma farith_inlines_d[llvm_pre_simp, vcg_monadify_xforms]: 
+    "Mreturn (a+b) = ll_fadd_d a b" 
+    "Mreturn (a-b) = ll_fsub_d a b" 
+    "Mreturn (a*b) = ll_fmul_d a b" 
+    "Mreturn (a/b) = ll_fdiv_d a b" 
+    "Mreturn (drem a b) = ll_frem_d a b" 
+    "Mreturn (dsqrt a) = ll_sqrt_f64 a" 
+    by vcg
+    
   term sqrt  
     
 end  
@@ -1012,19 +1084,35 @@ definition "ll_cmp'_ult a b \<equiv> ll_cmp' (a<b)" for a b :: "_ word"
 definition "ll_cmp'_sle a b \<equiv> ll_cmp' (a <=s b)" for a b :: "_ word"
 definition "ll_cmp'_slt a b \<equiv> ll_cmp' (a <s b)" for a b :: "_ word"
 
-definition "ll_cmp'_fle a b \<equiv> ll_cmp' (a\<le>b)" for a b :: "double"
-definition "ll_cmp'_flt a b \<equiv> ll_cmp' (a<b)" for a b :: "double"
-
+definition "ll_cmp'_fle_f a b \<equiv> ll_cmp' (a\<le>b)" for a b :: "single"
+definition "ll_cmp'_flt_f a b \<equiv> ll_cmp' (a<b)" for a b :: "single"
                                           
+definition "ll_cmp'_fle_d a b \<equiv> ll_cmp' (a\<le>b)" for a b :: "double"
+definition "ll_cmp'_flt_d a b \<equiv> ll_cmp' (a<b)" for a b :: "double"
+
 lemmas ll_cmp'_defs = ll_cmp'_eq_def ll_cmp'_ne_def ll_cmp'_ule_def ll_cmp'_ult_def ll_cmp'_sle_def ll_cmp'_slt_def
-                      ll_cmp'_fle_def ll_cmp'_flt_def
+                      ll_cmp'_fle_f_def ll_cmp'_flt_f_def
+                      ll_cmp'_fle_d_def ll_cmp'_flt_d_def
 
 lemmas [llvm_pre_simp, vcg_monadify_xforms] = ll_cmp'_defs[symmetric]
 
 (* TODO: Move *)
+lemma fcompare_has_ord_semantics:
+  "a<b \<Longrightarrow> \<not>LLVM_Single.is_nan a \<and> \<not>LLVM_Single.is_nan b"
+  "a\<le>b \<Longrightarrow> \<not>LLVM_Single.is_nan a \<and> \<not>LLVM_Single.is_nan b"
+  apply (all transfer')
+  unfolding less_float_def less_eq_float_def flt_def fle_def fcompare_def 
+  by auto
+
+lemma fcompare_ord_conv:
+  "\<not> LLVM_Single.is_nan a \<and> \<not> LLVM_Single.is_nan b \<and> a < b \<longleftrightarrow> a < b"  
+  "\<not> LLVM_Single.is_nan a \<and> \<not> LLVM_Single.is_nan b \<and> a \<le> b \<longleftrightarrow> a \<le> b"  
+  using fcompare_has_ord_semantics by blast+
+  
+
 lemma dcompare_has_ord_semantics:
-  "a<b \<Longrightarrow> \<not>is_nan a \<and> \<not>is_nan b"
-  "a\<le>b \<Longrightarrow> \<not>is_nan a \<and> \<not>is_nan b"
+  "a<b \<Longrightarrow> \<not>LLVM_Double.is_nan a \<and> \<not>LLVM_Double.is_nan b"
+  "a\<le>b \<Longrightarrow> \<not>LLVM_Double.is_nan a \<and> \<not>LLVM_Double.is_nan b"
   apply (all transfer')
   unfolding less_float_def less_eq_float_def flt_def fle_def fcompare_def 
   by auto
@@ -1033,7 +1121,8 @@ lemma dcompare_ord_conv:
   "\<not> LLVM_Double.is_nan a \<and> \<not> LLVM_Double.is_nan b \<and> a < b \<longleftrightarrow> a < b"  
   "\<not> LLVM_Double.is_nan a \<and> \<not> LLVM_Double.is_nan b \<and> a \<le> b \<longleftrightarrow> a \<le> b"  
   using dcompare_has_ord_semantics by blast+
-  
+
+    
 context begin
   interpretation llvm_prim_arith_setup .
 
@@ -1048,9 +1137,17 @@ context begin
     by (all vcg_normalize)
 
 
+  lemma ll_cmp'_float_xforms[vcg_monadify_xforms,llvm_pre_simp]:
+    "Mreturn (ll_cmp'_flt_f  a b) = ll_fcmp_olt_f a b" 
+    "Mreturn (ll_cmp'_fle_f  a b) = ll_fcmp_ole_f a b" 
+    unfolding ll_cmp'_defs
+    apply (all vcg_normalize)
+    apply (simp_all add: fcompare_ord_conv)
+    done
+    
   lemma ll_cmp'_double_xforms[vcg_monadify_xforms,llvm_pre_simp]:
-    "Mreturn (ll_cmp'_flt  a b) = ll_fcmp_olt a b" 
-    "Mreturn (ll_cmp'_fle  a b) = ll_fcmp_ole a b" 
+    "Mreturn (ll_cmp'_flt_d a b) = ll_fcmp_olt_d a b" 
+    "Mreturn (ll_cmp'_fle_d a b) = ll_fcmp_ole_d a b" 
     unfolding ll_cmp'_defs
     apply (all vcg_normalize)
     apply (simp_all add: dcompare_ord_conv)

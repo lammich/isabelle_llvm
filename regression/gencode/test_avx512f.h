@@ -7,9 +7,13 @@
 
 
 
-double test_avx512f_to_ninf(double, double);
-double test_avx512f_to_pinf(double, double);
-double test_avx512f_to_zero(double, double);
-double test_avx512f_to_nearest(double, double);
+double test_avx512f_sd_to_ninf(double, double);
+double test_avx512f_sd_to_pinf(double, double);
+double test_avx512f_sd_to_zero(double, double);
+float test_avx512f_ss_to_ninf(float, float);
+float test_avx512f_ss_to_pinf(float, float);
+float test_avx512f_ss_to_zero(float, float);
+double test_avx512f_sd_to_nearest(double, double);
+float test_avx512f_ss_to_nearest(float, float);
 
 #endif

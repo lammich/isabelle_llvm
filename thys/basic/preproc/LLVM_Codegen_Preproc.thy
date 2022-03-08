@@ -948,30 +948,80 @@ definition [llvm_code]: "fibfib \<equiv> repeat2 fib"
 
 export_llvm fibfib
 
-
-
-definition times3_f :: "double \<Rightarrow> double llM" where [llvm_code]:
+definition times3_f :: "single \<Rightarrow> single llM" where [llvm_code]:
   "times3_f x \<equiv> doM {
-    x'\<leftarrow>ll_fadd x x;
-    x'\<leftarrow>ll_fadd x' x;
-    x'\<leftarrow>ll_fadd x' (double_of_word 0x3FD5555555555555);
+    x'\<leftarrow>ll_fadd_f x x;
+    x'\<leftarrow>ll_fadd_f x' x;
+    x'\<leftarrow>ll_fadd_f x' (single_of_word 0x3FD55555);
     Mreturn x'
   }"
 
 
-export_llvm times3_f is "double times3_f (double)"
+export_llvm times3_f is "float times3_f (float)"
 
-definition times3_pf :: "(double*double) ptr \<Rightarrow> double llM" where [llvm_code]:
+definition times3_pf :: "(single*single) ptr \<Rightarrow> single llM" where [llvm_code]:
   "times3_pf x \<equiv> doM {
     x \<leftarrow> ll_load x;
     a \<leftarrow> ll_extract_value x 0;
     b \<leftarrow> ll_extract_value x 1;
-    x'\<leftarrow>ll_fadd a a;
-    x'\<leftarrow>ll_fadd x' b;
+    x'\<leftarrow>ll_fadd_f a a;
+    x'\<leftarrow>ll_fadd_f x' b;
     Mreturn x'
   }"
 
-export_llvm times3_pf is "double times3_f (dpair*)" 
+export_llvm times3_pf is "float times3_f (dpair*)" 
+  defines \<open>typedef struct {float a; float b;} dpair;\<close>
+
+
+value "real_of_single (single_of_word 0x3FD5555555555555)"
+
+(* TODO: More meaningful tests, and check results! 
+
+  f (a,b) = (sqrt (a\<^sup>2 + b\<^sup>2) - a/b) fmod (a+b)
+
+*)
+definition test_float :: "single \<Rightarrow> single \<Rightarrow> single llM" where [llvm_code]:
+  "test_float a b \<equiv> doM {
+    aa \<leftarrow> ll_fmul_f a a;
+    bb \<leftarrow> ll_fmul_f b b;
+    t\<^sub>1 \<leftarrow> ll_fadd_f aa bb;
+    t\<^sub>1 \<leftarrow> ll_sqrt_f32 t\<^sub>1;
+    t\<^sub>2 \<leftarrow> ll_fdiv_f a b;
+    t\<^sub>1 \<leftarrow> ll_fsub_f t\<^sub>1 t\<^sub>2;
+    t\<^sub>2 \<leftarrow> ll_fadd_f a b;
+    t\<^sub>1 \<leftarrow> ll_frem_f t\<^sub>1 t\<^sub>2;
+  
+    Mreturn t\<^sub>1
+  }"
+
+  
+export_llvm 
+  test_float is "float test_float(float,float)"
+  file "../../../regression/gencode/test_float.ll"
+
+
+definition times3_d :: "double \<Rightarrow> double llM" where [llvm_code]:
+  "times3_d x \<equiv> doM {
+    x'\<leftarrow>ll_fadd_d x x;
+    x'\<leftarrow>ll_fadd_d x' x;
+    x'\<leftarrow>ll_fadd_d x' (double_of_word 0x3FD5555555555555);
+    Mreturn x'
+  }"
+
+
+export_llvm times3_d is "double times3_d (double)"
+
+definition times3_pd :: "(double*double) ptr \<Rightarrow> double llM" where [llvm_code]:
+  "times3_pd x \<equiv> doM {
+    x \<leftarrow> ll_load x;
+    a \<leftarrow> ll_extract_value x 0;
+    b \<leftarrow> ll_extract_value x 1;
+    x'\<leftarrow>ll_fadd_d a a;
+    x'\<leftarrow>ll_fadd_d x' b;
+    Mreturn x'
+  }"
+
+export_llvm times3_pd is "double times3_d (dpair*)" 
   defines \<open>typedef struct {double a; double b;} dpair;\<close>
 
 
@@ -984,14 +1034,14 @@ value "real_of_double (double_of_word 0x3FD5555555555555)"
 *)
 definition test_double :: "double \<Rightarrow> double \<Rightarrow> double llM" where [llvm_code]:
   "test_double a b \<equiv> doM {
-    aa \<leftarrow> ll_fmul a a;
-    bb \<leftarrow> ll_fmul b b;
-    t\<^sub>1 \<leftarrow> ll_fadd aa bb;
+    aa \<leftarrow> ll_fmul_d a a;
+    bb \<leftarrow> ll_fmul_d b b;
+    t\<^sub>1 \<leftarrow> ll_fadd_d aa bb;
     t\<^sub>1 \<leftarrow> ll_sqrt_f64 t\<^sub>1;
-    t\<^sub>2 \<leftarrow> ll_fdiv a b;
-    t\<^sub>1 \<leftarrow> ll_fsub t\<^sub>1 t\<^sub>2;
-    t\<^sub>2 \<leftarrow> ll_fadd a b;
-    t\<^sub>1 \<leftarrow> ll_frem t\<^sub>1 t\<^sub>2;
+    t\<^sub>2 \<leftarrow> ll_fdiv_d a b;
+    t\<^sub>1 \<leftarrow> ll_fsub_d t\<^sub>1 t\<^sub>2;
+    t\<^sub>2 \<leftarrow> ll_fadd_d a b;
+    t\<^sub>1 \<leftarrow> ll_frem_d t\<^sub>1 t\<^sub>2;
   
     Mreturn t\<^sub>1
   }"
@@ -1022,9 +1072,28 @@ lemma rm_opposite_inlines[llvm_pre_simp]:
                                ^ needs to round opposite way
 *)
 
-  
-definition test_avx512f_tmpl :: "nat \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double llM" where [llvm_pre_simp]:
-"test_avx512f_tmpl rm \<equiv> \<lambda>a b. doM {
+
+definition test_avx512f_ss_tmpl :: "nat \<Rightarrow> single \<Rightarrow> single \<Rightarrow> single llM" where [llvm_pre_simp]:
+"test_avx512f_ss_tmpl rm \<equiv> \<lambda>a b. doM {
+  aa \<leftarrow> ll_x86_avx512_mul_ss_round rm a a;
+  t\<^sub>1 \<leftarrow> ll_x86_avx512_vfmadd_f32 rm b b aa;
+  t\<^sub>1 \<leftarrow> ll_x86_avx512_sqrt_ss rm t\<^sub>1;
+  t\<^sub>2 \<leftarrow> ll_x86_avx512_div_ss_round (rm_opposite rm) a b;
+  t\<^sub>1 \<leftarrow> ll_x86_avx512_sub_ss_round rm t\<^sub>1 t\<^sub>2;
+  t\<^sub>1 \<leftarrow> ll_x86_avx512_add_ss_round rm t\<^sub>1 a;
+
+  Mreturn t\<^sub>1
+}"
+
+definition [llvm_code]: "test_avx512f_ss_to_nearest \<equiv> test_avx512f_ss_tmpl AVX512_FROUND_TO_NEAREST_NO_EXC"
+definition [llvm_code]: "test_avx512f_ss_to_pinf    \<equiv> test_avx512f_ss_tmpl AVX512_FROUND_TO_POS_INF_NO_EXC"
+definition [llvm_code]: "test_avx512f_ss_to_ninf    \<equiv> test_avx512f_ss_tmpl AVX512_FROUND_TO_NEG_INF_NO_EXC"
+definition [llvm_code]: "test_avx512f_ss_to_zero    \<equiv> test_avx512f_ss_tmpl AVX512_FROUND_TO_ZERO_NO_EXC"
+
+
+
+definition test_avx512f_sd_tmpl :: "nat \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double llM" where [llvm_pre_simp]:
+"test_avx512f_sd_tmpl rm \<equiv> \<lambda>a b. doM {
   aa \<leftarrow> ll_x86_avx512_mul_sd_round rm a a;
   t\<^sub>1 \<leftarrow> ll_x86_avx512_vfmadd_f64 rm b b aa;
   t\<^sub>1 \<leftarrow> ll_x86_avx512_sqrt_sd rm t\<^sub>1;
@@ -1035,20 +1104,26 @@ definition test_avx512f_tmpl :: "nat \<Rightarrow> double \<Rightarrow> double \
   Mreturn t\<^sub>1
 }"
 
-definition [llvm_code]: "test_avx512f_to_nearest \<equiv> test_avx512f_tmpl AVX512_FROUND_TO_NEAREST_NO_EXC"
-definition [llvm_code]: "test_avx512f_to_pinf \<equiv> test_avx512f_tmpl AVX512_FROUND_TO_POS_INF_NO_EXC"
-definition [llvm_code]: "test_avx512f_to_ninf \<equiv> test_avx512f_tmpl AVX512_FROUND_TO_NEG_INF_NO_EXC"
-definition [llvm_code]: "test_avx512f_to_zero \<equiv> test_avx512f_tmpl AVX512_FROUND_TO_ZERO_NO_EXC"
+definition [llvm_code]: "test_avx512f_sd_to_nearest \<equiv> test_avx512f_sd_tmpl AVX512_FROUND_TO_NEAREST_NO_EXC"
+definition [llvm_code]: "test_avx512f_sd_to_pinf    \<equiv> test_avx512f_sd_tmpl AVX512_FROUND_TO_POS_INF_NO_EXC"
+definition [llvm_code]: "test_avx512f_sd_to_ninf    \<equiv> test_avx512f_sd_tmpl AVX512_FROUND_TO_NEG_INF_NO_EXC"
+definition [llvm_code]: "test_avx512f_sd_to_zero    \<equiv> test_avx512f_sd_tmpl AVX512_FROUND_TO_ZERO_NO_EXC"
+
 
 
 
 declare [[llc_compile_avx512f=true]]  
 export_llvm 
-  test_avx512f_to_nearest is "double test_avx512f_to_nearest(double,double)"
-  test_avx512f_to_pinf is "double test_avx512f_to_pinf(double,double)"
-  test_avx512f_to_ninf is "double test_avx512f_to_ninf(double,double)"
-  test_avx512f_to_zero is "double test_avx512f_to_zero(double,double)"
+  test_avx512f_ss_to_nearest is "float test_avx512f_ss_to_nearest(float,float)"
+  test_avx512f_ss_to_pinf    is "float test_avx512f_ss_to_pinf   (float,float)"
+  test_avx512f_ss_to_ninf    is "float test_avx512f_ss_to_ninf   (float,float)"
+  test_avx512f_ss_to_zero    is "float test_avx512f_ss_to_zero   (float,float)"
+  test_avx512f_sd_to_nearest is "double test_avx512f_sd_to_nearest(double,double)"
+  test_avx512f_sd_to_pinf    is "double test_avx512f_sd_to_pinf   (double,double)"
+  test_avx512f_sd_to_ninf    is "double test_avx512f_sd_to_ninf   (double,double)"
+  test_avx512f_sd_to_zero    is "double test_avx512f_sd_to_zero   (double,double)"
   file "../../../regression/gencode/test_avx512f.ll"
+
   
 end
 

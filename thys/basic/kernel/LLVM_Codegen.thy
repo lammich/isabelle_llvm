@@ -63,6 +63,14 @@ begin
         in n end
         | dest_double_const t = raise TERM("dest_double_const",[t])
 
+      fun dest_float_const @{mpat \<open>single_of_word ?w\<close>} = let
+          val (_,n) = HOLogic.dest_number w 
+          val _ = 0<=n andalso n<IntInf.pow (2,32) orelse raise TERM("dest_float_const (0\<le> _ <2^32): ",[w])
+          val n = Word32.fromInt n
+        in n end
+        | dest_float_const t = raise TERM("dest_float_const",[t])
+        
+        
       (* Testing the dest-functions, to make them fail early after forgetting to 
         adapt them for changes to foundation.
       
@@ -196,6 +204,7 @@ begin
       
       val llc_compile_avx512f = Attrib.setup_config_bool @{binding llc_compile_avx512f} (K false)
 
+      val str_of_w32 = Word32.fmt StringCvt.HEX #> StringCvt.padLeft #"0" 8 #> prefix "0x";
       val str_of_w64 = Word64.fmt StringCvt.HEX #> StringCvt.padLeft #"0" 16 #> prefix "0x";
       
             
@@ -229,8 +238,8 @@ begin
     
       (* LLC intermediate representation. Somewhere in between Isabelle and LLVM-IR *)    
       
-      datatype llc_type = TInt of int | TDouble | TPtr of llc_type | TStruct of llc_type list | TNamed of string
-      datatype llc_const = CInit | CInt of int | CDouble of Word64.word | CNull
+      datatype llc_type = TInt of int | TFloat | TDouble | TPtr of llc_type | TStruct of llc_type list | TNamed of string
+      datatype llc_const = CInit | CInt of int | CFloat of Word32.word | CDouble of Word64.word | CNull
       datatype llc_opr = OVar of string | OConst of llc_const
       type llc_topr = llc_type * llc_opr
       datatype llc_topr' = OOOp of llc_topr | OOType of llc_type | OOCIdx of int
@@ -255,6 +264,7 @@ begin
       fun pretty_mstr m s = Pretty.markup m [Pretty.str s]
       
       fun pretty_type (TInt w) = pretty_mstr Markup.keyword1 ("i" ^ Int.toString w)
+        | pretty_type (TFloat) = pretty_mstr Markup.keyword1 ("float")
         | pretty_type (TDouble) = pretty_mstr Markup.keyword1 ("double")
         | pretty_type (TPtr T) = Pretty.block [pretty_type T, Pretty.str "*"]
         | pretty_type (TStruct Ts) = Pretty.list "{" "}" (map pretty_type Ts)
@@ -262,6 +272,7 @@ begin
       
       fun pretty_const CInit = pretty_mstr Markup.keyword1 "zeroinitializer"
         | pretty_const (CInt i) = pretty_mstr Markup.numeral (Int.toString i)
+        | pretty_const (CFloat w) = pretty_mstr Markup.numeral (LLC_Lib.str_of_w32 w)
         | pretty_const (CDouble w) = pretty_mstr Markup.numeral (LLC_Lib.str_of_w64 w)
         | pretty_const CNull = pretty_mstr Markup.keyword1 "null"
 
@@ -468,6 +479,7 @@ begin
       
       (* Lookup already cached type *)
       fun llc_lookup_type _ (Type (@{type_name word},[T])) = SOME (dest_numeralT T |> TInt, [])
+        | llc_lookup_type _ (Type (@{type_name single},_)) = SOME (TFloat, [])
         | llc_lookup_type _ (Type (@{type_name double},_)) = SOME (TDouble, [])
         | llc_lookup_type ctxt (Type (@{type_name ptr},[T])) = (case llc_lookup_type ctxt T of
             NONE => NONE
@@ -477,6 +489,7 @@ begin
       
       
       fun llc_parse_type (Type (@{type_name word},[T])) ctxt = (dest_numeralT T |> TInt, ctxt)
+        | llc_parse_type (Type (@{type_name single},_)) ctxt = (TFloat, ctxt)
         | llc_parse_type (Type (@{type_name double},_)) ctxt = (TDouble, ctxt)
         | llc_parse_type (Type (@{type_name ptr},[T])) ctxt = llc_parse_type T ctxt |>> TPtr
         | llc_parse_type (T as Type _) ctxt = llc_make_type_inst T ctxt
@@ -594,9 +607,11 @@ begin
         | llc_parse_const @{mpat (typs) \<open>null::?'v_T::llvm_rep ptr\<close>} ctxt = llc_parse_type T ctxt |>> (fn T => (TPtr T, CNull))
         | llc_parse_const t ctxt = case try dest_word_const t of
             SOME (w,v) => ((TInt w, CInt v), ctxt)
-          | NONE => case try dest_double_const t of
-              SOME d => ((TDouble,CDouble d),ctxt)
-            | NONE => raise TERM ("llc_parse_const",[t])
+          | NONE => case try dest_float_const t of
+              SOME d => ((TFloat,CFloat d),ctxt)
+            | NONE => case try dest_double_const t of
+                SOME d => ((TDouble,CDouble d),ctxt)
+              | NONE => raise TERM ("llc_parse_const",[t])
       
       fun dest_cidx t = let
         val (T,idx) = HOLogic.dest_number t
@@ -916,6 +931,7 @@ begin
       type builder = vtab -> LLVM_Builder.regname -> llc_topr' list -> Proof.context -> LLVM_Builder.T -> LLVM_Builder.value option
     
       fun llc_ty _ (TInt w) = LLVM_Builder.mkty_i w
+        | llc_ty _ (TFloat) = LLVM_Builder.mkty_float
         | llc_ty _ (TDouble) = LLVM_Builder.mkty_double
         | llc_ty b (TPtr ty) = LLVM_Builder.mkty_ptr (llc_ty b ty)
         | llc_ty b (TStruct tys) = LLVM_Builder.mkty_struct (map (llc_ty b) tys)
@@ -924,6 +940,7 @@ begin
       
       fun llc_const_to_val b ty CInit = LLVM_Builder.mkc_zeroinit (llc_ty b ty)
         | llc_const_to_val b ty (CInt v) = LLVM_Builder.mkc_i (llc_ty b ty) v
+        | llc_const_to_val b ty (CFloat v) = LLVM_Builder.mkc_f (llc_ty b ty) v
         | llc_const_to_val b ty (CDouble v) = LLVM_Builder.mkc_d (llc_ty b ty) v
         | llc_const_to_val b ty (CNull) = LLVM_Builder.mkc_null (llc_ty b ty)
       
@@ -936,17 +953,26 @@ begin
               
       fun dstreg NONE = NONE | dstreg (SOME s) = SOME s
         
+      fun unsuffix_float_instr s = 
+        if String.isSuffix "_d" s then unsuffix "_d" s
+        else if String.isSuffix "_f" s then unsuffix "_f" s
+        else raise Fail("Expected floating point suffixed operation [_d,_f]: " ^ s)
+      
       
       fun arith_instr_builder iname vtab dst [OOOp x1, OOOp x2] _ b = (
         LLVM_Builder.mk_arith_instr iname b dst (llc_op_to_val b vtab x1) (llc_op_to_val b vtab x2) |> SOME
       ) | arith_instr_builder _ _ _ _ _ _ = raise Fail "arith_instr_builder: invalid arguments"
-      
+
+      fun farith_instr_builder iname vtab dst [OOOp x1, OOOp x2] _ b = (
+        LLVM_Builder.mk_arith_instr (unsuffix_float_instr iname) b dst (llc_op_to_val b vtab x1) (llc_op_to_val b vtab x2) |> SOME
+      ) | farith_instr_builder _ _ _ _ _ _ = raise Fail "farith_instr_builder: invalid arguments"
+            
       fun icmp_instr_builder cmpcode vtab dst [OOOp x1, OOOp x2] _ b = (
         LLVM_Builder.mk_icmp_instr cmpcode b dst (llc_op_to_val b vtab x1) (llc_op_to_val b vtab x2) |> SOME
       ) | icmp_instr_builder _ _ _ _ _ _ = raise Fail "icmp_instr_builder: invalid arguments"
 
       fun fcmp_instr_builder cmpcode vtab dst [OOOp x1, OOOp x2] _ b = (
-        LLVM_Builder.mk_fcmp_instr cmpcode b dst (llc_op_to_val b vtab x1) (llc_op_to_val b vtab x2) |> SOME
+        LLVM_Builder.mk_fcmp_instr (unsuffix_float_instr cmpcode) b dst (llc_op_to_val b vtab x1) (llc_op_to_val b vtab x2) |> SOME
       ) | fcmp_instr_builder _ _ _ _ _ _ = raise Fail "fcmp_instr_builder: invalid arguments"
       
       fun ptrcmp_instr_builder cmpcode vtab dst [OOOp x1, OOOp x2] _ b = (
@@ -999,17 +1025,25 @@ begin
       local open LLVM_Builder in
         val ll_t_2xdouble = mkty_vector 2 mkty_double
         val ll_zeroinit_2xdouble = mkc_zeroinit ll_t_2xdouble
+        val ll_t_4xfloat = mkty_vector 4 mkty_float
+        val ll_zeroinit_4xfloat = mkc_zeroinit ll_t_4xfloat
       end
       
-      fun llc_to_vector_2xdouble_sd b x = LLVM_Builder.mk_insertelement b (SOME "mmx_") ll_zeroinit_2xdouble x (LLVM_Builder.mkc_iw 32 0)
-      fun llc_from_vector_2xdouble_sd b dst x = LLVM_Builder.mk_extractelement b dst x (LLVM_Builder.mkc_iw 32 0)
+      fun llc_to_vector_2xdouble_sd b x = LLVM_Builder.mk_insertelement b (SOME "mmx_") ll_zeroinit_2xdouble x (LLVM_Builder.mkc_iw 64 0)
+      fun llc_from_vector_2xdouble_sd b dst x = LLVM_Builder.mk_extractelement b dst x (LLVM_Builder.mkc_iw 64 0)
 
+      fun llc_to_vector_4xfloat_ss b x = LLVM_Builder.mk_insertelement b (SOME "mmx_") ll_zeroinit_4xfloat x (LLVM_Builder.mkc_iw 32 0)
+      fun llc_from_vector_4xfloat_ss b dst x = LLVM_Builder.mk_extractelement b dst x (LLVM_Builder.mkc_iw 32 0)
+      
       fun assert_avx512f ctxt = Config.get ctxt llc_compile_avx512f orelse
                 raise Fail "AVX512f support is experimental and disabled! Declare [[llc_compile_avx512f=true]] to enable!"
                   
       fun llc_op_to_2xdouble_sd b vtab = llc_op_to_val b vtab #> llc_to_vector_2xdouble_sd b          
       fun llc_op'_to_2xdouble_sd b vtab = llc_op'_to_val b vtab #> llc_to_vector_2xdouble_sd b          
-                
+
+      fun llc_op_to_4xfloat_ss b vtab = llc_op_to_val b vtab #> llc_to_vector_4xfloat_ss b          
+      fun llc_op'_to_4xfloat_ss b vtab = llc_op'_to_val b vtab #> llc_to_vector_4xfloat_ss b          
+                      
       (* {add, sub, mul, div} r x1 x2 \<rightarrow> llvm.x86.avx512.mask.XXX.sd.round x1 x2 0 -1 r *)
       fun avx512_asmd_sd_round_intrinsic_builder iname vtab dst [OOCIdx rounding, OOOp x1, OOOp x2] ctxt b = let
         val _ = assert_avx512f ctxt
@@ -1070,7 +1104,69 @@ begin
       end
       | avx512_vfmadd_f64_builder _ _ _ _ _ = raise Fail "avx512_vfmadd_f64_builder: invalid arguments"
       
-            
+
+      (* {add, sub, mul, div} r x1 x2 \<rightarrow> llvm.x86.avx512.mask.XXX.ss.round x1 x2 0 -1 r *)
+      fun avx512_asmd_ss_round_intrinsic_builder iname vtab dst [OOCIdx rounding, OOOp x1, OOOp x2] ctxt b = let
+        val _ = assert_avx512f ctxt
+        
+        val iname = unsuffix "_ss_round" iname
+        val iname = "llvm.x86.avx512.mask."^iname^".ss.round"
+
+        val rounding = LLVM_Builder.mkc_iw 32 rounding
+        val mask = LLVM_Builder.mkc_iw 8 ~1
+        
+        val cop = llc_op_to_4xfloat_ss b vtab
+        
+        val args = [cop x1, cop x2, ll_zeroinit_2xdouble, mask, rounding]
+        val attrs = [ [],    [],       [],                 [],  ["immarg"] ]
+        
+        val res = LLVM_Builder.mk_external_call_attrs b (SOME "mmx_") ll_t_4xfloat iname args attrs
+          |> llc_from_vector_4xfloat_ss b dst
+                
+      in
+        SOME res
+      end
+      | avx512_asmd_ss_round_intrinsic_builder _ _ _ _ _ _ = raise Fail "avx512_asmd_ss_round_intrinsic_builder: invalid arguments"
+      
+      (* sqrt r x \<rightarrow> llvm.x86.avx512.mask.sqrt.ss x x 0 -1 r   *)
+      fun avx512_sqrt_ss_round_intrinsic_builder vtab dst [OOCIdx rounding, OOOp x] ctxt b = let
+        val _ = assert_avx512f ctxt
+        
+        val iname = "llvm.x86.avx512.mask.sqrt.ss"
+        val x = llc_op_to_4xfloat_ss b vtab x
+        val mask = LLVM_Builder.mkc_iw 8 ~1
+        val rounding = LLVM_Builder.mkc_iw 32 rounding
+
+        val args = [x,x,ll_zeroinit_4xfloat, mask, rounding]      
+        val attrs = [ [],[],[],[],["immarg"] ]
+
+        val res = LLVM_Builder.mk_external_call_attrs b (SOME "mmx_") ll_t_4xfloat iname args attrs
+          |> llc_from_vector_4xfloat_ss b dst
+              
+      in
+        SOME res
+      end
+      | avx512_sqrt_ss_round_intrinsic_builder _ _ _ _ _ = raise Fail "avx512_sqrt_ss_round_intrinsic_builder: invalid arguments"
+
+      (* fmadd r x1 x2 x3 \<rightarrow> llvm.x86.avx512.vfmadd.f32 x1 x2 x3 r *)      
+      fun avx512_vfmadd_f32_builder vtab dst [OOCIdx rounding, OOOp x1, OOOp x2, OOOp x3] ctxt b = let
+        val _ = assert_avx512f ctxt
+
+        val iname = "llvm.x86.avx512.vfmadd.f32"
+
+        val cop = llc_op_to_val b vtab
+        val rounding = LLVM_Builder.mkc_iw 32 rounding
+        val args = map cop [x1,x2,x3] @ [rounding]
+        val attrs = [ [],[],[],["immarg"] ]
+        
+        val res = LLVM_Builder.mk_external_call_attrs b dst LLVM_Builder.mkty_float iname args attrs
+      in
+        SOME res
+      end
+      | avx512_vfmadd_f32_builder _ _ _ _ _ = raise Fail "avx512_vfmadd_f32_builder: invalid arguments"
+      
+      
+                  
       fun register_builder (b:builder) (n:string) = Symtab.update_new (n,b)
       
       fun register_prfx_builder prfx b n = let
@@ -1084,8 +1180,12 @@ begin
           [@{const_name ll_add}, @{const_name ll_sub}, @{const_name ll_mul},
            @{const_name ll_udiv}, @{const_name ll_urem}, @{const_name ll_sdiv}, @{const_name ll_srem},
            @{const_name ll_shl}, @{const_name ll_lshr}, @{const_name ll_ashr},
-           @{const_name ll_and}, @{const_name ll_or}, @{const_name ll_xor},
-           @{const_name ll_fadd}, @{const_name ll_fsub}, @{const_name ll_fmul}, @{const_name ll_fdiv}, @{const_name ll_frem}
+           @{const_name ll_and}, @{const_name ll_or}, @{const_name ll_xor}
+          ]
+        |> fold (register_prfx_builder "ll_" farith_instr_builder) 
+          [
+           @{const_name ll_fadd_d}, @{const_name ll_fsub_d}, @{const_name ll_fmul_d}, @{const_name ll_fdiv_d}, @{const_name ll_frem_d},
+           @{const_name ll_fadd_f}, @{const_name ll_fsub_f}, @{const_name ll_fmul_f}, @{const_name ll_fdiv_f}, @{const_name ll_frem_f}
           ]
         |> fold (register_prfx_builder "ll_" conv_instr_builder) [
              @{const_name ll_trunc}, @{const_name ll_sext}, @{const_name ll_zext}
@@ -1096,14 +1196,23 @@ begin
              @{const_name ll_icmp_ult}, @{const_name ll_icmp_ule} 
           ]  
         |> fold (register_prfx_builder "ll_fcmp_" fcmp_instr_builder) [
-             @{const_name ll_fcmp_oeq}, @{const_name ll_fcmp_one}, 
-             @{const_name ll_fcmp_olt}, @{const_name ll_fcmp_ogt}, 
-             @{const_name ll_fcmp_ole}, @{const_name ll_fcmp_oge}, 
-             @{const_name ll_fcmp_ord},
-             @{const_name ll_fcmp_ueq}, @{const_name ll_fcmp_une}, 
-             @{const_name ll_fcmp_ult}, @{const_name ll_fcmp_ugt}, 
-             @{const_name ll_fcmp_ule}, @{const_name ll_fcmp_uge}, 
-             @{const_name ll_fcmp_uno}
+             @{const_name ll_fcmp_oeq_d}, @{const_name ll_fcmp_one_d}, 
+             @{const_name ll_fcmp_olt_d}, @{const_name ll_fcmp_ogt_d}, 
+             @{const_name ll_fcmp_ole_d}, @{const_name ll_fcmp_oge_d}, 
+             @{const_name ll_fcmp_ord_d},                                         
+             @{const_name ll_fcmp_ueq_d}, @{const_name ll_fcmp_une_d}, 
+             @{const_name ll_fcmp_ult_d}, @{const_name ll_fcmp_ugt_d}, 
+             @{const_name ll_fcmp_ule_d}, @{const_name ll_fcmp_uge_d}, 
+             @{const_name ll_fcmp_uno_d},
+             
+             @{const_name ll_fcmp_oeq_f}, @{const_name ll_fcmp_one_f}, 
+             @{const_name ll_fcmp_olt_f}, @{const_name ll_fcmp_ogt_f}, 
+             @{const_name ll_fcmp_ole_f}, @{const_name ll_fcmp_oge_f}, 
+             @{const_name ll_fcmp_ord_f},
+             @{const_name ll_fcmp_ueq_f}, @{const_name ll_fcmp_une_f}, 
+             @{const_name ll_fcmp_ult_f}, @{const_name ll_fcmp_ugt_f}, 
+             @{const_name ll_fcmp_ule_f}, @{const_name ll_fcmp_uge_f}, 
+             @{const_name ll_fcmp_uno_f}
           ]  
         |> fold (register_prfx_builder "ll_ptrcmp_" ptrcmp_instr_builder) [
              @{const_name ll_ptrcmp_eq}, @{const_name ll_ptrcmp_ne}
@@ -1120,6 +1229,7 @@ begin
         (*|> register_builder (gep_idx_builder) @{const_name ll_gep_struct}          *)
         
         |> register_builder (intrinsic_builder LLVM_Builder.mkty_double "llvm.sqrt.f64") @{const_name ll_sqrt_f64}
+        |> register_builder (intrinsic_builder LLVM_Builder.mkty_float "llvm.sqrt.f32") @{const_name ll_sqrt_f32}
         
         |> fold (register_prfx_builder "ll_x86_avx512_" avx512_asmd_sd_round_intrinsic_builder) [
               @{const_name ll_x86_avx512_add_sd_round},
@@ -1129,6 +1239,15 @@ begin
           ]
         |> register_builder (avx512_sqrt_sd_round_intrinsic_builder) @{const_name ll_x86_avx512_sqrt_sd}
         |> register_builder (avx512_vfmadd_f64_builder) @{const_name ll_x86_avx512_vfmadd_f64}
+        
+        |> fold (register_prfx_builder "ll_x86_avx512_" avx512_asmd_ss_round_intrinsic_builder) [
+              @{const_name ll_x86_avx512_add_ss_round},
+              @{const_name ll_x86_avx512_sub_ss_round},
+              @{const_name ll_x86_avx512_mul_ss_round},
+              @{const_name ll_x86_avx512_div_ss_round}
+          ]
+        |> register_builder (avx512_sqrt_ss_round_intrinsic_builder) @{const_name ll_x86_avx512_sqrt_ss}
+        |> register_builder (avx512_vfmadd_f32_builder) @{const_name ll_x86_avx512_vfmadd_f32}
             
 
       fun vtab_bind (SOME dst) (SOME v) vtab = Symtab.update_new (dst,v) vtab  
@@ -1453,6 +1572,7 @@ begin
       | PRIM_SI16 | PRIM_UI16
       | PRIM_SI32 | PRIM_UI32
       | PRIM_SI64 | PRIM_UI64
+      | PRIM_FLOAT
       | PRIM_DOUBLE
     datatype cfield = FLD_NAMED of ctype * string | FLD_ANON of cfield list
          and ctype = 
@@ -1507,6 +1627,7 @@ begin
       || pcm "uint16_t" >> K PRIM_UI16
       || pcm "uint32_t" >> K PRIM_UI32
       || pcm "uint64_t" >> K PRIM_UI64
+      || pcm "float" >> K PRIM_FLOAT
       || pcm "double" >> K PRIM_DOUBLE
   
       fun mk_ptr ty [] = ty
@@ -1811,6 +1932,7 @@ begin
         | cprim_to_Cs PRIM_UI16 = word "uint16_t"
         | cprim_to_Cs PRIM_UI32 = word "uint32_t"
         | cprim_to_Cs PRIM_UI64 = word "uint64_t"
+        | cprim_to_Cs PRIM_FLOAT = word "float"
         | cprim_to_Cs PRIM_DOUBLE = word "double"
                                                   
       fun cfield_to_Cs (FLD_NAMED (ty,name)) = block [ctype_to_Cs ty, word name, nword ";"]  
@@ -1993,6 +2115,7 @@ begin
         | cty_of_lty (TInt 32) = CTYO_PRIM PRIM_SI32
         | cty_of_lty (TInt 64) = CTYO_PRIM PRIM_SI64
         | cty_of_lty (TInt w) = error ("cty_of_lty: Unsupported integer width " ^ Int.toString w)
+        | cty_of_lty (TFloat) = CTYO_PRIM PRIM_FLOAT
         | cty_of_lty (TDouble) = CTYO_PRIM PRIM_DOUBLE
         | cty_of_lty (TPtr ty) = CTYO_PTR (cty_of_lty ty)
         | cty_of_lty (TStruct tys) = CTYO_STRUCT (map cfld_of_lty tys)
@@ -2057,6 +2180,7 @@ begin
             end
           )
         | rc_ty (TInt _) = I
+        | rc_ty (TFloat) = I
         | rc_ty (TDouble) = I
       
     in

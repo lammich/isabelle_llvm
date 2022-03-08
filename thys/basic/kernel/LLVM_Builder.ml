@@ -13,6 +13,7 @@ signature LLVM_BUILDER = sig
   (* Types *)
   val mkty_i: int -> ty
   val mkty_double: ty
+  val mkty_float: ty
   val mkty_ptr: ty -> ty
   val mkty_array: int -> ty -> ty
   val mkty_vector: int -> ty -> ty
@@ -32,6 +33,7 @@ signature LLVM_BUILDER = sig
   (* Constants *)    
   val mkc_iw: int -> int -> value
   val mkc_i: ty -> int -> value
+  val mkc_f: ty -> Word32.word -> value
   val mkc_d: ty -> Word64.word -> value
   val mkc_undef: ty -> value
   val mkc_zeroinit: ty -> value
@@ -135,6 +137,7 @@ structure LLVM_Builder : LLVM_BUILDER = struct
     
   datatype ty = 
       TInt of int 
+    | TFloat
     | TDouble  
     | TPtr of ty 
     | TStruct of ty list 
@@ -251,6 +254,7 @@ structure LLVM_Builder : LLVM_BUILDER = struct
 
   (* Primitive types: those valid as vector elements *)  
   fun is_primitive_ty (TInt _) = true
+    | is_primitive_ty (TFloat) = true
     | is_primitive_ty (TDouble) = true
     | is_primitive_ty (TPtr _) = true
     | is_primitive_ty _ = false
@@ -258,6 +262,7 @@ structure LLVM_Builder : LLVM_BUILDER = struct
       
   fun mkty_i w = TInt w
   val mkty_double = TDouble
+  val mkty_float = TFloat
   fun mkty_ptr ty = TPtr ty
   (*fun mkty_array n ty = "[" ^ Int.toString n ^# "x" ^# ty ^"]"*)
   (*fun mkty_struct tys = "{" ^ (separate ", " tys |> implode) ^ "}"*)
@@ -275,7 +280,7 @@ structure LLVM_Builder : LLVM_BUILDER = struct
   fun dstty_ptr (TPtr ty) = ty | dstty_ptr _ = raise Fail "dstty_ptr"
   
   fun isty_i (TInt _) = true | isty_i _ = false
-  fun isty_f (TDouble) = true | isty_f _ = false
+  fun isty_f (TFloat) = true | isty_f (TDouble) = true | isty_f _ = false
   
   
   
@@ -298,11 +303,14 @@ structure LLVM_Builder : LLVM_BUILDER = struct
     | mkc_i _ _ = raise Error ("mkc_i: Expected integer type")
 
   (* Also in LLC_Lib. Duplicated here as this is part of printing TCB *)  
+  val str_of_w32 = Word32.fmt StringCvt.HEX #> StringCvt.padLeft #"0" 8 #> prefix "0x";  
   val str_of_w64 = Word64.fmt StringCvt.HEX #> StringCvt.padLeft #"0" 16 #> prefix "0x";  
     
   fun mkc_d (ty as TDouble) d = CONST (ty, str_of_w64 d)
     | mkc_d _ _ = raise Error ("mkc_d: Expected double type")
     
+  fun mkc_f (ty as TFloat) d = CONST (ty, str_of_w32 d)
+    | mkc_f _ _ = raise Error ("mkc_f: Expected float type")
       
   fun mkc_iw w = mkc_i (mkty_i w)
   fun mkc_undef ty = CONST (ty, "undef")
@@ -345,6 +353,7 @@ structure LLVM_Builder : LLVM_BUILDER = struct
   fun pr_tyname n = "%" ^ quote_name n
   fun pr_reg r = "%" ^ quote_name r
   fun pr_ty (TInt w) = "i" ^ Int.toString w
+    | pr_ty (TFloat) = "float"
     | pr_ty (TDouble) = "double"
     | pr_ty (TPtr ty) = pr_ty ty ^ "*"
     | pr_ty (TVector (n, ty)) = "<" ^ Int.toString n ^# "x" ^# pr_ty ty ^">"

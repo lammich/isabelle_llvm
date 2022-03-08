@@ -33,7 +33,7 @@ abbreviation exp64::"64 word \<Rightarrow> 64 word llM" where "exp64 \<equiv> ex
 
 export_llvm 
   exp32 is "uint32_t exp32 (uint32_t)" 
-  exp64 is "uint64_t exp64 (uint64_t)" 
+  exp64 is "uint64_t exp64 (uint64_t)"
   file "code/exp.ll"
 
 lemma exp_aux1: 
@@ -209,6 +209,30 @@ context begin
 
   (* TODO: Prove upper and lower bounds. This needs an infrastructure to be thought of! *)  
 
+  
+  definition fdist :: "single \<times> single \<Rightarrow> single \<times> single \<Rightarrow> single llM"
+    where [llvm_code]: "fdist p\<^sub>1 p\<^sub>2 \<equiv> doM {
+    let (x\<^sub>1,y\<^sub>1) = p\<^sub>1;
+    let (x\<^sub>2,y\<^sub>2) = p\<^sub>2;
+    let dx = x\<^sub>1 - x\<^sub>2;
+    let dy = y\<^sub>1 - y\<^sub>2;
+    Mreturn (ssqrt ( dx*dx + dy*dy ))
+  }"
+  
+  export_llvm fdist
+  
+  interpretation llvm_prim_arith_setup .
+
+  (* There's not much we can prove without defined rounding mode. At least not in current setup! *)
+  lemma "llvm_htriple \<box> (fdist p\<^sub>1 p\<^sub>2) (\<lambda>_. \<box>)"
+    unfolding fdist_def 
+    apply (simp split: prod.split add: Let_def)
+    apply vcg
+    done
+
+  (* TODO: Prove upper and lower bounds. This needs an infrastructure to be thought of! *)  
+  
+  
 end
 
 
@@ -315,7 +339,7 @@ begin
     (* TODO: Clean proof here, not breaking abstraction barriers! *)
     apply (auto simp: to_val_word_def init_zero fun_eq_iff split: list_cell.splits)
     subgoal for v v1 v2 by (cases v) (auto)
-    subgoal by (metis init_ptr_def init_zero llvm_zero_initializer.simps(4) struct_of_ptr_def)
+    subgoal by (metis init_ptr_def init_zero llvm_zero_initializer.simps(5) struct_of_ptr_def)
     done
 
 end

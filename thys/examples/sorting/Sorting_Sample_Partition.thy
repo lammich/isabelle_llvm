@@ -131,6 +131,26 @@ context weak_ordering begin
     
     RETURN (idxs!mi)
   }"
+
+  (* For presentation in paper *)  
+  lemma "doN {
+    let ns = min (length xs) 64;
+    idxs \<leftarrow> equidist (length xs) ns;
+    idxs \<leftarrow> slice_sort_spec (\<lambda>i j. xs!i \<^bold>< xs!j) idxs 0 ns;
+    RETURN (idxs!(ns div 2))
+  } \<le> sample_pivot xs n"
+    using sorted_samples_correct
+    unfolding sample_pivot_def num_samples_def sorted_samples_def pslice_sort_spec_def
+    apply (simp only: pw_le_iff refine_pw_simps mop_array_to_woarray_def mop_woarray_to_array_def Let_def)
+    apply safe
+    apply simp
+    apply blast
+    apply blast
+    apply blast
+    apply blast
+    by (metis (no_types, lifting))
+    
+    
   
   
   lemma sample_pivot_correct[refine_vcg]: "
