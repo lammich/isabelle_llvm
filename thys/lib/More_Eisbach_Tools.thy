@@ -1,5 +1,5 @@
 theory More_Eisbach_Tools
-imports "HOL-Eisbach.Eisbach" Automatic_Refinement.Refine_Util
+imports Automatic_Refinement.Refine_Util "HOL-Eisbach.Eisbach"
 begin
 
 section \<open>More Tracing\<close>

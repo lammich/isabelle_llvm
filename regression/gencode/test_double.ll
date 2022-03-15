@@ -16,7 +16,8 @@ define double @test_double(double %a, double %b) {
     %t_11 = call double @llvm.sqrt.f64 (double %t_1)
     %t_2 = fdiv double %a, %b
     %t_12 = fsub double %t_11, %t_2
-    %x = fadd double %a, %b
-    %x1 = frem double %t_12, %x
-    ret double %x1
+    %t_21 = fadd double %a, %b
+    %t_13 = frem double %t_12, %t_21
+    %x = fadd double %t_13, 0x3FE0000000000000
+    ret double %x
 }

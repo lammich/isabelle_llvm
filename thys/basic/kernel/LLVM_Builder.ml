@@ -303,13 +303,21 @@ structure LLVM_Builder : LLVM_BUILDER = struct
     | mkc_i _ _ = raise Error ("mkc_i: Expected integer type")
 
   (* Also in LLC_Lib. Duplicated here as this is part of printing TCB *)  
-  val str_of_w32 = Word32.fmt StringCvt.HEX #> StringCvt.padLeft #"0" 8 #> prefix "0x";  
+  (*val str_of_w32 = Word32.fmt StringCvt.HEX #> StringCvt.padLeft #"0" 8 #> prefix "0x";  *)
   val str_of_w64 = Word64.fmt StringCvt.HEX #> StringCvt.padLeft #"0" 16 #> prefix "0x";  
     
   fun mkc_d (ty as TDouble) d = CONST (ty, str_of_w64 d)
     | mkc_d _ _ = raise Error ("mkc_d: Expected double type")
     
-  fun mkc_f (ty as TFloat) d = CONST (ty, str_of_w32 d)
+
+  (* TODO: Generate reflected function on Word32/64, using Machine-Words AFP entry! *)
+  (* Convert 32bit single representation to 64bit representation required by LLVM.
+    The funtion LLVM_Extend_Float_Double.fext_int_32_64 is verified in Isabelle, 
+    and reflected into the ML environment. See \<^theory>\<open>IEEE_Float_Extend_Integer\<close>
+  *)
+  val fext_word_32_64 = Word32.toInt #> LLVM_Extend_Float_Double.fext_int_32_64 #> Word64.fromInt
+    
+  fun mkc_f (ty as TFloat) d = CONST (ty, str_of_w64 (fext_word_32_64 d))
     | mkc_f _ _ = raise Error ("mkc_f: Expected float type")
       
   fun mkc_iw w = mkc_i (mkty_i w)

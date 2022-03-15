@@ -738,21 +738,21 @@ lemma ll_ptrcmp_simps[vcg_normalize_simps]:
   done  
   
 lemma ll_fcmp_f_simp[vcg_normalize_simps]:
-  "ll_fcmp_oeq_f a b = Mreturn (from_bool (\<not>LLVM_Single.is_nan a \<and> \<not>LLVM_Single.is_nan b \<and> eq_single a b))"
-  "ll_fcmp_ogt_f a b = Mreturn (from_bool (\<not>LLVM_Single.is_nan a \<and> \<not>LLVM_Single.is_nan b \<and> a > b))"
-  "ll_fcmp_oge_f a b = Mreturn (from_bool (\<not>LLVM_Single.is_nan a \<and> \<not>LLVM_Single.is_nan b \<and> a \<ge> b))"
-  "ll_fcmp_olt_f a b = Mreturn (from_bool (\<not>LLVM_Single.is_nan a \<and> \<not>LLVM_Single.is_nan b \<and> a < b))"
-  "ll_fcmp_ole_f a b = Mreturn (from_bool (\<not>LLVM_Single.is_nan a \<and> \<not>LLVM_Single.is_nan b \<and> a \<le> b))"
-  "ll_fcmp_one_f a b = Mreturn (from_bool (\<not>LLVM_Single.is_nan a \<and> \<not>LLVM_Single.is_nan b \<and> \<not>eq_single a b))"
-  "ll_fcmp_ord_f a b = Mreturn (from_bool (\<not>LLVM_Single.is_nan a \<and> \<not>LLVM_Single.is_nan b))"
+  "ll_fcmp_oeq_f a b = Mreturn (from_bool (\<not>is_nan_single a \<and> \<not>is_nan_single b \<and> eq_single a b))"
+  "ll_fcmp_ogt_f a b = Mreturn (from_bool (\<not>is_nan_single a \<and> \<not>is_nan_single b \<and> a > b))"
+  "ll_fcmp_oge_f a b = Mreturn (from_bool (\<not>is_nan_single a \<and> \<not>is_nan_single b \<and> a \<ge> b))"
+  "ll_fcmp_olt_f a b = Mreturn (from_bool (\<not>is_nan_single a \<and> \<not>is_nan_single b \<and> a < b))"
+  "ll_fcmp_ole_f a b = Mreturn (from_bool (\<not>is_nan_single a \<and> \<not>is_nan_single b \<and> a \<le> b))"
+  "ll_fcmp_one_f a b = Mreturn (from_bool (\<not>is_nan_single a \<and> \<not>is_nan_single b \<and> \<not>eq_single a b))"
+  "ll_fcmp_ord_f a b = Mreturn (from_bool (\<not>is_nan_single a \<and> \<not>is_nan_single b))"
 
-  "ll_fcmp_ueq_f a b = Mreturn (from_bool (LLVM_Single.is_nan a \<or> LLVM_Single.is_nan b \<or> eq_single a b))"
-  "ll_fcmp_ugt_f a b = Mreturn (from_bool (LLVM_Single.is_nan a \<or> LLVM_Single.is_nan b \<or> a > b))"
-  "ll_fcmp_uge_f a b = Mreturn (from_bool (LLVM_Single.is_nan a \<or> LLVM_Single.is_nan b \<or> a \<ge> b))"
-  "ll_fcmp_ult_f a b = Mreturn (from_bool (LLVM_Single.is_nan a \<or> LLVM_Single.is_nan b \<or> a < b))"
-  "ll_fcmp_ule_f a b = Mreturn (from_bool (LLVM_Single.is_nan a \<or> LLVM_Single.is_nan b \<or> a \<le> b))"
-  "ll_fcmp_une_f a b = Mreturn (from_bool (LLVM_Single.is_nan a \<or> LLVM_Single.is_nan b \<or> \<not>eq_single a b))"
-  "ll_fcmp_uno_f a b = Mreturn (from_bool (LLVM_Single.is_nan a \<or> LLVM_Single.is_nan b))"
+  "ll_fcmp_ueq_f a b = Mreturn (from_bool (is_nan_single a \<or> is_nan_single b \<or> eq_single a b))"
+  "ll_fcmp_ugt_f a b = Mreturn (from_bool (is_nan_single a \<or> is_nan_single b \<or> a > b))"
+  "ll_fcmp_uge_f a b = Mreturn (from_bool (is_nan_single a \<or> is_nan_single b \<or> a \<ge> b))"
+  "ll_fcmp_ult_f a b = Mreturn (from_bool (is_nan_single a \<or> is_nan_single b \<or> a < b))"
+  "ll_fcmp_ule_f a b = Mreturn (from_bool (is_nan_single a \<or> is_nan_single b \<or> a \<le> b))"
+  "ll_fcmp_une_f a b = Mreturn (from_bool (is_nan_single a \<or> is_nan_single b \<or> \<not>eq_single a b))"
+  "ll_fcmp_uno_f a b = Mreturn (from_bool (is_nan_single a \<or> is_nan_single b))"
   
   unfolding 
     ll_fcmp_oeq_f_def
@@ -776,21 +776,21 @@ lemma ll_fcmp_f_simp[vcg_normalize_simps]:
     
 
 lemma ll_fcmp_d_simp[vcg_normalize_simps]:
-  "ll_fcmp_oeq_d a b = Mreturn (from_bool (\<not>LLVM_Double.is_nan a \<and> \<not>LLVM_Double.is_nan b \<and> eq_double a b))"
-  "ll_fcmp_ogt_d a b = Mreturn (from_bool (\<not>LLVM_Double.is_nan a \<and> \<not>LLVM_Double.is_nan b \<and> a > b))"
-  "ll_fcmp_oge_d a b = Mreturn (from_bool (\<not>LLVM_Double.is_nan a \<and> \<not>LLVM_Double.is_nan b \<and> a \<ge> b))"
-  "ll_fcmp_olt_d a b = Mreturn (from_bool (\<not>LLVM_Double.is_nan a \<and> \<not>LLVM_Double.is_nan b \<and> a < b))"
-  "ll_fcmp_ole_d a b = Mreturn (from_bool (\<not>LLVM_Double.is_nan a \<and> \<not>LLVM_Double.is_nan b \<and> a \<le> b))"
-  "ll_fcmp_one_d a b = Mreturn (from_bool (\<not>LLVM_Double.is_nan a \<and> \<not>LLVM_Double.is_nan b \<and> \<not>eq_double a b))"
-  "ll_fcmp_ord_d a b = Mreturn (from_bool (\<not>LLVM_Double.is_nan a \<and> \<not>LLVM_Double.is_nan b))"
+  "ll_fcmp_oeq_d a b = Mreturn (from_bool (\<not>is_nan_double a \<and> \<not>is_nan_double b \<and> eq_double a b))"
+  "ll_fcmp_ogt_d a b = Mreturn (from_bool (\<not>is_nan_double a \<and> \<not>is_nan_double b \<and> a > b))"
+  "ll_fcmp_oge_d a b = Mreturn (from_bool (\<not>is_nan_double a \<and> \<not>is_nan_double b \<and> a \<ge> b))"
+  "ll_fcmp_olt_d a b = Mreturn (from_bool (\<not>is_nan_double a \<and> \<not>is_nan_double b \<and> a < b))"
+  "ll_fcmp_ole_d a b = Mreturn (from_bool (\<not>is_nan_double a \<and> \<not>is_nan_double b \<and> a \<le> b))"
+  "ll_fcmp_one_d a b = Mreturn (from_bool (\<not>is_nan_double a \<and> \<not>is_nan_double b \<and> \<not>eq_double a b))"
+  "ll_fcmp_ord_d a b = Mreturn (from_bool (\<not>is_nan_double a \<and> \<not>is_nan_double b))"
 
-  "ll_fcmp_ueq_d a b = Mreturn (from_bool (LLVM_Double.is_nan a \<or> LLVM_Double.is_nan b \<or> eq_double a b))"
-  "ll_fcmp_ugt_d a b = Mreturn (from_bool (LLVM_Double.is_nan a \<or> LLVM_Double.is_nan b \<or> a > b))"
-  "ll_fcmp_uge_d a b = Mreturn (from_bool (LLVM_Double.is_nan a \<or> LLVM_Double.is_nan b \<or> a \<ge> b))"
-  "ll_fcmp_ult_d a b = Mreturn (from_bool (LLVM_Double.is_nan a \<or> LLVM_Double.is_nan b \<or> a < b))"
-  "ll_fcmp_ule_d a b = Mreturn (from_bool (LLVM_Double.is_nan a \<or> LLVM_Double.is_nan b \<or> a \<le> b))"
-  "ll_fcmp_une_d a b = Mreturn (from_bool (LLVM_Double.is_nan a \<or> LLVM_Double.is_nan b \<or> \<not>eq_double a b))"
-  "ll_fcmp_uno_d a b = Mreturn (from_bool (LLVM_Double.is_nan a \<or> LLVM_Double.is_nan b))"
+  "ll_fcmp_ueq_d a b = Mreturn (from_bool (is_nan_double a \<or> is_nan_double b \<or> eq_double a b))"
+  "ll_fcmp_ugt_d a b = Mreturn (from_bool (is_nan_double a \<or> is_nan_double b \<or> a > b))"
+  "ll_fcmp_uge_d a b = Mreturn (from_bool (is_nan_double a \<or> is_nan_double b \<or> a \<ge> b))"
+  "ll_fcmp_ult_d a b = Mreturn (from_bool (is_nan_double a \<or> is_nan_double b \<or> a < b))"
+  "ll_fcmp_ule_d a b = Mreturn (from_bool (is_nan_double a \<or> is_nan_double b \<or> a \<le> b))"
+  "ll_fcmp_une_d a b = Mreturn (from_bool (is_nan_double a \<or> is_nan_double b \<or> \<not>eq_double a b))"
+  "ll_fcmp_uno_d a b = Mreturn (from_bool (is_nan_double a \<or> is_nan_double b))"
   
   unfolding 
     ll_fcmp_oeq_d_def
@@ -1098,28 +1098,28 @@ lemmas [llvm_pre_simp, vcg_monadify_xforms] = ll_cmp'_defs[symmetric]
 
 (* TODO: Move *)
 lemma fcompare_has_ord_semantics:
-  "a<b \<Longrightarrow> \<not>LLVM_Single.is_nan a \<and> \<not>LLVM_Single.is_nan b"
-  "a\<le>b \<Longrightarrow> \<not>LLVM_Single.is_nan a \<and> \<not>LLVM_Single.is_nan b"
+  "a<b \<Longrightarrow> \<not>is_nan_single a \<and> \<not>is_nan_single b"
+  "a\<le>b \<Longrightarrow> \<not>is_nan_single a \<and> \<not>is_nan_single b"
   apply (all transfer')
   unfolding less_float_def less_eq_float_def flt_def fle_def fcompare_def 
   by auto
 
 lemma fcompare_ord_conv:
-  "\<not> LLVM_Single.is_nan a \<and> \<not> LLVM_Single.is_nan b \<and> a < b \<longleftrightarrow> a < b"  
-  "\<not> LLVM_Single.is_nan a \<and> \<not> LLVM_Single.is_nan b \<and> a \<le> b \<longleftrightarrow> a \<le> b"  
+  "\<not> is_nan_single a \<and> \<not> is_nan_single b \<and> a < b \<longleftrightarrow> a < b"  
+  "\<not> is_nan_single a \<and> \<not> is_nan_single b \<and> a \<le> b \<longleftrightarrow> a \<le> b"  
   using fcompare_has_ord_semantics by blast+
   
 
 lemma dcompare_has_ord_semantics:
-  "a<b \<Longrightarrow> \<not>LLVM_Double.is_nan a \<and> \<not>LLVM_Double.is_nan b"
-  "a\<le>b \<Longrightarrow> \<not>LLVM_Double.is_nan a \<and> \<not>LLVM_Double.is_nan b"
+  "a<b \<Longrightarrow> \<not>is_nan_double a \<and> \<not>is_nan_double b"
+  "a\<le>b \<Longrightarrow> \<not>is_nan_double a \<and> \<not>is_nan_double b"
   apply (all transfer')
   unfolding less_float_def less_eq_float_def flt_def fle_def fcompare_def 
   by auto
 
 lemma dcompare_ord_conv:
-  "\<not> LLVM_Double.is_nan a \<and> \<not> LLVM_Double.is_nan b \<and> a < b \<longleftrightarrow> a < b"  
-  "\<not> LLVM_Double.is_nan a \<and> \<not> LLVM_Double.is_nan b \<and> a \<le> b \<longleftrightarrow> a \<le> b"  
+  "\<not> is_nan_double a \<and> \<not> is_nan_double b \<and> a < b \<longleftrightarrow> a < b"  
+  "\<not> is_nan_double a \<and> \<not> is_nan_double b \<and> a \<le> b \<longleftrightarrow> a \<le> b"  
   using dcompare_has_ord_semantics by blast+
 
     

@@ -12,7 +12,7 @@ for i in fpgen32_testsuite/*.fptest; do
 
 
   cat "$i" \
-  | egrep '^b32([-+*/]|\*\+) '\
+  | egrep '^b32([-+*/V]|\*\+) '\
   | egrep -v "#"\
   | sed -re 's/ [xuvwozi]+( |$)/ /g' \
   | sed -re 's/ -> / /' \

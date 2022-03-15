@@ -253,17 +253,17 @@ begin
   definition op_lift_fcmp_d :: "bool \<Rightarrow> _ \<Rightarrow> double \<Rightarrow> double \<Rightarrow> 1 word llM"
     where "op_lift_fcmp_d ordered f a b \<equiv> doM {
       if ordered then
-        return (lint_to_word (bool_to_lint (\<not>LLVM_Double.is_nan a \<and> \<not>LLVM_Double.is_nan b \<and> f a b)))
+        return (lint_to_word (bool_to_lint (\<not>is_nan_double a \<and> \<not>is_nan_double b \<and> f a b)))
       else
-        return (lint_to_word (bool_to_lint (LLVM_Double.is_nan a \<or> LLVM_Double.is_nan b \<or> f a b)))
+        return (lint_to_word (bool_to_lint (is_nan_double a \<or> is_nan_double b \<or> f a b)))
     
   }"
   definition op_lift_fcmp_f :: "bool \<Rightarrow> _ \<Rightarrow> single \<Rightarrow> single \<Rightarrow> 1 word llM"
     where "op_lift_fcmp_f ordered f a b \<equiv> doM {
       if ordered then
-        return (lint_to_word (bool_to_lint (\<not>LLVM_Single.is_nan a \<and> \<not>LLVM_Single.is_nan b \<and> f a b)))
+        return (lint_to_word (bool_to_lint (\<not>is_nan_single a \<and> \<not>is_nan_single b \<and> f a b)))
       else
-        return (lint_to_word (bool_to_lint (LLVM_Single.is_nan a \<or> LLVM_Single.is_nan b \<or> f a b)))
+        return (lint_to_word (bool_to_lint (is_nan_single a \<or> is_nan_single b \<or> f a b)))
     
   }"
     

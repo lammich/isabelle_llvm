@@ -7,7 +7,7 @@
 #include "double_lib.c"
 
 double c_test_double(double a, double b) {
-  return fmod (sqrt(a*a + b*b) - a/b, a+b);
+  return fmod (sqrt(a*a + b*b) - a/b, a+b) + .5;
 }
 
 void test(double a, double b) {

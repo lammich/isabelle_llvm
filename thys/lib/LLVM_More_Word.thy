@@ -1,6 +1,6 @@
 section \<open>Entry-Point to Word Library and additional lemmas for Isabelle-LLVM\<close>
 theory LLVM_More_Word
-imports "HOL-Library.Word" (*"HOL-Library.Bit_Operations"*) Bits_Natural "Word_Lib.Word_Lib_Sumo"
+imports LLVM_More_Word_Lemmas Bits_Natural "Word_Lib.Word_Lib_Sumo"
 begin
 (* TODO: Fix in Word.thy! 
   Introducing proper infix-syntax for signed comparisons. So, also (<s) and (<=s) get available.
@@ -18,28 +18,6 @@ declare [[coercion_enabled = false]]
 
 subsection \<open>Additional Lemmas\<close>
 
-class len2 = len +
-  assumes len2_not_1 [simp]: "LENGTH('a) \<noteq> Suc 0"
-
-lemma len2_simps[simp]:
-  "LENGTH('a::len2) > Suc 0"
-  "LENGTH('a::len2) \<ge> 2"
-  subgoal by (metis Suc_lessI len2_not_1 len_gt_0)
-  subgoal using \<open>Suc 0 < LENGTH('a)\<close> by linarith
-  done
-  
-lemma len2E: obtains n where "LENGTH('a::len2) = 2+n"
-  apply (cases "LENGTH('a)"; simp)
-  subgoal for k by (cases k; simp)
-  done
-  
-instance bit0 :: (len) len2 
-  by standard simp
-  
-instance bit1 :: (len) len2 
-  by standard simp
-  
-definition "len2 (TYPE('a::len2)) \<equiv> True"  
 
 
 (* Original theorem is in simpset, but useless due to non-normalized LHS *)

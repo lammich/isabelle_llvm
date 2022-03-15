@@ -64,6 +64,14 @@ structure FP_test_base : sig
           (num1 bit0 bit1 bit1, num1 bit1 bit0 bit1 bit0 bit0) float -> bool
   val minus_zero32 : (num1 bit0 bit0 bit0, num1 bit0 bit1 bit1 bit1) float
   val minus_zero64 : (num1 bit0 bit1 bit1, num1 bit1 bit0 bit1 bit0 bit0) float
+  val check_fsqrt32 :
+    roundmode ->
+      (num1 bit0 bit0 bit0, num1 bit0 bit1 bit1 bit1) float ->
+        (num1 bit0 bit0 bit0, num1 bit0 bit1 bit1 bit1) float -> bool
+  val check_fsqrt64 :
+    roundmode ->
+      (num1 bit0 bit1 bit1, num1 bit1 bit0 bit1 bit0 bit0) float ->
+        (num1 bit0 bit1 bit1, num1 bit1 bit0 bit1 bit0 bit0) float -> bool
   val check_fmul_add32 :
     roundmode ->
       (num1 bit0 bit0 bit0, num1 bit0 bit1 bit1 bit1) float ->
@@ -1549,6 +1557,685 @@ val minus_zero64 : (num1 bit0 bit1 bit1, num1 bit1 bit0 bit1 bit0 bit0) float =
     (len_bit0 (len_bit0 (len_bit1 (len0_bit0 (len0_bit1 len0_num1)))))
     (zero_float (len_bit1 (len0_bit1 (len0_bit0 len0_num1)))
       (len_bit0 (len_bit0 (len_bit1 (len0_bit0 (len0_bit1 len0_num1))))));
+
+fun sqrt_lt_sqrt_plus_r a b r =
+  (if equal_real r zero_reala then less_real a b
+    else (if equal_real a zero_reala
+           then (if less_real b zero_reala
+                  then less_eq_real (uminus_real r) zero_reala andalso
+                         less_real
+                           (uminus_real
+                             (power power_real (uminus_real r)
+                               (nat_of_integer (2 : IntInf.int))))
+                           b
+                  else less_real (uminus_real r) zero_reala orelse
+                         less_real
+                           (power power_real (uminus_real r)
+                             (nat_of_integer (2 : IntInf.int)))
+                           b)
+           else (if equal_real b zero_reala
+                  then (if less_real a zero_reala
+                         then less_real zero_reala r orelse
+                                less_real a
+                                  (uminus_real
+                                    (power power_real r
+                                      (nat_of_integer (2 : IntInf.int))))
+                         else less_eq_real zero_reala r andalso
+                                less_real a
+                                  (power power_real r
+                                    (nat_of_integer (2 : IntInf.int))))
+                  else (if less_real a zero_reala andalso
+                             (less_real r zero_reala andalso
+                               less_real b zero_reala)
+                         then less_eq_real
+                                (plus_reala a
+                                  (power power_real r
+                                    (nat_of_integer (2 : IntInf.int))))
+                                b andalso
+                                less_real
+                                  (uminus_real
+                                    (power power_real
+                                      (minus_real b
+(plus_reala a (power power_real r (nat_of_integer (2 : IntInf.int)))))
+                                      (nat_of_integer (2 : IntInf.int))))
+                                  (times_reala b
+                                    (times_reala
+                                      (Ratreal
+(of_int (Int_of_integer (4 : IntInf.int))))
+                                      (power power_real r
+(nat_of_integer (2 : IntInf.int)))))
+                         else (if less_real a zero_reala andalso
+                                    less_real b zero_reala
+                                then less_real
+                                       (uminus_real
+ (power power_real r (nat_of_integer (2 : IntInf.int))))
+                                       b orelse
+                                       (less_real
+  (plus_reala a (power power_real r (nat_of_integer (2 : IntInf.int)))) b orelse
+ less_real
+   (times_reala b
+     (times_reala (Ratreal (of_int (Int_of_integer (4 : IntInf.int))))
+       (power power_real r (nat_of_integer (2 : IntInf.int)))))
+   (uminus_real
+     (power power_real
+       (minus_real b
+         (plus_reala a (power power_real r (nat_of_integer (2 : IntInf.int)))))
+       (nat_of_integer (2 : IntInf.int)))))
+                                else (if less_real r zero_reala andalso
+   less_real b zero_reala
+                                       then false
+                                       else (if less_real b zero_reala
+      then less_eq_real
+             (uminus_real
+               (power power_real r (nat_of_integer (2 : IntInf.int))))
+             b andalso
+             (less_eq_real (plus_reala a b)
+                (power power_real r (nat_of_integer (2 : IntInf.int))) andalso
+               less_real
+                 (uminus_real
+                   (power power_real
+                     (minus_real (plus_reala a b)
+                       (power power_real r (nat_of_integer (2 : IntInf.int))))
+                     (nat_of_integer (2 : IntInf.int))))
+                 (times_reala b
+                   (times_reala
+                     (Ratreal (of_int (Int_of_integer (4 : IntInf.int))))
+                     (power power_real r (nat_of_integer (2 : IntInf.int))))))
+      else (if less_real a zero_reala andalso less_real r zero_reala
+             then less_real
+                    (power power_real r (nat_of_integer (2 : IntInf.int)))
+                    b orelse
+                    (less_real
+                       (plus_reala b
+                         (power power_real r (nat_of_integer (2 : IntInf.int))))
+                       (uminus_real a) orelse
+                      less_real
+                        (power power_real
+                          (minus_real (uminus_real a)
+                            (plus_reala b
+                              (power power_real r
+                                (nat_of_integer (2 : IntInf.int)))))
+                          (nat_of_integer (2 : IntInf.int)))
+                        (times_reala b
+                          (times_reala
+                            (Ratreal (of_int (Int_of_integer (4 : IntInf.int))))
+                            (power power_real r
+                              (nat_of_integer (2 : IntInf.int))))))
+             else (if less_real a zero_reala then true
+                    else (if less_real r zero_reala
+                           then less_eq_real
+                                  (power power_real r
+                                    (nat_of_integer (2 : IntInf.int)))
+                                  b andalso
+                                  (less_eq_real a
+                                     (plus_reala b
+                                       (power power_real r
+ (nat_of_integer (2 : IntInf.int)))) andalso
+                                    less_real
+                                      (times_reala b
+(times_reala (Ratreal (of_int (Int_of_integer (4 : IntInf.int))))
+  (power power_real r (nat_of_integer (2 : IntInf.int)))))
+                                      (power power_real
+(minus_real a
+  (plus_reala b (power power_real r (nat_of_integer (2 : IntInf.int)))))
+(nat_of_integer (2 : IntInf.int))))
+                           else less_real a
+                                  (plus_reala b
+                                    (power power_real r
+                                      (nat_of_integer (2 : IntInf.int)))) orelse
+                                  less_real
+                                    (power power_real
+                                      (minus_real a
+(plus_reala b (power power_real r (nat_of_integer (2 : IntInf.int)))))
+                                      (nat_of_integer (2 : IntInf.int)))
+                                    (times_reala b
+                                      (times_reala
+(Ratreal (of_int (Int_of_integer (4 : IntInf.int))))
+(power power_real r (nat_of_integer (2 : IntInf.int)))))))))))))));
+
+fun sgn_real a =
+  (if equal_real a zero_reala then zero_reala
+    else (if less_real zero_reala a then one_reala else uminus_real one_reala));
+
+fun sqrt_diff_cmp_lt a r b s =
+  sqrt_lt_sqrt_plus_r
+    (times_reala
+      (times_reala (sgn_real s)
+        (power power_real s (nat_of_integer (2 : IntInf.int))))
+      (times_reala (Ratreal (of_int (Int_of_integer (4 : IntInf.int)))) b))
+    (times_reala
+      (times_reala (sgn_real r)
+        (power power_real r (nat_of_integer (2 : IntInf.int))))
+      (times_reala (Ratreal (of_int (Int_of_integer (4 : IntInf.int)))) a))
+    (uminus_real
+      (plus_reala (abs_real a)
+        (minus_real (times_reala r r)
+          (plus_reala (abs_real b) (times_reala s s)))));
+
+fun check_zs_r_sqrt A_ B_ m s r res =
+  (case m
+    of To_nearest =>
+      (if (if less_real r zero_reala
+            then less_eq_real zero_reala
+                   (uminus_real (threshold A_ B_ Type)) orelse
+                   less_eq_real r
+                     (uminus_real
+                       (power power_real (uminus_real (threshold A_ B_ Type))
+                         (nat_of_integer (2 : IntInf.int))))
+            else less_eq_real zero_reala
+                   (uminus_real (threshold A_ B_ Type)) andalso
+                   less_eq_real r
+                     (power power_real (uminus_real (threshold A_ B_ Type))
+                       (nat_of_integer (2 : IntInf.int))))
+        then equal_float A_ B_ res (uminus_float A_ B_ (plus_infinity A_ B_))
+        else (if (if less_real r zero_reala
+                   then less_eq_real (threshold A_ B_ Type) zero_reala andalso
+                          less_eq_real
+                            (uminus_real
+                              (power power_real (threshold A_ B_ Type)
+                                (nat_of_integer (2 : IntInf.int))))
+                            r
+                   else less_eq_real (threshold A_ B_ Type) zero_reala orelse
+                          less_eq_real
+                            (power power_real (threshold A_ B_ Type)
+                              (nat_of_integer (2 : IntInf.int)))
+                            r)
+               then equal_float A_ B_ res (plus_infinity A_ B_)
+               else (if equal_float A_ B_ res (topfloat A_ B_)
+                      then sqrt_diff_cmp_lt r (valof A_ B_ res) r
+                             (valof A_ B_ (prev_float A_ B_ res))
+                      else (if equal_float A_ B_ res
+                                 (uminus_float A_ B_ (topfloat A_ B_))
+                             then sqrt_diff_cmp_lt r (valof A_ B_ res) r
+                                    (valof A_ B_ (next_float A_ B_ res))
+                             else (if not
+(is_finite A_ B_ res andalso
+  (if is_zero A_ B_ res
+    then (if less_real r zero_reala
+           then less_eq_real
+                  (valof A_ B_
+                    (prev_float A_ B_ (uminus_float A_ B_ (zero_float A_ B_))))
+                  zero_reala andalso
+                  less_real
+                    (uminus_real
+                      (power power_real
+                        (valof A_ B_
+                          (prev_float A_ B_
+                            (uminus_float A_ B_ (zero_float A_ B_))))
+                        (nat_of_integer (2 : IntInf.int))))
+                    r
+           else less_real
+                  (valof A_ B_
+                    (prev_float A_ B_ (uminus_float A_ B_ (zero_float A_ B_))))
+                  zero_reala orelse
+                  less_real
+                    (power power_real
+                      (valof A_ B_
+                        (prev_float A_ B_
+                          (uminus_float A_ B_ (zero_float A_ B_))))
+                      (nat_of_integer (2 : IntInf.int)))
+                    r) andalso
+           (if less_real r zero_reala
+             then less_real zero_reala
+                    (valof A_ B_ (next_float A_ B_ (zero_float A_ B_))) orelse
+                    less_real r
+                      (uminus_real
+                        (power power_real
+                          (valof A_ B_ (next_float A_ B_ (zero_float A_ B_)))
+                          (nat_of_integer (2 : IntInf.int))))
+             else less_eq_real zero_reala
+                    (valof A_ B_ (next_float A_ B_ (zero_float A_ B_))) andalso
+                    less_real r
+                      (power power_real
+                        (valof A_ B_ (next_float A_ B_ (zero_float A_ B_)))
+                        (nat_of_integer (2 : IntInf.int))))
+    else (if less_real r zero_reala
+           then less_eq_real (valof A_ B_ (prev_float A_ B_ res))
+                  zero_reala andalso
+                  less_real
+                    (uminus_real
+                      (power power_real (valof A_ B_ (prev_float A_ B_ res))
+                        (nat_of_integer (2 : IntInf.int))))
+                    r
+           else less_real (valof A_ B_ (prev_float A_ B_ res)) zero_reala orelse
+                  less_real
+                    (power power_real (valof A_ B_ (prev_float A_ B_ res))
+                      (nat_of_integer (2 : IntInf.int)))
+                    r) andalso
+           (if less_real r zero_reala
+             then less_real zero_reala
+                    (valof A_ B_ (next_float A_ B_ res)) orelse
+                    less_real r
+                      (uminus_real
+                        (power power_real (valof A_ B_ (next_float A_ B_ res))
+                          (nat_of_integer (2 : IntInf.int))))
+             else less_eq_real zero_reala
+                    (valof A_ B_ (next_float A_ B_ res)) andalso
+                    less_real r
+                      (power power_real (valof A_ B_ (next_float A_ B_ res))
+                        (nat_of_integer (2 : IntInf.int)))))) orelse
+(equal_float A_ B_ res (topfloat A_ B_) orelse
+  equal_float A_ B_ res (uminus_float A_ B_ (topfloat A_ B_)))
+                                    then false
+                                    else (if sqrt_diff_cmp_lt r
+       (valof A_ B_
+         (if (if less_real r zero_reala
+               then less_real zero_reala (valof A_ B_ res) orelse
+                      less_real r
+                        (uminus_real
+                          (power power_real (valof A_ B_ res)
+                            (nat_of_integer (2 : IntInf.int))))
+               else less_eq_real zero_reala (valof A_ B_ res) andalso
+                      less_real r
+                        (power power_real (valof A_ B_ res)
+                          (nat_of_integer (2 : IntInf.int))))
+           then prev_floata A_ B_ res else zerosign A_ B_ zero_nata res))
+       r (valof A_ B_
+           (if (if less_real r zero_reala
+                 then less_eq_real (valof A_ B_ res) zero_reala andalso
+                        less_eq_real
+                          (uminus_real
+                            (power power_real (valof A_ B_ res)
+                              (nat_of_integer (2 : IntInf.int))))
+                          r
+                 else less_eq_real (valof A_ B_ res) zero_reala orelse
+                        less_eq_real
+                          (power power_real (valof A_ B_ res)
+                            (nat_of_integer (2 : IntInf.int)))
+                          r)
+             then next_floatb A_ B_ res
+             else zerosign A_ B_
+                    (if less_real r zero_reala then one_nata else zero_nata)
+                    res))
+   then equal_float A_ B_ res
+          (zerosign A_ B_ s
+            (if (if less_real r zero_reala
+                  then less_real zero_reala (valof A_ B_ res) orelse
+                         less_real r
+                           (uminus_real
+                             (power power_real (valof A_ B_ res)
+                               (nat_of_integer (2 : IntInf.int))))
+                  else less_eq_real zero_reala (valof A_ B_ res) andalso
+                         less_real r
+                           (power power_real (valof A_ B_ res)
+                             (nat_of_integer (2 : IntInf.int))))
+              then prev_floata A_ B_ res else zerosign A_ B_ zero_nata res))
+   else (if sqrt_diff_cmp_lt r
+              (valof A_ B_
+                (if (if less_real r zero_reala
+                      then less_eq_real (valof A_ B_ res) zero_reala andalso
+                             less_eq_real
+                               (uminus_real
+                                 (power power_real (valof A_ B_ res)
+                                   (nat_of_integer (2 : IntInf.int))))
+                               r
+                      else less_eq_real (valof A_ B_ res) zero_reala orelse
+                             less_eq_real
+                               (power power_real (valof A_ B_ res)
+                                 (nat_of_integer (2 : IntInf.int)))
+                               r)
+                  then next_floatb A_ B_ res
+                  else zerosign A_ B_
+                         (if less_real r zero_reala then one_nata
+                           else zero_nata)
+                         res))
+              r (valof A_ B_
+                  (if (if less_real r zero_reala
+                        then less_real zero_reala (valof A_ B_ res) orelse
+                               less_real r
+                                 (uminus_real
+                                   (power power_real (valof A_ B_ res)
+                                     (nat_of_integer (2 : IntInf.int))))
+                        else less_eq_real zero_reala (valof A_ B_ res) andalso
+                               less_real r
+                                 (power power_real (valof A_ B_ res)
+                                   (nat_of_integer (2 : IntInf.int))))
+                    then prev_floata A_ B_ res
+                    else zerosign A_ B_ zero_nata res))
+          then equal_float A_ B_ res
+                 (zerosign A_ B_ s
+                   (if (if less_real r zero_reala
+                         then less_eq_real (valof A_ B_ res) zero_reala andalso
+                                less_eq_real
+                                  (uminus_real
+                                    (power power_real (valof A_ B_ res)
+                                      (nat_of_integer (2 : IntInf.int))))
+                                  r
+                         else less_eq_real (valof A_ B_ res) zero_reala orelse
+                                less_eq_real
+                                  (power power_real (valof A_ B_ res)
+                                    (nat_of_integer (2 : IntInf.int)))
+                                  r)
+                     then next_floatb A_ B_ res
+                     else zerosign A_ B_
+                            (if less_real r zero_reala then one_nata
+                              else zero_nata)
+                            res))
+          else (if dvd (equal_nat, semidom_modulo_nat)
+                     (nat_of_integer (2 : IntInf.int))
+                     (fraction A_ B_
+                       (if (if less_real r zero_reala
+                             then less_real zero_reala (valof A_ B_ res) orelse
+                                    less_real r
+                                      (uminus_real
+(power power_real (valof A_ B_ res) (nat_of_integer (2 : IntInf.int))))
+                             else less_eq_real zero_reala
+                                    (valof A_ B_ res) andalso
+                                    less_real r
+                                      (power power_real (valof A_ B_ res)
+(nat_of_integer (2 : IntInf.int))))
+                         then prev_floata A_ B_ res
+                         else zerosign A_ B_ zero_nata res))
+                 then equal_float A_ B_ res
+                        (zerosign A_ B_ s
+                          (if (if less_real r zero_reala
+                                then less_real zero_reala
+                                       (valof A_ B_ res) orelse
+                                       less_real r
+ (uminus_real
+   (power power_real (valof A_ B_ res) (nat_of_integer (2 : IntInf.int))))
+                                else less_eq_real zero_reala
+                                       (valof A_ B_ res) andalso
+                                       less_real r
+ (power power_real (valof A_ B_ res) (nat_of_integer (2 : IntInf.int))))
+                            then prev_floata A_ B_ res
+                            else zerosign A_ B_ zero_nata res))
+                 else equal_float A_ B_ res
+                        (zerosign A_ B_ s
+                          (if (if less_real r zero_reala
+                                then less_eq_real (valof A_ B_ res)
+                                       zero_reala andalso
+                                       less_eq_real
+ (uminus_real
+   (power power_real (valof A_ B_ res) (nat_of_integer (2 : IntInf.int))))
+ r
+                                else less_eq_real (valof A_ B_ res)
+                                       zero_reala orelse
+                                       less_eq_real
+ (power power_real (valof A_ B_ res) (nat_of_integer (2 : IntInf.int))) r)
+                            then next_floatb A_ B_ res
+                            else zerosign A_ B_
+                                   (if less_real r zero_reala then one_nata
+                                     else zero_nata)
+                                   res))))))))))
+    | Float_To_zero =>
+      (if (if less_real r zero_reala
+            then less_real zero_reala (uminus_real (largest A_ B_ Type)) orelse
+                   less_real r
+                     (uminus_real
+                       (power power_real (uminus_real (largest A_ B_ Type))
+                         (nat_of_integer (2 : IntInf.int))))
+            else less_eq_real zero_reala
+                   (uminus_real (largest A_ B_ Type)) andalso
+                   less_real r
+                     (power power_real (uminus_real (largest A_ B_ Type))
+                       (nat_of_integer (2 : IntInf.int))))
+        then equal_float A_ B_ res (uminus_float A_ B_ (topfloat A_ B_))
+        else (if (if less_real r zero_reala
+                   then less_eq_real (largest A_ B_ Type) zero_reala andalso
+                          less_real
+                            (uminus_real
+                              (power power_real (largest A_ B_ Type)
+                                (nat_of_integer (2 : IntInf.int))))
+                            r
+                   else less_real (largest A_ B_ Type) zero_reala orelse
+                          less_real
+                            (power power_real (largest A_ B_ Type)
+                              (nat_of_integer (2 : IntInf.int)))
+                            r)
+               then equal_float A_ B_ res (topfloat A_ B_)
+               else (if equal_real (sgn_real r)
+                          (sgn_real (uminus_real (largest A_ B_ Type))) andalso
+                          equal_real (abs_real r)
+                            (power power_real (uminus_real (largest A_ B_ Type))
+                              (nat_of_integer (2 : IntInf.int)))
+                      then equal_float A_ B_ res
+                             (uminus_float A_ B_ (topfloat A_ B_))
+                      else (if equal_real (sgn_real r)
+                                 (sgn_real (largest A_ B_ Type)) andalso
+                                 equal_real (abs_real r)
+                                   (power power_real (largest A_ B_ Type)
+                                     (nat_of_integer (2 : IntInf.int)))
+                             then equal_float A_ B_ res (topfloat A_ B_)
+                             else (if equal_float A_ B_ res
+(uminus_float A_ B_ (topfloat A_ B_)) orelse
+(equal_float A_ B_ res (topfloat A_ B_) orelse not (is_finite A_ B_ res))
+                                    then false
+                                    else (if is_zero A_ B_ res
+   then equal_bool (equal_nata s zero_nata)
+          (equal_float A_ B_ res (zero_float A_ B_)) andalso
+          ((if less_real r zero_reala
+             then less_eq_real
+                    (valof A_ B_
+                      (prev_float A_ B_
+                        (uminus_float A_ B_ (zero_float A_ B_))))
+                    zero_reala andalso
+                    less_real
+                      (uminus_real
+                        (power power_real
+                          (valof A_ B_
+                            (prev_float A_ B_
+                              (uminus_float A_ B_ (zero_float A_ B_))))
+                          (nat_of_integer (2 : IntInf.int))))
+                      r
+             else less_real
+                    (valof A_ B_
+                      (prev_float A_ B_
+                        (uminus_float A_ B_ (zero_float A_ B_))))
+                    zero_reala orelse
+                    less_real
+                      (power power_real
+                        (valof A_ B_
+                          (prev_float A_ B_
+                            (uminus_float A_ B_ (zero_float A_ B_))))
+                        (nat_of_integer (2 : IntInf.int)))
+                      r) andalso
+            (if less_real r zero_reala
+              then less_real zero_reala
+                     (valof A_ B_ (next_float A_ B_ (zero_float A_ B_))) orelse
+                     less_real r
+                       (uminus_real
+                         (power power_real
+                           (valof A_ B_ (next_float A_ B_ (zero_float A_ B_)))
+                           (nat_of_integer (2 : IntInf.int))))
+              else less_eq_real zero_reala
+                     (valof A_ B_ (next_float A_ B_ (zero_float A_ B_))) andalso
+                     less_real r
+                       (power power_real
+                         (valof A_ B_ (next_float A_ B_ (zero_float A_ B_)))
+                         (nat_of_integer (2 : IntInf.int)))))
+   else (if less_real r zero_reala
+          then (if less_real r zero_reala
+                 then less_eq_real (valof A_ B_ (prev_float A_ B_ res))
+                        zero_reala andalso
+                        less_real
+                          (uminus_real
+                            (power power_real
+                              (valof A_ B_ (prev_float A_ B_ res))
+                              (nat_of_integer (2 : IntInf.int))))
+                          r
+                 else less_real (valof A_ B_ (prev_float A_ B_ res))
+                        zero_reala orelse
+                        less_real
+                          (power power_real (valof A_ B_ (prev_float A_ B_ res))
+                            (nat_of_integer (2 : IntInf.int)))
+                          r) andalso
+                 (if less_real r zero_reala
+                   then less_eq_real zero_reala (valof A_ B_ res) orelse
+                          less_eq_real r
+                            (uminus_real
+                              (power power_real (valof A_ B_ res)
+                                (nat_of_integer (2 : IntInf.int))))
+                   else less_eq_real zero_reala (valof A_ B_ res) andalso
+                          less_eq_real r
+                            (power power_real (valof A_ B_ res)
+                              (nat_of_integer (2 : IntInf.int))))
+          else (if less_real r zero_reala
+                 then less_eq_real (valof A_ B_ res) zero_reala andalso
+                        less_eq_real
+                          (uminus_real
+                            (power power_real (valof A_ B_ res)
+                              (nat_of_integer (2 : IntInf.int))))
+                          r
+                 else less_eq_real (valof A_ B_ res) zero_reala orelse
+                        less_eq_real
+                          (power power_real (valof A_ B_ res)
+                            (nat_of_integer (2 : IntInf.int)))
+                          r) andalso
+                 (if less_real r zero_reala
+                   then less_real zero_reala
+                          (valof A_ B_ (next_float A_ B_ res)) orelse
+                          less_real r
+                            (uminus_real
+                              (power power_real
+                                (valof A_ B_ (next_float A_ B_ res))
+                                (nat_of_integer (2 : IntInf.int))))
+                   else less_eq_real zero_reala
+                          (valof A_ B_ (next_float A_ B_ res)) andalso
+                          less_real r
+                            (power power_real
+                              (valof A_ B_ (next_float A_ B_ res))
+                              (nat_of_integer (2 : IntInf.int)))))))))))
+    | To_pinfinity =>
+      (if (if less_real r zero_reala
+            then less_real zero_reala (uminus_real (largest A_ B_ Type)) orelse
+                   less_real r
+                     (uminus_real
+                       (power power_real (uminus_real (largest A_ B_ Type))
+                         (nat_of_integer (2 : IntInf.int))))
+            else less_eq_real zero_reala
+                   (uminus_real (largest A_ B_ Type)) andalso
+                   less_real r
+                     (power power_real (uminus_real (largest A_ B_ Type))
+                       (nat_of_integer (2 : IntInf.int))))
+        then equal_float A_ B_ res (uminus_float A_ B_ (topfloat A_ B_))
+        else (if (if less_real r zero_reala
+                   then less_eq_real (largest A_ B_ Type) zero_reala andalso
+                          less_real
+                            (uminus_real
+                              (power power_real (largest A_ B_ Type)
+                                (nat_of_integer (2 : IntInf.int))))
+                            r
+                   else less_real (largest A_ B_ Type) zero_reala orelse
+                          less_real
+                            (power power_real (largest A_ B_ Type)
+                              (nat_of_integer (2 : IntInf.int)))
+                            r)
+               then equal_float A_ B_ res (plus_infinity A_ B_)
+               else (if equal_real (sgn_real r)
+                          (sgn_real (uminus_real (largest A_ B_ Type))) andalso
+                          equal_real (abs_real r)
+                            (power power_real (uminus_real (largest A_ B_ Type))
+                              (nat_of_integer (2 : IntInf.int)))
+                      then equal_float A_ B_ res
+                             (uminus_float A_ B_ (topfloat A_ B_))
+                      else (if equal_float A_ B_ res
+                                 (uminus_float A_ B_ (topfloat A_ B_)) orelse
+                                 not (is_finite A_ B_ res)
+                             then false
+                             else (if equal_float A_ B_ res (zero_float A_ B_)
+                                    then equal_real r zero_reala andalso
+   equal_nata s zero_nata
+                                    else (if less_real r zero_reala
+   then less_eq_real (valof A_ B_ (prev_float A_ B_ res)) zero_reala andalso
+          less_real
+            (uminus_real
+              (power power_real (valof A_ B_ (prev_float A_ B_ res))
+                (nat_of_integer (2 : IntInf.int))))
+            r
+   else less_real (valof A_ B_ (prev_float A_ B_ res)) zero_reala orelse
+          less_real
+            (power power_real (valof A_ B_ (prev_float A_ B_ res))
+              (nat_of_integer (2 : IntInf.int)))
+            r) andalso
+   ((if less_real r zero_reala
+      then less_eq_real zero_reala (valof A_ B_ res) orelse
+             less_eq_real r
+               (uminus_real
+                 (power power_real (valof A_ B_ res)
+                   (nat_of_integer (2 : IntInf.int))))
+      else less_eq_real zero_reala (valof A_ B_ res) andalso
+             less_eq_real r
+               (power power_real (valof A_ B_ res)
+                 (nat_of_integer (2 : IntInf.int)))) andalso
+     z_compat A_ B_ res s))))))
+    | To_ninfinity =>
+      (if (if less_real r zero_reala
+            then less_real zero_reala (uminus_real (largest A_ B_ Type)) orelse
+                   less_real r
+                     (uminus_real
+                       (power power_real (uminus_real (largest A_ B_ Type))
+                         (nat_of_integer (2 : IntInf.int))))
+            else less_eq_real zero_reala
+                   (uminus_real (largest A_ B_ Type)) andalso
+                   less_real r
+                     (power power_real (uminus_real (largest A_ B_ Type))
+                       (nat_of_integer (2 : IntInf.int))))
+        then equal_float A_ B_ res (uminus_float A_ B_ (plus_infinity A_ B_))
+        else (if (if less_real r zero_reala
+                   then less_eq_real (largest A_ B_ Type) zero_reala andalso
+                          less_real
+                            (uminus_real
+                              (power power_real (largest A_ B_ Type)
+                                (nat_of_integer (2 : IntInf.int))))
+                            r
+                   else less_real (largest A_ B_ Type) zero_reala orelse
+                          less_real
+                            (power power_real (largest A_ B_ Type)
+                              (nat_of_integer (2 : IntInf.int)))
+                            r)
+               then equal_float A_ B_ res (topfloat A_ B_)
+               else (if equal_real (sgn_real r)
+                          (sgn_real (largest A_ B_ Type)) andalso
+                          equal_real (abs_real r)
+                            (power power_real (largest A_ B_ Type)
+                              (nat_of_integer (2 : IntInf.int)))
+                      then equal_float A_ B_ res (topfloat A_ B_)
+                      else (if equal_float A_ B_ res (topfloat A_ B_) orelse
+                                 not (is_finite A_ B_ res)
+                             then false
+                             else (if less_real r zero_reala
+                                    then less_eq_real (valof A_ B_ res)
+   zero_reala andalso
+   less_eq_real
+     (uminus_real
+       (power power_real (valof A_ B_ res) (nat_of_integer (2 : IntInf.int))))
+     r
+                                    else less_eq_real (valof A_ B_ res)
+   zero_reala orelse
+   less_eq_real
+     (power power_real (valof A_ B_ res) (nat_of_integer (2 : IntInf.int)))
+     r) andalso
+                                    ((if less_real r zero_reala
+                                       then less_real zero_reala
+      (valof A_ B_ (next_floata A_ B_ res)) orelse
+      less_real r
+        (uminus_real
+          (power power_real (valof A_ B_ (next_floata A_ B_ res))
+            (nat_of_integer (2 : IntInf.int))))
+                                       else less_eq_real zero_reala
+      (valof A_ B_ (next_floata A_ B_ res)) andalso
+      less_real r
+        (power power_real (valof A_ B_ (next_floata A_ B_ res))
+          (nat_of_integer (2 : IntInf.int)))) andalso
+                                      z_compat A_ B_ res s))))));
+
+fun check_fsqrt A_ B_ m a res =
+  (if is_nan A_ B_ a then is_nan A_ B_ res
+    else (if is_zero A_ B_ a orelse
+               is_infinity A_ B_ a andalso equal_nata (sign A_ B_ a) zero_nata
+           then equal_float A_ B_ res a
+           else (if equal_nata (sign A_ B_ a) one_nata then is_nan A_ B_ res
+                  else check_zs_r_sqrt A_ B_ m (sign A_ B_ a) (valof A_ B_ a)
+                         res)));
+
+fun check_fsqrt32 x =
+  check_fsqrt (len_bit0 (len_bit0 (len_bit0 len_num1)))
+    (len_bit1 (len0_bit1 (len0_bit1 (len0_bit0 len0_num1)))) x;
+
+fun check_fsqrt64 x =
+  check_fsqrt (len_bit1 (len0_bit1 (len0_bit0 len0_num1)))
+    (len_bit0 (len_bit0 (len_bit1 (len0_bit0 (len0_bit1 len0_num1))))) x;
 
 fun check_fr A_ B_ m s r f =
   check_zs_r A_ B_ m (if s then one_nata else zero_nata) r f;

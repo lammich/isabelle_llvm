@@ -37,12 +37,14 @@ begin
   definition check_fmul32 :: "_ \<Rightarrow> float32 \<Rightarrow> _" where "check_fmul32 \<equiv> check_fmul"
   definition check_fdiv32 :: "_ \<Rightarrow> float32 \<Rightarrow> _" where "check_fdiv32 \<equiv> check_fdiv"
   definition check_fmul_add32 :: "_ \<Rightarrow> float32 \<Rightarrow> _" where "check_fmul_add32 \<equiv> check_fmul_add"
+  definition check_fsqrt32 :: "_ \<Rightarrow> float32 \<Rightarrow> _" where "check_fsqrt32 \<equiv> check_fsqrt"
   
   definition check_fadd64 :: "_ \<Rightarrow> float64 \<Rightarrow> _" where "check_fadd64 \<equiv> check_fadd"
   definition check_fsub64 :: "_ \<Rightarrow> float64 \<Rightarrow> _" where "check_fsub64 \<equiv> check_fsub"
   definition check_fmul64 :: "_ \<Rightarrow> float64 \<Rightarrow> _" where "check_fmul64 \<equiv> check_fmul"
   definition check_fdiv64 :: "_ \<Rightarrow> float64 \<Rightarrow> _" where "check_fdiv64 \<equiv> check_fdiv"
   definition check_fmul_add64 :: "_ \<Rightarrow> float64 \<Rightarrow> _" where "check_fmul_add64 \<equiv> check_fmul_add"
+  definition check_fsqrt64 :: "_ \<Rightarrow> float64 \<Rightarrow> _" where "check_fsqrt64 \<equiv> check_fsqrt"
   
     
   export_code 
@@ -50,8 +52,8 @@ begin
     sNaN32 qNaN32 plus_zero32 minus_zero32 plus_inf32 minus_inf32
     sNaN64 qNaN64 plus_zero64 minus_zero64 plus_inf64 minus_inf64
     
-    check_fadd32 check_fsub32 check_fmul32 check_fdiv32 check_fmul_add32
-    check_fadd64 check_fsub64 check_fmul64 check_fdiv64 check_fmul_add64
+    check_fadd32 check_fsub32 check_fmul32 check_fdiv32 check_fmul_add32 check_fsqrt32
+    check_fadd64 check_fsub64 check_fmul64 check_fdiv64 check_fmul_add64 check_fsqrt64
     To_pinfinity To_ninfinity To_nearest float_To_zero
     in SML module_name FP_test_base
     file "FP_test_base.sml"
@@ -98,7 +100,16 @@ begin
     
   value "check_fmul32 To_pinfinity (fp32 1 0x48FDB5 (-78+127)) (fp32 0 0x4381CE (-73+127)) (fp32 1 0x000000 0)"
     
+  term "frem"
+
   
+  
+  find_theorems sqrt  
+    
+  
+  value "1 < sqrt (3.3::real)"
+  
+  value "fsqrt To_nearest (fp32 1 0x7FFFFF 254)"
   
   value [nbe] "fadd To_nearest (fp32 0 0 127) (fp32 1 0x7FFFFF 254)"
   

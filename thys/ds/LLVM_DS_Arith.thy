@@ -119,8 +119,7 @@ lemma len_neq_one_conv:
   by (metis One_nat_def Suc_pred' len_gt_0 neq0_conv)
   
 lemma word_of_int_div2: "0\<le>w \<Longrightarrow> w<2^LENGTH('a) \<Longrightarrow> word_of_int w div (2::'a::len word) = word_of_int (w div 2)"  
-  apply (simp add: word_uint_eq_iff uint_word_of_int uint_div bintrunc_mod2p) 
-  by (smt (z3) mod_pos_pos_trivial mod_self nonneg1_imp_zdiv_pos_iff nonneg_mod_div)
+  by (force simp add: word_uint_eq_iff uint_word_of_int uint_div bintrunc_mod2p) 
 
 lemma word_of_int_shr1: "0\<le>w \<Longrightarrow> w<2^LENGTH('a::len) \<Longrightarrow> (word_of_int w :: 'a word) >> Suc 0 = word_of_int (w div 2)"
   by (auto simp: shiftr1_is_div_2[simplified] word_of_int_div2)
@@ -300,14 +299,18 @@ lemma monadify_unsigned[vcg_monadify_xforms]:
   "Mreturn (unsigned x) = ll_const (unsigned x)" by (simp add: ll_const_def)
 
   
+lemma uint_numeral_eq_aux: "numeral w < (2::int) ^ LENGTH('a) \<Longrightarrow> take_bit LENGTH('a::len) (numeral w::nat) = numeral w"  
+  by (simp add: nat_int_comparison(2) take_bit_eq_mod)
+  
+  
 lemma ll_const_unsigned_rule[vcg_rules]: 
   "llvm_htriple \<box> (ll_const (unsigned 0)) (\<lambda>r. \<upharpoonleft>uint.assn 0 r)"
   "llvm_htriple \<box> (ll_const (unsigned 1)) (\<lambda>r. \<upharpoonleft>uint.assn 1 r)"
   "llvm_htriple (\<up>\<^sub>d(numeral w \<in> uints LENGTH('a))) (ll_const (unsigned (numeral w::'a::len word))) (\<lambda>r. \<upharpoonleft>uint.assn (numeral w) r)"
   unfolding ll_const_def unsigned_def uint.assn_def
-  supply [simp] = bintrunc_mod2p max_uint_def
+  supply [simp] = bintrunc_mod2p max_uint_def uint_numeral_eq_aux
   by vcg
-
+  
   
 (* TODO: Move *)
 lemma lt_exp2n_estimate[simp]: 

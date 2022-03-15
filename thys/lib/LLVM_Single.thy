@@ -1,4 +1,7 @@
 (* Parts copied from: afp/IEEE_Floating_Point/Double.thy by Lei Yu, University of Cambridge *)
+
+*** Obsolete. See LLVM_Float_Types
+
 theory LLVM_Single
 imports IEEE_Floating_Point.Conversion_IEEE_Float (*IEEE_Floating_Point.FP64*) LLVM_More_Word
 begin

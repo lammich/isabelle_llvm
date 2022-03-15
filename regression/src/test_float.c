@@ -7,7 +7,7 @@
 #include "double_lib.c"
 
 float c_test_float(float a, float b) {
-  return fmodf(sqrtf(a*a + b*b) - a/b, a+b);
+  return fmodf(sqrtf(a*a + b*b) - a/b, a+b) + .5;
 }
 
 void test(float a, float b) {

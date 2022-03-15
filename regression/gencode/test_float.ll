@@ -16,7 +16,8 @@ define float @test_float(float %a, float %b) {
     %t_11 = call float @llvm.sqrt.f32 (float %t_1)
     %t_2 = fdiv float %a, %b
     %t_12 = fsub float %t_11, %t_2
-    %x = fadd float %a, %b
-    %x1 = frem float %t_12, %x
-    ret float %x1
+    %t_21 = fadd float %a, %b
+    %t_13 = frem float %t_12, %t_21
+    %x = fadd float %t_13, 0x3FE0000000000000
+    ret float %x
 }

@@ -973,7 +973,7 @@ export_llvm times3_pf is "float times3_f (dpair*)"
   defines \<open>typedef struct {float a; float b;} dpair;\<close>
 
 
-value "real_of_single (single_of_word 0x3FD5555555555555)"
+value "real_of_single (single_of_word 0x3F000000)"
 
 (* TODO: More meaningful tests, and check results! 
 
@@ -990,6 +990,7 @@ definition test_float :: "single \<Rightarrow> single \<Rightarrow> single llM" 
     t\<^sub>1 \<leftarrow> ll_fsub_f t\<^sub>1 t\<^sub>2;
     t\<^sub>2 \<leftarrow> ll_fadd_f a b;
     t\<^sub>1 \<leftarrow> ll_frem_f t\<^sub>1 t\<^sub>2;
+    t\<^sub>1 \<leftarrow> ll_fadd_f t\<^sub>1 (single_of_word 0x3F000000);
   
     Mreturn t\<^sub>1
   }"
@@ -1025,7 +1026,7 @@ export_llvm times3_pd is "double times3_d (dpair*)"
   defines \<open>typedef struct {double a; double b;} dpair;\<close>
 
 
-value "real_of_double (double_of_word 0x3FD5555555555555)"
+value "real_of_double (double_of_word 0x3FE0000000000000)"
 
 (* TODO: More meaningful tests, and check results! 
 
@@ -1042,6 +1043,7 @@ definition test_double :: "double \<Rightarrow> double \<Rightarrow> double llM"
     t\<^sub>1 \<leftarrow> ll_fsub_d t\<^sub>1 t\<^sub>2;
     t\<^sub>2 \<leftarrow> ll_fadd_d a b;
     t\<^sub>1 \<leftarrow> ll_frem_d t\<^sub>1 t\<^sub>2;
+    t\<^sub>1 \<leftarrow> ll_fadd_d t\<^sub>1 (double_of_word 0x3FE0000000000000);
   
     Mreturn t\<^sub>1
   }"

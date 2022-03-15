@@ -1,12 +1,20 @@
 section \<open>Basic Lemmas for Floating Point Reasoning\<close>
 theory IEEE_Fp_Add_Basic
-imports IEEE_Floating_Point.Conversion_IEEE_Float
+imports IEEE_Floating_Point.Conversion_IEEE_Float "HOL-Library.Rewrite"
 begin
+  (* TODO: Move! *)
+
+
+
   subsection \<open>Bounds\<close>  
   lemma fraction_upper_bound: "fraction (a::('a,'b) float) < 2^LENGTH('b)"
     apply transfer
     by auto
 
+  lemma exponent_upper_bound: "exponent f < 2 ^ LENGTH('e)" for f :: "('e,'f) float" 
+    apply transfer
+    by auto
+    
   lemma emax_gt1_iff_e_gt1[simp]: "Suc 0 < emax TYPE(('e, 'f) float) \<longleftrightarrow> LENGTH('e)>1"
     apply (clarsimp simp: emax_def)
     by (smt (z3) Suc_lessI len_gt_0 mask_1 max_word_mask sint_n1 unat_1 unat_eq_1 unat_max_word_pos word_sint_1)
@@ -81,6 +89,16 @@ begin
         
   subsection \<open>Classification\<close>  
   
+  
+    lemma float_cases':
+      obtains "  is_nan f" "\<not> is_normal f" "\<not> is_denormal f" "\<not> is_zero f" "\<not> is_infinity f"
+            | "\<not> is_nan f" "  is_normal f" "\<not> is_denormal f" "\<not> is_zero f" "\<not> is_infinity f"
+            | "\<not> is_nan f" "\<not> is_normal f" "  is_denormal f" "\<not> is_zero f" "\<not> is_infinity f"
+            | "\<not> is_nan f" "\<not> is_normal f" "\<not> is_denormal f" "  is_zero f" "\<not> is_infinity f"
+            | "\<not> is_nan f" "\<not> is_normal f" "\<not> is_denormal f" "\<not> is_zero f" "  is_infinity f"
+      by (metis float_cases float_distinct normal_imp_not_zero)
+    
+  
     lemma normalize_sign[simp]:
       "sign f \<noteq> 0 \<longleftrightarrow> sign f = Suc 0"
       "sign f \<noteq> Suc 0 \<longleftrightarrow> sign f = 0"
@@ -126,7 +144,8 @@ begin
       subgoal by (meson is_nan_def the_nan_is_nan)
       done
       
-    
+    lemma is_infinity_inf[simp,intro!]: "is_infinity \<infinity>"
+      by (simp add: float_defs(2)) 
     
     
   subsubsection \<open>Conmponent-Wise Equality\<close>
@@ -335,7 +354,17 @@ begin
   end  
     
   subsection \<open>Component-Wise Floating Point Operations\<close>  
-    
+
+  definition "Abs_float' s e f \<equiv> Abs_float (of_nat s, of_nat e, of_nat f)"
+  
+  lemma Abs_float'_parts[simp]:
+    "sign (Abs_float' s e f :: ('e,'f) float) = s mod 2"
+    "exponent (Abs_float' s e f :: ('e,'f) float) = e mod 2^LENGTH('e)"
+    "fraction (Abs_float' s e f :: ('e,'f) float) = f mod 2^LENGTH('f)"
+    unfolding Abs_float'_def
+    apply (all transfer')
+    by (simp_all add: unat_of_nat)
+
   subsubsection \<open>Compare\<close>  
   definition "fcc_le_samesign f f' \<longleftrightarrow> (
     if exponent f < exponent f' then True 

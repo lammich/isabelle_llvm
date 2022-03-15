@@ -1,6 +1,6 @@
 section \<open>Next Floating Point Number\<close>
 theory IEEE_Fp_Nextfloat
-imports IEEE_Fp_Add_Basic
+imports IEEE_Fp_Add_Basic "HOL-Library.Rewrite"
 begin
 
   subsection \<open>Miscellaneous\<close>
@@ -1376,7 +1376,15 @@ begin
   | "check_zs_r float_To_zero s r f = check_zs_r_tz s r f"
   | "check_zs_r To_nearest s r f = check_zs_r_tn s r f"
   
+  lemma check_zs_r_alt: "check_zs_r m s r f = (case m of 
+    To_ninfinity \<Rightarrow> check_zs_r_ninf s r f
+  | To_pinfinity \<Rightarrow> check_zs_r_pinf s r f
+  | float_To_zero \<Rightarrow> check_zs_r_tz s r f  
+  | To_nearest \<Rightarrow> check_zs_r_tn s r f
+  )"
+    apply (cases m) by (auto simp: fun_eq_iff)
   
+    
   lemma check_zs_r:
     fixes f :: "('e,'f) float"
     assumes LEN[simp]: "1 < LENGTH('e)"
@@ -1408,6 +1416,21 @@ begin
     
   subsection \<open>Executable Result Checks for Operations\<close>
 
+  (* Setup for sqrt *)
+  lemma le_sqrt_code[code_unfold]: "a \<le> sqrt b \<longleftrightarrow> (if b<0 then a\<le>0 \<and> -a\<^sup>2\<le>b else a\<le>0 \<or> a\<^sup>2\<le>b)"
+    by (smt (verit) real_sqrt_abs real_sqrt_le_iff real_sqrt_minus)
+    
+  lemma lt_sqrt_code[code_unfold]: "a < sqrt b \<longleftrightarrow> (if b<0 then a\<le>0 \<and> -a\<^sup>2<b else a<0 \<or> a\<^sup>2<b)"
+    by (smt (verit, ccfv_SIG) real_sqrt_abs real_sqrt_less_mono real_sqrt_minus)
+    
+  lemma sqrt_le_code[code_unfold]: "sqrt a \<le> b \<longleftrightarrow> (if a<0 then 0\<le>b \<or> a\<le>-b\<^sup>2 else 0\<le>b \<and> a\<le>b\<^sup>2)"  
+    by (smt (verit, best) real_sqrt_abs real_sqrt_minus sqrt_ge_absD sqrt_le_D)
+    
+  lemma sqrt_lt_code[code_unfold]: "sqrt a < b \<longleftrightarrow> (if a<0 then 0<b \<or> a < -b\<^sup>2 else 0\<le>b \<and> a<b\<^sup>2)"  
+    by (smt (verit, best) real_sqrt_abs real_sqrt_minus sqrt_ge_absD sqrt_le_D)
+    
+  
+  
   text \<open>Handling NaN\<close>
   
   lift_definition nan01 :: "('e,'f) float" is "(0,-1,1)" .
@@ -1579,8 +1602,367 @@ begin
     apply (elim check_decomp_aux check_fr[OF LEN, THEN eq_nan_eqI])
     by simp_all
 
+
     
-  export_code check_fadd check_fsub check_fmul check_fdiv check_fmul_add checking SML  
+  lemma abs_le_abs_conv: "\<bar>a\<bar> \<le> \<bar>b\<bar> \<longleftrightarrow> (
+    if a<0 \<and> b<0 then -a\<le>-b
+    else if a<0 then -a\<le>b
+    else if b<0 then a\<le>-b
+    else a\<le>b
+  )" for a b :: real by simp
+
+  lemma le_conv_abs: "a\<le>b \<longleftrightarrow> (
+    if a<0 \<and> b<0 then \<bar>b\<bar> \<le> \<bar>a\<bar>
+    else if a<0 then True
+    else if b<0 then False
+    else \<bar>a\<bar> \<le> \<bar>b\<bar>
+  )" for a b :: real
+    by (auto)
+  
+    
+    
+  lemma nz_nlt_conv: "a\<noteq>0 \<Longrightarrow> \<not>(a<0) \<longleftrightarrow> a>0" for a :: real by auto
+      
+  lemma order_sqrt:
+    fixes x y z r a
+    defines "SS \<equiv> sqrt a"
+    shows
+    "x + SS = SS + x"
+    "x + (SS + y) = SS + (x + y)"
+    
+    "x+y+z = x+(y+z)"
+    "x+y-z = x+(y-z)"
+    "x-y+z = x-(y-z)"
+    "x-y-z = x-(y+z)"
+    
+    (*"x+(y+z) = x+y+z"
+    "x+(y-z) = x+y-z"
+    "x-(y+z) = x-y-z"
+    "x-(y-z) = x-y+z"
+    *)
+    
+    "SS + x \<le> y \<longleftrightarrow> SS \<le> y-x"
+    "x \<le> SS + y \<longleftrightarrow> x-y \<le> SS"
+    
+    unfolding SS_def
+    apply (auto simp: field_split_simps)
+    done
+  
+  
+  lemma shift_cmp_right: 
+    "a+b \<le> c \<longleftrightarrow> b \<le> c-a" 
+    "a * sqrt b \<le> c \<longleftrightarrow> (if a=0 then 0\<le>c else if a<0 then c/a \<le> sqrt b else sqrt b \<le> c/a)"
+    for a b c :: real 
+    by (auto simp: field_split_simps)
+    
+  lemma shift_cmp_left: 
+    "a \<le> b + c \<longleftrightarrow> a-b \<le> c" 
+    "a \<le> b * sqrt c \<longleftrightarrow> (if b=0 then a\<le>0 else if b>0 then a/b \<le> sqrt c else sqrt c \<le> a/b)"
+    for a b c :: real 
+    by (auto simp: field_split_simps)
+    
+  thm linorder_cases[where x=0]  
+    
+  lemma sqrt_sgn[simp]: "sqrt (sgn r) = sgn r"
+    by (auto simp: sgn_real_def field_simps real_sqrt_minus)
+  
+  lemma mult_sqrt: 
+    "r*sqrt a = sqrt (sgn r * r\<^sup>2*a)"
+    "sqrt a*r = sqrt (sgn r * r\<^sup>2*a)"
+    by (auto simp: field_simps real_sqrt_mult sgn_real_def real_sqrt_minus)
+  
+  lemma div_sqrt: 
+    "r/sqrt a = sqrt (sgn r * r\<^sup>2/a)"
+    "sqrt a/r = sqrt (sgn r * a / r\<^sup>2)"
+    by (auto simp: field_simps real_sqrt_mult real_sqrt_divide sgn_real_def real_sqrt_minus)
+
+    
+  definition "sqrt_le_sqrt_plus_r a b r \<equiv> (
+    if r = 0 then a \<le> b
+    else if a = 0 then - r \<le> sqrt b
+    else if b = 0 then sqrt a \<le> r
+    else if a < 0 \<and> r < 0 \<and> b < 0 then a + r\<^sup>2 \<le> b \<and> - (b - (a + r\<^sup>2))\<^sup>2 \<le> b * (4 * r\<^sup>2)
+    else if a < 0 \<and> b < 0 then - r\<^sup>2 \<le> b \<or> a + r\<^sup>2 \<le> b \<or> b * (4 * r\<^sup>2) \<le> - (b - (a + r\<^sup>2))\<^sup>2
+    else if r < 0 \<and> b < 0 then False
+    else if b < 0 then - r\<^sup>2 \<le> b \<and> a + b \<le> r\<^sup>2 \<and> - (a + b - r\<^sup>2)\<^sup>2 \<le> b * (4 * r\<^sup>2)
+    else if a < 0 \<and> r < 0 then r\<^sup>2 \<le> b \<or> b + r\<^sup>2 \<le> - a \<or> (- a - (b + r\<^sup>2))\<^sup>2 \<le> b * (4 * r\<^sup>2)
+    else if a < 0 then True
+    else if r < 0 then r\<^sup>2 \<le> b \<and> a \<le> b + r\<^sup>2 \<and> b * (4 * r\<^sup>2) \<le> (a - (b + r\<^sup>2))\<^sup>2
+    else a \<le> b + r\<^sup>2 \<or> (a - (b + r\<^sup>2))\<^sup>2 \<le> b * (4 * r\<^sup>2))"  
+   
+        
+  lemma sqrt_le_sqrt_plus_r:
+    shows "sqrt a \<le> sqrt b + r \<longleftrightarrow> sqrt_le_sqrt_plus_r a b r"
+  proof -
+
+    { 
+      fix xb
+      assume A: "r<0"
+      have "a + (r * r + r * (sqrt b * 2)) \<le> xb \<longleftrightarrow> sqrt b \<ge> (-a + xb - r\<^sup>2)/(2*r)"
+        using A
+        by (auto simp: field_simps power2_eq_square)
+    } note 1=this
+
+    { 
+      fix xb
+      assume A: "0<r"
+      have "a + (r * r + r * (sqrt b * 2)) \<le> xb \<longleftrightarrow> sqrt b \<le> (-a +xb - r\<^sup>2)/(2*r)"
+        using A
+        by (auto simp: field_simps power2_eq_square)
+    } note 2=this
+    
+    have C1: "a \<le> b + x \<longleftrightarrow> a-b \<le> x" for x by auto
+    
+    {
+      fix xb
+      assume A: "r<0"
+      have "xb \<le> r * r + r * (sqrt b * 2) \<longleftrightarrow> sqrt b \<le> (xb-r\<^sup>2) / (2*r)"
+        using A
+        by (auto simp: field_simps power2_eq_square)
+    
+    } note 3=this
+    
+    {
+      fix xb
+      assume A: "0<r"
+      have "xb \<le> r * r + r * (sqrt b * 2) \<longleftrightarrow> (xb-r\<^sup>2) / (2*r) \<le> sqrt b"
+        using A
+        by (auto simp: field_simps power2_eq_square)
+    
+    } note 4=this
+        
+          
+  
+    show ?thesis
+      apply (cases "r=0"; cases "r<0"; cases "a=0"; cases "a<0"; cases "b=0"; cases "b<0"; simp add: nz_nlt_conv field_split_simps real_0_le_add_iff)
+      apply (simp_all add: sqrt_le_sqrt_plus_r_def)
+      unfolding sqrt_le_code
+      apply (simp_all add: field_simps power2_eq_square real_0_le_add_iff)
+      unfolding 1 2 C1 3 4
+      unfolding le_sqrt_code sqrt_le_code
+      by (simp_all add: field_split_simps power2_eq_square)
+  qed
+    
+  definition "sqrt_diff_cmp_le a r b s \<equiv> sqrt_le_sqrt_plus_r (sgn s * s\<^sup>2 * (4 * b)) (sgn r * r\<^sup>2 * (4 * a)) (- (\<bar>a\<bar> + (r * r - (\<bar>b\<bar> + s * s))))"
+
+  export_code sqrt_diff_cmp_le in SML
+  
+  lemma sqrt_diff_cmp_le:
+    shows "\<bar>sqrt a - r\<bar> \<le> \<bar>sqrt b - s\<bar> \<longleftrightarrow> sqrt_diff_cmp_le a r b s"
+  proof -  
+  
+    note CC = linorder_cases[where x=0]
+  
+    show ?thesis
+      apply (simp add: abs_le_square_iff power2_eq_square field_simps)
+      apply (simp_all add: order_sqrt mult_sqrt)
+      apply (simp flip: sqrt_le_sqrt_plus_r add: sqrt_diff_cmp_le_def)
+      apply (simp add: field_split_simps power2_eq_square)
+      done
+      
+  qed        
+  
+  definition "sqrt_lt_sqrt_plus_r a b r \<equiv> (
+    if r = 0 then a < b
+    else if a = 0 then - r < sqrt b
+    else if b = 0 then sqrt a < r
+    else if a < 0 \<and> r < 0 \<and> b < 0 then (a + r\<^sup>2 \<le> b \<and> - (b - (a + r\<^sup>2))\<^sup>2 < b * (4 * r\<^sup>2))
+    else if a < 0 \<and> b < 0 then (- r\<^sup>2 < b \<or> a + r\<^sup>2 < b \<or> b * (4 * r\<^sup>2) < - (b - (a + r\<^sup>2))\<^sup>2)
+    else if r < 0 \<and> b < 0 then False
+    else if b < 0 then (- r\<^sup>2 \<le> b \<and> a + b \<le> r\<^sup>2 \<and> - (a + b - r\<^sup>2)\<^sup>2 < b * (4 * r\<^sup>2))
+    else if a < 0 \<and> r < 0 then (r\<^sup>2 < b \<or> b + r\<^sup>2 < - a \<or> (- a - (b + r\<^sup>2))\<^sup>2 < b * (4 * r\<^sup>2))
+    else if a < 0 then True
+    else if r < 0 then (r\<^sup>2 \<le> b \<and> a \<le> b + r\<^sup>2 \<and> b * (4 * r\<^sup>2) < (a - (b + r\<^sup>2))\<^sup>2)
+    else (a < b + r\<^sup>2 \<or> (a - (b + r\<^sup>2))\<^sup>2 < b * (4 * r\<^sup>2)))"
+   
+  lemma sqrt_lt_sqrt_plus_r:
+    shows "sqrt a < sqrt b + r \<longleftrightarrow> sqrt_lt_sqrt_plus_r a b r"
+  proof -
+
+    { 
+      fix xb
+      assume A: "r<0"
+      have "a + (r * r + r * (sqrt b * 2)) < xb \<longleftrightarrow> sqrt b > (-a + xb - r\<^sup>2)/(2*r)"
+        using A
+        by (auto simp: field_simps power2_eq_square)
+    } note 1=this
+
+    { 
+      fix xb
+      assume A: "0<r"
+      have "a + (r * r + r * (sqrt b * 2)) < xb \<longleftrightarrow> sqrt b < (-a +xb - r\<^sup>2)/(2*r)"
+        using A
+        by (auto simp: field_simps power2_eq_square)
+    } note 2=this
+    
+    have C1: "a < b + x \<longleftrightarrow> a-b < x" for x by auto
+    
+    {
+      fix xb
+      assume A: "r<0"
+      have "xb < r * r + r * (sqrt b * 2) \<longleftrightarrow> sqrt b < (xb-r\<^sup>2) / (2*r)"
+        using A
+        by (auto simp: field_simps power2_eq_square)
+    
+    } note 3=this
+    
+    {
+      fix xb
+      assume A: "0<r"
+      have "xb < r * r + r * (sqrt b * 2) \<longleftrightarrow> (xb-r\<^sup>2) / (2*r) < sqrt b"
+        using A
+        by (auto simp: field_simps power2_eq_square)
+    
+    } note 4=this
+        
+          
+  
+    show ?thesis
+      apply (cases "r=0"; cases "r<0"; cases "a=0"; cases "a<0"; cases "b=0"; cases "b<0"; simp add: nz_nlt_conv field_split_simps real_0_less_add_iff)
+      apply (simp_all add: sqrt_lt_sqrt_plus_r_def)
+      unfolding sqrt_lt_code
+      apply (simp_all add: field_simps power2_eq_square real_0_less_add_iff real_0_le_add_iff)
+      unfolding 1 2 C1 3 4
+      unfolding lt_sqrt_code sqrt_lt_code le_sqrt_code sqrt_le_code
+      apply (simp_all add: field_split_simps power2_eq_square)
+      done
+  qed
+    
+  definition "sqrt_diff_cmp_lt a r b s \<equiv> sqrt_lt_sqrt_plus_r (sgn s * s\<^sup>2 * (4 * b)) (sgn r * r\<^sup>2 * (4 * a)) (- (\<bar>a\<bar> + (r * r - (\<bar>b\<bar> + s * s))))"
+
+  export_code sqrt_diff_cmp_lt in SML
+  
+  (* TODO: Move  *)
+  lemma abs_lt_square_iff: "\<bar>x\<bar> < \<bar>y\<bar> \<longleftrightarrow> x\<^sup>2 < y\<^sup>2" for x y :: "'a::linordered_idom"
+    using abs_le_square_iff linorder_not_le by blast
+
+  lemma power_strict_mono_iff [simp]:
+    fixes a b :: "'a::linordered_idom"
+    shows "\<lbrakk>a \<ge> 0; b \<ge> 0; n>0\<rbrakk> \<Longrightarrow> a ^ n < b ^ n \<longleftrightarrow> a < b"
+    using power_less_imp_less_base power_strict_mono by blast
+    
+    
+  definition "lt_pos_sqrt_diff a b x \<equiv> let
+    n\<^sub>1 = x<a\<^sup>2;
+    n\<^sub>2 = x<b\<^sup>2
+  in case (n\<^sub>1,n\<^sub>2) of
+    (False,False) \<Rightarrow> a > b
+  | (True,True)   \<Rightarrow> a<b
+  | (False,True)  \<Rightarrow>  4*x < (a+b)\<^sup>2
+  | (True,False)  \<Rightarrow> (a+b)\<^sup>2 < 4*x
+  "  
+    
+  lemma sqrt_diff_cmp_pos:
+    assumes "a>0" "b>0" "x>0"
+    shows "\<bar>sqrt x - a\<bar> < \<bar>sqrt x - b\<bar> \<longleftrightarrow> lt_pos_sqrt_diff a b x"  
+  proof -
+  
+    have 1: "sqrt x < a \<longleftrightarrow> x<a\<^sup>2" by (smt (verit, ccfv_SIG) assms(1) le_sqrt_code real_le_rsqrt)
+    have 2: "sqrt x < b \<longleftrightarrow> x<b\<^sup>2" by (smt (verit, ccfv_SIG) assms(2) le_sqrt_code real_le_rsqrt)
+  
+    have 3: "(a < 2 * sqrt x - b) = ((a + b)\<^sup>2 < 4 * x)"
+    proof -
+      have "(a < 2 * sqrt x - b) \<longleftrightarrow> a+b < sqrt (4*x)" by (auto simp: field_split_simps real_sqrt_mult)
+      also have "\<dots> \<longleftrightarrow> (a+b)\<^sup>2 < 4*x" using assms(1) assms(2) lt_sqrt_code real_less_rsqrt by force
+      finally show ?thesis .
+    qed
+    
+    have 4: "(2 * sqrt x - a < b) = (4 * x < (a + b)\<^sup>2)"
+    proof -
+      have "(2 * sqrt x - a < b) \<longleftrightarrow> 2 * sqrt x < a+b" by auto
+      also have "\<dots> \<longleftrightarrow> (2*sqrt x)\<^sup>2 < (a+b)\<^sup>2"
+        by (smt (verit, ccfv_SIG) assms(1) assms(2) assms(3) pos2 power_strict_mono real_sqrt_gt_zero)
+      finally show ?thesis using assms(3) by auto  
+    qed
+    
+    show ?thesis
+      using assms
+      by (cases "sqrt x - a < 0"; cases "sqrt x - b < 0"; (simp add: abs_real_def lt_pos_sqrt_diff_def Let_def 1 2 3 4 split: bool.splits))
+  qed
+  
+      
+    
+  lemma sqrt_diff_cmp_lt:
+    shows "\<bar>sqrt a - r\<bar> < \<bar>sqrt b - s\<bar> \<longleftrightarrow> sqrt_diff_cmp_lt a r b s"
+  proof -  
+  
+    note CC = linorder_cases[where x=0]
+  
+    find_theorems "\<bar>_\<bar> \<le> \<bar>_\<bar> \<longleftrightarrow> _"
+    
+    show ?thesis
+      apply (simp add: abs_lt_square_iff power2_eq_square field_simps)
+      apply (simp_all add: order_sqrt mult_sqrt)
+      apply (simp flip: sqrt_lt_sqrt_plus_r add: sqrt_diff_cmp_lt_def)
+      apply (simp add: field_split_simps power2_eq_square)
+      done
+      
+  qed        
+    
+  definition "check_zs_r_sqrt m s r res \<equiv> check_zs_r m s (sqrt r) res"
+  
+  lemmas [code_unfold] = check_zs_r_sqrt_def[symmetric] 
+  
+  lemma sqrt_cmp_z_simps:
+    "sqrt x < 0 \<longleftrightarrow> x<0"
+    "sqrt x > 0 \<longleftrightarrow> x>0"
+    "sqrt x = 0 \<longleftrightarrow> x=0"
+    "sqrt x \<le> 0 \<longleftrightarrow> x\<le>0"
+    "sqrt x \<ge> 0 \<longleftrightarrow> x\<ge>0"
+    by auto
+    
+  lemma sqrt_eq_conv:
+    "sqrt r = x \<longleftrightarrow> sgn r = sgn x \<and> \<bar>r\<bar> = x\<^sup>2"  
+    "x = sqrt r \<longleftrightarrow> sgn r = sgn x \<and> \<bar>r\<bar> = x\<^sup>2"  
+    apply (auto simp: field_split_simps sgn_real_def power2_eq_square)
+    by (metis abs_of_nonpos linorder_le_less_linear real_sqrt_abs2 real_sqrt_minus verit_minus_simplify(4))+
     
 
+  (*
+    TODO: We use the more complicated sqrt_diff_cmp_lt here, 
+    as it is hard, without rewrite-with-cong-rules, to do the rewrite
+    under the side-conditions enforced by the if-statements, i.e.,
+    that the operands are actually positive!
+    
+    See thm sqrt_diff_cmp_pos for a simpler version, that, however, requires these side conditions
+  *)    
+  schematic_goal check_zs_r_sqrt_code[code]: "check_zs_r_sqrt m s r res \<longleftrightarrow> ?foo"  
+    unfolding check_zs_r_sqrt_def
+    unfolding check_zs_r_alt check_zs_r_tn_def check_zs_r_tn_aux_def lbound_def rbound_def is_close_def Let_def
+    unfolding check_zs_r_tz_def check_zs_r_pinf_def check_zs_r_ninf_def
+    unfolding sqrt_cmp_z_simps sqrt_diff_cmp_lt
+    unfolding sqrt_eq_conv
+    by (rule refl)
+    
+  export_code check_zs_r_sqrt in SML  
+    
+        
+  definition check_fsqrt :: "roundmode \<Rightarrow> ('e ,'f) float \<Rightarrow> ('e ,'f) float \<Rightarrow> bool"
+    where "check_fsqrt m a res =
+      (if is_nan a then is_nan res
+       else if is_zero a \<or> is_infinity a \<and> sign a = 0 then res=a
+       else if sign a = 1 then is_nan res
+       else check_zs_r_sqrt m (sign a) (valof a) res)"
+
+  lemma check_fsqrt:
+    fixes a b :: "('e,'f) float"
+    assumes LEN[simp]: "1 < LENGTH('e)"
+    shows "check_fsqrt m a b \<Longrightarrow> fsqrt m a =\<^sub>N\<^sub>a\<^sub>N b"
+    unfolding fsqrt_def check_fsqrt_def Let_def check_zs_r_sqrt_def
+    apply (elim check_decomp_aux check_zs_r[OF LEN, THEN eq_nan_eqI])
+    by simp_all
+       
+           
+  export_code check_fadd check_fsub check_fmul check_fdiv check_fmul_add check_fsqrt checking SML  
+
+  find_consts "(_,_) float \<Rightarrow> (_,_) float"  
+    
+    
+  term valof
+  
+  
+  
+  
+  
+  
 end

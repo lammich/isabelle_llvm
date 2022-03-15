@@ -61,6 +61,7 @@ structure FP_test_parser = struct
       | ("b32-",[a,b,c]) => check_fsub32 rm a b c
       | ("b32*",[a,b,c]) => check_fmul32 rm a b c
       | ("b32/",[a,b,c]) => check_fdiv32 rm a b c
+      | ("b32V",[a,b]) => check_fsqrt32 rm a b
       | ("b32*+",[a,b,c,d]) => check_fmul_add32 rm a b c d
       | (_,_) => error ("Unknown fun or arg type")
     end

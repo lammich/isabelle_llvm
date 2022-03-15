@@ -1,6 +1,6 @@
 section \<open>Simple Memory Model\<close>
 theory Simple_Memory
-imports "../../lib/LLVM_Integer" "../../lib/LLVM_Single" "../../lib/LLVM_Double"  "../../lib/MM/MMonad" 
+imports "../../lib/LLVM_Integer" "../../lib/LLVM_Float_Types" "../../lib/MM/MMonad" 
 begin
 
   text \<open>Here, we combine a model of LLVM values, with our generic block-based memory model\<close>

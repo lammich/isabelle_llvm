@@ -927,8 +927,8 @@ lemma hn_unat_numeral[sepref_fr_rules]:
   "\<lbrakk>numeral n \<in> unats LENGTH('a)\<rbrakk> \<Longrightarrow> 
     hn_refine \<box> (Mreturn (numeral n)) \<box> (unat_assn' TYPE('a::len)) (\<lambda>_. True) (RETURN$(PR_CONST (unat_const TYPE('a) (numeral n))))"
   apply sepref_to_hoare unfolding unat_rel_def unat.rel_def in_br_conv 
-  apply vcg'
-  using max_unat_def take_bit_nat_eq_self by force
+  apply vcg' 
+  by (metis id_apply max_unat_def mod_less of_nat_eq_id take_bit_eq_mod unat_bintrunc unsigned_numeral)
 
   
 lemma hn_unat_ops[sepref_fr_rules]:
