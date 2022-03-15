@@ -12,16 +12,6 @@ begin
     such that we can use the verified conversion in our code generator.
   \<close>
 
-  (*
-  xxx, ctd here:
-    clean up DONE
-    DONE Join LLVM_Single and LLVM_Double to LLVM_floating_point,
-    DONE use FP32/FP64 for representation as numbers.
-    transfer correctness thm about conversion also to this repr.
-    use in code generator.
-  *)
-
-
   subsection \<open>Find Highest Bit\<close>
   (*
     given n>0, find h such that
