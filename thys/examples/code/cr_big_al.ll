@@ -7,8 +7,9 @@ target triple = "x86_64-pc-linux-gnu"
 declare void @isabelle_llvm_free(i8*)
 declare i8* @isabelle_llvm_calloc(i64, i64)
 
+attributes #0 = { strictfp }
 
-define void @LLVM_DS_Array_arraycpy(i64* %dst, i64* %src, i64 %n) {
+define void @LLVM_DS_Array_arraycpy(i64* %dst, i64* %src, i64 %n) #0 {
 
   start:
     br label %while_start
@@ -30,7 +31,7 @@ define void @LLVM_DS_Array_arraycpy(i64* %dst, i64* %src, i64 %n) {
     ret void
 }
 
-define i64 @cr_big_al(i64 %n) {
+define i64 @cr_big_al(i64 %n) #0 {
 
   start:
     %tmp = icmp eq i64 8, 0
@@ -146,7 +147,7 @@ define i64 @cr_big_al(i64 %n) {
     ret i64 %x8
 }
 
-define void @LLVM_DS_NArray_narray_free(i64* %p) {
+define void @LLVM_DS_NArray_narray_free(i64* %p) #0 {
 
   start:
     %a = ptrtoint i64* %p to i64
@@ -166,7 +167,7 @@ define void @LLVM_DS_NArray_narray_free(i64* %p) {
     ret void
 }
 
-define { i64, { i64, i64* } } @LLVM_DS_Array_List_arl_resize(i64 %c, { i64, { i64, i64* } } %al) {
+define { i64, { i64, i64* } } @LLVM_DS_Array_List_arl_resize(i64 %c, { i64, { i64, i64* } } %al) #0 {
 
   start:
     %l = extractvalue { i64, { i64, i64* } } %al, 0

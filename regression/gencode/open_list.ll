@@ -7,8 +7,9 @@ target triple = "x86_64-pc-linux-gnu"
 declare void @isabelle_llvm_free(i8*)
 declare i8* @isabelle_llvm_calloc(i64, i64)
 
+attributes #0 = { strictfp }
 
-define { i64, %list_elem* } @LLVM_DS_Open_List_os_pop(%list_elem* %p) {
+define { i64, %list_elem* } @LLVM_DS_Open_List_os_pop(%list_elem* %p) #0 {
 
   start:
     %n = load %list_elem, %list_elem* %p
@@ -23,7 +24,7 @@ define { i64, %list_elem* } @LLVM_DS_Open_List_os_pop(%list_elem* %p) {
     ret { i64, %list_elem* } %x
 }
 
-define %list_elem* @os_rem(i64 %x, %list_elem* %p) {
+define %list_elem* @os_rem(i64 %x, %list_elem* %p) #0 {
 
   start:
     %a = ptrtoint %list_elem* %p to i64
@@ -66,7 +67,7 @@ define %list_elem* @os_rem(i64 %x, %list_elem* %p) {
     ret %list_elem* %x3
 }
 
-define void @os_pop(%list_elem* %xsi, { i64, %list_elem* }* %resultp) {
+define void @os_pop(%list_elem* %xsi, { i64, %list_elem* }* %resultp) #0 {
 
   start:
     %r = call { i64, %list_elem* } @LLVM_DS_Open_List_os_pop (%list_elem* %xsi)
@@ -74,13 +75,13 @@ define void @os_pop(%list_elem* %xsi, { i64, %list_elem* }* %resultp) {
     ret void
 }
 
-define %list_elem* @os_empty() {
+define %list_elem* @os_empty() #0 {
 
   start:
     ret %list_elem* null
 }
 
-define %list_elem* @os_prepend(i64 %a, %list_elem* %n) {
+define %list_elem* @os_prepend(i64 %a, %list_elem* %n) #0 {
 
   start:
     %b = zext i1 1 to i64
@@ -94,14 +95,14 @@ define %list_elem* @os_prepend(i64 %a, %list_elem* %n) {
     ret %list_elem* %r
 }
 
-define %list_elem* @os_reverse(%list_elem* %p) {
+define %list_elem* @os_reverse(%list_elem* %p) #0 {
 
   start:
     %x = call %list_elem* @LLVM_DS_Open_List_os_reverse_aux (%list_elem* null, %list_elem* %p)
     ret %list_elem* %x
 }
 
-define i8 @os_is_empty(%list_elem* %xsi) {
+define i8 @os_is_empty(%list_elem* %xsi) #0 {
 
   start:
     %a = ptrtoint %list_elem* %xsi to i64
@@ -120,7 +121,7 @@ define i8 @os_is_empty(%list_elem* %xsi) {
     ret i8 %x
 }
 
-define %list_elem* @LLVM_DS_Open_List_os_reverse_aux(%list_elem* %q, %list_elem* %p) {
+define %list_elem* @LLVM_DS_Open_List_os_reverse_aux(%list_elem* %q, %list_elem* %p) #0 {
 
   start:
     %a = ptrtoint %list_elem* %p to i64

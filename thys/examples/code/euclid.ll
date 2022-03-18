@@ -6,8 +6,9 @@ target triple = "x86_64-pc-linux-gnu"
 
 
 
+attributes #0 = { strictfp }
 
-define i64 @euclid(i64 %a, i64 %b) {
+define i64 @euclid(i64 %a, i64 %b) #0 {
 
   start:
     %xa = insertvalue { i64, i64 } zeroinitializer, i64 %a, 0

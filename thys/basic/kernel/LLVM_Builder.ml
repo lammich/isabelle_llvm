@@ -40,8 +40,14 @@ signature LLVM_BUILDER = sig
   val mkc_null: ty -> value
   val mkc_fun: ty -> string -> value
   
+  (* Attributes *)
+  type attributes
+  val declare_attributes: T -> string -> attributes
+  val add_every_proc_attributes: T -> attributes -> unit
+  val declare_every_proc_attributes: T -> string -> attributes
+  
   (* Procedures *)
-  val open_proc: T -> ty option -> string -> (ty * string) list -> value list
+  val open_proc: T -> ty option -> string -> (ty * string) list -> attributes list -> value list
   val close_proc: T -> unit
 
   (* Basic Blocks *)
@@ -134,6 +140,8 @@ structure LLVM_Builder : LLVM_BUILDER = struct
   
   type label = string
 
+  type attributes = int
+  
     
   datatype ty = 
       TInt of int 
@@ -149,6 +157,8 @@ structure LLVM_Builder : LLVM_BUILDER = struct
   
   type T = {
     next_id : int ref,
+    next_attr : attributes ref,
+    every_proc_attrs : attributes list ref,
     out : (unit -> string) list ref,
     in_proc : bool ref,
     curr_bb : label option ref,
@@ -160,6 +170,8 @@ structure LLVM_Builder : LLVM_BUILDER = struct
 
   fun builder_aux () : T = { 
     next_id = Unsynchronized.ref 0, 
+    next_attr = Unsynchronized.ref 0, 
+    every_proc_attrs = Unsynchronized.ref [],
     out = Unsynchronized.ref [],
     in_proc = Unsynchronized.ref false,
     curr_bb = Unsynchronized.ref NONE,
@@ -354,7 +366,10 @@ structure LLVM_Builder : LLVM_BUILDER = struct
   fun fresh_id (builder:T) = iop (#next_id builder) (fn i => (i,i+1))
   val fresh_id_str = Int.toString o fresh_id
   
-  
+  fun next_attr_id(builder:T) = iop (#next_attr builder) (fn i => (i,i+1))
+
+  fun add_every_proc_attributes (builder:T) i = Unsynchronized.change (#every_proc_attrs builder) (fn is => is@[i])
+    
   fun check_regname b (SOME s) = let val s = variant_reg b s in SOME s end
     | check_regname _ NONE = NONE
 
@@ -386,6 +401,10 @@ structure LLVM_Builder : LLVM_BUILDER = struct
 
   fun pr_ty_attrs ty attrs = pr_ty ty ^ (map (prefix " ") attrs |> implode)
   fun pr_tys_attrs tys attrs = separate ", " (map2 pr_ty_attrs tys attrs) |> implode
+  
+  fun pr_attr i = "#"^pr_int i
+  
+  fun pr_attrs is = separate " " (map pr_attr is) |> implode
   
   fun decl_ext_fun_attrs b rty name ptys pattrs = let
     val raw = "declare" ^# pr_ty' rty ^# pr_proc name ^ "(" ^ pr_tys_attrs ptys pattrs ^ ")"
@@ -423,17 +442,36 @@ structure LLVM_Builder : LLVM_BUILDER = struct
     writeln b (quote_name label ^ ":");
     #curr_bb b := SOME label
   )
+
   
-  fun open_proc (builder:T) rty name params = let
+  
+  fun declare_attributes (builder:T) content = let
+    val i = next_attr_id(builder)
+    val _ = writeln builder ("attributes" ^# pr_attr i ^# "=" ^# "{" ^# content ^# "}")
+  in
+    i
+  end
+  
+  fun declare_every_proc_attributes (builder:T) content = let
+    val i = declare_attributes builder content
+    val _ = add_every_proc_attributes builder i
+  in
+    i
+  end
+  
+    
+  fun open_proc (builder:T) rty name params attributes = let
     val _ = ! (#in_proc builder) andalso raise Error "open_proc: Already open";
     val _ = #local_names builder := Name.context;
-    
+
+    val attributes = !(#every_proc_attrs builder) @ attributes
+        
     (* val _ = map (apsnd (define_name builder)) params *)
     
     val params = map (apsnd (variant_name builder)) params
     
     val _ = emptyln builder
-    val _ = writeln builder ("define" ^# pr_ty' rty ^# pr_proc name ^ "(" ^ pr_params params ^ ")" ^# "{" );
+    val _ = writeln builder ("define" ^# pr_ty' rty ^# pr_proc name ^ "(" ^ pr_params params ^ ")" ^# pr_attrs attributes ^# "{" );
     
     val _ = #in_proc builder := true;
     

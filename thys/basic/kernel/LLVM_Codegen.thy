@@ -1117,7 +1117,7 @@ begin
         
         val cop = llc_op_to_4xfloat_ss b vtab
         
-        val args = [cop x1, cop x2, ll_zeroinit_2xdouble, mask, rounding]
+        val args = [cop x1, cop x2, ll_zeroinit_4xfloat, mask, rounding]
         val attrs = [ [],    [],       [],                 [],  ["immarg"] ]
         
         val res = LLVM_Builder.mk_external_call_attrs b (SOME "mmx_") ll_t_4xfloat iname args attrs
@@ -1399,7 +1399,7 @@ begin
         val params = map (apfst (llc_ty b)) params
         val rty = map_option (llc_ty b) rty
         
-        val paramsv = LLVM_Builder.open_proc b rty pname params
+        val paramsv = LLVM_Builder.open_proc b rty pname params []
         
         val vtab = fold (Symtab.update_new o apfst snd) (params ~~ paramsv) Symtab.empty
         
@@ -1418,8 +1418,22 @@ begin
         LLVM_Builder.decl_named_ty b name sty
       end
           
+      fun init_attributes ctxt b = let
+        val attrs=
+          ["strictfp"]
+        @ (if Config.get ctxt llc_compile_avx512f then ["\"target-features\"=\"+avx512f\""] else [])
+        
+        val attrs = space_implode " " attrs
+        
+        val _ = LLVM_Builder.declare_every_proc_attributes b attrs
+      in
+        b
+      end
+      
       fun compile_to_llvm ctxt (tys,eqns) = let
-        val b = LLVM_Builder.builder ()
+        val b = LLVM_Builder.builder () 
+              |> init_attributes ctxt
+        
         (* val _ = LLVM_Builder.set_dbg_trace b true *)
         val _ = map (build_named_ty b) tys
         val _ = map (build_eqn ctxt b) eqns

@@ -1,19 +1,20 @@
 theory FP_test_base
 imports 
   "../../thys/lib/IEEE_Fp_Nextfloat"
+  "../../thys/lib/IEEE_Float_To_Word"
   "HOL-Library.Code_Target_Nat"
   "HOL-Library.Code_Target_Int"
 begin
 
-  type_synonym float32 = "(8,23)float"
-  type_synonym float64 = "(11,52)float"
-
-  
   definition fp_gen :: "integer \<Rightarrow> integer \<Rightarrow> integer \<Rightarrow> (_,_) float" 
     where "fp_gen s f e \<equiv> Abs_float (of_nat (nat_of_integer s), of_int (int_of_integer e), of_nat (nat_of_integer f))"
   
   definition fp32 :: "_ \<Rightarrow> _ \<Rightarrow> _ \<Rightarrow> float32" where "fp32 \<equiv> fp_gen"
   definition fp64 :: "_ \<Rightarrow> _ \<Rightarrow> _ \<Rightarrow> float64" where "fp64 \<equiv> fp_gen"
+  
+  definition "single_of_int \<equiv> float_of_fp32 o word_of_integer"
+  definition "double_of_int \<equiv> float_of_fp64 o word_of_integer"
+  
   
   (* Signalling and exceptions are not supported by this framework, so we just map all NaNs to the same value *)
   definition sNaN32 :: float32 where "sNaN32 \<equiv> nan01"
@@ -48,7 +49,7 @@ begin
   
     
   export_code 
-    fp32 fp64 
+    fp32 fp64 single_of_int double_of_int
     sNaN32 qNaN32 plus_zero32 minus_zero32 plus_inf32 minus_inf32
     sNaN64 qNaN64 plus_zero64 minus_zero64 plus_inf64 minus_inf64
     
@@ -58,7 +59,16 @@ begin
     in SML module_name FP_test_base
     file "FP_test_base.sml"
   
-  
+
+  (*  
+  xxx, ctd here: simplify test format, to represent floats as unsigned hex values!
+  write/adapt test checkers:
+    in SML, against semantics
+    in C (direct)
+    in C, using operations exported from LLVM
+      (for rounding modes other than to_nearest, use avxf-512!)
+  *)
+      
   declare [[code abort: closest]]
   
   term round
@@ -109,7 +119,6 @@ begin
   
   value "1 < sqrt (3.3::real)"
   
-  value "fsqrt To_nearest (fp32 1 0x7FFFFF 254)"
   
   value [nbe] "fadd To_nearest (fp32 0 0 127) (fp32 1 0x7FFFFF 254)"
   

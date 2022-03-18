@@ -1,4 +1,5 @@
 structure FP_test_base : sig
+  type 'a word
   type 'a bit0
   type 'a bit1
   type num1
@@ -72,6 +73,10 @@ structure FP_test_base : sig
     roundmode ->
       (num1 bit0 bit1 bit1, num1 bit1 bit0 bit1 bit0 bit0) float ->
         (num1 bit0 bit1 bit1, num1 bit1 bit0 bit1 bit0 bit0) float -> bool
+  val double_of_int :
+    IntInf.int -> (num1 bit0 bit1 bit1, num1 bit1 bit0 bit1 bit0 bit0) float
+  val single_of_int :
+    IntInf.int -> (num1 bit0 bit0 bit0, num1 bit0 bit1 bit1 bit1) float
   val check_fmul_add32 :
     roundmode ->
       (num1 bit0 bit0 bit0, num1 bit0 bit1 bit1 bit1) float ->
@@ -826,12 +831,80 @@ fun take_bit_int n k =
 
 fun of_inta A_ k = Word (take_bit_int (len_of (len0_len A_) Type) k);
 
+fun plus_worda A_ a b = of_inta A_ (plus_int (the_int A_ a) (the_int A_ b));
+
+fun plus_word A_ = {plus = plus_worda A_} : 'a word plus;
+
+fun zero_worda A_ = Word zero_int;
+
+fun zero_word A_ = {zero = zero_worda A_} : 'a word zero;
+
+fun semigroup_add_word A_ = {plus_semigroup_add = plus_word A_} :
+  'a word semigroup_add;
+
+fun numeral_word A_ =
+  {one_numeral = one_word A_, semigroup_add_numeral = semigroup_add_word A_} :
+  'a word numeral;
+
 fun times_worda A_ a b = of_inta A_ (times_inta (the_int A_ a) (the_int A_ b));
 
 fun times_word A_ = {times = times_worda A_} : 'a word times;
 
 fun power_word A_ = {one_power = one_word A_, times_power = times_word A_} :
   'a word power;
+
+fun ab_semigroup_add_word A_ =
+  {semigroup_add_ab_semigroup_add = semigroup_add_word A_} :
+  'a word ab_semigroup_add;
+
+fun semigroup_mult_word A_ = {times_semigroup_mult = times_word A_} :
+  'a word semigroup_mult;
+
+fun semiring_word A_ =
+  {ab_semigroup_add_semiring = ab_semigroup_add_word A_,
+    semigroup_mult_semiring = semigroup_mult_word A_}
+  : 'a word semiring;
+
+fun mult_zero_word A_ =
+  {times_mult_zero = times_word A_, zero_mult_zero = zero_word A_} :
+  'a word mult_zero;
+
+fun monoid_add_word A_ =
+  {semigroup_add_monoid_add = semigroup_add_word A_,
+    zero_monoid_add = zero_word A_}
+  : 'a word monoid_add;
+
+fun comm_monoid_add_word A_ =
+  {ab_semigroup_add_comm_monoid_add = ab_semigroup_add_word A_,
+    monoid_add_comm_monoid_add = monoid_add_word A_}
+  : 'a word comm_monoid_add;
+
+fun semiring_0_word A_ =
+  {comm_monoid_add_semiring_0 = comm_monoid_add_word A_,
+    mult_zero_semiring_0 = mult_zero_word A_,
+    semiring_semiring_0 = semiring_word A_}
+  : 'a word semiring_0;
+
+fun monoid_mult_word A_ =
+  {semigroup_mult_monoid_mult = semigroup_mult_word A_,
+    power_monoid_mult = power_word A_}
+  : 'a word monoid_mult;
+
+fun semiring_numeral_word A_ =
+  {monoid_mult_semiring_numeral = monoid_mult_word A_,
+    numeral_semiring_numeral = numeral_word A_,
+    semiring_semiring_numeral = semiring_word A_}
+  : 'a word semiring_numeral;
+
+fun zero_neq_one_word A_ =
+  {one_zero_neq_one = one_word A_, zero_zero_neq_one = zero_word A_} :
+  'a word zero_neq_one;
+
+fun semiring_1_word A_ =
+  {semiring_numeral_semiring_1 = semiring_numeral_word A_,
+    semiring_0_semiring_1 = semiring_0_word A_,
+    zero_neq_one_semiring_1 = zero_neq_one_word A_}
+  : 'a word semiring_1;
 
 fun nat_of_integer k = Nat (max ord_integer (0 : IntInf.int) k);
 
@@ -896,6 +969,9 @@ fun sign A_ B_ (Abs_float xa) = let
                                   the_nat len_num1 s
                                 end;
 
+fun cast B_ A_ w =
+  Word (take_bit_int (len_of (len0_len A_) Type) (the_int B_ w));
+
 fun uminus_rat p = Frct let
                           val a = quotient_of p;
                           val (aa, b) = a;
@@ -915,8 +991,6 @@ fun divide_rat p q = Frct let
                           end;
 
 fun divide_real (Ratreal x) (Ratreal y) = Ratreal (divide_rat x y);
-
-fun zero_word A_ = Word zero_int;
 
 fun numeral A_ (Bit1 n) =
   let
@@ -982,7 +1056,7 @@ fun valof A_ B_ (Abs_float xa) =
     val (s, (e, f)) = xa;
     val x = Type;
   in
-    (if equal_worda A_ e (zero_word A_)
+    (if equal_worda A_ e (zero_worda A_)
       then times_reala
              (times_reala
                (power power_real (uminus_real one_reala) (the_nat len_num1 s))
@@ -1069,7 +1143,7 @@ fun minus_word A_ a b = of_inta A_ (minus_int (the_int A_ a) (the_int A_ b));
 
 fun topfloat A_ B_ =
   Abs_float
-    (zero_word len_num1,
+    (zero_worda len_num1,
       (uminus_word A_ (of_inta A_ (Int_of_integer (2 : IntInf.int))),
         minus_word B_
           (power (power_word B_) (of_inta B_ (Int_of_integer (2 : IntInf.int)))
@@ -1084,7 +1158,7 @@ fun uminus_float A_ B_ (Abs_float x) =
             end;
 
 fun zero_float A_ B_ =
-  Abs_float (zero_word len_num1, (zero_word A_, zero_word B_));
+  Abs_float (zero_worda len_num1, (zero_worda A_, zero_worda B_));
 
 fun zerosign A_ B_ s a =
   (if is_zero A_ B_ a
@@ -1117,6 +1191,14 @@ fun threshold A_ B_ x =
         (power power_real (Ratreal (of_int (Int_of_integer (2 : IntInf.int))))
           (suc (len_of (len0_len B_) Type)))));
 
+fun drop_bit_int n k =
+  divide_int k (power power_int (Int_of_integer (2 : IntInf.int)) n);
+
+fun drop_bit_word A_ n w = Word (drop_bit_int n (the_int A_ w));
+
+fun word_split A_ B_ C_ w =
+  (cast A_ B_ (drop_bit_word A_ (len_of (len0_len C_) Type) w), cast A_ C_ w);
+
 fun is_infinity A_ B_ a =
   equal_nata (exponent A_ B_ a) (emax A_ B_ Type) andalso
     equal_nata (fraction A_ B_ a) zero_nata;
@@ -1135,10 +1217,12 @@ fun fp64 x =
     (len_bit0 (len_bit0 (len_bit1 (len0_bit0 (len0_bit1 len0_num1))))) x;
 
 fun plus_infinity A_ B_ =
-  Abs_float (zero_word len_num1, (uminus_word A_ (one_worda A_), zero_word B_));
+  Abs_float
+    (zero_worda len_num1, (uminus_word A_ (one_worda A_), zero_worda B_));
 
 fun nan01 A_ B_ =
-  Abs_float (zero_word len_num1, (uminus_word A_ (one_worda A_), one_worda B_));
+  Abs_float
+    (zero_worda len_num1, (uminus_word A_ (one_worda A_), one_worda B_));
 
 val qNaN32 : (num1 bit0 bit0 bit0, num1 bit0 bit1 bit1 bit1) float =
   nan01 (len_bit0 (len_bit0 (len_bit0 len_num1)))
@@ -1199,24 +1283,22 @@ fun equal_float A_ B_ (Abs_float xc) (Abs_float xa) =
   equal_proda (equal_word len_num1) (equal_prod (equal_word A_) (equal_word B_))
     xc xa;
 
-fun plus_word A_ a b = of_inta A_ (plus_int (the_int A_ a) (the_int A_ b));
-
 fun prev_float A_ B_ (Abs_float x) =
   Abs_float
     let
       val (s, (e, f)) = x;
     in
-      (if equal_worda len_num1 s (zero_word len_num1)
-        then (if equal_worda B_ f (zero_word B_) andalso
-                   equal_worda A_ e (zero_word A_)
+      (if equal_worda len_num1 s (zero_worda len_num1)
+        then (if equal_worda B_ f (zero_worda B_) andalso
+                   equal_worda A_ e (zero_worda A_)
                then (one_worda len_num1, (e, f))
-               else (if equal_worda B_ f (zero_word B_)
+               else (if equal_worda B_ f (zero_worda B_)
                       then (s, (minus_word A_ e (one_worda A_),
                                  uminus_word B_ (one_worda B_)))
                       else (s, (e, minus_word B_ f (one_worda B_)))))
         else (if equal_worda B_ f (uminus_word B_ (one_worda B_))
-               then (s, (plus_word A_ e (one_worda A_), zero_word B_))
-               else (s, (e, plus_word B_ f (one_worda B_)))))
+               then (s, (plus_worda A_ e (one_worda A_), zero_worda B_))
+               else (s, (e, plus_worda B_ f (one_worda B_)))))
     end;
 
 fun prev_floata A_ B_ f =
@@ -1258,16 +1340,16 @@ fun next_float A_ B_ (Abs_float x) =
       val (s, (e, f)) = x;
     in
       (if equal_worda len_num1 s (one_worda len_num1)
-        then (if equal_worda B_ f (zero_word B_) andalso
-                   equal_worda A_ e (zero_word A_)
-               then (zero_word len_num1, (e, f))
-               else (if equal_worda B_ f (zero_word B_)
+        then (if equal_worda B_ f (zero_worda B_) andalso
+                   equal_worda A_ e (zero_worda A_)
+               then (zero_worda len_num1, (e, f))
+               else (if equal_worda B_ f (zero_worda B_)
                       then (s, (minus_word A_ e (one_worda A_),
                                  minus_word B_ f (one_worda B_)))
                       else (s, (e, minus_word B_ f (one_worda B_)))))
         else (if equal_worda B_ f (uminus_word B_ (one_worda B_))
-               then (s, (plus_word A_ e (one_worda A_), zero_word B_))
-               else (s, (e, plus_word B_ f (one_worda B_)))))
+               then (s, (plus_worda A_ e (one_worda A_), zero_worda B_))
+               else (s, (e, plus_worda B_ f (one_worda B_)))))
     end;
 
 fun next_floatb A_ B_ f =
@@ -2236,6 +2318,39 @@ fun check_fsqrt32 x =
 fun check_fsqrt64 x =
   check_fsqrt (len_bit1 (len0_bit1 (len0_bit0 len0_num1)))
     (len_bit0 (len_bit0 (len_bit1 (len0_bit0 (len0_bit1 len0_num1))))) x;
+
+fun word_of_integer A_ = of_nata A_ o nat_of_integer;
+
+fun float_of_word A_ B_ C_ D_ xa x =
+  Abs_float (apsnd (word_split A_ C_ D_) (word_split B_ len_num1 A_ x));
+
+fun float_of_fp64 x =
+  float_of_word
+    (len_bit1 (len0_bit1 (len0_bit1 (len0_bit1 (len0_bit1 len0_num1)))))
+    (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))
+    (len_bit1 (len0_bit1 (len0_bit0 len0_num1)))
+    (len_bit0 (len_bit0 (len_bit1 (len0_bit0 (len0_bit1 len0_num1))))) Type x;
+
+fun double_of_int x =
+  (float_of_fp64 o
+    word_of_integer
+      (semiring_1_word
+        (len_bit0
+          (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1))))))))
+    x;
+
+fun float_of_fp32 x =
+  float_of_word (len_bit1 (len0_bit1 (len0_bit1 (len0_bit1 len0_num1))))
+    (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))
+    (len_bit0 (len_bit0 (len_bit0 len_num1)))
+    (len_bit1 (len0_bit1 (len0_bit1 (len0_bit0 len0_num1)))) Type x;
+
+fun single_of_int x =
+  (float_of_fp32 o
+    word_of_integer
+      (semiring_1_word
+        (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
+    x;
 
 fun check_fr A_ B_ m s r f =
   check_zs_r A_ B_ m (if s then one_nata else zero_nata) r f;

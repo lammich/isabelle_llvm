@@ -6,8 +6,9 @@ target triple = "x86_64-pc-linux-gnu"
 
 declare double @llvm.sqrt.f64(double)
 
+attributes #0 = { strictfp }
 
-define double @test_double(double %a, double %b) {
+define double @test_double(double %a, double %b) #0 {
 
   start:
     %aa = fmul double %a, %a

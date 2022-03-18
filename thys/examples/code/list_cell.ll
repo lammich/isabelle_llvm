@@ -6,8 +6,9 @@ target triple = "x86_64-pc-linux-gnu"
 
 
 
+attributes #0 = { strictfp }
 
-define %list_cell_i1 @LLVM_Examples_llist_append(i1 %x, %list_cell_i1* %l) {
+define %list_cell_i1 @LLVM_Examples_llist_append(i1 %x, %list_cell_i1* %l) #0 {
 
   start:
     %r = insertvalue %list_cell_i1 zeroinitializer, i1 %x, 0

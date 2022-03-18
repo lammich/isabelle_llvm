@@ -7,9 +7,11 @@ CTEST="$HOME/devel/float_test/build/float_test"
 CNT=0
 CCNT=0
 
-./mktests.sh | while read line; do
+cat tests.txt | $CTEST
+
+
+cat tests.txt | while read line; do
   $SEMTEST "$line";
-  $CTEST "$line";
   let "CNT+=1"
   let "CCNT+=1"
 

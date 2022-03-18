@@ -6,8 +6,9 @@ target triple = "x86_64-pc-linux-gnu"
 
 
 
+attributes #0 = { strictfp }
 
-define i64 @exp64(i64 %r) {
+define i64 @exp64(i64 %r) #0 {
 
   start:
     %xa = insertvalue { i64, i64 } zeroinitializer, i64 1, 0
@@ -36,7 +37,7 @@ define i64 @exp64(i64 %r) {
     ret i64 %a2
 }
 
-define i32 @exp32(i32 %r) {
+define i32 @exp32(i32 %r) #0 {
 
   start:
     %xa = insertvalue { i32, i32 } zeroinitializer, i32 1, 0

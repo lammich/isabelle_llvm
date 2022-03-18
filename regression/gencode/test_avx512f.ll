@@ -8,17 +8,18 @@ declare float @llvm.x86.avx512.vfmadd.f32(float, float, float, i32 immarg)
 declare double @llvm.x86.avx512.vfmadd.f64(double, double, double, i32 immarg)
 declare <4 x float> @llvm.x86.avx512.mask.sqrt.ss(<4 x float>, <4 x float>, <4 x float>, i8, i32 immarg)
 declare <2 x double> @llvm.x86.avx512.mask.sqrt.sd(<2 x double>, <2 x double>, <2 x double>, i8, i32 immarg)
-declare <4 x float> @llvm.x86.avx512.mask.add.ss.round(<4 x float>, <4 x float>, <2 x double>, i8, i32 immarg)
-declare <4 x float> @llvm.x86.avx512.mask.div.ss.round(<4 x float>, <4 x float>, <2 x double>, i8, i32 immarg)
-declare <4 x float> @llvm.x86.avx512.mask.mul.ss.round(<4 x float>, <4 x float>, <2 x double>, i8, i32 immarg)
-declare <4 x float> @llvm.x86.avx512.mask.sub.ss.round(<4 x float>, <4 x float>, <2 x double>, i8, i32 immarg)
+declare <4 x float> @llvm.x86.avx512.mask.add.ss.round(<4 x float>, <4 x float>, <4 x float>, i8, i32 immarg)
+declare <4 x float> @llvm.x86.avx512.mask.div.ss.round(<4 x float>, <4 x float>, <4 x float>, i8, i32 immarg)
+declare <4 x float> @llvm.x86.avx512.mask.mul.ss.round(<4 x float>, <4 x float>, <4 x float>, i8, i32 immarg)
+declare <4 x float> @llvm.x86.avx512.mask.sub.ss.round(<4 x float>, <4 x float>, <4 x float>, i8, i32 immarg)
 declare <2 x double> @llvm.x86.avx512.mask.add.sd.round(<2 x double>, <2 x double>, <2 x double>, i8, i32 immarg)
 declare <2 x double> @llvm.x86.avx512.mask.div.sd.round(<2 x double>, <2 x double>, <2 x double>, i8, i32 immarg)
 declare <2 x double> @llvm.x86.avx512.mask.mul.sd.round(<2 x double>, <2 x double>, <2 x double>, i8, i32 immarg)
 declare <2 x double> @llvm.x86.avx512.mask.sub.sd.round(<2 x double>, <2 x double>, <2 x double>, i8, i32 immarg)
 
+attributes #0 = { strictfp "target-features"="+avx512f" }
 
-define double @test_avx512f_sd_to_ninf(double %x, double %x1) {
+define double @test_avx512f_sd_to_ninf(double %x, double %x1) #0 {
 
   start:
     %mmx_ = insertelement <2 x double> zeroinitializer, double %x, i64 0
@@ -44,7 +45,7 @@ define double @test_avx512f_sd_to_ninf(double %x, double %x1) {
     ret double %x2
 }
 
-define double @test_avx512f_sd_to_pinf(double %x, double %x1) {
+define double @test_avx512f_sd_to_pinf(double %x, double %x1) #0 {
 
   start:
     %mmx_ = insertelement <2 x double> zeroinitializer, double %x, i64 0
@@ -70,7 +71,7 @@ define double @test_avx512f_sd_to_pinf(double %x, double %x1) {
     ret double %x2
 }
 
-define double @test_avx512f_sd_to_zero(double %x, double %x1) {
+define double @test_avx512f_sd_to_zero(double %x, double %x1) #0 {
 
   start:
     %mmx_ = insertelement <2 x double> zeroinitializer, double %x, i64 0
@@ -96,12 +97,12 @@ define double @test_avx512f_sd_to_zero(double %x, double %x1) {
     ret double %x2
 }
 
-define float @test_avx512f_ss_to_ninf(float %x, float %x1) {
+define float @test_avx512f_ss_to_ninf(float %x, float %x1) #0 {
 
   start:
     %mmx_ = insertelement <4 x float> zeroinitializer, float %x, i32 0
     %mmxa_ = insertelement <4 x float> zeroinitializer, float %x, i32 0
-    %mmxb_ = call <4 x float> @llvm.x86.avx512.mask.mul.ss.round (<4 x float> %mmx_, <4 x float> %mmxa_, <2 x double> zeroinitializer, i8 -1, i32 9)
+    %mmxb_ = call <4 x float> @llvm.x86.avx512.mask.mul.ss.round (<4 x float> %mmx_, <4 x float> %mmxa_, <4 x float> zeroinitializer, i8 -1, i32 9)
     %aa = extractelement <4 x float> %mmxb_, i32 0
     %t_1 = call float @llvm.x86.avx512.vfmadd.f32 (float %x1, float %x1, float %aa, i32 9)
     %mmxc_ = insertelement <4 x float> zeroinitializer, float %t_1, i32 0
@@ -109,25 +110,25 @@ define float @test_avx512f_ss_to_ninf(float %x, float %x1) {
     %t_11 = extractelement <4 x float> %mmxd_, i32 0
     %mmxe_ = insertelement <4 x float> zeroinitializer, float %x, i32 0
     %mmxf_ = insertelement <4 x float> zeroinitializer, float %x1, i32 0
-    %mmxg_ = call <4 x float> @llvm.x86.avx512.mask.div.ss.round (<4 x float> %mmxe_, <4 x float> %mmxf_, <2 x double> zeroinitializer, i8 -1, i32 10)
+    %mmxg_ = call <4 x float> @llvm.x86.avx512.mask.div.ss.round (<4 x float> %mmxe_, <4 x float> %mmxf_, <4 x float> zeroinitializer, i8 -1, i32 10)
     %t_2 = extractelement <4 x float> %mmxg_, i32 0
     %mmxh_ = insertelement <4 x float> zeroinitializer, float %t_11, i32 0
     %mmxi_ = insertelement <4 x float> zeroinitializer, float %t_2, i32 0
-    %mmxj_ = call <4 x float> @llvm.x86.avx512.mask.sub.ss.round (<4 x float> %mmxh_, <4 x float> %mmxi_, <2 x double> zeroinitializer, i8 -1, i32 9)
+    %mmxj_ = call <4 x float> @llvm.x86.avx512.mask.sub.ss.round (<4 x float> %mmxh_, <4 x float> %mmxi_, <4 x float> zeroinitializer, i8 -1, i32 9)
     %t_12 = extractelement <4 x float> %mmxj_, i32 0
     %mmxk_ = insertelement <4 x float> zeroinitializer, float %t_12, i32 0
     %mmxl_ = insertelement <4 x float> zeroinitializer, float %x, i32 0
-    %mmxm_ = call <4 x float> @llvm.x86.avx512.mask.add.ss.round (<4 x float> %mmxk_, <4 x float> %mmxl_, <2 x double> zeroinitializer, i8 -1, i32 9)
+    %mmxm_ = call <4 x float> @llvm.x86.avx512.mask.add.ss.round (<4 x float> %mmxk_, <4 x float> %mmxl_, <4 x float> zeroinitializer, i8 -1, i32 9)
     %x2 = extractelement <4 x float> %mmxm_, i32 0
     ret float %x2
 }
 
-define float @test_avx512f_ss_to_pinf(float %x, float %x1) {
+define float @test_avx512f_ss_to_pinf(float %x, float %x1) #0 {
 
   start:
     %mmx_ = insertelement <4 x float> zeroinitializer, float %x, i32 0
     %mmxa_ = insertelement <4 x float> zeroinitializer, float %x, i32 0
-    %mmxb_ = call <4 x float> @llvm.x86.avx512.mask.mul.ss.round (<4 x float> %mmx_, <4 x float> %mmxa_, <2 x double> zeroinitializer, i8 -1, i32 10)
+    %mmxb_ = call <4 x float> @llvm.x86.avx512.mask.mul.ss.round (<4 x float> %mmx_, <4 x float> %mmxa_, <4 x float> zeroinitializer, i8 -1, i32 10)
     %aa = extractelement <4 x float> %mmxb_, i32 0
     %t_1 = call float @llvm.x86.avx512.vfmadd.f32 (float %x1, float %x1, float %aa, i32 10)
     %mmxc_ = insertelement <4 x float> zeroinitializer, float %t_1, i32 0
@@ -135,25 +136,25 @@ define float @test_avx512f_ss_to_pinf(float %x, float %x1) {
     %t_11 = extractelement <4 x float> %mmxd_, i32 0
     %mmxe_ = insertelement <4 x float> zeroinitializer, float %x, i32 0
     %mmxf_ = insertelement <4 x float> zeroinitializer, float %x1, i32 0
-    %mmxg_ = call <4 x float> @llvm.x86.avx512.mask.div.ss.round (<4 x float> %mmxe_, <4 x float> %mmxf_, <2 x double> zeroinitializer, i8 -1, i32 9)
+    %mmxg_ = call <4 x float> @llvm.x86.avx512.mask.div.ss.round (<4 x float> %mmxe_, <4 x float> %mmxf_, <4 x float> zeroinitializer, i8 -1, i32 9)
     %t_2 = extractelement <4 x float> %mmxg_, i32 0
     %mmxh_ = insertelement <4 x float> zeroinitializer, float %t_11, i32 0
     %mmxi_ = insertelement <4 x float> zeroinitializer, float %t_2, i32 0
-    %mmxj_ = call <4 x float> @llvm.x86.avx512.mask.sub.ss.round (<4 x float> %mmxh_, <4 x float> %mmxi_, <2 x double> zeroinitializer, i8 -1, i32 10)
+    %mmxj_ = call <4 x float> @llvm.x86.avx512.mask.sub.ss.round (<4 x float> %mmxh_, <4 x float> %mmxi_, <4 x float> zeroinitializer, i8 -1, i32 10)
     %t_12 = extractelement <4 x float> %mmxj_, i32 0
     %mmxk_ = insertelement <4 x float> zeroinitializer, float %t_12, i32 0
     %mmxl_ = insertelement <4 x float> zeroinitializer, float %x, i32 0
-    %mmxm_ = call <4 x float> @llvm.x86.avx512.mask.add.ss.round (<4 x float> %mmxk_, <4 x float> %mmxl_, <2 x double> zeroinitializer, i8 -1, i32 10)
+    %mmxm_ = call <4 x float> @llvm.x86.avx512.mask.add.ss.round (<4 x float> %mmxk_, <4 x float> %mmxl_, <4 x float> zeroinitializer, i8 -1, i32 10)
     %x2 = extractelement <4 x float> %mmxm_, i32 0
     ret float %x2
 }
 
-define float @test_avx512f_ss_to_zero(float %x, float %x1) {
+define float @test_avx512f_ss_to_zero(float %x, float %x1) #0 {
 
   start:
     %mmx_ = insertelement <4 x float> zeroinitializer, float %x, i32 0
     %mmxa_ = insertelement <4 x float> zeroinitializer, float %x, i32 0
-    %mmxb_ = call <4 x float> @llvm.x86.avx512.mask.mul.ss.round (<4 x float> %mmx_, <4 x float> %mmxa_, <2 x double> zeroinitializer, i8 -1, i32 11)
+    %mmxb_ = call <4 x float> @llvm.x86.avx512.mask.mul.ss.round (<4 x float> %mmx_, <4 x float> %mmxa_, <4 x float> zeroinitializer, i8 -1, i32 11)
     %aa = extractelement <4 x float> %mmxb_, i32 0
     %t_1 = call float @llvm.x86.avx512.vfmadd.f32 (float %x1, float %x1, float %aa, i32 11)
     %mmxc_ = insertelement <4 x float> zeroinitializer, float %t_1, i32 0
@@ -161,20 +162,20 @@ define float @test_avx512f_ss_to_zero(float %x, float %x1) {
     %t_11 = extractelement <4 x float> %mmxd_, i32 0
     %mmxe_ = insertelement <4 x float> zeroinitializer, float %x, i32 0
     %mmxf_ = insertelement <4 x float> zeroinitializer, float %x1, i32 0
-    %mmxg_ = call <4 x float> @llvm.x86.avx512.mask.div.ss.round (<4 x float> %mmxe_, <4 x float> %mmxf_, <2 x double> zeroinitializer, i8 -1, i32 11)
+    %mmxg_ = call <4 x float> @llvm.x86.avx512.mask.div.ss.round (<4 x float> %mmxe_, <4 x float> %mmxf_, <4 x float> zeroinitializer, i8 -1, i32 11)
     %t_2 = extractelement <4 x float> %mmxg_, i32 0
     %mmxh_ = insertelement <4 x float> zeroinitializer, float %t_11, i32 0
     %mmxi_ = insertelement <4 x float> zeroinitializer, float %t_2, i32 0
-    %mmxj_ = call <4 x float> @llvm.x86.avx512.mask.sub.ss.round (<4 x float> %mmxh_, <4 x float> %mmxi_, <2 x double> zeroinitializer, i8 -1, i32 11)
+    %mmxj_ = call <4 x float> @llvm.x86.avx512.mask.sub.ss.round (<4 x float> %mmxh_, <4 x float> %mmxi_, <4 x float> zeroinitializer, i8 -1, i32 11)
     %t_12 = extractelement <4 x float> %mmxj_, i32 0
     %mmxk_ = insertelement <4 x float> zeroinitializer, float %t_12, i32 0
     %mmxl_ = insertelement <4 x float> zeroinitializer, float %x, i32 0
-    %mmxm_ = call <4 x float> @llvm.x86.avx512.mask.add.ss.round (<4 x float> %mmxk_, <4 x float> %mmxl_, <2 x double> zeroinitializer, i8 -1, i32 11)
+    %mmxm_ = call <4 x float> @llvm.x86.avx512.mask.add.ss.round (<4 x float> %mmxk_, <4 x float> %mmxl_, <4 x float> zeroinitializer, i8 -1, i32 11)
     %x2 = extractelement <4 x float> %mmxm_, i32 0
     ret float %x2
 }
 
-define double @test_avx512f_sd_to_nearest(double %x, double %x1) {
+define double @test_avx512f_sd_to_nearest(double %x, double %x1) #0 {
 
   start:
     %mmx_ = insertelement <2 x double> zeroinitializer, double %x, i64 0
@@ -200,12 +201,12 @@ define double @test_avx512f_sd_to_nearest(double %x, double %x1) {
     ret double %x2
 }
 
-define float @test_avx512f_ss_to_nearest(float %x, float %x1) {
+define float @test_avx512f_ss_to_nearest(float %x, float %x1) #0 {
 
   start:
     %mmx_ = insertelement <4 x float> zeroinitializer, float %x, i32 0
     %mmxa_ = insertelement <4 x float> zeroinitializer, float %x, i32 0
-    %mmxb_ = call <4 x float> @llvm.x86.avx512.mask.mul.ss.round (<4 x float> %mmx_, <4 x float> %mmxa_, <2 x double> zeroinitializer, i8 -1, i32 8)
+    %mmxb_ = call <4 x float> @llvm.x86.avx512.mask.mul.ss.round (<4 x float> %mmx_, <4 x float> %mmxa_, <4 x float> zeroinitializer, i8 -1, i32 8)
     %aa = extractelement <4 x float> %mmxb_, i32 0
     %t_1 = call float @llvm.x86.avx512.vfmadd.f32 (float %x1, float %x1, float %aa, i32 8)
     %mmxc_ = insertelement <4 x float> zeroinitializer, float %t_1, i32 0
@@ -213,15 +214,15 @@ define float @test_avx512f_ss_to_nearest(float %x, float %x1) {
     %t_11 = extractelement <4 x float> %mmxd_, i32 0
     %mmxe_ = insertelement <4 x float> zeroinitializer, float %x, i32 0
     %mmxf_ = insertelement <4 x float> zeroinitializer, float %x1, i32 0
-    %mmxg_ = call <4 x float> @llvm.x86.avx512.mask.div.ss.round (<4 x float> %mmxe_, <4 x float> %mmxf_, <2 x double> zeroinitializer, i8 -1, i32 8)
+    %mmxg_ = call <4 x float> @llvm.x86.avx512.mask.div.ss.round (<4 x float> %mmxe_, <4 x float> %mmxf_, <4 x float> zeroinitializer, i8 -1, i32 8)
     %t_2 = extractelement <4 x float> %mmxg_, i32 0
     %mmxh_ = insertelement <4 x float> zeroinitializer, float %t_11, i32 0
     %mmxi_ = insertelement <4 x float> zeroinitializer, float %t_2, i32 0
-    %mmxj_ = call <4 x float> @llvm.x86.avx512.mask.sub.ss.round (<4 x float> %mmxh_, <4 x float> %mmxi_, <2 x double> zeroinitializer, i8 -1, i32 8)
+    %mmxj_ = call <4 x float> @llvm.x86.avx512.mask.sub.ss.round (<4 x float> %mmxh_, <4 x float> %mmxi_, <4 x float> zeroinitializer, i8 -1, i32 8)
     %t_12 = extractelement <4 x float> %mmxj_, i32 0
     %mmxk_ = insertelement <4 x float> zeroinitializer, float %t_12, i32 0
     %mmxl_ = insertelement <4 x float> zeroinitializer, float %x, i32 0
-    %mmxm_ = call <4 x float> @llvm.x86.avx512.mask.add.ss.round (<4 x float> %mmxk_, <4 x float> %mmxl_, <2 x double> zeroinitializer, i8 -1, i32 8)
+    %mmxm_ = call <4 x float> @llvm.x86.avx512.mask.add.ss.round (<4 x float> %mmxk_, <4 x float> %mmxl_, <4 x float> zeroinitializer, i8 -1, i32 8)
     %x2 = extractelement <4 x float> %mmxm_, i32 0
     ret float %x2
 }

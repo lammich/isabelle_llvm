@@ -6,8 +6,9 @@ target triple = "x86_64-pc-linux-gnu"
 
 declare float @llvm.sqrt.f32(float)
 
+attributes #0 = { strictfp }
 
-define float @test_float(float %a, float %b) {
+define float @test_float(float %a, float %b) #0 {
 
   start:
     %aa = fmul float %a, %a

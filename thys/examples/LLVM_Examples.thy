@@ -903,6 +903,61 @@ find_consts "nat \<Rightarrow> nat \<Rightarrow> _ list \<Rightarrow> _ list"
   
 *)  
   
+
+subsection \<open>More Floating Point\<close>
+
+abbreviation "rm_tmpl f (rmi::64 word) \<equiv> 
+  if rmi=unsigned 0 then f AVX512_FROUND_TO_NEAREST_NO_EXC
+  else if rmi=unsigned 1 then f AVX512_FROUND_TO_POS_INF_NO_EXC
+  else if rmi=unsigned 2 then f AVX512_FROUND_TO_NEG_INF_NO_EXC
+  else f AVX512_FROUND_TO_ZERO_NO_EXC
+"  
+  
+context
+  notes [llvm_pre_simp] = if_distribR
+  notes [[llc_compile_avx512f=true]]
+begin
+
+definition [llvm_code]: "avx512_64_add   x a b = rm_tmpl ll_x86_avx512_add_sd_round x a b"
+definition [llvm_code]: "avx512_64_sub   x a b = rm_tmpl ll_x86_avx512_sub_sd_round x a b"
+definition [llvm_code]: "avx512_64_mul   x a b = rm_tmpl ll_x86_avx512_mul_sd_round x a b"
+definition [llvm_code]: "avx512_64_div   x a b = rm_tmpl ll_x86_avx512_div_sd_round x a b"
+definition [llvm_code]: "avx512_64_sqrt  x a = rm_tmpl ll_x86_avx512_sqrt_sd x a"
+definition [llvm_code]: "avx512_64_fmadd x a b c = rm_tmpl ll_x86_avx512_vfmadd_f64 x a b c"
+
+definition [llvm_code]: "avx512_32_add   x a b = rm_tmpl ll_x86_avx512_add_ss_round x a b"
+definition [llvm_code]: "avx512_32_sub   x a b = rm_tmpl ll_x86_avx512_sub_ss_round x a b"
+definition [llvm_code]: "avx512_32_mul   x a b = rm_tmpl ll_x86_avx512_mul_ss_round x a b"
+definition [llvm_code]: "avx512_32_div   x a b = rm_tmpl ll_x86_avx512_div_ss_round x a b"
+definition [llvm_code]: "avx512_32_sqrt  x a = rm_tmpl ll_x86_avx512_sqrt_ss x a"
+definition [llvm_code]: "avx512_32_fmadd x a b c = rm_tmpl ll_x86_avx512_vfmadd_f32 x a b c"
+
+export_llvm 
+  avx512_64_add    is "avx512_64_add  "
+  avx512_64_sub    is "avx512_64_sub  "
+  avx512_64_mul    is "avx512_64_mul  "
+  avx512_64_div    is "avx512_64_div  "
+  avx512_64_sqrt   is "avx512_64_sqrt "
+  avx512_64_fmadd  is "avx512_64_fmadd"
+  avx512_32_add    is "avx512_32_add  "
+  avx512_32_sub    is "avx512_32_sub  "
+  avx512_32_mul    is "avx512_32_mul  "
+  avx512_32_div    is "avx512_32_div  "
+  avx512_32_sqrt   is "avx512_32_sqrt "
+  avx512_32_fmadd  is "avx512_32_fmadd"     
+  file "../../regression/gencode/test_avx512f_ops.ll"
+  
+  
+       
+end  
+  
+  
+  
+
+
+
+
+
   
 
 end

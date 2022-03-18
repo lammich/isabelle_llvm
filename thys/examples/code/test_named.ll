@@ -6,8 +6,9 @@ target triple = "x86_64-pc-linux-gnu"
 
 
 
+attributes #0 = { strictfp }
 
-define i64 @LLVM_Examples_add_add(i64 %a) {
+define i64 @LLVM_Examples_add_add(i64 %a) #0 {
 
   start:
     %x = add i64 %a, %a
@@ -15,7 +16,7 @@ define i64 @LLVM_Examples_add_add(i64 %a) {
     ret i64 %x1
 }
 
-define i32 @LLVM_Examples_add_add1(i32 %a) {
+define i32 @LLVM_Examples_add_add1(i32 %a) #0 {
 
   start:
     %x = add i32 %a, %a
@@ -23,7 +24,7 @@ define i32 @LLVM_Examples_add_add1(i32 %a) {
     ret i32 %x1
 }
 
-define i64 @LLVM_Examples_test_named(i32 %a, i64 %b) {
+define i64 @LLVM_Examples_test_named(i32 %a, i64 %b) #0 {
 
   start:
     %a1 = call i32 @LLVM_Examples_add_add1 (i32 %a)
