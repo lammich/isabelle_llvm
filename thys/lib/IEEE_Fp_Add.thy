@@ -1,7 +1,7 @@
 section \<open>Additional Floating-Point Properties\<close>
 theory IEEE_Fp_Add
 imports 
-  IEEE_Floating_Point.Conversion_IEEE_Float IEEE_Floating_Point.FP64
+  (*IEEE_Floating_Point.Conversion_IEEE_Float IEEE_Floating_Point.FP64*)
   IEEE_Fp_Add_Basic
 begin
 

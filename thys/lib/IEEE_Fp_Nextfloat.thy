@@ -1572,26 +1572,31 @@ begin
   (* TODO: This semantics is wrong *)  
   definition check_fmul_add :: "roundmode \<Rightarrow> ('t ,'w) float \<Rightarrow> ('t ,'w) float \<Rightarrow> ('t ,'w) float \<Rightarrow> ('t ,'w) float \<Rightarrow> bool"
     where "check_fmul_add mode x y z res =
-        (let signP = if sign x = sign y then 0 else 1 in
-        let infP = is_infinity x  \<or> is_infinity y
-        in
-           if is_nan x \<or> is_nan y \<or> is_nan z then is_nan res
-           else if is_infinity x \<and> is_zero y \<or>
-                   is_zero x \<and> is_infinity y \<or>
-                   is_infinity z \<and> infP \<and> signP \<noteq> sign z then
-              is_nan res
-           else if is_infinity z \<and> (sign z = 0) \<or> infP \<and> (signP = 0)
-              then res=plus_infinity
-           else if is_infinity z \<and> (sign z = 1) \<or> infP \<and> (signP = 1)
-              then res=minus_infinity
-           else
-              let r1 = valof x * valof y;
-                  r2 = valof z
-              in
-                check_fr mode
-                  (if (r1 = 0) \<and> (r2 = 0) \<and> (signP = sign z) then
-                     signP = 1
-                   else mode = To_ninfinity) (r1 + r2) res)"
+      (let signP = if sign x = sign y then 0 else 1 in
+      let infP = is_infinity x  \<or> is_infinity y
+      in
+      if is_nan x \<or> is_nan y \<or> is_nan z then is_nan res
+      else if is_infinity x \<and> is_zero y \<or>
+             is_zero x \<and> is_infinity y \<or>
+             is_infinity z \<and> infP \<and> signP \<noteq> sign z then
+        is_nan res
+      else if is_infinity z \<and> (sign z = 0) \<or> infP \<and> (signP = 0)
+        then res=plus_infinity
+      else if is_infinity z \<and> (sign z = 1) \<or> infP \<and> (signP = 1)
+        then res=minus_infinity
+      else let 
+        r1 = valof x * valof y;
+        r2 = valof z;
+        r = r1+r2
+      in 
+        if r=0 then ( \<comment> \<open>Exact Zero Case. Same sign rules as for add apply. \<close>
+          if r1=0 \<and> r2=0 \<and> signP=sign z then res = zerosign signP 0
+          else if mode = To_ninfinity then res = -0
+          else res = 0
+        ) else ( \<comment> \<open>Not exactly zero: Rounding has sign of exact value, even if rounded val is zero\<close>
+          check_zs_r mode (if r<0 then 1 else 0) r res
+        ))
+      "
       
     
   lemma check_fmul_add:
@@ -1599,7 +1604,7 @@ begin
     assumes LEN[simp]: "1 < LENGTH('e)"
     shows "check_fmul_add m a b c d \<Longrightarrow> fmul_add m a b c =\<^sub>N\<^sub>a\<^sub>N d"
     unfolding fmul_add_def check_fmul_add_def Let_def
-    apply (elim check_decomp_aux check_fr[OF LEN, THEN eq_nan_eqI])
+    apply (elim check_decomp_aux check_zs_r[OF LEN, THEN eq_nan_eqI])
     by simp_all
 
 
@@ -1960,7 +1965,7 @@ begin
     
   term valof
   
-  
+  find_theorems zerosign float_round
   
   
   

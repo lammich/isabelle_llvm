@@ -1,6 +1,6 @@
 section \<open>Basic Lemmas for Floating Point Reasoning\<close>
 theory IEEE_Fp_Add_Basic
-imports IEEE_Floating_Point.Conversion_IEEE_Float "HOL-Library.Rewrite"
+imports "IEEE_Floating_Point/Conversion_IEEE_Float" "HOL-Library.Rewrite"
 begin
   (* TODO: Move! *)
 

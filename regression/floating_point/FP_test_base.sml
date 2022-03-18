@@ -2352,9 +2352,6 @@ fun single_of_int x =
         (len_bit0 (len_bit0 (len_bit0 (len_bit0 (len_bit0 len_num1)))))))
     x;
 
-fun check_fr A_ B_ m s r f =
-  check_zs_r A_ B_ m (if s then one_nata else zero_nata) r f;
-
 fun check_fmul_add A_ B_ mode x y z res =
   let
     val signP =
@@ -2382,13 +2379,17 @@ fun check_fmul_add A_ B_ mode x y z res =
                                   val r1 =
                                     times_reala (valof A_ B_ x) (valof A_ B_ y);
                                   val r2 = valof A_ B_ z;
+                                  val r = plus_reala r1 r2;
                                 in
-                                  check_fr A_ B_ mode
-                                    (if equal_real r1 zero_reala andalso
-  (equal_real r2 zero_reala andalso equal_nata signP (sign A_ B_ z))
-                                      then equal_nata signP one_nata
-                                      else equal_roundmode mode To_ninfinity)
-                                    (plus_reala r1 r2) res
+                                  (if equal_real r zero_reala
+                                    then (if equal_real r1 zero_reala andalso
+       (equal_real r2 zero_reala andalso equal_nata signP (sign A_ B_ z))
+   then equal_float A_ B_ res (zerosign A_ B_ signP (zero_float A_ B_))
+   else (if equal_roundmode mode To_ninfinity
+          then equal_float A_ B_ res (uminus_float A_ B_ (zero_float A_ B_))
+          else equal_float A_ B_ res (zero_float A_ B_)))
+                                    else check_zs_r A_ B_ mode
+   (if less_real r zero_reala then one_nata else zero_nata) r res)
                                 end))))
   end;
 
