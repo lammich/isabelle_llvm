@@ -1,7 +1,7 @@
 theory FP_test_base
 imports 
-  "../../thys/lib/IEEE_Fp_Nextfloat"
-  "../../thys/lib/IEEE_Float_To_Word"
+  "../../thys/lib/IEEE_FP_Extensions/IEEE_Fp_Res_Check"
+  "../../thys/lib/IEEE_FP_Extensions/IEEE_Float_To_Word"
   "HOL-Library.Code_Target_Nat"
   "HOL-Library.Code_Target_Int"
 begin

@@ -1,6 +1,6 @@
 section \<open>Basic Lemmas for Floating Point Reasoning\<close>
 theory IEEE_Fp_Add_Basic
-imports "IEEE_Floating_Point/Conversion_IEEE_Float" "HOL-Library.Rewrite"
+imports "../IEEE_Floating_Point/Conversion_IEEE_Float" "HOL-Library.Rewrite"
 begin
   (* TODO: Move! *)
 
@@ -104,6 +104,9 @@ begin
       "sign f \<noteq> Suc 0 \<longleftrightarrow> sign f = 0"
       by (cases f rule: sign_cases; simp)+
   
+      
+      
+      
     subsubsection \<open>Valueizing NaN\<close>
     text \<open>Make all NaNs a value, tagged by a constant\<close>
     definition "the_nan x \<equiv> if is_nan x then x else some_nan"
@@ -153,7 +156,97 @@ begin
     apply (transfer)
     by (auto simp flip: word_unat_eq_iff)
     
+
+    
+    
+  lemma float_class_consts[simp, intro!]:
+    "\<not>is_infinity (the_nan x)"
+    (* "is_nan       (the_nan x)" *)
+    "\<not>is_zero     (the_nan x)"
+    "\<not>is_finite   (the_nan x)"
+    "\<not>is_normal   (the_nan x)"
+    "\<not>is_denormal (the_nan x)"
+    
+    "is_infinity  \<infinity>"
+    "\<not>is_nan      \<infinity>"
+    "\<not>is_zero     \<infinity>"
+    "\<not>is_finite   \<infinity>"
+    "\<not>is_normal   \<infinity>"
+    "\<not>is_denormal \<infinity>"
+
+    "is_infinity  (-\<infinity>)"
+    "\<not>is_nan      (-\<infinity>)"
+    "\<not>is_zero     (-\<infinity>)"
+    "\<not>is_finite   (-\<infinity>)"
+    "\<not>is_normal   (-\<infinity>)"
+    "\<not>is_denormal (-\<infinity>)"
+
+    "\<not>is_infinity 0"
+    "\<not>is_nan      0"
+    "is_zero      0"
+    " is_finite   0"
+    "\<not>is_normal   0"
+    "\<not>is_denormal 0"
         
+    "\<not>is_infinity (-0)"
+    "\<not>is_nan      (-0)"
+    " is_zero     (-0)"
+    " is_finite   (-0)"
+    "\<not>is_normal   (-0)"
+    "\<not>is_denormal (-0)"
+    
+    "\<not>is_infinity topfloat"                    
+    "\<not>is_nan      topfloat"
+    "\<not>is_zero     topfloat"
+    " is_finite   topfloat"
+    " is_normal   (topfloat :: ('e,'f) float) \<longleftrightarrow> LENGTH('e)>1"
+    " is_denormal (topfloat:: ('e,'f) float) \<longleftrightarrow> LENGTH('e) = 1"
+    
+    "\<not>is_infinity bottomfloat"                    
+    "\<not>is_nan      bottomfloat"
+    "\<not>is_zero     bottomfloat"
+    " is_finite   bottomfloat"
+    " is_normal   (bottomfloat:: ('e,'f) float) \<longleftrightarrow> LENGTH('e)>1"
+    " is_denormal (bottomfloat:: ('e,'f) float) \<longleftrightarrow> LENGTH('e) = 1"
+    
+    apply (simp_all add: float_defs)
+    apply (metis One_nat_def Suc_pred' emax_pos(1) n_not_Suc_n)
+    apply (metis Suc_lessI len_gt_0)
+    apply (metis One_nat_def Suc_pred' emax_pos(1) n_not_Suc_n)
+    apply (metis Suc_lessI len_gt_0)
+    done
+  
+  (*lemmas [simp, intro!] = finite_topfloat  *)
+  
+  (* (the_nan x) \<infinity> -\<infinity> 0 -0 topfloat -topfloat *)
+  lemma float_ineqs[simp, symmetric, simp]:
+    "the_nan x \<noteq> \<infinity>"
+    "the_nan x \<noteq> -\<infinity>"
+    "the_nan x \<noteq> 0"
+    "the_nan x \<noteq> -0"
+    "the_nan x \<noteq> topfloat"
+    "the_nan x \<noteq> -topfloat"
+        
+    "\<infinity> \<noteq> 0"
+    "\<infinity> \<noteq> -0"
+    "\<infinity> \<noteq> topfloat"
+    "\<infinity> \<noteq> -topfloat"
+    
+    "-\<infinity> \<noteq> 0"
+    "-\<infinity> \<noteq> topfloat"
+    
+    "0 \<noteq> topfloat"
+    "0 \<noteq> -topfloat"
+    
+    "-0 \<noteq> topfloat"
+    
+    apply safe
+    apply (
+      drule arg_cong[where f=is_finite] arg_cong[where f=is_nan] arg_cong[where f=is_zero] arg_cong[where f=sign]; 
+      simp; fail)+
+    done
+    
+            
   subsection \<open>Almost-Injectivity of \<^const>\<open>valof\<close>\<close>  
         
   lemma valof_nonzero_injective:
@@ -515,6 +608,50 @@ begin
     qed      
     
   end    
+  
+subsection \<open>Basic FP-algebra\<close>  
+  
+
+lemma is_zero_alt: "is_zero x \<longleftrightarrow> x=0 \<or> x=-0"
+  by (auto elim!: is_zero_cases)
+
+lemma is_infinity_alt: "is_infinity x \<longleftrightarrow> x=\<infinity> \<or> x=-\<infinity>"
+  by (auto elim!: is_infinity_cases)
+  
+lemma sign_convs[simp]: 
+  "0 < sign x \<longleftrightarrow> sign x = 1" 
+  "sign x\<noteq>0 \<longleftrightarrow> sign x = 1" 
+  "sign x\<noteq>Suc 0 \<longleftrightarrow> sign x = 0" 
+  subgoal by (metis neq0_conv sign_cases zero_neq_one)
+  subgoal by (metis sign_cases zero_neq_one)
+  subgoal by (metis One_nat_def sign_cases zero_neq_one)
+  done
+
+lemma valof_eq_zero_conv: "IEEE.is_finite a \<Longrightarrow> valof a = 0 \<longleftrightarrow> a=0 \<or> a=-0"  
+  using valof_almost_injective by fastforce 
+
+
+lemma float_eq_minus_minus_conv[simp]: "-a=-b \<longleftrightarrow> a=b" for a b :: "(_,_)float"
+  by (metis minus_minus_float)
+
+lemma float_neq_minus_self[simp, symmetric, simp]: "a \<noteq> -a" 
+  for a :: "(_,_)float" 
+  apply (metis float_neg_sign)
+  done
+  
+lemma float_le_inf_simps[simp]:
+  "-\<infinity> \<le> u \<longleftrightarrow> \<not>is_nan u"
+  "\<infinity> \<le> u \<longleftrightarrow> u = \<infinity>"
+  "u \<le> \<infinity> \<longleftrightarrow> \<not>is_nan u"
+  "u \<le> -\<infinity> \<longleftrightarrow> u=-\<infinity>"
+  subgoal unfolding float_defs by simp
+  subgoal by (auto simp: less_eq_float_def fle_def fcompare_def is_infinity_alt)
+  subgoal unfolding float_defs by simp
+  subgoal by (auto simp: less_eq_float_def fle_def fcompare_def is_infinity_alt)
+  done
+  
+  
+  
   
   
 end

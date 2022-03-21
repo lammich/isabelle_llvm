@@ -7,6 +7,8 @@ begin
 
 
 
+
+
   subsection \<open>Miscellaneous Lemmas\<close>
 
   
@@ -99,18 +101,6 @@ begin
       finite_infinity
       finite_nan
       
-    lemma float_eq_conv: "a=b \<longleftrightarrow> sign a = sign b \<and> fraction a = fraction b \<and> exponent a = exponent b"
-      apply (transfer)
-      by auto
-    
-    
-    lemma fraction_upper_bound: "fraction (a::('a,'b) float) < 2^LENGTH('b)"
-      apply transfer
-      by auto
-  
-      
-
-            
     subsubsection \<open>Floating point classes and constants\<close>  
     (* is_infinity is_nan is_zero is_finite is_normal is_denormal     
        (the_nan x) \<infinity> -\<infinity> 0 -0 topfloat bottomfloat
@@ -132,7 +122,7 @@ begin
         
     lemma float_class_consts[simp, intro!]:
       "\<not>is_infinity (the_nan x)"
-      "is_nan       (the_nan x)"
+      (* "is_nan       (the_nan x)" *)
       "\<not>is_zero     (the_nan x)"
       "\<not>is_finite   (the_nan x)"
       "\<not>is_normal   (the_nan x)"
@@ -180,7 +170,10 @@ begin
       " is_normal   (bottomfloat:: ('e,'f) float) \<longleftrightarrow> LENGTH('e)>1"
       " is_denormal (bottomfloat:: ('e,'f) float) \<longleftrightarrow> LENGTH('e) = 1"
       
-      supply [simp] = the_nan_is_nan finite_topfloat class_topfloat_auxs
+      apply simp_all
+      
+      
+      supply [simp] = finite_topfloat class_topfloat_auxs
       apply (all \<open>
           (rule float_distinct' the_nan_is_nan; simp; fail 
         | (simp; fail) 
@@ -250,9 +243,9 @@ begin
       "\<infinity> \<le> u \<longleftrightarrow> u = \<infinity>"
       "u \<le> \<infinity> \<longleftrightarrow> \<not>is_nan u"
       "u \<le> -\<infinity> \<longleftrightarrow> u=-\<infinity>"
-      subgoal by (auto simp add: float_defs)
+      subgoal unfolding float_defs by simp
       subgoal by (auto simp: less_eq_float_def fle_def fcompare_def is_infinity_alt)
-      subgoal by (auto simp add: float_defs)
+      subgoal unfolding float_defs by simp
       subgoal by (auto simp: less_eq_float_def fle_def fcompare_def is_infinity_alt)
       done
       
@@ -488,7 +481,7 @@ begin
     apply transfer'
     apply clarsimp
     apply (auto split: if_splits simp: unat_eq_0 unat_minus_one degenerate_word_ne1 unat_minus_one_word)
-    subgoal by (metis emax_def less_not_refl2 unat_Suc2)
+    subgoal by (me tis emax_def less_not_refl2 unat_Suc2)
     apply (simp add: unat_minus_one_word word_eq_unatI)
     apply (simp add: unat_minus_one_word word_eq_unatI)
     done
@@ -502,7 +495,7 @@ begin
     unfolding float_defs
     apply transfer'
     apply clarsimp
-    apply (auto split: if_splits simp: unat_eq_0 unat_minus_one degenerate_word_ne1 unat_minus_one_word)
+    apply (auto sp lit: if_splits simp: unat_eq_0 unat_minus_one degenerate_word_ne1 unat_minus_one_word)
     subgoal by (simp add: unat_minus_one_word word_eq_unatI)
     subgoal using unat_Suc2 by blast
     subgoal by (simp add: unat_minus_one_word word_eq_unatI)
@@ -524,9 +517,9 @@ begin
     unfolding is_nan_def
     apply (simp add: next_float_defs)
     apply (auto simp: is_nan_def float_eq_conv)
-    subgoal by (metis Suc_pred diff_le_self float_exp_le not_less_eq_eq)
-    subgoal by (metis One_nat_def Suc_n_not_le_n Suc_pred emax_pos(1) float_exp_le)
-    subgoal by (metis Suc_pred diff_le_self float_exp_le not_less_eq_eq)
+    subgoal by (met is Suc_pred diff_le_self float_exp_le not_less_eq_eq)
+    subgoal by (me tis One_nat_def Suc_n_not_le_n Suc_pred emax_pos(1) float_exp_le)
+    subgoal by (met is Suc_pred diff_le_self float_exp_le not_less_eq_eq)
     subgoal by (metis Suc_pred diff_le_self float_exp_le not_less_eq_eq)
     subgoal by (metis One_nat_def Suc_n_not_le_n Suc_pred emax_pos(1) float_exp_le)
     done
@@ -854,7 +847,7 @@ begin
 
   lemma next_float_finiteI: "\<lbrakk>is_finite f; f\<noteq>topfloat\<rbrakk> \<Longrightarrow> is_finite (next_float f)"
     apply (clarsimp simp: float_defs next_float_defs float_eq_conv)
-    by (metis (no_types, lifting) Suc_lessI diff_Suc_Suc emax_ge1 less_eq_Suc_le less_imp_diff_less minus_nat.diff_0 two_plen_gt1)
+    by (meti s (no_types, lifting) Suc_lessI diff_Suc_Suc emax_ge1 less_eq_Suc_le less_imp_diff_less minus_nat.diff_0 two_plen_gt1)
     
     
   lemma float_frac_not_gt: "\<not>(2 ^ LENGTH('f) - Suc 0 < fraction f)" for f :: "('e,'f) float"
@@ -1059,9 +1052,9 @@ begin
       
     lemma ubound_fmadd_pinf: "\<lbrakk> ubound f\<^sub>1 x\<^sub>1; ubound f\<^sub>2 x\<^sub>2; ubound f\<^sub>3 x\<^sub>3; sign f\<^sub>1=0; sign f\<^sub>2=0; sign f\<^sub>3=0; \<not>is_infinity f\<^sub>1; \<not>is_zero f\<^sub>1; x\<^sub>1\<ge>0; x\<^sub>2\<ge>0; x\<^sub>3\<ge>0 \<rbrakk>
       \<Longrightarrow> ubound (fmul_add To_pinfinity f\<^sub>1 f\<^sub>2 f\<^sub>3) (x\<^sub>1*x\<^sub>2+x\<^sub>3) \<and> sign (fmul_add To_pinfinity f\<^sub>1 f\<^sub>2 f\<^sub>3) = 0"
-      apply (auto simp add: fmul_add_def float_round_def Let_def cong: if_cong)
+      apply (auto si mp add: fmul_add_def float_round_def Let_def cong: if_cong)
       subgoal
-        by (smt (verit, ccfv_SIG) LEN One_nat_def float_class_consts(22) float_ineqs(8) is_zero_alt mult_mono' ubound_def ubound_finite_conv ubound_round valof_zero(1) valof_zero(2))
+        by (smt (ver it, ccfv_SIG) LEN One_nat_def float_class_consts(22) float_ineqs(8) is_zero_alt mult_mono' ubound_def ubound_finite_conv ubound_round valof_zero(1) valof_zero(2))
       subgoal
         by (smt (verit, ccfv_SIG) LEN One_nat_def is_infinity_alt mult_mono' ubound_def ubound_round)
       subgoal
@@ -1080,8 +1073,8 @@ begin
       apply (auto simp: fmul_add_def float_round_def cong: if_cong elim: is_infinity_cases)
       apply (auto simp add: Let_def lbound_def)
       subgoal by (smt (verit) mult_nonneg_nonneg valof_nonneg)
-      subgoal by (metis LEN One_nat_def lbound_def lbound_round)
-      subgoal by (smt (verit, best) LEN One_nat_def lbound_def lbound_round mult_mono valof_nonneg)
+      subgoal by (meti s LEN One_nat_def lbound_def lbound_round)
+      subgoal by (sm t (verit, best) LEN One_nat_def lbound_def lbound_round mult_mono valof_nonneg)
       done
             
       

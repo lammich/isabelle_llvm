@@ -6,8 +6,9 @@ target triple = "x86_64-pc-linux-gnu"
 
 
 
+attributes #0 = { strictfp }
 
-define i64 @Bin_Search_bin_search_impl({ i64, i64* } %x, i64 %x1) {
+define i64 @Bin_Search_bin_search_impl({ i64, i64* } %x, i64 %x1) #0 {
 
   start:
     %a1 = extractvalue { i64, i64* } %x, 0
@@ -57,7 +58,7 @@ define i64 @Bin_Search_bin_search_impl({ i64, i64* } %x, i64 %x1) {
     ret i64 %a1a1
 }
 
-define i64 @bin_search({ i64, i64* }* %a, i64 %x) {
+define i64 @bin_search({ i64, i64* }* %a, i64 %x) #0 {
 
   start:
     %a1 = load { i64, i64* }, { i64, i64* }* %a

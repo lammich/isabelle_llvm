@@ -1,6 +1,6 @@
 section \<open>Convert Floating Point to Word\<close>
 theory IEEE_Float_To_Word
-imports IEEE_Fp_Add_Basic LLVM_More_Word_Lemmas
+imports IEEE_Fp_Add_Basic "../LLVM_More_Word_Lemmas"
 begin
   
 

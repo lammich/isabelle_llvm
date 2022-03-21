@@ -1,7 +1,7 @@
 (* Formalization of IEEE-754 Standard for binary floating-point arithmetic *)
 (* Author: Lei Yu, University of Cambridge
 
-  Contrib: Peter Lammich: fixed wromng sign handling in fmadd
+  Contrib: Peter Lammich: fixed wrong sign handling in fmadd
 
 *)
 
