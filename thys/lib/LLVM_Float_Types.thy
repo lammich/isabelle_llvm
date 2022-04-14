@@ -1,5 +1,5 @@
 theory LLVM_Float_Types
-imports IEEE_Float_Extend_Integer
+imports "IEEE_FP_Extensions/IEEE_Float_Extend_Integer"
 begin
 
 subsection \<open>Double\<close>
