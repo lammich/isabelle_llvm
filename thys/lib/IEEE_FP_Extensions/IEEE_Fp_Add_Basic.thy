@@ -1,9 +1,17 @@
 section \<open>Basic Lemmas for Floating Point Reasoning\<close>
 theory IEEE_Fp_Add_Basic
-imports "../IEEE_Floating_Point/Conversion_IEEE_Float" "HOL-Library.Rewrite"
+imports "../IEEE_Floating_Point/Conversion_IEEE_Float" "HOL-Library.Rewrite" "HOL-Library.Extended_Real"
 begin
-  (* TODO: Move! *)
 
+  no_notation IEEE.plus_infinity ("\<infinity>")
+
+  instantiation float :: (type,type)infinity
+  begin
+    definition "infinity_float = plus_infinity"
+    instance by standard
+  end
+
+  lemma plus_infinity_conv[simp]: "plus_infinity = \<infinity>" unfolding infinity_float_def ..
 
 
   subsection \<open>Bounds\<close>  
@@ -98,6 +106,16 @@ begin
             | "\<not> is_nan f" "\<not> is_normal f" "\<not> is_denormal f" "\<not> is_zero f" "  is_infinity f"
       by (metis float_cases float_distinct normal_imp_not_zero)
     
+    lemma float_cases_eqs:
+      obtains 
+        "f=\<infinity>" 
+      | "f=-\<infinity>" 
+      | "f=0" 
+      | "f=-0" 
+      | "is_nan f" "\<not>is_finite f" "\<not>is_zero f" "\<not>is_infinity f"
+      | "is_finite f" "\<not>is_zero f" "\<not>is_infinity f" "\<not>is_nan f"
+      by (metis float_cases_finite infinity_float_def is_infinity_cases is_zero_cases nan_not_finite)
+      
   
     lemma normalize_sign[simp]:
       "sign f \<noteq> 0 \<longleftrightarrow> sign f = Suc 0"
@@ -148,7 +166,7 @@ begin
       done
       
     lemma is_infinity_inf[simp,intro!]: "is_infinity \<infinity>"
-      by (simp add: float_defs(2)) 
+      by (simp add: float_defs(2) flip: plus_infinity_conv) 
     
     
   subsubsection \<open>Conmponent-Wise Equality\<close>
@@ -157,6 +175,14 @@ begin
     by (auto simp flip: word_unat_eq_iff)
     
 
+  lemma infinity_simps'[simp]:
+    "sign (\<infinity>::('e, 'f)float) = 0"
+    "sign (-\<infinity>::('e, 'f)float) = 1"
+    "exponent (\<infinity>::('e, 'f)float) = emax TYPE(('e, 'f)float)"
+    "exponent (-\<infinity>::('e, 'f)float) = emax TYPE(('e, 'f)float)"
+    "fraction (\<infinity>::('e, 'f)float) = 0"
+    "fraction (-\<infinity>::('e, 'f)float) = 0"
+    by (simp_all flip: plus_infinity_conv)
     
     
   lemma float_class_consts[simp, intro!]:
@@ -209,7 +235,7 @@ begin
     " is_normal   (bottomfloat:: ('e,'f) float) \<longleftrightarrow> LENGTH('e)>1"
     " is_denormal (bottomfloat:: ('e,'f) float) \<longleftrightarrow> LENGTH('e) = 1"
     
-    apply (simp_all add: float_defs)
+    apply (simp_all add: float_defs flip: plus_infinity_conv)
     apply (metis One_nat_def Suc_pred' emax_pos(1) n_not_Suc_n)
     apply (metis Suc_lessI len_gt_0)
     apply (metis One_nat_def Suc_pred' emax_pos(1) n_not_Suc_n)
@@ -227,12 +253,12 @@ begin
     "the_nan x \<noteq> topfloat"
     "the_nan x \<noteq> -topfloat"
         
-    "\<infinity> \<noteq> 0"
-    "\<infinity> \<noteq> -0"
+    "\<infinity> \<noteq> (0 :: (_,_) float)"
+    "\<infinity> \<noteq> (-0 :: (_,_) float)"
     "\<infinity> \<noteq> topfloat"
     "\<infinity> \<noteq> -topfloat"
     
-    "-\<infinity> \<noteq> 0"
+    "-\<infinity> \<noteq> (0:: (_,_) float)"
     "-\<infinity> \<noteq> topfloat"
     
     "0 \<noteq> topfloat"
@@ -644,14 +670,10 @@ lemma float_le_inf_simps[simp]:
   "\<infinity> \<le> u \<longleftrightarrow> u = \<infinity>"
   "u \<le> \<infinity> \<longleftrightarrow> \<not>is_nan u"
   "u \<le> -\<infinity> \<longleftrightarrow> u=-\<infinity>"
-  subgoal unfolding float_defs by simp
+  subgoal unfolding float_defs by simp 
   subgoal by (auto simp: less_eq_float_def fle_def fcompare_def is_infinity_alt)
   subgoal unfolding float_defs by simp
   subgoal by (auto simp: less_eq_float_def fle_def fcompare_def is_infinity_alt)
   done
-  
-  
-  
-  
   
 end

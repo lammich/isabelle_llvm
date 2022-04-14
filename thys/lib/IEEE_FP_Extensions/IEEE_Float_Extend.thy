@@ -1,6 +1,6 @@
 section \<open>Converting Float to Double\<close>
 theory IEEE_Float_Extend
-imports More_Eisbach_Tools IEEE_Fp_Add_Basic LLVM_More_Word_Lemmas IEEE_Float_To_Word
+imports "../More_Eisbach_Tools" IEEE_Fp_Add_Basic "../LLVM_More_Word_Lemmas" IEEE_Float_To_Word
 begin
   text \<open>
     LLVM code only accepts double (64 bit) constants, 

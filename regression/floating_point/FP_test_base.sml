@@ -908,7 +908,10 @@ fun semiring_1_word A_ =
 
 fun nat_of_integer k = Nat (max ord_integer (0 : IntInf.int) k);
 
-type 'a finite = {};
+type 'a countable = {};
+
+type 'a finite = {countable_finite : 'a countable};
+val countable_finite = #countable_finite : 'a finite -> 'a countable;
 
 datatype 'a bit0 = Abs_bit0 of int;
 
@@ -1251,24 +1254,26 @@ fun dvd (A1_, A2_) a b =
              algebraic_semidom_semidom_modulo)
             A2_));
 
+fun infinity_float A_ B_ = plus_infinity A_ B_;
+
 val plus_inf32 : (num1 bit0 bit0 bit0, num1 bit0 bit1 bit1 bit1) float =
-  plus_infinity (len_bit0 (len_bit0 (len_bit0 len_num1)))
+  infinity_float (len_bit0 (len_bit0 (len_bit0 len_num1)))
     (len_bit1 (len0_bit1 (len0_bit1 (len0_bit0 len0_num1))));
 
 val plus_inf64 : (num1 bit0 bit1 bit1, num1 bit1 bit0 bit1 bit0 bit0) float =
-  plus_infinity (len_bit1 (len0_bit1 (len0_bit0 len0_num1)))
+  infinity_float (len_bit1 (len0_bit1 (len0_bit0 len0_num1)))
     (len_bit0 (len_bit0 (len_bit1 (len0_bit0 (len0_bit1 len0_num1)))));
 
 val minus_inf32 : (num1 bit0 bit0 bit0, num1 bit0 bit1 bit1 bit1) float =
   uminus_float (len_bit0 (len_bit0 (len_bit0 len_num1)))
     (len_bit1 (len0_bit1 (len0_bit1 (len0_bit0 len0_num1))))
-    (plus_infinity (len_bit0 (len_bit0 (len_bit0 len_num1)))
+    (infinity_float (len_bit0 (len_bit0 (len_bit0 len_num1)))
       (len_bit1 (len0_bit1 (len0_bit1 (len0_bit0 len0_num1)))));
 
 val minus_inf64 : (num1 bit0 bit1 bit1, num1 bit1 bit0 bit1 bit0 bit0) float =
   uminus_float (len_bit1 (len0_bit1 (len0_bit0 len0_num1)))
     (len_bit0 (len_bit0 (len_bit1 (len0_bit0 (len0_bit1 len0_num1)))))
-    (plus_infinity (len_bit1 (len0_bit1 (len0_bit0 len0_num1)))
+    (infinity_float (len_bit1 (len0_bit1 (len0_bit0 len0_num1)))
       (len_bit0 (len_bit0 (len_bit1 (len0_bit0 (len0_bit1 len0_num1))))));
 
 val plus_zero32 : (num1 bit0 bit0 bit0, num1 bit0 bit1 bit1 bit1) float =

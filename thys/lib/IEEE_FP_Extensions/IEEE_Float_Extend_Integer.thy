@@ -3,7 +3,7 @@ text \<open>Used for LLVM code generator, as LLVM represents floating point cons
   as integer numbers.
 \<close>
 theory IEEE_Float_Extend_Integer
-imports LLVM_More_Word_Lemmas IEEE_Float_To_Word IEEE_Float_Extend
+imports "../LLVM_More_Word_Lemmas" IEEE_Float_To_Word IEEE_Float_Extend
 begin
 
 subsection \<open>Miscellaneous Lemmas\<close>
