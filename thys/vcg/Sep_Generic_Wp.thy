@@ -994,7 +994,7 @@ lemma DECOMP_HTRIPLEI: "\<phi> \<Longrightarrow> DECOMP_HTRIPLE \<phi>" unfoldin
     using assms unfolding vcg_tag_defs .
   
   lemma htriple_vcgI[htriple_vcg_intros]: 
-    assumes "\<And>asf s. STATE asf P s \<Longrightarrow> EXTRACT (wpa asf c (\<lambda>r. POSTCOND asf (Q r)) s)"
+    assumes "\<And>asf s. STATE asf P s \<Longrightarrow> EXTRACT (wpa asf c (\<lambda>r s. EXTRACT (POSTCOND asf (Q r) s)) s)"
     shows "htriple P c Q"
     apply (rule htripleI)
     using assms unfolding vcg_tag_defs STATE_def .

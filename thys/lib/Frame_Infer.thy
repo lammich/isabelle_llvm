@@ -369,6 +369,9 @@ lemma
   by (auto simp: vcg_tag_defs)
 
 
+lemma EXTRACT_True [simp, intro!]: "EXTRACT True" unfolding EXTRACT_def by simp
+
+
 ML \<open>
   structure Fri_Extract = struct
     (* TODO: Move *)

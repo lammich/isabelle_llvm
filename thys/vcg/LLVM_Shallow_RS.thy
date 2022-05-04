@@ -478,11 +478,6 @@ lemma ll_malloc_rule[vcg_rules]:
   unfolding ll_malloc_def ll_pto_def ll_malloc_tag_def llvm_alloc_def    
   supply [simp] = unat_gt_0 abase_ptr_iff the_raw_PTR_aidx blockvp_range_conv ll_range_init_conv_aux
   apply vcg  
-  apply vcg_normalize
-  subgoal for r (* TODO: Missing pure extraction on fri *)
-    apply (cases "llvm_ptr_is_block_base r"; simp add: sep_algebra_simps)
-    apply vcg
-    done
   done
   
 (* TODO: Move *)  

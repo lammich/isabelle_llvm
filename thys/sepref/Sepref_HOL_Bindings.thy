@@ -1207,11 +1207,11 @@ proof -
           POSTCOND_def STATE_extract(2) shiftr_div_2n 
        uint_shiftl exists_pure_conv)
    show \<open>wpa ( asf) (ll_shl ai bi)
-         (\<lambda>r. POSTCOND asf
+         (\<lambda>r s. EXTRACT (POSTCOND asf
                ((\<up>((ai, a) \<in> snat_rel) \<and>*
                  \<up>((bi, b) \<in> snat_rel) \<and>*
                  \<up>True \<and>*
-                 (\<lambda>s. \<exists>x. (\<up>((r, x) \<in> snat_rel) \<and>* \<up>(x = a << b)) s))))
+                 (\<lambda>s. \<exists>x. (\<up>((r, x) \<in> snat_rel) \<and>* \<up>(x = a << b)) s))) s))
          s\<close>
      using le a b state
      unfolding snat_rel_def snat.rel_def br_def
@@ -1220,7 +1220,7 @@ proof -
         nat_div_distrib nat_power_eq pred_lift_merge_simps sint_eq_uint max_snat_def
         cnv_snat_to_uint(1) in_br_conv snat.rel_def snat_invar_def
       simp flip: word_to_lint_shl nat_uint_eq)
-     apply (simp_all add: POSTCOND_def STATE_extract shiftr_div_2n 
+     apply (simp_all add: POSTCOND_def STATE_extract EXTRACT_def shiftr_div_2n 
        uint_shiftl exists_pure_conv )
     
      apply (subgoal_tac "nat (take_bit (size ai) (uint ai << unat bi)) = unat ai << unat bi")
