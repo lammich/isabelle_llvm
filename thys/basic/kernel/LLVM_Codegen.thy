@@ -2251,6 +2251,8 @@ begin
           line [word "#ifndef", hfsym],
           line [word "#define", hfsym, word "1"],
           fbrk, fbrk,
+          line [word "#include <stdint.h>"],
+          fbrk, fbrk,         
           tydefs_proto_to_Cs tydefs,
           fbrk, fbrk,
           tydefs_to_Cs tydefs,

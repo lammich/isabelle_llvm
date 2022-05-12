@@ -40,11 +40,11 @@ lemma exp_aux1:
   assumes "2 ^ nat k < (N::int)" "t \<le> k" "0 < t" 
   shows "2 * 2 ^ nat (k - t) < N"
 proof -
-  have "\<lbrakk>2 ^ k < N; 0 < t; t \<le> k\<rbrakk> \<Longrightarrow> 2 * 2 ^ (k - t) < (N::int)" for k t :: nat
-    by (metis Suc_leI diff_less less_le_trans not_less power.simps(2) power_increasing_iff rel_simps(49) semiring_norm(76))
-  with assms show ?thesis
-    by (auto simp add: nat_diff_distrib' dest!: nat_mono simp flip: zero_less_nat_eq)
-qed  
+  from assms have "nat (k - t) + 1 \<le> nat k" by auto
+  with assms have "(2::int) ^ (nat (k - t) + 1) \<le> 2 ^ nat k"
+    using one_le_numeral power_increasing by blast
+  thus ?thesis using assms by simp
+qed
   
 lemma exp_aux2:  "\<lbrakk>t \<le> k; 0 < t\<rbrakk> \<Longrightarrow> nat (1+k-t) = Suc (nat (k-t))" by simp
 
