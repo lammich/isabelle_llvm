@@ -5,8 +5,171 @@
 theory Par_Array_Examples
 imports "../sepref/IICF/Impl/IICF_Array"
 begin
+
+  (* TODO: Move *)
+
+  lemma curry_mono[refine_mono]: 
+    "\<lbrakk>\<And>ab. f ab \<le> f' ab\<rbrakk> \<Longrightarrow> curry f a b \<le> curry f' a b"
+    unfolding curry_def
+    by refine_mono
+  
+  (* Monadifier setup *)
+  lemma curry_arity[sepref_monadify_arity]: "curry \<equiv> \<lambda>\<^sub>2f a b. SP curry$(\<lambda>\<^sub>2ab. f$ab)$a$b"
+    by (simp add: curry_def)
+  
+  lemma curry_comb[sepref_monadify_comb]:  
+    "curry$f$a$b = Refine_Basic.bind$(EVAL$a)$(\<lambda>\<^sub>2a. Refine_Basic.bind$(EVAL$b)$(\<lambda>\<^sub>2b. SP curry$f$a$b))"
+    by simp
+  
+  lemma curry_mono_flat[refine_mono]: 
+    "\<lbrakk>\<And>ab. flat_ge (f ab) (f' ab)\<rbrakk> \<Longrightarrow> flat_ge (curry f a b) (curry f' a b)"
+    unfolding curry_def
+    by refine_mono
+  
+  lemma curry_rule[refine_vcg]:
+    assumes "f (a,b) \<le> SPEC P"
+    shows "curry f a b \<le> SPEC P"  
+    using assms(1) unfolding curry_def
+    apply auto
+    done
+
+  lemma curry_refine[refine]:
+    assumes [refine]: "f' (a',b') \<le> \<Down>R (f (a,b))"
+    shows "curry f' a' b' \<le>\<Down>R (curry f a b)"
+    unfolding curry_def
+    by refine_rcg
+
+    
+  thm sepref_comb_rules  
+    
+  lemma hn_curry_aux:
+    assumes "\<And>ab abi. \<lbrakk> ab=(a,b); CP_assm (abi=(ai,bi)) \<rbrakk> \<Longrightarrow> hn_refine (hn_ctxt (A\<times>\<^sub>aB) ab abi ** F) (fi abi) (hn_ctxt (A'\<times>\<^sub>aB') ab abi ** F') R (CP' abi) (f ab)"
+    assumes "CP_simplify (CP' (ai,bi)) CP"
+    shows "hn_refine (A a ai ** B b bi ** F) (fi (ai,bi)) (A' a ai ** B' b bi ** F') R CP (f (a,b))"
+    using assms
+    apply (clarsimp simp: CP_assm_def CP_simplify_def hn_ctxt_def)
+    apply (rule hn_refine_cons_cp[rotated])
+    apply (rprems; simp)
+    apply simp_all
+    done
+  
+
+  lemma hn_curry[sepref_comb_rules]:  
+    assumes FR1: "\<Gamma> \<turnstile> hn_ctxt A a ai ** hn_ctxt B b bi ** F"
+    assumes HN: "\<And>ab abi. \<lbrakk> ab=(a,b); CP_assm (abi=(ai,bi)) \<rbrakk> \<Longrightarrow> hn_refine (hn_ctxt (A\<times>\<^sub>aB) ab abi ** F) (fi abi) (\<Gamma>' ab abi) R (CP' abi) (f ab)"
+    assumes FR2: "\<And>ab abi. \<Gamma>' ab abi \<turnstile> hn_ctxt (A'\<times>\<^sub>aB') ab abi ** F'"
+    assumes CP: "CP_simplify (CP' (ai,bi)) CP"
+    shows "hn_refine \<Gamma> (fi (ai,bi)) (hn_ctxt A' a ai ** hn_ctxt B' b bi ** F') R CP (curry$(\<lambda>\<^sub>2ab. f ab)$a$b)"
+    apply simp
+    apply (rule hn_refine_cons_cp[rotated])
+    apply (rule HN[simplified])
+    apply simp
+    apply (simp add: CP_assm_def)
+    using FR2[of "(a,b)" "(ai,bi)", unfolded hn_ctxt_def, simplified] apply (simp add: hn_ctxt_def)
+    apply simp
+    using CP apply (simp add: CP_defs)
+    using FR1 apply (simp add: hn_ctxt_def)
+    done
+    
+
+
   declare [[llc_compile_par_call=true]]
 
+  locale map_reduce =
+    fixes f :: "'a \<Rightarrow> 'b::monoid_add"
+    fixes A B
+    fixes fi :: "'ai::llvm_rep \<Rightarrow> 'bi::llvm_rep llM"
+    fixes addi zi
+    assumes [sepref_fr_rules]: 
+      "(fi,RETURN o f)\<in>A\<^sup>k \<rightarrow>\<^sub>a B"
+      "(uncurry addi, uncurry (RETURN oo (+)))\<in>B\<^sup>k *\<^sub>a B\<^sup>k \<rightarrow>\<^sub>a B"
+      "(uncurry0 zi, uncurry0 (RETURN 0)) \<in> unit_assn\<^sup>k \<rightarrow>\<^sub>a B"
+    assumes AB_pure[safe_constraint_rules]: "is_pure A" "is_pure B"
+    
+    
+    notes [[sepref_register_adhoc f "(+)::'b \<Rightarrow> _" "0::'b"]]
+    notes [sepref_frame_free_rules] = AB_pure[THEN mk_free_is_pure]
+  begin
+
+    abbreviation threshold where "threshold \<equiv> 10000::nat"
+
+    definition "idx_fold xs n \<equiv> doN {
+      ASSERT (n=length xs);
+      (_,a) \<leftarrow> WHILEIT (\<lambda>(i,a). i\<le>n \<and> a = sum_list (map f (take i xs))) (\<lambda>(i,a). i<n) (\<lambda>(i,a). doN { 
+        ASSERT (i<n);
+        RETURN (i+1, a + (f (xs!i)))
+      }) (0,0);
+      RETURN a
+    }"
+    
+    lemma idx_fold_rule[refine_vcg]: "n=length xs \<Longrightarrow> idx_fold xs n \<le> SPEC (\<lambda>r. r = sum_list (map f xs))"
+      unfolding idx_fold_def
+      apply (refine_vcg WHILEIT_rule[where R="measure (\<lambda>(i,_). n-i)"])
+      by (auto simp: take_Suc_conv_app_nth)
+      
+    sepref_register idx_fold  
+      
+      
+    find_theorems array_slice_assn  
+      
+    sepref_def idx_fold_impl [] is "uncurry (PR_CONST idx_fold)" :: "(array_slice_assn A)\<^sup>k *\<^sub>a (snat_assn' TYPE(64))\<^sup>k \<rightarrow>\<^sub>a B" 
+      unfolding idx_fold_def PR_CONST_def
+      apply (annot_snat_const "TYPE(64)")
+      by sepref_dbg_keep
+      
+    term WITH_SPLIT  
+    
+    find_theorems hn_invalid CP_cond
+    
+    
+    definition "idx_fold_par xs n \<equiv> doN {
+      ASSERT (n=length xs);
+      curry (RECT (\<lambda>idx_fold_par (xs,n). do {
+        ASSERT (n = length xs);
+        if n \<le> threshold then
+          idx_fold xs n
+        else
+          WITH_SPLIT_ro threshold xs (\<lambda>xs\<^sub>1 xs\<^sub>2. doN {
+            let n\<^sub>1 = threshold;
+            let n\<^sub>2 = n - threshold;
+            a\<^sub>1 \<leftarrow> idx_fold xs\<^sub>1 n\<^sub>1;
+            a\<^sub>2 \<leftarrow> curry idx_fold_par xs\<^sub>2 n\<^sub>2;
+             
+            RETURN (a\<^sub>1+a\<^sub>2)
+          })
+      })) xs n
+    }"
+    
+    lemma "n=length xs \<Longrightarrow> idx_fold_par xs n \<le> RETURN (sum_list (map f xs))"
+      unfolding idx_fold_par_def
+      supply R = RECT_rule[where 
+            pre="\<lambda>(xs,n). n=length xs" 
+        and M="\<lambda>(xs,n). RETURN (sum_list (map f xs))"
+        and V="measure (\<lambda>(_,n). n)"
+      , THEN order_trans]
+      unfolding Let_def curry_def
+      apply (refine_vcg R)
+      
+      apply auto
+      apply (rule order_trans, rprems)
+      apply auto
+      done
+      
+
+    sepref_def idx_fold_par_impl [] is "uncurry (PR_CONST idx_fold_par)" :: "(array_slice_assn A)\<^sup>k *\<^sub>a (snat_assn' TYPE(64))\<^sup>k \<rightarrow>\<^sub>a B" 
+      unfolding idx_fold_par_def PR_CONST_def
+      apply (annot_snat_const "TYPE(64)")
+      supply [sepref_comb_rules] = hn_RECT'[where Rx'="IICF_Array.array_slice_assn A \<times>\<^sub>a snat_assn"]
+      by sepref
+
+  end  
+     
+  
+  global_interpretation map_reduce 
+  xxx, ctd here. Instantiate to something meaningful!
+   
+      
+  
   context fixes f :: "'a \<Rightarrow> 'a" begin
 
   fun abs_map where

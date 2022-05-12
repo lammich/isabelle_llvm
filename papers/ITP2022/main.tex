@@ -50,7 +50,7 @@
 \usepackage[font=scriptsize]{subcaption}
 \usepackage{hyperref}
 \usepackage{float}
-\usepackage{wrapfig}
+% \usepackage{wrapfig}
 
 \usepackage{multirow}
 \usepackage{siunitx}
@@ -134,27 +134,39 @@
 
 \keywords{Isabelle,Concurrent Separation Logic,Parallel Sorting,LLVM} %TODO mandatory; please add comma-separated list of keywords
 
+\supplementdetails[subcategory={Isabelle Formalization}]{Software}{https://www21.in.tum.de/~lammich/isabelle_llvm_par/}
+
 % \acknowledgements{I want to thank \dots}%optional
 
 %\nolinenumbers %uncomment to disable line numbering
 
 
 
-%Editor-only macros:: begin (do not touch as author)%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\EventEditors{John Q. Open and Joan R. Access}
+% %Editor-only macros:: begin (do not touch as author)%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \EventEditors{John Q. Open and Joan R. Access}
+% \EventNoEds{2}
+% \EventLongTitle{42nd Conference on Very Important Topics (CVIT 2016)}
+% \EventShortTitle{CVIT 2016}
+% \EventAcronym{CVIT}
+% \EventYear{2016}
+% \EventDate{December 24--27, 2016}
+% \EventLocation{Little Whinging, United Kingdom}
+% \EventLogo{}
+% \SeriesVolume{42}
+% \ArticleNo{23}
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\EventEditors{June Andronick and Leonardo de Moura}
 \EventNoEds{2}
-\EventLongTitle{42nd Conference on Very Important Topics (CVIT 2016)}
-\EventShortTitle{CVIT 2016}
-\EventAcronym{CVIT}
-\EventYear{2016}
-\EventDate{December 24--27, 2016}
-\EventLocation{Little Whinging, United Kingdom}
+\EventLongTitle{13th International Conference on Interactive Theorem Proving (ITP 2022)}
+\EventShortTitle{ITP 2022}
+\EventAcronym{ITP}
+\EventYear{2022}
+\EventDate{August 7--10, 2022}
+\EventLocation{Haifa, Israel}
 \EventLogo{}
-\SeriesVolume{42}
-\ArticleNo{23}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
+\SeriesVolume{237}
+\ArticleNo{12}
 
 \begin{document}
 
@@ -222,11 +234,11 @@ Our verified parallel sorting algorithm is competitive to state-of-the-art paral
 %   \item the first verified implementation of a parallel sorting algorithm.
 % \end{itemize}
 
-\noindent Formalization available at: \url{https://www21.in.tum.de/~lammich/isabelle_llvm_par/}
+% \noindent The formalization is available at \url{https://www21.in.tum.de/~lammich/isabelle_llvm_par/}.
 
 
 \subsection{Overview}\label{sec:intro_overview}
-This paper is based on the Isabelle Refinement Framework (IRF), a continuing effort
+This paper is based on the Isabelle Refinement Framework, a continuing effort
 to verify efficient implementations of complex algorithms, using stepwise refinement techniques.
 Figure~\ref{fig:IRF-overview} displays the components of the Isabelle Refinement Framework.
 
@@ -359,7 +371,7 @@ On top of the back-end, a program logic is used to prove programs correct.
 It uses separation logic, and provides automation like a verification condition generator (VCG).
 In Section~\ref{sec:seplogic}, we describe our formalization of concurrent separation logic~\cite{OH04}, and our VCG.
 
-This basic program logic and VCG can already be used to verify simple low-level algorithms and data structures,
+At the level of the program logic and VCG, our framework can already be used to verify simple low-level algorithms and data structures,
 like dynamic arrays and linked lists. More complex developments typically use a stepwise refinement approach,
 starting at purely functional programs modelled in a nondeterminism-error (NE) monad~\cite{LaTu12}.
 A semi-automatic refinement procedure (Sepref~\cite{La15,La19-llvm}) translates from the purely functional
@@ -440,7 +452,7 @@ Section~\ref{sec:concl} concludes the paper and discusses related and future wor
   \subsection{State-Nondeterminism-Error Monad with Access Reports}\label{sec:monad}
   We define the underlying monad in two steps. We start with a nondeterminism-error monad,
   and then lift it to a state monad and add access reports.
-  Defining a nondeterminism-error monad is standard:
+  Defining a nondeterminism-error monad is straightforward in Isabelle/HOL:
   \begin{lstlisting}
     'a neM == spec ("'a => bool") | fail
     return x == spec (%r. r=x)
@@ -460,9 +472,9 @@ Section~\ref{sec:concl} concludes the paper and discusses related and future wor
     bind$_M$ m f \mu == (x_1,r_1,\mu) <- m \mu; (x_2,r_2,\mu) <- f x_1 \mu; return$_{ne}$ (x_2,r_1+r_2,\mu)
   \end{lstlisting}
   Here, \is{return} does not change the state, and reports no accesses (\is$0$),
-  and \is{bind} sequentially composes the executions, and adds up the access reports.
+  and \is{bind} sequentially composes the executions, threading through the state $\mu$, and adding up the access reports \is$r_1$ and \is$r_2$.
 
-  Typically, the access report will contain read and written addresses, such that we can detect a data race.
+  Typically, the access report will contain read and written addresses, such that data races can be detected.
   Moreover, if parallel executions can allocate memory, we must detect those
   executions where the memory manager allocated the same block in both parallel strands.
   As we assume a thread safe memory manager, those \emph{infeasible} executions can safely be ignored.
@@ -471,7 +483,7 @@ Section~\ref{sec:concl} concludes the paper and discusses related and future wor
   compose two pairs of access reports and states. Then, we define a parallel composition operator for \is{M}:
   \begin{lstlisting}
     (m_1 || m_2) \mu ==
-      (x_1,(r_1,\mu_1)) <- m_1 \mu; (x_2,(r_2,\mu_2)) <- m_2 \mu;  --"\rightcomment{execute both strands}"
+      (x_1,r_1,\mu_1) <- m_1 \mu; (x_2,r_2,\mu_2) <- m_2 \mu;  --"\rightcomment{execute both strands}"
       assume feasible \rho_1 \rho_2;  --"\rightcomment{ignore infeasible combinations}"
       assert norace \rho_1 \rho_2; --"\rightcomment{fail on data race}"
       return$_{ne}$ ((x_1,x_2), combine (\rho_1,\mu_1) (\rho_2,\mu_2))  --"\rightcomment{combine results}"
@@ -514,7 +526,7 @@ Section~\ref{sec:concl} concludes the paper and discusses related and future wor
   \begin{lstlisting}
     valid \mu (ADDR b i) == is_alloc (\mu b) & i<|vals (\mu b)|
     get \mu (ADDR b i) == vals (\mu b) ! i
-    put \mu (ADDR b i) x == \mu(b := BLOCK ((vals (\mu b))[i:=x]))
+    put \mu (ADDR b i) x == \mu(b := ALLOC ((vals (\mu b))[i:=x]))
   \end{lstlisting}
   where \is{|xs|} is the length of list \is{xs}, \is{xs!i} returns the \is$i$th element of list \is$xs$,
   and \is{xs[i:=x]} replaces the \is$i$th element of \is{xs} by \is{x}.
@@ -559,11 +571,21 @@ Section~\ref{sec:concl} concludes the paper and discusses related and future wor
   and \is{\mu_1, \mu_2} be memories that have evolved from a common memory \is{\mu}, consistently with
   the access reports \is{\rho_1, \rho_2}. Let \is{(\rho',\mu') = combine (\rho_1,\mu_1) (\rho_2,\mu_2)}, and \is{addr} a valid address in \is{\mu'}. Then
   \begin{lstlisting}
-    \mu' b = FRESH <--> if b \in a_2 \union f_2 then \mu_2 b = FRESH else \mu_1 b = FRESH
-    \mu' b = FREED <--> if b \in a_2 \union f_2 then \mu_2 b = FREED else \mu_1 b = FREED
-    is_alloc (\mu' b) <--> if b \in b \in a_2 then is_alloc (\mu_2 b) else is_alloc (\mu_1 b)
-    get \mu' addr = if addr \in w_2 \or addr.bidx \in a_2 \union f_2 then get \mu_2 addr else get \mu_1 addr
+    (1)  \mu' b = FRESH <--> \mu b = FRESH \and b ~: a_1 \union a_2
+    (2)  is_alloc (\mu' b) <--> (is_alloc (\mu b) \or b \<in> a_1 \union a_2) \and b ~: f_1 \union f_2
+    (3)  \mu' b = FREED <--> \mu b = FREED \or b \in f_1 \union f_2
+
+    (4)  a \in w_1 \or b \in a_1 ==> get_addr \mu' a = get_addr \mu_1 a
+    (5)  a \in w_2 \or b \in a_2 ==> get_addr \mu' a = get_addr \mu_2 a
+    (6)  a ~: w_1\<union>w_2 \or b ~: a_1\<union>a_2 ==> get_addr \mu' a = get_addr \mu a
   \end{lstlisting}
+  The properties (1)--(3) define the state of blocks in the combined memory:
+  a fresh block in \is{\mu'} was fresh already in \is{\mu}, and has not been allocated (1);
+  an allocated block was already allocated or has been allocated, but has not been freed (2); and a freed block was already freed, or has been freed (3).
+  The properties (4)--(6) define the content: addresses written or allocated in the first or second execution get their content from \is{\mu_1} (4) or \is{\mu_2} (5) respectively.
+  Addresses not written or allocated at all keep their original content (6).
+
+
 
 
   \subsection{LLVM Instructions}
@@ -797,7 +819,7 @@ Section~\ref{sec:concl} concludes the paper and discusses related and future wor
     \alpha \mu == (\alpha$_m$ \mu, \alpha$_b$ \mu)
 
     \alpha$_m$ \mu addr == if valid \mu addr then Some (get \mu addr) else 0
-    \alpha$_b$ \mu b == if is_alloc (\mu b) then TRIV (|vals (\mu b)|) else 0
+    \alpha$_b$ \mu b == if is_alloc (\mu b) then Some (|vals (\mu b)|) else 0
   \end{lstlisting}
   An abstract memory \is{\alpha \mu} consists of two parts:
   \is{\alpha$_m$ \mu} is a map from addresses to the values stored there. It is used to reason about load and store operations.
@@ -817,7 +839,7 @@ Section~\ref{sec:concl} concludes the paper and discusses related and future wor
   \begin{lstlisting}
     \<up>\<phi> == if \<phi> then \<box> else false
   \end{lstlisting}
-  It does not depend on the memory, and is used to lift plain logical statements into separation logic.
+  It is used to lift plain logical statements into separation logic assertions owning no memory.
   When clear from the context, we omit the \is{\<up>}-symbol, and just mix plain statements with separation logic assertions.
 %   , e.g., \is{array xs p * i<|xs|}
 
@@ -845,7 +867,7 @@ Section~\ref{sec:concl} concludes the paper and discusses related and future wor
 
   Equipped with a weakest precondition with access restrictions, we define a Hoare-triple:
   \begin{lstlisting}
-    ABS amf P \mu == \<exists>am. am ## amf \and \<alpha> \mu = am+amf \and P am
+    ABS amf P \mu == \<exists>am. am # amf \and \<alpha> \mu = am+amf \and P am
 
     ht P c Q == \<forall>\mu amf. ABS amf P \mu ==> wpf amf c (%x \mu'. ABS amf (Q x) \mu') \mu
   \end{lstlisting}
@@ -864,7 +886,7 @@ Section~\ref{sec:concl} concludes the paper and discusses related and future wor
   The tactic is guided by the syntax of the command \is{c}.
   Basic monad combinators are broken down using the following rules:
   \begin{lstlisting}
-    Q r \mu ==> wpf amf (return r) \mu
+    Q r \mu ==> wpf amf (return r) Q \mu
     wpf amf m (%x. wpf amf (f x) Q) \mu ==> wpf amf ({x <- m; f x}) Q \mu
   \end{lstlisting}
   For other instructions and user defined functions, the VCG expects a Hoare-triple to be already proved.
@@ -872,7 +894,7 @@ Section~\ref{sec:concl} concludes the paper and discusses related and future wor
   \begin{lstlisting}
     ht P c Q \and ABS amf P' \mu   --"\rightcomment{match Hoare triple and current state}"
     \and P' |- P*F --"\rightcomment{infer frame}"
-    \and (!!r \mu. ABS amf (Q r ** F) \mu ==> Q' r \mu) --"\rightcomment{continue with postcondition}"
+    \and (!!r \mu. ABS amf (Q r * F) \mu ==> Q' r \mu) --"\rightcomment{continue with postcondition}"
     ==> wpf amf c Q' \mu
   \end{lstlisting}
   To process a command \is{c}, the first assumption is instantiated with the Hoare-triple for \is{c},
@@ -895,7 +917,7 @@ Section~\ref{sec:concl} concludes the paper and discusses related and future wor
   |= {n~=0} ll_malloc TYPE(\<alpha>) n {%p. range {0..<n} (%_. init) p * b_tag n p}
   |= {range {0..<n} xs p * b_tag n p} ll_free p {%_. \<box>}
   |= {pto x p} ll_load p {%r. r=x * pto x p}
-  |= {pto xx p} ll_store x p {%_. pto x p}
+  |= {pto y p} ll_store x p {%_. pto x p}
   \end{lstlisting}
   Here \is{b_tag n p} asserts that \is{p} points to the beginning of a block of size \is$n$, and
   \is{range I f p} describes that for all $i\in I$, $p+i$ points to value $f~i$.
@@ -913,9 +935,9 @@ Section~\ref{sec:concl} concludes the paper and discusses related and future wor
   Isabelle Refinement Framework, focusing on our changes to support parallel algorithms.
 
   \subsection{Abstract Programs}
-  Abstract programs are shallowly embedded into the nondeterminism error monad \is{'a ne} (cf.\ Section~\ref{sec:monad}).
+  Abstract programs are shallowly embedded into the nondeterminism error monad \is{'a neM} (cf.\ Section~\ref{sec:monad}).
   They are purely functional, not modifying memory, or differentiating between sequential and parallel execution.
-  We define a \emph{refinement ordering} on \is{ne}:
+  We define a \emph{refinement ordering} on \is{neM}:
   \begin{lstlisting}
     spec P <= spec Q == \<forall>x. P x ==> Q x         fail $\not\le$ spec Q         m <= fail
   \end{lstlisting}
@@ -932,7 +954,7 @@ Section~\ref{sec:concl} concludes the paper and discusses related and future wor
   If the precondition is false, the right hand side is \is{fail}, and the statement trivially holds.
   Otherwise, $m$ cannot fail, and every possible result $x$ of $m$ must satisfy $Q$.
 
-  For a detailed description on using the \is{ne} monad for stepwise refinement based program verification, we refer the reader to~\cite{LaTu12}.
+  For a detailed description on using the \is{ne}-monad for stepwise refinement based program verification, we refer the reader to~\cite{LaTu12}.
 
 
 
@@ -940,17 +962,17 @@ Section~\ref{sec:concl} concludes the paper and discusses related and future wor
   The Sepref tool~\cite{La15,La19-llvm} symbolically executes an abstract program in the \is{ne}-monad,
   keeping track of refinements for every abstract variable to a concrete representation, which may use pointers to dynamically allocated memory.
   During the symbolic execution, the tool synthesizes an imperative Isabelle-LLVM program, together with a refinement proof.
-  The synthesis is automatic, but requires use annotations to the abstract program.
+  The synthesis is automatic, but requires annotations to the abstract program.
 
-  The main concept of the Sepref tool is refinement between an abstract program \is{c} in the \is{ne} monad,
+  The main concept of the Sepref tool is refinement between an abstract program \is{c} in the \is{ne}-monad,
   and a concrete program \is{c$_\dagger$} in the \is{M} monad, as expressed by the \is{hnr}-predicate:
   \begin{lstlisting}
     "hnr \<Gamma> c$_\dagger$ \<Gamma>' R CP c ==
-        c ~= fail ==> ht \<Gamma> c$_\dagger$ (%x. \<exists>x$_\dagger$. \<Gamma>' * R x x$_\dagger$ * \<up>(return x <= c \and CP x$_\dagger$))"
+        c ~= fail ==> ht \<Gamma> c$_\dagger$ (%x$_\dagger$. \<exists>x. \<Gamma>' * R x x$_\dagger$ * \<up>(return x <= c \and CP x$_\dagger$))"
   \end{lstlisting}
   That is, either the abstract program \is{c} fails,
   or for a memory described by assertion \is{\<Gamma>},
-  the LLVM program \is{c$_\dagger$} succeeds with \is{r$_\dagger$},
+  the LLVM program \is{c$_\dagger$} succeeds with \is{x$_\dagger$},
   such that the new memory is described by \is{\<Gamma>' * R x x$_\dagger$},
   for a possible result \is{x} of the abstract program \is{c}. Moreover, the predicate \is{CP} holds for the concrete result.
   Note that \is{hnr} trivially holds for a failing abstract program. This makes sense, as we prove that
@@ -997,7 +1019,7 @@ Section~\ref{sec:concl} concludes the paper and discusses related and future wor
   \end{example}
 
   Given refinement assertions for the parameters, and \is{hnr}-rules for all operations in a program,
-  the Sepref tool automatically synthesizes an LLVM program from an abstract \is{ne} program.
+  the Sepref tool automatically synthesizes an LLVM program from an abstract \is{neM} program.
   The tool tries to automatically discharge additional proof obligations, typically arising from
   translating arithmetic operations from unbounded numbers to fixed width numbers. Where automatic proof fails,
   the user has to add assertions to the abstract program to help the proof.
@@ -1180,10 +1202,11 @@ Section~\ref{sec:concl} concludes the paper and discusses related and future wor
   This defines a context in which we have an abstract compare function \is{lt} for the abstract elements of type \is{'e}.
   It takes an extra parameter of type \is{'p} (e.g.\ the list $xs$), and forms a weak ordering\footnote{
     A weak ordering is induced by a mapping of the elements into a total ordering. It is the standard prerequisite for sorting algorithms in C++~\cite{Josu12}.
-  }. Moreover, we have a concrete implementation \is{lt$_\dagger$} or the compare function, wrt.\ the refinement assertions
+  }. Note that the strict compare function \is{lt} also induces a non-strict version \is{le p a b == \<not>lt p b a}.
+  Moreover, we have a concrete implementation \is{lt$_\dagger$} of the compare function, wrt.\ the refinement assertions
   \is{par$_A$} for the parameter and \is{elem$_A$} for the elements.
 
-  Our sorting algorithm is developed and verified in the context of this locale (to avoid confusion, our presentation has, up to now, just used \is{<} and \is{sorted} instead of \is{lt p} and \is{sorted_wrt (lt p)}).
+  Our sorting algorithm is developed and verified in the context of this locale (to avoid confusion, our presentation has, up to now, just used \is{<}, \is{<=}, and \is{sorted} instead of \is{lt p}, \is{le p}, and \is{sorted_wrt (le p)}).
   To get a sorting algorithm for an actual compare function, we have to instantiate the locale,
   providing an abstract and concrete compare function, along with a proof that the abstract function is a weak ordering,
   and the concrete function refines the abstract one. For our example of sorting indexes into an array,
@@ -1805,7 +1828,7 @@ Section~\ref{sec:concl} concludes the paper and discusses related and future wor
       title style={at={(0.1,.75)}},
       ybar=0pt,
       width=\textwidth,
-      height=.25\textheight,
+      height=.249\textheight,
       bar width=3pt,
       xtick=data,
       symbolic x coords={rev-sorted-end-10,rev-sorted-end-1,sorted-end-.1,almost-sorted-50,random-boolean,organ-pipe,sorted-end-10,equal,rev-sorted-middle-.1,rev-sorted,sorted-middle-1,rev-sorted-middle-10,random,almost-sorted-.1,sorted,rev-sorted-middle-1,sorted-middle-.1,almost-sorted-10,almost-sorted-1,sorted-middle-10,rev-sorted-end-.1,sorted-end-1,random-dup-10,}
@@ -1970,7 +1993,7 @@ Section~\ref{sec:concl} concludes the paper and discusses related and future wor
     The main idea of our parallel extension is to shallowly embed the semantics of a
     parallel combinator into a sequential semantics, by making the
     semantics report the accessed memory locations, and fail if there is a potential data race.
-    We only needed to changed the lower levels of our existing framework for sequential LLVM~\cite{La19-llvm}.
+    We only needed to change the lower levels of our existing framework for sequential LLVM~\cite{La19-llvm}.
     Higher-level tools like the VCG and Sepref remained largely unchanged and backwards compatible.
     This greatly simplified reusing of existing verification projects, like the sequential pdqsort algorithm~\cite{La20}.
 

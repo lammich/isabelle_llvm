@@ -936,71 +936,7 @@ begin
       c1.rw_valid_or_alloc c2.a_dj_valid
       free_alloc_dj alloc_free_dj
       by blast
-    
-    
-    
-    (* Properties of combine, for presentation in paper *)    
-    
-    lemma 
-    assumes "b \<in> a\<^sub>2\<union>f\<^sub>2"  
-    shows 
-      "is_FRESH s' b = is_FRESH s\<^sub>2 b" "is_FREED s' b = is_FREED s\<^sub>2 b" "is_ALLOC s' b = is_ALLOC s\<^sub>2 b"
-      using assms
-      apply (simp_all add: is_FRESH'_eq is_FREED'_eq is_ALLOC'_eq)
-      using c1.is_FRESH'_eq c2.is_FREED'_eq c2.is_FRESH'_eq assms apply blast
-      using c1.is_FREED'_eq c2.is_FREED'_eq free_alloc_dj apply blast
-      using c1.is_ALLOC'_eq c2.is_ALLOC'_eq free_alloc_dj assms apply blast
-      done
-      
-    lemma 
-    assumes "b \<notin> a\<^sub>2\<union>f\<^sub>2"  
-    shows 
-      "is_FRESH s' b = is_FRESH s\<^sub>1 b" "is_FREED s' b = is_FREED s\<^sub>1 b" "is_ALLOC s' b = is_ALLOC s\<^sub>1 b"
-      using assms
-      apply (simp_all add: is_FRESH'_eq is_FREED'_eq is_ALLOC'_eq)
-      using c1.is_FRESH'_eq c2.is_FREED'_eq c2.is_FRESH'_eq assms apply blast
-      using c1.is_FREED'_eq c2.is_FREED'_eq free_alloc_dj apply blast
-      using c1.is_ALLOC'_eq c2.is_ALLOC'_eq free_alloc_dj assms apply blast
-      done
-    
-    
-    lemma "is_FRESH s' b \<longleftrightarrow> (if b \<in> a\<^sub>2\<union>f\<^sub>2 then is_FRESH s\<^sub>2 b else is_FRESH s\<^sub>1 b)"
-      apply (simp add: is_FRESH'_eq)
-      using c1.is_FRESH'_eq c2.is_FREED'_eq c2.is_FRESH'_eq by blast
-    
-    lemma "is_FREED s' b \<longleftrightarrow> (if b \<in> a\<^sub>2\<union>f\<^sub>2 then is_FREED s\<^sub>2 b else is_FREED s\<^sub>1 b)"
-      apply (simp add: is_FREED'_eq)
-      using c1.is_FREED'_eq c2.is_FREED'_eq free_alloc_dj by auto
-    
-    lemma "is_ALLOC s' b \<longleftrightarrow> (if b \<in> a\<^sub>2\<union>f\<^sub>2 then is_ALLOC s\<^sub>2 b else is_ALLOC s\<^sub>1 b)"
-      apply (simp add: is_ALLOC'_eq)
-      using c1.is_ALLOC'_eq c2.is_ALLOC'_eq free_alloc_dj by auto
 
-    lemma 
-      fixes b i
-      defines "a \<equiv> ADDR b i"
-      assumes "is_ALLOC s' b" 
-      shows "get_addr s' a = (if a\<in>w\<^sub>2 \<or> b\<in>a\<^sub>2 \<or> b\<in>f\<^sub>2 then get_addr s\<^sub>2 a else get_addr s\<^sub>1 a)"  
-      apply (cases "is_valid_addr s' a")
-      subgoal
-        using assms(2)
-        by (auto simp: get_addr_combine a_def is_ALLOC'_eq)
-      subgoal
-        using assms(2)
-        apply (auto simp add: is_valid_addr_alt a_def get_addr_def)
-        apply (auto simp: block_size_def split: block.splits)
-        
-        subgoal
-          by (metis (no_types, lifting) UnI1 Un_commute addr.sel(1) addr.simps(2) assms(2) block_size_def c2.acc_consistent_loc_axioms c2.acc_ref_not_fresh c2.is_FREED'_eq block.simps(10) image_eqI acc_consistent_loc.rw_valid_s' is_ALLOC_conv is_FREED'_eq is_valid_addr_def valid_addr')
-        subgoal
-          by (smt (verit, ccfv_SIG) Un_iff alloc_blocks_def c1.acc_a_alloc c1.is_ALLOC'_eq c1.is_FRESH'_eq c2.acc_a_alloc c2.is_ALLOC'_eq block.disc(1) block.disc(2) block.disc(3) block.distinct(5) block.sel block_combine.simps(1) combine_states_def free_alloc_dj i_nth_simp(3) is_FREED'_eq le_eq_less_or_eq linorder_le_cases mapp_combine mem_Collect_eq par_blocks_exist_before)
-        subgoal 
-          by (meson UnI2 assms(2) is_ALLOC'_eq)
-        subgoal
-          by (metis Un_iff block_size_combine block_size_def c1.is_ALLOC'_eq c2.is_FREED'_eq block.collapse block.disc(3) block.distinct(5) block.simps(10) combine_states_def i_nth_simp(3) is_ALLOC'_eq is_FREED'_eq linorder_not_le)
-        done
-      done        
-    
   end
 
   text \<open>Consistent, feasible, and race free parallel executions\<close>  
@@ -1115,7 +1051,33 @@ begin
         using c1.allocated_addrs_approx c1.valid_s'_alt c2.allocated_addrs_approx c2.valid_s'_alt valid_addr' by auto
       done
             
-                        
+
+      
+    
+    (* Properties of combine, for presentation in paper *)    
+
+    lemma "is_FRESH s' b \<longleftrightarrow> is_FRESH s b \<and> b\<notin>a\<^sub>1\<union>a\<^sub>2"  
+      by (metis Un_iff c1.is_FRESH'_eq c2.is_FRESH'_eq is_FRESH'_eq)
+          
+    lemma "is_ALLOC s' b \<longleftrightarrow> (is_ALLOC s b \<or> b\<in>a\<^sub>1\<union>a\<^sub>2) \<and> b\<notin>f\<^sub>1 \<union> f\<^sub>2"
+      using is_ALLOC'_eq by auto
+      
+    lemma "is_FREED s' b \<longleftrightarrow> (is_FREED s b \<or> b\<in>f\<^sub>1\<union>f\<^sub>2)"  
+      using is_FREED'_eq by auto
+
+    lemma 
+      fixes b i
+      defines "a \<equiv> ADDR b i"
+      assumes "is_valid_addr s' a" 
+      shows "a\<in>w\<^sub>2 \<or> b\<in>a\<^sub>2 \<Longrightarrow> get_addr s' a = get_addr s\<^sub>2 a"
+        and "a\<in>w\<^sub>1 \<or> b\<in>a\<^sub>1 \<Longrightarrow> get_addr s' a = get_addr s\<^sub>1 a"
+        and "a\<notin>w\<^sub>1\<union>w\<^sub>2 \<and> b\<notin>a\<^sub>1\<union>a\<^sub>2 \<Longrightarrow> get_addr s' a = get_addr s a"
+      subgoal using assms(2) get_addr_combine local.a_def by auto
+      subgoal by (metis addr.sel(1) assms(2) combine_states_sym feasible_parallel_execution.get_addr_combine feasible_parallel_execution.intro local.a_def local.symmetric valid_parallel_execution_def)
+      subgoal using assms(2) get_addr_combine local.a_def valid_addr'_outside_wa_eq_orig(1) by auto
+      done
+      
+                              
   end      
 
 end

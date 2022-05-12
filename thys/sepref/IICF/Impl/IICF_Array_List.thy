@@ -102,6 +102,7 @@ begin
   lemma al_append_hnr_aux: "(uncurry arl_push_back, uncurry mop_list_append)
     \<in> [\<lambda>(xs,_). length xs + 1 < max_snat L]\<^sub>a AA\<^sup>d *\<^sub>a id_assn\<^sup>k \<rightarrow> AA"
     by m_ref  
+    
   sepref_decl_impl (ismop) al_append: al_append_hnr_aux .
 
   lemma al_take_hnr_aux: "(uncurry arl_take, uncurry mop_list_take)

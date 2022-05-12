@@ -557,7 +557,223 @@ begin
         
       apply (rule hn_WITH_SPLIT_template[of "array_slice_assn A", OF _ assms]; assumption?)
       unfolding array_slice_assn_def ..
-            
+
+
+      
+      
+      
+      
+    definition "WITH_SPLIT_ro i xs m \<equiv> doN {
+      ASSERT (i<length xs);
+      let xs\<^sub>1 = take i xs;
+      let xs\<^sub>2 = drop i xs;
+      m xs\<^sub>1 xs\<^sub>2
+    }"  
+    
+    (* Monotonicity setup *)
+    lemma WITH_SPLIT_ro_mono[refine_mono]: 
+      "\<lbrakk>\<And>a b. f a b \<le> f' a b\<rbrakk> \<Longrightarrow> WITH_SPLIT_ro xs n f \<le> WITH_SPLIT_ro xs n f'"
+      unfolding WITH_SPLIT_ro_def
+      by refine_mono
+    
+    (* Monadifier setup *)
+    lemma WITH_SPLIT_ro_arity[sepref_monadify_arity]: "WITH_SPLIT_ro \<equiv> \<lambda>\<^sub>2xs n f. SP WITH_SPLIT_ro$xs$n$(\<lambda>\<^sub>2a b. f$a$b)"
+      by simp
+    
+    lemma WITH_SPLIT_ro_comb[sepref_monadify_comb]:  
+      "WITH_SPLIT_ro$xs$n$f = Refine_Basic.bind$(EVAL$xs)$(\<lambda>\<^sub>2xs. Refine_Basic.bind$(EVAL$n)$(\<lambda>\<^sub>2n. SP WITH_SPLIT_ro$xs$n$f))"
+      by simp
+    
+    lemma WITH_SPLIT_ro_mono_flat[refine_mono]: 
+      "\<lbrakk>\<And>a b. flat_ge (f a b) (f' a b)\<rbrakk> \<Longrightarrow> flat_ge (WITH_SPLIT_ro xs n f) (WITH_SPLIT_ro xs n f')"
+      unfolding WITH_SPLIT_ro_def
+      by refine_mono
+    
+    lemma WITH_SPLIT_ro_rule[refine_vcg]:
+      assumes "n<length xs"
+      assumes "\<And>xs\<^sub>1 xs\<^sub>2. \<lbrakk>xs=xs\<^sub>1@xs\<^sub>2; length xs\<^sub>1=n \<rbrakk> \<Longrightarrow> m xs\<^sub>1 xs\<^sub>2 \<le> SPEC P"
+      shows "WITH_SPLIT_ro n xs m \<le> SPEC P"  
+      using assms(1) unfolding WITH_SPLIT_ro_def
+      apply (refine_vcg assms(2)[of "take n xs" "drop n xs"])
+      apply auto
+      done
+
+    lemma WITH_ro_split_refine[refine]:
+      assumes "(n',n)\<in>Id"
+      assumes "(xs',xs) \<in> \<langle>A\<rangle>list_rel"
+      assumes [refine]: "\<lbrakk>n < length xs; n' < length xs'\<rbrakk> \<Longrightarrow> m' (take n' xs') (drop n' xs') \<le> \<Down>R (m (take n xs) (drop n xs))"
+      shows "WITH_SPLIT_ro n' xs' m' \<le>\<Down>R (WITH_SPLIT_ro n xs m)"
+      unfolding WITH_SPLIT_ro_def
+      apply refine_rcg
+      using assms(1,2)
+      apply (auto simp: list_rel_imp_same_length list_rel_append)
+      done
+      
+
+    definition [llvm_inline]: "ars_with_split_ro i a m \<equiv> doM {
+      (a\<^sub>1,a\<^sub>2) \<leftarrow> ars_split i a;
+      r \<leftarrow> m a\<^sub>1 a\<^sub>2;
+      ars_join a\<^sub>1 a\<^sub>2;
+      Mreturn r
+    }"
+      
+    (* Monotonicity setup *)
+    lemma ars_with_split_ro_mono[partial_function_mono]:
+      assumes "\<And>xs\<^sub>1 xs\<^sub>2. M_mono' (\<lambda>D. m D xs\<^sub>1 xs\<^sub>2)"
+      shows "M_mono' (\<lambda>D. ars_with_split_ro i a (m D))"
+      unfolding ars_with_split_ro_def using assms
+      by pf_mono_prover
+    
+
+    lemma hn_WITH_SPLIT_ro_aux:
+      assumes MHN: "\<And>xs\<^sub>1 xsi\<^sub>1 xs\<^sub>2 xsi\<^sub>2. hn_refine (raw_array_slice_assn xs\<^sub>1 xsi\<^sub>1 ** raw_array_slice_assn xs\<^sub>2 xsi\<^sub>2 ** F) (mi xsi\<^sub>1 xsi\<^sub>2) (raw_array_slice_assn xs\<^sub>1 xsi\<^sub>1 ** raw_array_slice_assn xs\<^sub>2 xsi\<^sub>2 ** F') R (CP' xsi\<^sub>1 xsi\<^sub>2) (m xs\<^sub>1 xs\<^sub>2)"
+      assumes CP': "\<And>xsi\<^sub>1 xsi\<^sub>2 ri. CP' xsi\<^sub>1 xsi\<^sub>2 ri \<Longrightarrow> CP ri"
+      shows "hn_refine 
+        (raw_array_slice_assn xs xsi ** snat_assn n ni ** F) 
+        (ars_with_split_ro ni xsi mi) 
+        (raw_array_slice_assn xs xsi ** snat_assn n ni ** F') 
+        R 
+        CP 
+        (WITH_SPLIT_ro n xs m)"  
+      apply (sepref_to_hoare)
+      unfolding ars_with_split_ro_def WITH_SPLIT_ro_def
+      
+      supply [simp del] = List.take_all List.drop_all
+      supply [simp] = pure_def refine_pw_simps
+      
+      apply (clarsimp simp: )
+      
+      supply [vcg_rules] = hn_refineD[OF MHN]
+      
+      apply vcg
+      apply (drule CP')
+      apply (fold inres_def)
+      apply vcg
+      done
+
+    lemma hn_WITH_SPLIT_ro_simplified:
+      assumes MHN: "\<And>xs\<^sub>1 xsi\<^sub>1 xs\<^sub>2 xsi\<^sub>2. 
+        hn_refine (raw_array_slice_assn xs\<^sub>1 xsi\<^sub>1 ** raw_array_slice_assn xs\<^sub>2 xsi\<^sub>2) 
+                  (mi xsi\<^sub>1 xsi\<^sub>2) 
+                  (raw_array_slice_assn xs\<^sub>1 xsi\<^sub>1 ** raw_array_slice_assn xs\<^sub>2 xsi\<^sub>2) 
+                  R
+                  (\<lambda>_. True) 
+                  (m xs\<^sub>1 xs\<^sub>2)"
+      shows "hn_refine 
+        (raw_array_slice_assn xs xsi ** snat_assn n ni) 
+        (ars_with_split_ro ni xsi mi) 
+        (raw_array_slice_assn xs xsi ** snat_assn n ni) 
+        R 
+        (\<lambda>_. True)  
+        (WITH_SPLIT_ro n xs m)"  
+      using hn_WITH_SPLIT_ro_aux[where 
+        F=\<box> and F'=\<box> and
+        CP'="\<lambda>_ _ _. True" and
+        CP="\<lambda>_. True"] MHN
+      apply (simp add: sep_algebra_simps) 
+      by blast
+      
+      
+    lemma WITH_SPLIT_aux_append_list_rel: "\<lbrakk> (xsi\<^sub>1,take n xs)\<in>\<langle>A\<rangle>list_rel; (xsi\<^sub>2,drop n xs)\<in>\<langle>A\<rangle>list_rel \<rbrakk> \<Longrightarrow> (xsi\<^sub>1@xsi\<^sub>2,xs) \<in> \<langle>A\<rangle>list_rel"  
+      by (metis atd_lem list_rel_append)
+      
+    lemma hn_WITH_SPLIT_ro_template_aux:
+      assumes sl_assn_def: "sl_assn = hr_comp raw_array_slice_assn (\<langle>A\<rangle>list_rel)"
+      assumes MHN: "\<And>xs\<^sub>1 xs\<^sub>2 xsi\<^sub>2. hn_refine 
+        (hn_ctxt (sl_assn) xs\<^sub>1 xsi ** hn_ctxt (sl_assn) xs\<^sub>2 xsi\<^sub>2 ** hn_ctxt snat_assn n ni ** F) 
+        (mi xsi xsi\<^sub>2) (hn_ctxt (sl_assn) xs\<^sub>1 xsi ** hn_ctxt (sl_assn) xs\<^sub>2 xsi\<^sub>2 ** F') 
+        (R) 
+        (CP' xsi xsi\<^sub>2) 
+        (m xs\<^sub>1 xs\<^sub>2)"
+      assumes CP': "\<And>ri xsi\<^sub>2. CP' xsi xsi\<^sub>2 ri \<Longrightarrow> CP ri"
+      shows "hn_refine 
+        (hn_ctxt (sl_assn) xs xsi ** hn_ctxt snat_assn n ni ** F) 
+        (ars_with_split_ro ni xsi mi) 
+        (hn_ctxt (sl_assn) xs xsi ** hn_ctxt snat_assn n ni ** F') 
+        R
+        CP 
+        (WITH_SPLIT_ro n xs m)"  
+      apply (sepref_to_hoare)
+      unfolding ars_with_split_ro_def WITH_SPLIT_ro_def sl_assn_def hr_comp_def
+      
+      supply [simp del] = List.take_all List.drop_all
+      supply [simp] = pure_def refine_pw_simps list_rel_imp_same_length WITH_SPLIT_aux_append_list_rel
+      supply [elim] = list_rel_take list_rel_drop list_rel_append
+      
+      apply (clarsimp simp: )
+      
+      supply R = hn_refineD[OF MHN, unfolded hn_ctxt_def sl_assn_def hr_comp_def prod_assn_def]
+      thm R
+      supply [vcg_rules] = R
+      
+      apply vcg
+      apply (drule CP')
+      apply (fold inres_def)
+      apply vcg
+      done
+      
+      
+    lemma hn_WITH_SPLIT_ro_template: 
+      assumes sl_assn_def: "sl_assn = hr_comp raw_array_slice_assn (\<langle>A\<rangle>list_rel)"
+      assumes FR: "\<Gamma> \<turnstile> hn_ctxt sl_assn xs xsi ** hn_ctxt snat_assn n ni ** \<Gamma>\<^sub>1"
+      assumes HN: "\<And>xs\<^sub>1 xsi\<^sub>1 xs\<^sub>2 xsi\<^sub>2. \<lbrakk> CP_assm (xsi\<^sub>1 = xsi) \<rbrakk> \<Longrightarrow> hn_refine 
+        (hn_ctxt sl_assn xs\<^sub>1 xsi\<^sub>1 ** hn_ctxt sl_assn xs\<^sub>2 xsi\<^sub>2 ** hn_ctxt snat_assn n ni ** \<Gamma>\<^sub>1) 
+        (mi xsi\<^sub>1 xsi\<^sub>2) 
+        (\<Gamma>\<^sub>2 xs\<^sub>1 xsi\<^sub>1 xs\<^sub>2 xsi\<^sub>2) (R) (CP xsi\<^sub>1 xsi\<^sub>2) (m xs\<^sub>1 xs\<^sub>2)"
+      assumes FR2: "\<And>xs\<^sub>1 xsi\<^sub>1 xs\<^sub>2 xsi\<^sub>2. \<Gamma>\<^sub>2 xs\<^sub>1 xsi\<^sub>1 xs\<^sub>2 xsi\<^sub>2 \<turnstile>
+        hn_ctxt sl_assn xs\<^sub>1 xsi\<^sub>1 ** hn_ctxt sl_assn xs\<^sub>2 xsi\<^sub>2 ** \<Gamma>\<^sub>1'"
+        
+      assumes CP2: "\<And>xsi\<^sub>2. CP_simplify (CP xsi xsi\<^sub>2) (CP')"  
+      shows "hn_refine 
+        (\<Gamma>) 
+        (ars_with_split_ro ni xsi mi) 
+        (hn_ctxt sl_assn xs xsi ** \<Gamma>\<^sub>1') 
+        R
+        (CP') 
+        (WITH_SPLIT_ro$n$xs$(\<lambda>\<^sub>2a b. m a b))"  
+      unfolding autoref_tag_defs PROTECT2_def
+      apply (rule hn_refine_cons_pre)
+      applyS (rule FR)
+      apply1 extract_hnr_invalids
+      supply R = hn_WITH_SPLIT_ro_template_aux[OF sl_assn_def, where CP=CP']
+      thm R
+      apply (rule hn_refine_cons_cp[OF _ R])
+      applyS (fri)
+      apply1 extract_hnr_invalids
+      apply (rule hn_refine_cons[OF _ HN])
+      applyS (fri)
+      applyS (simp add: CP_defs)
+      applyS (sep_drule FR2; simp; rule entails_refl)
+      applyS(rule entails_refl)
+      focus using CP2 unfolding CP_defs apply blast solved
+      applyS (simp add: hn_ctxt_def invalid_pure_recover)
+      applyS (rule entails_refl)
+      applyS blast
+      done  
+
+      
+    lemma hn_WITH_SPLIT_ro_array_slice[sepref_comb_rules]: 
+      assumes FR: "\<Gamma> \<turnstile> hn_ctxt (array_slice_assn A) xs xsi ** hn_ctxt snat_assn n ni ** \<Gamma>\<^sub>1"
+      assumes HN: "\<And>xs\<^sub>1 xsi\<^sub>1 xs\<^sub>2 xsi\<^sub>2. \<lbrakk> CP_assm (xsi\<^sub>1 = xsi) \<rbrakk> \<Longrightarrow> hn_refine 
+        (hn_ctxt (array_slice_assn A) xs\<^sub>1 xsi\<^sub>1 ** hn_ctxt (array_slice_assn A) xs\<^sub>2 xsi\<^sub>2 ** hn_ctxt snat_assn n ni ** \<Gamma>\<^sub>1) 
+        (mi xsi\<^sub>1 xsi\<^sub>2) 
+        (\<Gamma>\<^sub>2 xs\<^sub>1 xsi\<^sub>1 xs\<^sub>2 xsi\<^sub>2) (R) (CP xsi\<^sub>1 xsi\<^sub>2) (m xs\<^sub>1 xs\<^sub>2)"
+      assumes FR2: "\<And>xs\<^sub>1 xsi\<^sub>1 xs\<^sub>2 xsi\<^sub>2. \<Gamma>\<^sub>2 xs\<^sub>1 xsi\<^sub>1 xs\<^sub>2 xsi\<^sub>2 \<turnstile>
+        hn_ctxt (array_slice_assn A) xs\<^sub>1 xsi\<^sub>1 ** hn_ctxt (array_slice_assn A) xs\<^sub>2 xsi\<^sub>2 ** \<Gamma>\<^sub>1'"
+        
+      assumes CP2: "\<And>xsi\<^sub>2. CP_simplify (CP xsi xsi\<^sub>2) (CP')"  
+      shows "hn_refine 
+        (\<Gamma>) 
+        (ars_with_split_ro ni xsi mi) 
+        (hn_ctxt (array_slice_assn A) xs xsi ** \<Gamma>\<^sub>1') 
+        (R) 
+        (CP') 
+        (WITH_SPLIT_ro$n$xs$(\<lambda>\<^sub>2a b. m a b))"  
+        
+      apply (rule hn_WITH_SPLIT_ro_template[of "array_slice_assn A", OF _ assms]; assumption?)
+      unfolding array_slice_assn_def ..
+      
+                  
   end  
 end  
 

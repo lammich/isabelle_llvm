@@ -1,4 +1,4 @@
-PWD /home/peter/devel/isabelle/isabelle_llvm_par/papers/llvm_par
+PWD /home/peter/devel/isabelle/isabelle_llvm_par/papers/ITP2022
 INPUT /etc/texmf/web2c/texmf.cnf
 INPUT /usr/share/texmf/web2c/texmf.cnf
 INPUT /usr/share/texlive/texmf-dist/web2c/texmf.cnf
@@ -229,8 +229,6 @@ INPUT /usr/share/texlive/texmf-dist/tex/latex/algorithmicx/algpseudocode.sty
 INPUT /usr/share/texlive/texmf-dist/tex/latex/algorithmicx/algpseudocode.sty
 INPUT /usr/share/texlive/texmf-dist/tex/latex/algorithmicx/algorithmicx.sty
 INPUT /usr/share/texlive/texmf-dist/tex/latex/algorithmicx/algorithmicx.sty
-INPUT /usr/share/texlive/texmf-dist/tex/latex/wrapfig/wrapfig.sty
-INPUT /usr/share/texlive/texmf-dist/tex/latex/wrapfig/wrapfig.sty
 INPUT /usr/share/texlive/texmf-dist/tex/latex/siunitx/siunitx.sty
 INPUT /usr/share/texlive/texmf-dist/tex/latex/siunitx/siunitx.sty
 INPUT /usr/share/texlive/texmf-dist/tex/latex/translator/translator.sty
@@ -538,12 +536,13 @@ INPUT /usr/share/texlive/texmf-dist/fonts/tfm/public/amsfonts/symbols/msam10.tfm
 INPUT /usr/share/texlive/texmf-dist/fonts/tfm/public/amsfonts/symbols/msam7.tfm
 INPUT /usr/share/texlive/texmf-dist/fonts/tfm/public/amsfonts/symbols/msbm10.tfm
 INPUT /usr/share/texlive/texmf-dist/fonts/tfm/public/amsfonts/symbols/msbm7.tfm
+INPUT /usr/share/texmf/fonts/tfm/public/lm/ec-lmri9.tfm
+INPUT /usr/share/texmf/tex/latex/lm/t1lmtt.fd
+INPUT /usr/share/texmf/tex/latex/lm/t1lmtt.fd
+INPUT /usr/share/texmf/fonts/tfm/public/lm/ec-lmtt9.tfm
 INPUT /usr/share/texmf/fonts/tfm/public/lm/ec-lmss10.tfm
 INPUT /usr/share/texmf/fonts/tfm/public/lm/ec-lmss12.tfm
 INPUT /usr/share/texmf/fonts/tfm/public/lm/ec-lmssbx10.tfm
-INPUT /usr/share/texmf/tex/latex/lm/t1lmtt.fd
-INPUT /usr/share/texmf/tex/latex/lm/t1lmtt.fd
-INPUT /usr/share/texmf/fonts/tfm/public/lm/ec-lmtt10.tfm
 INPUT /usr/share/texmf/fonts/tfm/public/lm/ec-lmssbx10.tfm
 INPUT /usr/share/texmf/fonts/tfm/public/lm/ec-lmr7.tfm
 INPUT cc-by.pdf
@@ -559,6 +558,7 @@ INPUT ./lipics-logo-bw.pdf
 INPUT ./lipics-logo-bw.pdf
 INPUT /var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map
 INPUT /usr/share/texmf/fonts/tfm/public/lm/ec-lmri10.tfm
+INPUT /usr/share/texmf/fonts/tfm/public/lm/ec-lmtt10.tfm
 INPUT /usr/share/texmf/fonts/tfm/public/lm/ec-lmri7.tfm
 INPUT /usr/share/texmf/fonts/tfm/public/lm/ec-lmri7.tfm
 INPUT /usr/share/texmf/fonts/tfm/public/lm/ec-lmbx10.tfm
@@ -607,8 +607,6 @@ INPUT sudata_server.tex
 INPUT sudata_server.tex
 INPUT main.bbl
 INPUT main.bbl
-INPUT /usr/share/texmf/fonts/tfm/public/lm/ec-lmri9.tfm
-INPUT /usr/share/texmf/fonts/tfm/public/lm/ec-lmtt9.tfm
 INPUT main.aux
 INPUT ./main.out
 INPUT ./main.out
