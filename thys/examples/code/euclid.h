@@ -3,6 +3,9 @@
 #define _EUCLID_H 1
 
 
+#include <stdint.h>
+
+
 
 
 

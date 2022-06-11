@@ -3,6 +3,9 @@
 #define _KMP_H 1
 
 
+#include <stdint.h>
+
+
 typedef struct string string;
 
 typedef struct string {

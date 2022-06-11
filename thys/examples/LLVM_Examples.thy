@@ -187,13 +187,54 @@ subsubsection \<open>Distance between two Points (double)\<close>
 
 context begin
 
+  (*
+    TODO: Generalize monadification/preprocessor to push nanize into operations!
+      Otherwise, we have to flatten by hand!
+  *)
+  lemma plus_nan_double1[simp]:
+    "is_nan_double a \<Longrightarrow> is_nan_double (a+b)"
+    apply transfer
+    unfolding plus_float_def fadd_def
+    by simp
+
+  lemma plus_nan_double2[simp]:
+    "is_nan_double b \<Longrightarrow> is_nan_double (a+b)"
+    apply transfer
+    unfolding plus_float_def fadd_def
+    by simp
+    
+  lemma [simp]: "is_nan_double \<noteq> bot"  
+    using is_nan_double.abs_eq by force
+    
+  lemma [simp]: "is_nan_single \<noteq> bot"  
+    using is_nan_single.abs_eq by force
+  
+  lemma pw_nan_double[pw_simp]:
+    "run ndet_nan_double s \<noteq> fail\<^sub>n\<^sub>e"  
+    "is_res (run ndet_nan_double s) (x,i,s') \<longleftrightarrow> is_nan_double x \<and> i=0 \<and> s'=s"
+    unfolding ndet_nan_double_def
+    by pw+
+    
+  lemma "doM {
+    a \<leftarrow> nanize_double a;
+    b \<leftarrow> nanize_double b;
+    nanize_double (a + b)
+  } = nanize_double (a + b)"
+    unfolding nanize_double_def
+    apply pw' 
+    apply fastforce
+    done
+
   definition ddist :: "double \<times> double \<Rightarrow> double \<times> double \<Rightarrow> double llM"
     where [llvm_code]: "ddist p\<^sub>1 p\<^sub>2 \<equiv> doM {
     let (x\<^sub>1,y\<^sub>1) = p\<^sub>1;
     let (x\<^sub>2,y\<^sub>2) = p\<^sub>2;
-    let dx = x\<^sub>1 - x\<^sub>2;
-    let dy = y\<^sub>1 - y\<^sub>2;
-    Mreturn (dsqrt ( dx*dx + dy*dy ))
+    dx \<leftarrow> nanize_double (x\<^sub>1 - x\<^sub>2);
+    dy \<leftarrow> nanize_double (y\<^sub>1 - y\<^sub>2);
+    dx2 \<leftarrow> nanize_double (dx*dx);
+    dy2 \<leftarrow> nanize_double (dy*dy);
+    dxy2 \<leftarrow> nanize_double (dx2+dy2);
+    nanize_double (dsqrt dxy2)
   }"
   
   export_llvm ddist
@@ -204,6 +245,7 @@ context begin
   lemma "llvm_htriple \<box> (ddist p\<^sub>1 p\<^sub>2) (\<lambda>_. \<box>)"
     unfolding ddist_def 
     apply (simp split: prod.split add: Let_def)
+    unfolding nanize_double_def ndet_nan_double_def
     apply vcg
     done
 
@@ -214,9 +256,12 @@ context begin
     where [llvm_code]: "fdist p\<^sub>1 p\<^sub>2 \<equiv> doM {
     let (x\<^sub>1,y\<^sub>1) = p\<^sub>1;
     let (x\<^sub>2,y\<^sub>2) = p\<^sub>2;
-    let dx = x\<^sub>1 - x\<^sub>2;
-    let dy = y\<^sub>1 - y\<^sub>2;
-    Mreturn (ssqrt ( dx*dx + dy*dy ))
+    dx \<leftarrow> nanize_single (x\<^sub>1 - x\<^sub>2);
+    dy \<leftarrow> nanize_single (y\<^sub>1 - y\<^sub>2);
+    dx2 \<leftarrow> nanize_single (dx*dx);
+    dy2 \<leftarrow> nanize_single (dy*dy);
+    dxy2 \<leftarrow> nanize_single (dx2+dy2);
+    nanize_single (ssqrt dxy2)
   }"
   
   export_llvm fdist
@@ -227,6 +272,7 @@ context begin
   lemma "llvm_htriple \<box> (fdist p\<^sub>1 p\<^sub>2) (\<lambda>_. \<box>)"
     unfolding fdist_def 
     apply (simp split: prod.split add: Let_def)
+    unfolding nanize_single_def ndet_nan_single_def
     apply vcg
     done
 

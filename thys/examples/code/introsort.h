@@ -3,6 +3,9 @@
 #define _INTROSORT_H 1
 
 
+#include <stdint.h>
+
+
 typedef struct llstring llstring;
 
 typedef struct llstring {

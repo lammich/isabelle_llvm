@@ -3,6 +3,9 @@
 #define _CR_BIG_AL_H 1
 
 
+#include <stdint.h>
+
+
 
 
 

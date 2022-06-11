@@ -186,38 +186,55 @@ begin
   definition "ll_srem \<equiv> op_lift_arith2 sdivrem_is_undef (smod)"
 
   subsubsection \<open>Binary Floating Point Operations\<close>  
+  definition ndet_nan_double :: "double llM" where "ndet_nan_double \<equiv> Mspec is_nan_double"
+  definition ndet_nan_single :: "single llM" where "ndet_nan_single \<equiv> Mspec is_nan_single"
+  
+  definition nanize_double where "nanize_double x \<equiv> if is_nan_double x then ndet_nan_double else return x"
+  lemma nanize_double_simps[simp]: 
+    "\<not>is_nan_double x \<Longrightarrow> nanize_double x = Mreturn x"
+    "is_nan_double x \<Longrightarrow> nanize_double x = ndet_nan_double"
+    unfolding nanize_double_def
+    by auto
+
+  definition nanize_single where "nanize_single x \<equiv> if is_nan_single x then ndet_nan_single else return x"
+  lemma nanize_single_simps[simp]: 
+    "\<not>is_nan_single x \<Longrightarrow> nanize_single x = Mreturn x"
+    "is_nan_single x \<Longrightarrow> nanize_single x = ndet_nan_single"
+    unfolding nanize_single_def
+    by auto
+      
   text \<open>We define a generic lifter for binary arithmetic operations.
     It is parameterized by an error condition.
   \<close> (* TODO: Use precondition instead of negated precondition! *)
   
   definition op_lift_farith1_d :: "_ \<Rightarrow> double \<Rightarrow> double llM"
     where "op_lift_farith1_d f a \<equiv> doM {
-    return (f a)
+    nanize_double (f a)
   }"
   
   definition op_lift_farith2_d :: "_ \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double llM"
     where "op_lift_farith2_d f a b \<equiv> doM {
-    return (f a b)
+    nanize_double (f a b)
   }"
 
   definition op_lift_farith3_d :: "_ \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double llM"
     where "op_lift_farith3_d f a b c \<equiv> doM {
-    return (f a b c)
+    nanize_double (f a b c)
   }"
   
   definition op_lift_farith1_f :: "_ \<Rightarrow> single \<Rightarrow> single llM"
     where "op_lift_farith1_f f a \<equiv> doM {
-    return (f a)
+    nanize_single (f a)
   }"
   
   definition op_lift_farith2_f :: "_ \<Rightarrow> single \<Rightarrow> single \<Rightarrow> single llM"
     where "op_lift_farith2_f f a b \<equiv> doM {
-    return (f a b)
+    nanize_single (f a b)
   }"
 
   definition op_lift_farith3_f :: "_ \<Rightarrow> single \<Rightarrow> single \<Rightarrow> single \<Rightarrow> single llM"
     where "op_lift_farith3_f f a b c \<equiv> doM {
-    return (f a b c)
+    nanize_single (f a b c)
   }"
           
   definition "ll_fadd_d \<equiv> op_lift_farith2_d (+)"
@@ -375,18 +392,18 @@ begin
     unfolding xlate_rounding_mode_def by simp_all
     
   definition op_lift_farith1_rm_d :: "(roundmode \<Rightarrow> double \<Rightarrow> double) \<Rightarrow> nat \<Rightarrow> double \<Rightarrow> double llM" 
-    where "op_lift_farith1_rm_d f rm a \<equiv> doM { rm \<leftarrow> xlate_rounding_mode rm; return (f rm a) }"
+    where "op_lift_farith1_rm_d f rm a \<equiv> doM { rm \<leftarrow> xlate_rounding_mode rm; nanize_double (f rm a) }"
   definition op_lift_farith2_rm_d :: "(roundmode \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double) \<Rightarrow> nat \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double llM" 
-    where "op_lift_farith2_rm_d f rm a b \<equiv> doM { rm \<leftarrow> xlate_rounding_mode rm; return (f rm a b) }"
+    where "op_lift_farith2_rm_d f rm a b \<equiv> doM { rm \<leftarrow> xlate_rounding_mode rm; nanize_double (f rm a b) }"
   definition op_lift_farith3_rm_d :: "(roundmode \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double) \<Rightarrow> nat \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double \<Rightarrow> double llM" 
-    where "op_lift_farith3_rm_d f rm a b c \<equiv> doM { rm \<leftarrow> xlate_rounding_mode rm; return (f rm a b c) }"
+    where "op_lift_farith3_rm_d f rm a b c \<equiv> doM { rm \<leftarrow> xlate_rounding_mode rm; nanize_double (f rm a b c) }"
 
   definition op_lift_farith1_rm_f :: "(roundmode \<Rightarrow> single \<Rightarrow> single) \<Rightarrow> nat \<Rightarrow> single \<Rightarrow> single llM" 
-    where "op_lift_farith1_rm_f f rm a \<equiv> doM { rm \<leftarrow> xlate_rounding_mode rm; return (f rm a) }"
+    where "op_lift_farith1_rm_f f rm a \<equiv> doM { rm \<leftarrow> xlate_rounding_mode rm; nanize_single (f rm a) }"
   definition op_lift_farith2_rm_f :: "(roundmode \<Rightarrow> single \<Rightarrow> single \<Rightarrow> single) \<Rightarrow> nat \<Rightarrow> single \<Rightarrow> single \<Rightarrow> single llM" 
-    where "op_lift_farith2_rm_f f rm a b \<equiv> doM { rm \<leftarrow> xlate_rounding_mode rm; return (f rm a b) }"
+    where "op_lift_farith2_rm_f f rm a b \<equiv> doM { rm \<leftarrow> xlate_rounding_mode rm; nanize_single (f rm a b) }"
   definition op_lift_farith3_rm_f :: "(roundmode \<Rightarrow> single \<Rightarrow> single \<Rightarrow> single \<Rightarrow> single) \<Rightarrow> nat \<Rightarrow> single \<Rightarrow> single \<Rightarrow> single \<Rightarrow> single llM" 
-    where "op_lift_farith3_rm_f f rm a b c \<equiv> doM { rm \<leftarrow> xlate_rounding_mode rm; return (f rm a b c) }"
+    where "op_lift_farith3_rm_f f rm a b c \<equiv> doM { rm \<leftarrow> xlate_rounding_mode rm; nanize_single (f rm a b c) }"
     
         
   definition "ll_x86_avx512_add_sd_round \<equiv> op_lift_farith2_rm_d dradd"

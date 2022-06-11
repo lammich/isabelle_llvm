@@ -638,30 +638,30 @@ lemma ll_srem_rule[vcg_rules]: "\<lbrakk>WBOUNDS (b\<noteq>0); WBOUNDS (in_srang
   unfolding vcg_tag_defs by vcg
 
 
-lemma ll_fadd_f_simp[vcg_normalize_simps]:     "ll_fadd_f a b = Mreturn (a + b)" by (auto    simp: ll_fadd_f_def) 
-lemma ll_fsub_f_simp[vcg_normalize_simps]:     "ll_fsub_f a b = Mreturn (a - b)" by (auto    simp: ll_fsub_f_def) 
-lemma ll_fmul_f_simp[vcg_normalize_simps]:     "ll_fmul_f a b = Mreturn (a * b)" by (auto    simp: ll_fmul_f_def) 
-lemma ll_fdiv_f_simp[vcg_normalize_simps]:     "ll_fdiv_f a b = Mreturn (a / b)" by (auto    simp: ll_fdiv_f_def) 
-lemma ll_frem_f_simp[vcg_normalize_simps]:     "ll_frem_f a b = Mreturn (srem a b)" by (auto simp: ll_frem_f_def) 
-lemma ll_sqrt_f_f64_simp[vcg_normalize_simps]: "ll_sqrt_f32 a = Mreturn (ssqrt a)" by (auto simp:  ll_sqrt_f32_def)
+lemma ll_fadd_f_simp[vcg_normalize_simps]:     "ll_fadd_f a b = nanize_single (a + b)" by (auto    simp: ll_fadd_f_def) 
+lemma ll_fsub_f_simp[vcg_normalize_simps]:     "ll_fsub_f a b = nanize_single (a - b)" by (auto    simp: ll_fsub_f_def) 
+lemma ll_fmul_f_simp[vcg_normalize_simps]:     "ll_fmul_f a b = nanize_single (a * b)" by (auto    simp: ll_fmul_f_def) 
+lemma ll_fdiv_f_simp[vcg_normalize_simps]:     "ll_fdiv_f a b = nanize_single (a / b)" by (auto    simp: ll_fdiv_f_def) 
+lemma ll_frem_f_simp[vcg_normalize_simps]:     "ll_frem_f a b = nanize_single (srem a b)" by (auto simp: ll_frem_f_def) 
+lemma ll_sqrt_f32_simp[vcg_normalize_simps]: "ll_sqrt_f32 a = nanize_single (ssqrt a)" by (auto simp:  ll_sqrt_f32_def)
   
-lemma ll_fadd_d_simp[vcg_normalize_simps]: "ll_fadd_d a b = Mreturn (a + b)" by (auto simp: ll_fadd_d_def) 
-lemma ll_fsub_d_simp[vcg_normalize_simps]: "ll_fsub_d a b = Mreturn (a - b)" by (auto simp: ll_fsub_d_def) 
-lemma ll_fmul_d_simp[vcg_normalize_simps]: "ll_fmul_d a b = Mreturn (a * b)" by (auto simp: ll_fmul_d_def) 
-lemma ll_fdiv_d_simp[vcg_normalize_simps]: "ll_fdiv_d a b = Mreturn (a / b)" by (auto simp: ll_fdiv_d_def) 
-lemma ll_frem_d_simp[vcg_normalize_simps]: "ll_frem_d a b = Mreturn (drem a b)" by (auto simp: ll_frem_d_def) 
-lemma ll_sqrt_f64_simp[vcg_normalize_simps]: "ll_sqrt_f64 a = Mreturn (dsqrt a)" by (auto simp: ll_sqrt_f64_def) 
+lemma ll_fadd_d_simp[vcg_normalize_simps]: "ll_fadd_d a b =   nanize_double (a + b)" by (auto simp: ll_fadd_d_def) 
+lemma ll_fsub_d_simp[vcg_normalize_simps]: "ll_fsub_d a b =   nanize_double (a - b)" by (auto simp: ll_fsub_d_def) 
+lemma ll_fmul_d_simp[vcg_normalize_simps]: "ll_fmul_d a b =   nanize_double (a * b)" by (auto simp: ll_fmul_d_def) 
+lemma ll_fdiv_d_simp[vcg_normalize_simps]: "ll_fdiv_d a b =   nanize_double (a / b)" by (auto simp: ll_fdiv_d_def) 
+lemma ll_frem_d_simp[vcg_normalize_simps]: "ll_frem_d a b =   nanize_double (drem a b)" by (auto simp: ll_frem_d_def) 
+lemma ll_sqrt_f64_simp[vcg_normalize_simps]: "ll_sqrt_f64 a = nanize_double (dsqrt a)" by (auto simp: ll_sqrt_f64_def) 
   
 
 lemmas [vcg_normalize_simps] = xlate_rounding_mode_simps
 
 lemma ll_x86_avx512_ss_simps[vcg_normalize_simps]:
-  "ll_x86_avx512_add_ss_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm; Mreturn (sradd rm a b)}"
-  "ll_x86_avx512_sub_ss_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm; Mreturn (srsub rm a b)}"
-  "ll_x86_avx512_mul_ss_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm; Mreturn (srmul rm a b)}"
-  "ll_x86_avx512_div_ss_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm; Mreturn (srdiv rm a b)}"
-  "ll_x86_avx512_sqrt_ss      rm a = doM {rm \<leftarrow> xlate_rounding_mode rm; Mreturn (srsqrt rm a)}"
-  "ll_x86_avx512_vfmadd_f32   rm a b c = doM {rm \<leftarrow> xlate_rounding_mode rm; Mreturn (srfmadd rm a b c)}"
+  "ll_x86_avx512_add_ss_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm;   nanize_single (sradd rm a b)}"
+  "ll_x86_avx512_sub_ss_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm;   nanize_single (srsub rm a b)}"
+  "ll_x86_avx512_mul_ss_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm;   nanize_single (srmul rm a b)}"
+  "ll_x86_avx512_div_ss_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm;   nanize_single (srdiv rm a b)}"
+  "ll_x86_avx512_sqrt_ss      rm a =   doM {rm \<leftarrow> xlate_rounding_mode rm;   nanize_single (srsqrt rm a)}"
+  "ll_x86_avx512_vfmadd_f32   rm a b c = doM {rm \<leftarrow> xlate_rounding_mode rm; nanize_single (srfmadd rm a b c)}"
   unfolding
     ll_x86_avx512_add_ss_round_def
     ll_x86_avx512_sub_ss_round_def
@@ -672,12 +672,12 @@ lemma ll_x86_avx512_ss_simps[vcg_normalize_simps]:
   by auto  
 
 lemma ll_x86_avx512_sd_simps[vcg_normalize_simps]:
-  "ll_x86_avx512_add_sd_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm; Mreturn (dradd rm a b)}"
-  "ll_x86_avx512_sub_sd_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm; Mreturn (drsub rm a b)}"
-  "ll_x86_avx512_mul_sd_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm; Mreturn (drmul rm a b)}"
-  "ll_x86_avx512_div_sd_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm; Mreturn (drdiv rm a b)}"
-  "ll_x86_avx512_sqrt_sd      rm a = doM {rm \<leftarrow> xlate_rounding_mode rm; Mreturn (drsqrt rm a)}"
-  "ll_x86_avx512_vfmadd_f64   rm a b c = doM {rm \<leftarrow> xlate_rounding_mode rm; Mreturn (drfmadd rm a b c)}"
+  "ll_x86_avx512_add_sd_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm;   nanize_double (dradd rm a b)}"
+  "ll_x86_avx512_sub_sd_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm;   nanize_double (drsub rm a b)}"
+  "ll_x86_avx512_mul_sd_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm;   nanize_double (drmul rm a b)}"
+  "ll_x86_avx512_div_sd_round rm a b = doM {rm \<leftarrow> xlate_rounding_mode rm;   nanize_double (drdiv rm a b)}"
+  "ll_x86_avx512_sqrt_sd      rm a =   doM {rm \<leftarrow> xlate_rounding_mode rm;   nanize_double (drsqrt rm a)}"
+  "ll_x86_avx512_vfmadd_f64   rm a b c = doM {rm \<leftarrow> xlate_rounding_mode rm; nanize_double (drfmadd rm a b c)}"
   unfolding
     ll_x86_avx512_add_sd_round_def
     ll_x86_avx512_sub_sd_round_def
@@ -1012,21 +1012,21 @@ context begin
     by vcg                                           
 
   lemma farith_inlines_f[llvm_pre_simp, vcg_monadify_xforms]: 
-    "Mreturn (a+b) = ll_fadd_f a b" 
-    "Mreturn (a-b) = ll_fsub_f a b" 
-    "Mreturn (a*b) = ll_fmul_f a b" 
-    "Mreturn (a/b) = ll_fdiv_f a b" 
-    "Mreturn (srem a b) = ll_frem_f a b" 
-    "Mreturn (ssqrt a) = ll_sqrt_f32 a" 
+    "nanize_single (a+b) = ll_fadd_f a b" 
+    "nanize_single (a-b) = ll_fsub_f a b" 
+    "nanize_single (a*b) = ll_fmul_f a b" 
+    "nanize_single (a/b) = ll_fdiv_f a b" 
+    "nanize_single (srem a b) = ll_frem_f a b" 
+    "nanize_single (ssqrt a) = ll_sqrt_f32 a" 
     by vcg
 
   lemma farith_inlines_d[llvm_pre_simp, vcg_monadify_xforms]: 
-    "Mreturn (a+b) = ll_fadd_d a b" 
-    "Mreturn (a-b) = ll_fsub_d a b" 
-    "Mreturn (a*b) = ll_fmul_d a b" 
-    "Mreturn (a/b) = ll_fdiv_d a b" 
-    "Mreturn (drem a b) = ll_frem_d a b" 
-    "Mreturn (dsqrt a) = ll_sqrt_f64 a" 
+    "nanize_double (a+b) = ll_fadd_d a b" 
+    "nanize_double (a-b) = ll_fsub_d a b" 
+    "nanize_double (a*b) = ll_fmul_d a b" 
+    "nanize_double (a/b) = ll_fdiv_d a b" 
+    "nanize_double (drem a b) = ll_frem_d a b" 
+    "nanize_double (dsqrt a) = ll_sqrt_f64 a" 
     by vcg
     
   term sqrt  
@@ -1050,14 +1050,23 @@ context begin
   lemmas [llvm_pre_simp(*, vcg_monadify_xforms*)] = avx512_rm.simps
   
   lemma avx512_arith_inlines[llvm_pre_simp(*, vcg_monadify_xforms*)]:
-    "Mreturn (dradd rm a b) = ll_x86_avx512_add_sd_round (avx512_rm rm) a b"
-    "Mreturn (drsub rm a b) = ll_x86_avx512_sub_sd_round (avx512_rm rm) a b"
-    "Mreturn (drmul rm a b) = ll_x86_avx512_mul_sd_round (avx512_rm rm) a b"
-    "Mreturn (drdiv rm a b) = ll_x86_avx512_div_sd_round (avx512_rm rm) a b"
-    "Mreturn (drsqrt rm a) = ll_x86_avx512_sqrt_sd (avx512_rm rm) a"
-    "Mreturn (drfmadd rm a b c) = ll_x86_avx512_vfmadd_f64 (avx512_rm rm) a b c"
+    "nanize_double (dradd rm a b) = ll_x86_avx512_add_sd_round (avx512_rm rm) a b"
+    "nanize_double (drsub rm a b) = ll_x86_avx512_sub_sd_round (avx512_rm rm) a b"
+    "nanize_double (drmul rm a b) = ll_x86_avx512_mul_sd_round (avx512_rm rm) a b"
+    "nanize_double (drdiv rm a b) = ll_x86_avx512_div_sd_round (avx512_rm rm) a b"
+    "nanize_double (drsqrt rm a) = ll_x86_avx512_sqrt_sd (avx512_rm rm) a"
+    "nanize_double (drfmadd rm a b c) = ll_x86_avx512_vfmadd_f64 (avx512_rm rm) a b c"
     by (cases rm; vcg)+
-  
+
+  lemma avx512_arith_inlines_ss[llvm_pre_simp(*, vcg_monadify_xforms*)]:
+    "nanize_single (sradd rm a b) = ll_x86_avx512_add_ss_round (avx512_rm rm) a b"
+    "nanize_single (srsub rm a b) = ll_x86_avx512_sub_ss_round (avx512_rm rm) a b"
+    "nanize_single (srmul rm a b) = ll_x86_avx512_mul_ss_round (avx512_rm rm) a b"
+    "nanize_single (srdiv rm a b) = ll_x86_avx512_div_ss_round (avx512_rm rm) a b"
+    "nanize_single (srsqrt rm a) = ll_x86_avx512_sqrt_ss (avx512_rm rm) a"
+    "nanize_single (srfmadd rm a b c) = ll_x86_avx512_vfmadd_f32 (avx512_rm rm) a b c"
+    by (cases rm; vcg)+
+      
 end
 end
 

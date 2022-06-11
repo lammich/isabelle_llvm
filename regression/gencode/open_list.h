@@ -3,6 +3,9 @@
 #define _OPEN_LIST_H 1
 
 
+#include <stdint.h>
+
+
 
 typedef struct list_elem list_elem;
 typedef struct pop_result pop_result;

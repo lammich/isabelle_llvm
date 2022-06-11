@@ -3,6 +3,9 @@
 #define _BIN_SEARCH_H 1
 
 
+#include <stdint.h>
+
+
 
 typedef struct larray_t larray_t;
 

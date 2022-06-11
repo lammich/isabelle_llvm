@@ -3,6 +3,9 @@
 #define _QS_QUICKSORT_H 1
 
 
+#include <stdint.h>
+
+
 
 
 

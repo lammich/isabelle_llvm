@@ -3,6 +3,9 @@
 #define _TEST_AVX512F_H 1
 
 
+#include <stdint.h>
+
+
 
 
 

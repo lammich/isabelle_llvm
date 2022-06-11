@@ -322,6 +322,8 @@ subsubsection \<open>VCG Setup\<close>
 lemma wpa_false[vcg_normalize_simps]: "\<not>wpa A m (\<lambda>_ _. False) s"  
   by (simp add: wpa_def vcg_normalize_simps)
 
+lemma wpa_spec[vcg_normalize_simps]: "wpa asf (Mspec P) Q s \<longleftrightarrow> (P\<noteq>bot) \<and> (\<forall>x. P x \<longrightarrow> Q x s)" by pw
+
 lemma wpa_return[vcg_normalize_simps]: "wpa asf (Mreturn x) Q s \<longleftrightarrow> Q x s" by pw
 
 lemma wpa_fail[vcg_normalize_simps]: "\<not> wpa asf (Mfail) Q s" by pw 

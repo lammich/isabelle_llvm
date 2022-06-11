@@ -17,7 +17,7 @@ define void @__isabelle_llvm_par_wrapper_0_1 (i8 * %clpv) {
   %resp = extractvalue {i64* *, { i64*, { i64, i64 } }} %cl, 0
   %arg = extractvalue {i64* *, { i64*, { i64, i64 } }} %cl, 1
 
-  %res = call i64* @Sorting_Export_Code_ll_icmp_ult_f_025391128 ({ i64*, { i64, i64 } } %arg)
+  %res = call i64* @Sorting_Export_Code_ll_icmp_ult_f_025502372 ({ i64*, { i64, i64 } } %arg)
 
   store i64* %res, i64* *%resp
 
@@ -34,7 +34,7 @@ define void @__isabelle_llvm_par_wrapper_0_2 (i8 * %clpv) {
   %resp = extractvalue {i64* *, { i64*, { i64, i64 } }} %cl, 0
   %arg = extractvalue {i64* *, { i64*, { i64, i64 } }} %cl, 1
 
-  %res = call i64* @Sorting_Export_Code_ll_icmp_ult_f_025391128 ({ i64*, { i64, i64 } } %arg)
+  %res = call i64* @Sorting_Export_Code_ll_icmp_ult_f_025502372 ({ i64*, { i64, i64 } } %arg)
 
   store i64* %res, i64* *%resp
 
@@ -88,7 +88,7 @@ define void @__isabelle_llvm_par_wrapper_1_1 (i8 * %clpv) {
   %resp = extractvalue {{ i64, { i64, i8* } }* *, { { i64, { i64, i8* } }*, { i64, i64 } }} %cl, 0
   %arg = extractvalue {{ i64, { i64, i8* } }* *, { { i64, { i64, i8* } }*, { i64, i64 } }} %cl, 1
 
-  %res = call { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_026157816 ({ { i64, { i64, i8* } }*, { i64, i64 } } %arg)
+  %res = call { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_026269060 ({ { i64, { i64, i8* } }*, { i64, i64 } } %arg)
 
   store { i64, { i64, i8* } }* %res, { i64, { i64, i8* } }* *%resp
 
@@ -105,7 +105,7 @@ define void @__isabelle_llvm_par_wrapper_1_2 (i8 * %clpv) {
   %resp = extractvalue {{ i64, { i64, i8* } }* *, { { i64, { i64, i8* } }*, { i64, i64 } }} %cl, 0
   %arg = extractvalue {{ i64, { i64, i8* } }* *, { { i64, { i64, i8* } }*, { i64, i64 } }} %cl, 1
 
-  %res = call { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_026157816 ({ { i64, { i64, i8* } }*, { i64, i64 } } %arg)
+  %res = call { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_026269060 ({ { i64, { i64, i8* } }*, { i64, i64 } } %arg)
 
   store { i64, { i64, i8* } }* %res, { i64, { i64, i8* } }* *%resp
 
@@ -580,7 +580,7 @@ define { i64, { i64, i8* } }* @str_pdqsort({ i64, { i64, i8* } }* %x, i64 %x1, i
     %tmpcb = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %xga, { i64, { i64, i64 } } %tmpcaa, 1
     %xha = insertvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } zeroinitializer, i1 1, 0
     %x4 = insertvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %xha, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %tmpcb, 1
-    %x5 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_pdqsort_impl_f_026584446 ({ i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %x4)
+    %x5 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_pdqsort_impl_f_026695690 ({ i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %x4)
     br label %ctd_if
 
   else:
@@ -632,7 +632,7 @@ define i64* @pdqsort(i64* %x, i64 %x1, i64 %x2) #0 {
     %tmpcb = insertvalue { i64*, { i64, { i64, i64 } } } %xga, { i64, { i64, i64 } } %tmpcaa, 1
     %xha = insertvalue { i1, { i64*, { i64, { i64, i64 } } } } zeroinitializer, i1 1, 0
     %x4 = insertvalue { i1, { i64*, { i64, { i64, i64 } } } } %xha, { i64*, { i64, { i64, i64 } } } %tmpcb, 1
-    %x5 = call i64* @Sorting_Export_Code_unat_pdqsort_impl_f_025821378 ({ i1, { i64*, { i64, { i64, i64 } } } } %x4)
+    %x5 = call i64* @Sorting_Export_Code_unat_pdqsort_impl_f_025932622 ({ i1, { i64*, { i64, { i64, i64 } } } } %x4)
     br label %ctd_if
 
   else:
@@ -715,7 +715,7 @@ define i64* @introsort(i64* %x, i64 %x1, i64 %x2) #0 {
     ret i64* %x5
 }
 
-define i64* @Sorting_Export_Code_ll_icmp_ult_f_025391128({ i64*, { i64, i64 } } %x) #0 {
+define i64* @Sorting_Export_Code_ll_icmp_ult_f_025502372({ i64*, { i64, i64 } } %x) #0 {
 
   start:
     %a1 = extractvalue { i64*, { i64, i64 } } %x, 0
@@ -750,14 +750,14 @@ define i64* @Sorting_Export_Code_ll_icmp_ult_f_025391128({ i64*, { i64, i64 } } 
     %tmpac = insertvalue { i64, i64 } %xoa, i64 %xla, 1
     %xpa = insertvalue { i64*, { i64, i64 } } zeroinitializer, i64* %a1b, 0
     %xqa = insertvalue { i64*, { i64, i64 } } %xpa, { i64, i64 } %tmpac, 1
-    %xma = call i64* @Sorting_Export_Code_ll_icmp_ult_f_025391128 ({ i64*, { i64, i64 } } %xqa)
+    %xma = call i64* @Sorting_Export_Code_ll_icmp_ult_f_025502372 ({ i64*, { i64, i64 } } %xqa)
     %xna = sub i64 %a1a, %a2b
     %xoaa = sub i64 %a2a, 1
     %xsa = insertvalue { i64, i64 } zeroinitializer, i64 %xna, 0
     %tmpbb = insertvalue { i64, i64 } %xsa, i64 %xoaa, 1
     %xta = insertvalue { i64*, { i64, i64 } } zeroinitializer, i64* %p_2, 0
     %xua = insertvalue { i64*, { i64, i64 } } %xta, { i64, i64 } %tmpbb, 1
-    %xpaa = call i64* @Sorting_Export_Code_ll_icmp_ult_f_025391128 ({ i64*, { i64, i64 } } %xua)
+    %xpaa = call i64* @Sorting_Export_Code_ll_icmp_ult_f_025502372 ({ i64*, { i64, i64 } } %xua)
     %xqaa = insertvalue { i64*, i64* } zeroinitializer, i64* %xma, 0
     %x2 = insertvalue { i64*, i64* } %xqaa, i64* %xpaa, 1
     br label %ctd_ifa
@@ -788,7 +788,7 @@ define i64* @Sorting_Export_Code_ll_icmp_ult_f_025391128({ i64*, { i64, i64 } } 
     ret i64* %x5
 }
 
-define i64* @Sorting_Export_Code_ll_icmp_ult_f_025469854(i64* %ai, { i64*, { i64, { i64, i64 } } } %x) #0 {
+define i64* @Sorting_Export_Code_ll_icmp_ult_f_025581098(i64* %ai, { i64*, { i64, { i64, i64 } } } %x) #0 {
 
   start:
     %a1 = extractvalue { i64*, { i64, { i64, i64 } } } %x, 0
@@ -820,7 +820,7 @@ define i64* @Sorting_Export_Code_ll_icmp_ult_f_025469854(i64* %ai, { i64*, { i64
     %tmpda = insertvalue { i64, { i64, i64 } } %xpa, { i64, i64 } %tmpca, 1
     %xqa = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %a1c, 0
     %xra = insertvalue { i64*, { i64, { i64, i64 } } } %xqa, { i64, { i64, i64 } } %tmpda, 1
-    %xha = call i64* @Sorting_Export_Code_ll_icmp_ult_f_025469854 (i64* %ai, { i64*, { i64, { i64, i64 } } } %xra)
+    %xha = call i64* @Sorting_Export_Code_ll_icmp_ult_f_025581098 (i64* %ai, { i64*, { i64, { i64, i64 } } } %xra)
     %xia = sub i64 %a2b, 1
     %xta = insertvalue { i64, i64 } zeroinitializer, i64 %a1b, 0
     %tmpeb = insertvalue { i64, i64 } %xta, i64 %xia, 1
@@ -828,7 +828,7 @@ define i64* @Sorting_Export_Code_ll_icmp_ult_f_025469854(i64* %ai, { i64*, { i64
     %tmpfa = insertvalue { i64, { i64, i64 } } %xua, { i64, i64 } %tmpeb, 1
     %xva = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %xha, 0
     %x2 = insertvalue { i64*, { i64, { i64, i64 } } } %xva, { i64, { i64, i64 } } %tmpfa, 1
-    %x3 = call i64* @Sorting_Export_Code_ll_icmp_ult_f_025469854 (i64* %ai, { i64*, { i64, { i64, i64 } } } %x2)
+    %x3 = call i64* @Sorting_Export_Code_ll_icmp_ult_f_025581098 (i64* %ai, { i64*, { i64, { i64, i64 } } } %x2)
     br label %ctd_ifa
 
   ctd_ifa:
@@ -843,7 +843,7 @@ define i64* @Sorting_Export_Code_ll_icmp_ult_f_025469854(i64* %ai, { i64*, { i64
     ret i64* %x5
 }
 
-define i64* @Sorting_Export_Code_ll_icmp_ult_f_026083942({ i64*, { i64, { i64, i64 } } } %x) #0 {
+define i64* @Sorting_Export_Code_ll_icmp_ult_f_026195186({ i64*, { i64, { i64, i64 } } } %x) #0 {
 
   start:
     %a1 = extractvalue { i64*, { i64, { i64, i64 } } } %x, 0
@@ -986,7 +986,7 @@ define i64* @Sorting_Export_Code_ll_icmp_ult_f_026083942({ i64*, { i64, { i64, i
     %tmpda = insertvalue { i64, { i64, i64 } } %xya, { i64, i64 } %tmpcb, 1
     %xza = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %a1c, 0
     %yaa = insertvalue { i64*, { i64, { i64, i64 } } } %xza, { i64, { i64, i64 } } %tmpda, 1
-    %xha = call i64* @Sorting_Export_Code_ll_icmp_ult_f_026083942 ({ i64*, { i64, { i64, i64 } } } %yaa)
+    %xha = call i64* @Sorting_Export_Code_ll_icmp_ult_f_026195186 ({ i64*, { i64, { i64, i64 } } } %yaa)
     %xia = sub i64 %a2b, 1
     %yca = insertvalue { i64, i64 } zeroinitializer, i64 %a1b, 0
     %tmpeb = insertvalue { i64, i64 } %yca, i64 %xia, 1
@@ -994,7 +994,7 @@ define i64* @Sorting_Export_Code_ll_icmp_ult_f_026083942({ i64*, { i64, { i64, i
     %tmpfa = insertvalue { i64, { i64, i64 } } %yda, { i64, i64 } %tmpeb, 1
     %yea = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %xha, 0
     %x27 = insertvalue { i64*, { i64, { i64, i64 } } } %yea, { i64, { i64, i64 } } %tmpfa, 1
-    %x28 = call i64* @Sorting_Export_Code_ll_icmp_ult_f_026083942 ({ i64*, { i64, { i64, i64 } } } %x27)
+    %x28 = call i64* @Sorting_Export_Code_ll_icmp_ult_f_026195186 ({ i64*, { i64, { i64, i64 } } } %x27)
     br label %ctd_ifa
 
   ctd_ifa:
@@ -1009,7 +1009,7 @@ define i64* @Sorting_Export_Code_ll_icmp_ult_f_026083942({ i64*, { i64, { i64, i
     ret i64* %x30
 }
 
-define { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_026157816({ { i64, { i64, i8* } }*, { i64, i64 } } %x) #0 {
+define { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_026269060({ { i64, { i64, i8* } }*, { i64, i64 } } %x) #0 {
 
   start:
     %a1 = extractvalue { { i64, { i64, i8* } }*, { i64, i64 } } %x, 0
@@ -1044,14 +1044,14 @@ define { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_026157816({ { i
     %tmpac = insertvalue { i64, i64 } %xoa, i64 %xla, 1
     %xpa = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } zeroinitializer, { i64, { i64, i8* } }* %a1b, 0
     %xqa = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xpa, { i64, i64 } %tmpac, 1
-    %xma = call { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_026157816 ({ { i64, { i64, i8* } }*, { i64, i64 } } %xqa)
+    %xma = call { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_026269060 ({ { i64, { i64, i8* } }*, { i64, i64 } } %xqa)
     %xna = sub i64 %a1a, %a2b
     %xoaa = sub i64 %a2a, 1
     %xsa = insertvalue { i64, i64 } zeroinitializer, i64 %xna, 0
     %tmpbb = insertvalue { i64, i64 } %xsa, i64 %xoaa, 1
     %xta = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } zeroinitializer, { i64, { i64, i8* } }* %p_2, 0
     %xua = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xta, { i64, i64 } %tmpbb, 1
-    %xpaa = call { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_026157816 ({ { i64, { i64, i8* } }*, { i64, i64 } } %xua)
+    %xpaa = call { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_026269060 ({ { i64, { i64, i8* } }*, { i64, i64 } } %xua)
     %xqaa = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i8* } }* } zeroinitializer, { i64, { i64, i8* } }* %xma, 0
     %x2 = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i8* } }* } %xqaa, { i64, { i64, i8* } }* %xpaa, 1
     br label %ctd_ifa
@@ -1082,7 +1082,7 @@ define { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_026157816({ { i
     ret { i64, { i64, i8* } }* %x5
 }
 
-define i64* @Sorting_Export_Code_strcmp_impl_f_026236378({ i64, { i64, i8* } }* %ai, { i64*, { i64, { i64, i64 } } } %x) #0 {
+define i64* @Sorting_Export_Code_strcmp_impl_f_026347622({ i64, { i64, i8* } }* %ai, { i64*, { i64, { i64, i64 } } } %x) #0 {
 
   start:
     %a1 = extractvalue { i64*, { i64, { i64, i64 } } } %x, 0
@@ -1114,7 +1114,7 @@ define i64* @Sorting_Export_Code_strcmp_impl_f_026236378({ i64, { i64, i8* } }* 
     %tmpda = insertvalue { i64, { i64, i64 } } %xpa, { i64, i64 } %tmpca, 1
     %xqa = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %a1c, 0
     %xra = insertvalue { i64*, { i64, { i64, i64 } } } %xqa, { i64, { i64, i64 } } %tmpda, 1
-    %xha = call i64* @Sorting_Export_Code_strcmp_impl_f_026236378 ({ i64, { i64, i8* } }* %ai, { i64*, { i64, { i64, i64 } } } %xra)
+    %xha = call i64* @Sorting_Export_Code_strcmp_impl_f_026347622 ({ i64, { i64, i8* } }* %ai, { i64*, { i64, { i64, i64 } } } %xra)
     %xia = sub i64 %a2b, 1
     %xta = insertvalue { i64, i64 } zeroinitializer, i64 %a1b, 0
     %tmpeb = insertvalue { i64, i64 } %xta, i64 %xia, 1
@@ -1122,7 +1122,7 @@ define i64* @Sorting_Export_Code_strcmp_impl_f_026236378({ i64, { i64, i8* } }* 
     %tmpfa = insertvalue { i64, { i64, i64 } } %xua, { i64, i64 } %tmpeb, 1
     %xva = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %xha, 0
     %x2 = insertvalue { i64*, { i64, { i64, i64 } } } %xva, { i64, { i64, i64 } } %tmpfa, 1
-    %x3 = call i64* @Sorting_Export_Code_strcmp_impl_f_026236378 ({ i64, { i64, i8* } }* %ai, { i64*, { i64, { i64, i64 } } } %x2)
+    %x3 = call i64* @Sorting_Export_Code_strcmp_impl_f_026347622 ({ i64, { i64, i8* } }* %ai, { i64*, { i64, { i64, i64 } } } %x2)
     br label %ctd_ifa
 
   ctd_ifa:
@@ -1137,7 +1137,7 @@ define i64* @Sorting_Export_Code_strcmp_impl_f_026236378({ i64, { i64, i8* } }* 
     ret i64* %x5
 }
 
-define { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_026847010({ { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %x) #0 {
+define { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_026958254({ { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %x) #0 {
 
   start:
     %a1 = extractvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %x, 0
@@ -1280,7 +1280,7 @@ define { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_026847010({ { i
     %tmpda = insertvalue { i64, { i64, i64 } } %xya, { i64, i64 } %tmpcb, 1
     %xza = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } zeroinitializer, { i64, { i64, i8* } }* %a1c, 0
     %yaa = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %xza, { i64, { i64, i64 } } %tmpda, 1
-    %xha = call { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_026847010 ({ { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %yaa)
+    %xha = call { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_026958254 ({ { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %yaa)
     %xia = sub i64 %a2b, 1
     %yca = insertvalue { i64, i64 } zeroinitializer, i64 %a1b, 0
     %tmpeb = insertvalue { i64, i64 } %yca, i64 %xia, 1
@@ -1288,7 +1288,7 @@ define { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_026847010({ { i
     %tmpfa = insertvalue { i64, { i64, i64 } } %yda, { i64, i64 } %tmpeb, 1
     %yea = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } zeroinitializer, { i64, { i64, i8* } }* %xha, 0
     %x27 = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %yea, { i64, { i64, i64 } } %tmpfa, 1
-    %x28 = call { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_026847010 ({ { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %x27)
+    %x28 = call { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_026958254 ({ { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %x27)
     br label %ctd_ifa
 
   ctd_ifa:
@@ -1303,7 +1303,7 @@ define { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_026847010({ { i
     ret { i64, { i64, i8* } }* %x30
 }
 
-define { i64, { i64, i8* } }* @Sorting_Export_Code_str_pdqsort_impl_f_026584446({ i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %x) #0 {
+define { i64, { i64, i8* } }* @Sorting_Export_Code_str_pdqsort_impl_f_026695690({ i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %x) #0 {
 
   start:
     %a1 = extractvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %x, 0
@@ -1704,7 +1704,7 @@ define { i64, { i64, i8* } }* @Sorting_Export_Code_str_pdqsort_impl_f_026584446(
     %tmpdba = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %yca, { i64, { i64, i64 } } %tmpdaa, 1
     %yda = insertvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } zeroinitializer, i1 0, 0
     %x23 = insertvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %yda, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %tmpdba, 1
-    %x24 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_pdqsort_impl_f_026584446 ({ i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %x23)
+    %x24 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_pdqsort_impl_f_026695690 ({ i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %x23)
     br label %ctd_ifs
 
   elses:
@@ -2073,7 +2073,7 @@ define { i64, { i64, i8* } }* @Sorting_Export_Code_str_pdqsort_impl_f_026584446(
     %tmpce = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %ysa, { i64, { i64, i64 } } %tmpcd, 1
     %yta = insertvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } zeroinitializer, i1 %a1, 0
     %yua = insertvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %yta, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %tmpce, 1
-    %yaaaa5 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_pdqsort_impl_f_026584446 ({ i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %yua)
+    %yaaaa5 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_pdqsort_impl_f_026695690 ({ i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %yua)
     %ybaaa4 = add i64 %a1e1, 1
     %ywa = insertvalue { i64, i64 } zeroinitializer, i64 %a1c, 0
     %tmpdl = insertvalue { i64, i64 } %ywa, i64 %xxaa3, 1
@@ -2083,7 +2083,7 @@ define { i64, { i64, i8* } }* @Sorting_Export_Code_str_pdqsort_impl_f_026584446(
     %tmpdba1 = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %yya, { i64, { i64, i64 } } %tmpdaa1, 1
     %yza = insertvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } zeroinitializer, i1 0, 0
     %x60 = insertvalue { i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %yza, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %tmpdba1, 1
-    %x61 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_pdqsort_impl_f_026584446 ({ i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %x60)
+    %x61 = call { i64, { i64, i8* } }* @Sorting_Export_Code_str_pdqsort_impl_f_026695690 ({ i1, { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } } %x60)
     br label %ctd_igf
 
   ctd_igf:
@@ -2099,7 +2099,7 @@ define { i64, { i64, i8* } }* @Sorting_Export_Code_str_pdqsort_impl_f_026584446(
     ret { i64, { i64, i8* } }* %x64
 }
 
-define i64* @Sorting_Export_Code_unat_pdqsort_impl_f_025821378({ i1, { i64*, { i64, { i64, i64 } } } } %x) #0 {
+define i64* @Sorting_Export_Code_unat_pdqsort_impl_f_025932622({ i1, { i64*, { i64, { i64, i64 } } } } %x) #0 {
 
   start:
     %a1 = extractvalue { i1, { i64*, { i64, { i64, i64 } } } } %x, 0
@@ -2500,7 +2500,7 @@ define i64* @Sorting_Export_Code_unat_pdqsort_impl_f_025821378({ i1, { i64*, { i
     %tmpdba = insertvalue { i64*, { i64, { i64, i64 } } } %yca, { i64, { i64, i64 } } %tmpdaa, 1
     %yda = insertvalue { i1, { i64*, { i64, { i64, i64 } } } } zeroinitializer, i1 0, 0
     %x23 = insertvalue { i1, { i64*, { i64, { i64, i64 } } } } %yda, { i64*, { i64, { i64, i64 } } } %tmpdba, 1
-    %x24 = call i64* @Sorting_Export_Code_unat_pdqsort_impl_f_025821378 ({ i1, { i64*, { i64, { i64, i64 } } } } %x23)
+    %x24 = call i64* @Sorting_Export_Code_unat_pdqsort_impl_f_025932622 ({ i1, { i64*, { i64, { i64, i64 } } } } %x23)
     br label %ctd_ifs
 
   elses:
@@ -2869,7 +2869,7 @@ define i64* @Sorting_Export_Code_unat_pdqsort_impl_f_025821378({ i1, { i64*, { i
     %tmpce = insertvalue { i64*, { i64, { i64, i64 } } } %ysa, { i64, { i64, i64 } } %tmpcd, 1
     %yta = insertvalue { i1, { i64*, { i64, { i64, i64 } } } } zeroinitializer, i1 %a1, 0
     %yua = insertvalue { i1, { i64*, { i64, { i64, i64 } } } } %yta, { i64*, { i64, { i64, i64 } } } %tmpce, 1
-    %yaaaa5 = call i64* @Sorting_Export_Code_unat_pdqsort_impl_f_025821378 ({ i1, { i64*, { i64, { i64, i64 } } } } %yua)
+    %yaaaa5 = call i64* @Sorting_Export_Code_unat_pdqsort_impl_f_025932622 ({ i1, { i64*, { i64, { i64, i64 } } } } %yua)
     %ybaaa4 = add i64 %a1e1, 1
     %ywa = insertvalue { i64, i64 } zeroinitializer, i64 %a1c, 0
     %tmpdl = insertvalue { i64, i64 } %ywa, i64 %xxaa3, 1
@@ -2879,7 +2879,7 @@ define i64* @Sorting_Export_Code_unat_pdqsort_impl_f_025821378({ i1, { i64*, { i
     %tmpdba1 = insertvalue { i64*, { i64, { i64, i64 } } } %yya, { i64, { i64, i64 } } %tmpdaa1, 1
     %yza = insertvalue { i1, { i64*, { i64, { i64, i64 } } } } zeroinitializer, i1 0, 0
     %x60 = insertvalue { i1, { i64*, { i64, { i64, i64 } } } } %yza, { i64*, { i64, { i64, i64 } } } %tmpdba1, 1
-    %x61 = call i64* @Sorting_Export_Code_unat_pdqsort_impl_f_025821378 ({ i1, { i64*, { i64, { i64, i64 } } } } %x60)
+    %x61 = call i64* @Sorting_Export_Code_unat_pdqsort_impl_f_025932622 ({ i1, { i64*, { i64, { i64, i64 } } } } %x60)
     br label %ctd_igf
 
   ctd_igf:
@@ -3800,7 +3800,7 @@ define i64* @Monadify_M_CONST_Sorting_Parsort_sort_impl_context_par_sort_aux_imp
     %tmpa = insertvalue { i64, i64 } %xa, i64 %x2, 1
     %xaa = insertvalue { i64*, { i64, i64 } } zeroinitializer, i64* %x, 0
     %x3 = insertvalue { i64*, { i64, i64 } } %xaa, { i64, i64 } %tmpa, 1
-    %x4 = call i64* @Sorting_Export_Code_ll_icmp_ult_f_025391128 ({ i64*, { i64, i64 } } %x3)
+    %x4 = call i64* @Sorting_Export_Code_ll_icmp_ult_f_025502372 ({ i64*, { i64, i64 } } %x3)
     ret i64* %x4
 }
 
@@ -3811,7 +3811,7 @@ define { i64, { i64, i8* } }* @Monadify_M_CONST_Sorting_Parsort_sort_impl_contex
     %tmpa = insertvalue { i64, i64 } %xa, i64 %x2, 1
     %xaa = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } zeroinitializer, { i64, { i64, i8* } }* %x, 0
     %x3 = insertvalue { { i64, { i64, i8* } }*, { i64, i64 } } %xaa, { i64, i64 } %tmpa, 1
-    %x4 = call { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_026157816 ({ { i64, { i64, i8* } }*, { i64, i64 } } %x3)
+    %x4 = call { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_026269060 ({ { i64, { i64, i8* } }*, { i64, i64 } } %x3)
     ret { i64, { i64, i8* } }* %x4
 }
 
@@ -3824,7 +3824,7 @@ define i64* @Monadify_M_CONST_Sorting_Introsort_sort_impl_context_introsort_aux_
     %tmpab = insertvalue { i64, { i64, i64 } } %xaa, { i64, i64 } %tmpa, 1
     %xba = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %x, 0
     %x4 = insertvalue { i64*, { i64, { i64, i64 } } } %xba, { i64, { i64, i64 } } %tmpab, 1
-    %x5 = call i64* @Sorting_Export_Code_ll_icmp_ult_f_026083942 ({ i64*, { i64, { i64, i64 } } } %x4)
+    %x5 = call i64* @Sorting_Export_Code_ll_icmp_ult_f_026195186 ({ i64*, { i64, { i64, i64 } } } %x4)
     ret i64* %x5
 }
 
@@ -3837,7 +3837,7 @@ define { i64, { i64, i8* } }* @Monadify_M_CONST_Sorting_Introsort_sort_impl_cont
     %tmpab = insertvalue { i64, { i64, i64 } } %xaa, { i64, i64 } %tmpa, 1
     %xba = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } zeroinitializer, { i64, { i64, i8* } }* %x, 0
     %x4 = insertvalue { { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %xba, { i64, { i64, i64 } } %tmpab, 1
-    %x5 = call { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_026847010 ({ { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %x4)
+    %x5 = call { i64, { i64, i8* } }* @Sorting_Export_Code_strcmp_impl_f_026958254 ({ { i64, { i64, i8* } }*, { i64, { i64, i64 } } } %x4)
     ret { i64, { i64, i8* } }* %x5
 }
 
@@ -6086,7 +6086,7 @@ define i64* @Monadify_M_CONST_Sorting_Introsort_parameterized_sort_impl_context_
     %tmpab = insertvalue { i64, { i64, i64 } } %xaa, { i64, i64 } %tmpa, 1
     %xba = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %x1, 0
     %x5 = insertvalue { i64*, { i64, { i64, i64 } } } %xba, { i64, { i64, i64 } } %tmpab, 1
-    %x6 = call i64* @Sorting_Export_Code_ll_icmp_ult_f_025469854 (i64* %x, { i64*, { i64, { i64, i64 } } } %x5)
+    %x6 = call i64* @Sorting_Export_Code_ll_icmp_ult_f_025581098 (i64* %x, { i64*, { i64, { i64, i64 } } } %x5)
     ret i64* %x6
 }
 
@@ -6099,7 +6099,7 @@ define i64* @Monadify_M_CONST_Sorting_Introsort_parameterized_sort_impl_context_
     %tmpab = insertvalue { i64, { i64, i64 } } %xaa, { i64, i64 } %tmpa, 1
     %xba = insertvalue { i64*, { i64, { i64, i64 } } } zeroinitializer, i64* %x1, 0
     %x5 = insertvalue { i64*, { i64, { i64, i64 } } } %xba, { i64, { i64, i64 } } %tmpab, 1
-    %x6 = call i64* @Sorting_Export_Code_strcmp_impl_f_026236378 ({ i64, { i64, i8* } }* %x, { i64*, { i64, { i64, i64 } } } %x5)
+    %x6 = call i64* @Sorting_Export_Code_strcmp_impl_f_026347622 ({ i64, { i64, i8* } }* %x, { i64*, { i64, { i64, i64 } } } %x5)
     ret i64* %x6
 }
 
