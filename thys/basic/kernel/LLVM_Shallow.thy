@@ -452,6 +452,19 @@ begin
       checked_from_val r
     }"
     
+  definition ll_dest_union :: "'t::llvm_rep \<Rightarrow> nat \<Rightarrow> 't\<^sub>1::llvm_rep llM" 
+    where "ll_dest_union p i \<equiv> doM {
+      r \<leftarrow> llvm_dest_union (to_val p) i;
+      checked_from_val r
+    }" 
+
+  definition ll_make_union :: "'t::llvm_rep itself \<Rightarrow> 't\<^sub>1::llvm_rep \<Rightarrow> nat \<Rightarrow> 't::llvm_rep llM"
+    where "ll_make_union TYPE('t) x i \<equiv> doM {
+      r \<leftarrow> llvm_make_union (struct_of TYPE('t)) (to_val x) i;
+      checked_from_val r
+    }"
+        
+    
   subsubsection \<open>Memory Access and Addressing Operations\<close>
     
   definition ll_load :: "'a::llvm_rep ptr \<Rightarrow> 'a llM" where

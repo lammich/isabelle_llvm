@@ -37,10 +37,16 @@ end
 
 subsubsection \<open>Setup for LLVM code export\<close>
 text \<open>Declare structure to code generator.\<close>
+
+lemma struct_of_node[ll_struct_of]: "struct_of TYPE('a::llvm_rep node) = VS_STRUCT [struct_of TYPE('a), struct_of TYPE('a::llvm_rep node ptr)]"
+  by auto
+
+(*
 lemma to_val_node[ll_to_val]: "to_val x = LL_STRUCT [to_val (node.val x), to_val (node.next x)]"
   apply (cases x)
   apply (auto simp: to_val_node_def)
   done
+*)  
 
 text \<open>Declare as named structure. Required b/c of circular reference.\<close>
 lemma [ll_identified_structures]: "ll_is_identified_structure ''node'' TYPE(_ node)"  

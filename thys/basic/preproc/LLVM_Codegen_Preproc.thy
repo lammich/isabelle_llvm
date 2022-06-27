@@ -752,8 +752,13 @@ subsection \<open>Code Generator Driver\<close>
   subsection \<open>Setup for Product Type\<close>
   text \<open>We prepare a setup to compile product types to anonymous 2-element structures\<close>
   
-  lemma to_val_prod[ll_to_val]: "to_val x = LL_STRUCT [to_val (fst x), to_val (snd x)]"
+  lemma struct_of_prod[ll_struct_of]: 
+    "struct_of TYPE('a::llvm_rep\<times>'b::llvm_rep) = VS_STRUCT [struct_of TYPE('a), struct_of TYPE('b)]" by simp
+  
+  
+  (*lemma to_val_prod[ll_to_val]: "to_val x = LL_STRUCT [to_val (fst x), to_val (snd x)]"
     by (cases x; simp)
+  *)
   
   definition prod_insert_fst :: "('a::llvm_rep \<times> 'b::llvm_rep) \<Rightarrow> 'a \<Rightarrow> _" 
     where [llvm_inline]: "prod_insert_fst p x \<equiv> ll_insert_value p x 0"
@@ -1126,8 +1131,6 @@ export_llvm
   test_avx512f_sd_to_zero    is "double test_avx512f_sd_to_zero   (double,double)"
   file "../../../regression/gencode/test_avx512f.ll"
 
-
-  
     
 end
 

@@ -1,3 +1,4 @@
+*** obsolete!
 section \<open>Values\<close>
 theory Sep_Value
 imports 
@@ -5,7 +6,12 @@ imports
 begin
 
   subsection \<open>Values and Addresses\<close>
-  datatype 'a val = STRUCT (fields: "'a val list") | PRIMITIVE (the: 'a)
+  
+  datatype 's vstruct = VS_STRUCT "'s vstruct list" | VS_UNION "'s vstruct list" | VS_PRIMITIVE 's
+  datatype ('a,'s) val = 
+      STRUCT (fields: "('a,'s) val list") 
+    | UNION (this: "('a,'s) val option") (variants: "'s vstruct list") \<comment> \<open>None value: zero-initialized\<close>
+    | PRIMITIVE (the: 'a)
   hide_const (open) val.fields val.the
   define_lenses (open) val
   
@@ -24,9 +30,9 @@ begin
     unfolding lens_of_vaddr_def
     by auto
     
-  lemma ex_two_vals[simp, intro]: "\<exists>a b::'a val. a \<noteq> b" by auto
+  lemma ex_two_vals[simp, intro]: "\<exists>a b::('a,'s) val. a \<noteq> b" by auto
 
-  lemma lens_of_item_rnl[simp, intro!]: "rnlens (lens_of_item i :: 'a val \<Longrightarrow> 'a val)"  
+  lemma lens_of_item_rnl[simp, intro!]: "rnlens (lens_of_item i :: ('a,'s) val \<Longrightarrow> ('a,'s) val)"  
   proof (cases i)
     case [simp]: (PFLD i)
     show ?thesis 
@@ -35,7 +41,7 @@ begin
       
   qed
 
-  lemma lens_of_item_hlens[simp, intro!]: "hlens (lens_of_item i :: 'a val \<Longrightarrow> 'a val)"  
+  lemma lens_of_item_hlens[simp, intro!]: "hlens (lens_of_item i :: ('a,'s) val \<Longrightarrow> ('a,'s) val)"  
     by (cases i) (auto)
   
   
@@ -65,18 +71,19 @@ begin
   
   
   subsection \<open>Structure of Value\<close>
-  datatype 's vstruct = VS_STRUCT "'s vstruct list" | VS_PRIMITIVE 's
   
   locale structured_value_defs =
     fixes struct_of_primval :: "'a \<Rightarrow> 's"
       and init_primval :: "'s \<Rightarrow> 'a"
   begin
-    fun struct_of_val :: "'a val \<Rightarrow> 's vstruct" where
+    fun struct_of_val :: "('a,'s) val \<Rightarrow> 's vstruct" where
       "struct_of_val (STRUCT fs) = VS_STRUCT (map struct_of_val fs)"
+    | "struct_of_val (UNION _ s) = VS_UNION s"
     | "struct_of_val (PRIMITIVE x) = VS_PRIMITIVE (struct_of_primval x)"
 
-    fun init_val :: "'s vstruct \<Rightarrow> 'a val" where
+    fun init_val :: "'s vstruct \<Rightarrow> ('a,'s) val" where
       "init_val (VS_STRUCT fs) = STRUCT (map init_val fs)"
+    | "init_val (VS_UNION fs) = UNION None fs"
     | "init_val (VS_PRIMITIVE ps) = PRIMITIVE (init_primval ps)"  
       
   end    

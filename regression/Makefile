@@ -7,3 +7,4 @@ isabelle:
 
 tests: isabelle
 	$(MAKE) -C src
+	$(MAKE) -C aggregates

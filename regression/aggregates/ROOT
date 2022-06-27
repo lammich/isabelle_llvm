@@ -1,0 +1,3 @@
+session Aggregate_Tests = Isabelle_LLVM +
+  theories
+    "Aggregate_Tests"  

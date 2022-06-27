@@ -1,16 +1,253 @@
-signature LLVM_BUILDER = sig
+(* Alignment *)
+signature ALIGNMENT = sig
   type T
-  type label
-  type ty
-  type value
+
+  val to_bytes: T -> int
+  val to_bits: T -> int
+  val from_bytes: int -> T
+  val from_bits: int -> T (* Raises Error unless argument is multiple of 8. *)
+
+  val max: T -> T -> T
+  val min_align: T (* Minimum possible alignment (1 byte) *)
   
-  val builder: unit -> T
+  val align_ofs: T -> int -> int
+
+  val invalid: T
+  val is_valid: T -> bool
+      
+end
+
+structure Alignment : ALIGNMENT = struct
+  datatype T = Align of int
+
+  fun to_bytes (Align n) = n
+  fun to_bits n = to_bytes n * 8
+  
+  fun from_bytes n = Align (if n=0 then 1 else n)
+  
+  fun from_bits n = let
+    val _ = n mod 8 = 0 orelse error("Bit-size must be multiple of 8: " ^ Int.toString n)
+  in
+    from_bytes (n div 8)
+  end
+
+  fun max (Align x) (Align y) = Align (Int.max(x,y))
+
+  val min_align = from_bytes 1
+  
+  fun align_ofs a n = let val a = to_bytes a in (n+a-1) div a * a end
+
+  val invalid = Align 0
+  fun is_valid (Align n) = n>0
+
+end
+
+(* Integer and Float Alignment info *)
+signature ALIGN_INFO = sig
+  type T
+  
+  (** All alignments in bytes *)
+  val empty: T  
+  val add: int * Alignment.T -> T -> T
+  val make: (int * Alignment.T) list -> T
+  val get_alignment: T -> int -> Alignment.T
+
+  val is_empty: T -> bool
+  
+  val strings_of: string -> T -> string list
+
+  
+      
+end
+
+structure Align_Info : ALIGN_INFO = struct
+  type T = (int * Alignment.T) list (* type-size, alignment. Sorted *)
+
+  val empty = []  
+  fun add (u,v) xs = 
+    if member op= (map fst xs) u then error("Ambiguous alignment for size " ^ Int.toString u) 
+    else sort (int_ord o apply2 fst) ((u,v)::xs)
+  
+  fun make als = fold add als empty
+  
+  fun get_alignment xs sz = case find_first (fn (u,_) => u>=sz) xs of
+    SOME (_,v) => v
+  | NONE => if length xs = 0 then error("Align-Info should not be empty") else snd (snd (split_last xs))
+
+  val is_empty = null
+  
+  fun strings_of prefix xs = let
+    fun aux (u,v) = prefix ^ Int.toString u ^ ":" ^ Int.toString (Alignment.to_bits v)
+  in
+    map aux xs
+  end
+
+  
+  
+end
+
+(* Data Layout *)
+signature DATA_LAYOUT = sig
+  type T
+  
+  val string_of: T -> string
+  val of_string: string -> T
+
+  val parsed_info_string: T -> string
+    
+  val check_complete: T -> T
+  
+  val int_alignment: T -> int -> Alignment.T (* Alignment for iN type *)
+  val float_alignment: T -> Alignment.T
+  val double_alignment: T -> Alignment.T
+  val ptr_alignment: T -> Alignment.T
+  val aggr_alignment: T -> Alignment.T
+  
+  val ptr_size_bits: T -> int
+
+  val llvm_dflt_layout: T
+  val x86_64_linux_layout: T
+  
+end
+
+structure Data_Layout : DATA_LAYOUT = struct
+  type T = {
+    raw_items: string list, (* Everything *)
+    ptr_size: int, (* bits *)
+    ptr_align: Alignment.T,
+    int_align: Align_Info.T,
+    float_align: Align_Info.T,
+    aggr_align: Alignment.T
+  }
+                                
+  fun default_empty raw_items : T = {
+    raw_items=raw_items,
+    ptr_size=0,
+    ptr_align=Alignment.invalid,
+    int_align=Align_Info.empty,
+    float_align=Align_Info.empty,
+    aggr_align=Alignment.invalid
+  }
+  
+  fun map_ptr_size    f ({raw_items, ptr_size, ptr_align, int_align, float_align, aggr_align}:T) :T = {raw_items=  raw_items, ptr_size=f ptr_size, ptr_align=  ptr_align, int_align=  int_align, float_align=  float_align, aggr_align=  aggr_align}
+  fun map_ptr_align   f ({raw_items, ptr_size, ptr_align, int_align, float_align, aggr_align}:T) :T = {raw_items=  raw_items, ptr_size=  ptr_size, ptr_align=f ptr_align, int_align=  int_align, float_align=  float_align, aggr_align=  aggr_align}
+  fun map_int_align   f ({raw_items, ptr_size, ptr_align, int_align, float_align, aggr_align}:T) :T = {raw_items=  raw_items, ptr_size=  ptr_size, ptr_align=  ptr_align, int_align=f int_align, float_align=  float_align, aggr_align=  aggr_align}
+  fun map_float_align f ({raw_items, ptr_size, ptr_align, int_align, float_align, aggr_align}:T) :T = {raw_items=  raw_items, ptr_size=  ptr_size, ptr_align=  ptr_align, int_align=  int_align, float_align=f float_align, aggr_align=  aggr_align}
+  fun map_aggr_align  f ({raw_items, ptr_size, ptr_align, int_align, float_align, aggr_align}:T) :T = {raw_items=  raw_items, ptr_size=  ptr_size, ptr_align=  ptr_align, int_align=  int_align, float_align=  float_align, aggr_align=f aggr_align}
+
+  
+  fun check_complete ((t as {raw_items = _, ptr_size, ptr_align, int_align, float_align, aggr_align }) : T) = let
+    fun chk_not_null n ename = n<>0 orelse error(ename ^ " unspecified") 
+    fun chk_valid n ename = Alignment.is_valid n orelse error(ename ^ " unspecified") 
+    fun chk_not_empty xs ename = Align_Info.is_empty xs andalso error(ename ^ " unspecified") 
+    
+  in
+    chk_not_null ptr_size "pointer size";
+    chk_valid ptr_align "pointer alignment";
+    chk_valid aggr_align "aggregate alignment";
+    chk_not_empty int_align "integer alignment";
+    chk_not_empty float_align "float alignment";
+    t
+  end
+    
+
+  fun string_of ({raw_items, ... } : T) = space_implode "-" raw_items
+                                                                              
+  fun parsed_info_string ({raw_items=_, ptr_size, ptr_align, int_align, float_align, aggr_align } : T) = let
+    val s_p = ["p:"^Int.toString ptr_size^":"^Int.toString (Alignment.to_bits ptr_align)]
+    val s_a = ["a:"^Int.toString (Alignment.to_bits aggr_align)]
+    val s_i = Align_Info.strings_of "i" int_align
+    val s_f = Align_Info.strings_of "f" float_align
+  
+    val items = s_p @ s_i @ s_f @ s_a
+  in
+    "<dbg only!>: " ^ space_implode "-" items (* Prevent this to be printed to LLVM output! *)
+  end
+
+  local
+    fun is_digit s = size s = 1 andalso Char.ord #"0" <= ord s andalso ord s <= Char.ord #"9";
+    val parse_nat = Scan.repeat1 (Scan.one is_digit) >> (implode #> Int.fromString #> the)
+    val parse_bit_align = parse_nat >> (fn n => Alignment.from_bits n)
+    val parse_all = Scan.repeat (Scan.one (fn s => size s > 0)) >> implode
+    
+    val stopper = Scan.stopper (K "") (fn s => s="")
+    
+    val _ = Scan.read Lexicon.stopper           
+    
+    fun set_val newv oldv = if Alignment.is_valid oldv then error("duplicate alignment info") else newv
+    fun set_val_int newv oldv = if oldv<>0 then error("duplicate alignment info") else newv
+    
+    val parse_item = 
+       $$"i" |-- parse_nat --| $$":" -- parse_bit_align --| Scan.option ($$":"-- parse_bit_align) >> (fn (u,v) => map_int_align (Align_Info.add (u,v)))
+    || $$"f" |-- parse_nat --| $$":" -- parse_bit_align --| Scan.option ($$":"-- parse_bit_align) >> (fn (u,v) => map_float_align (Align_Info.add (u,v)))  
+    || $$"p" |-- $$":" |-- parse_nat --| $$":" -- parse_bit_align --| Scan.option ($$":"-- parse_bit_align) >> (fn (u,v) => map_ptr_size (set_val_int u) #> map_ptr_align (set_val v))
+    || $$"a" |-- $$":" |-- parse_bit_align --| Scan.option ($$":"-- parse_bit_align) >> (fn u => map_aggr_align (set_val u))
+    || parse_all >> (fn _ => I)
+                                                
+    val itemf_of_string =
+       raw_explode
+    #> Scan.read stopper parse_item 
+    #> the 
+  in                            
+    fun of_string s = let
+      val items = space_explode "-" s 
+      val t = fold itemf_of_string items (default_empty items)
+      (*val _ = tracing (parsed_info_string t)*)
+      val _ = check_complete t
+    in 
+      t
+    end
+  end    
+  
+  fun int_alignment t = Align_Info.get_alignment (#int_align t)
+  fun float_alignment t = Align_Info.get_alignment (#float_align t) 32
+  fun double_alignment t = Align_Info.get_alignment (#float_align t) 64
+  val ptr_alignment = #ptr_align
+  val ptr_size_bits = #ptr_size
+  val aggr_alignment = #aggr_align
+
+
+  (* See \<^url>\<open>https://releases.llvm.org/14.0.0/docs/LangRef.html#data-layout\<close>*)
+  val llvm_dflt_layout = of_string "e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:32:64-f16:16:16-f32:32:32-f64:64:64-f128:128:128-v64:64:64-v128:128:128-a:0:64"
+  
+  (* clang10 on my linux box creates: "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"  
+    Stripped of unused address spaces and types, and combined with LLVM-default this yields:
+  *)
+  val x86_64_linux_layout = of_string "e-m:e-p:64:64:64-a:0:64-n8:16:32:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f16:16:16-f32:32:32-f64:64:64-f128:128:128"
+  
+  
+(*  
+    
+  xxx, ctd here: 
+    parser, default, add to export_llvm command
+    function to compute structure size, then support for union
+*)  
+  
+
+end
+
+
+signature LLVM_BUILDER = sig
+  (* Target Triple *)
+  
+  type target_info = {target_triple:string, data_layout: Data_Layout.T}
+    
+  val target_x86_64_linux: target_info
+  
+  
+  
+  (* Builder Type *)
+  type T
+  val builder: target_info -> T
   
   val string_of: T -> string
   
   val set_dbg_trace: T -> bool -> unit
   
   (* Types *)
+  type ty
+  type value
+
   val mkty_i: int -> ty
   val mkty_double: ty
   val mkty_float: ty
@@ -18,18 +255,32 @@ signature LLVM_BUILDER = sig
   val mkty_array: int -> ty -> ty
   val mkty_vector: int -> ty -> ty
   val mkty_struct: ty list -> ty
+  val mkty_union: T -> ty list -> ty
+  
   val mkty_named: T -> string -> ty
   val mkty_fptr: ty option -> ty list -> ty
 
   val is_primitive_ty: ty -> bool
   
   val dstty_i: ty -> int
-  (* TODO: Add other dstty functions *)
+  (** TODO: Add other dstty functions *)
 
   val decl_named_ty: T -> string -> ty -> ty
   
   val ty_of_val: value -> ty    
 
+  (* Alignment and sizeof *)
+  val alignment_of_ty: T -> ty -> Alignment.T
+  val sizeof_ty: T -> ty -> int (** Allocation Size *)
+  
+  (*
+  xxx, ctd here: test correctness of size-of computations:
+    for a variety of types, compare results of
+    a) static sizeof_ty
+    b) dynamic sizeof_ty in LLVM (then replace in malloc!)
+    c) sizeof() of corresponding C structure
+  *)
+  
   (* Constants *)    
   val mkc_iw: int -> int -> value
   val mkc_i: ty -> int -> value
@@ -51,6 +302,8 @@ signature LLVM_BUILDER = sig
   val close_proc: T -> unit
 
   (* Basic Blocks *)
+  type label
+  
   val variant_label: T -> string -> label
   val open_bb: T -> label -> unit
   
@@ -70,6 +323,10 @@ signature LLVM_BUILDER = sig
   val mk_extractvalue: T -> regname -> value -> int -> value
   val mk_insertvalue: T -> regname -> value -> value -> int -> value
 
+  val mk_dest_union: T -> regname -> value -> int -> value
+  val mk_make_union: T -> regname -> ty -> value -> int -> value
+  
+    
   val mk_extractelement: T -> regname -> value -> value -> value
   val mk_insertelement: T -> regname -> value -> value -> value -> value
   
@@ -121,6 +378,12 @@ signature LLVM_BUILDER = sig
   val mk_phi': T -> regname -> (value * label) list -> value
   
 
+  (* Derived *)
+  val mk_size_of: T -> regname -> ty -> value   (* Dynamic size_of using GEP trick *)
+  
+  val size_t: T -> ty
+  
+  
   (*
   val size_t: ty
   val mk_size_of: T -> string -> ty -> value        
@@ -141,7 +404,11 @@ structure LLVM_Builder : LLVM_BUILDER = struct
   type label = string
 
   type attributes = int
+
+  type target_info = {target_triple:string, data_layout: Data_Layout.T}
+
   
+  val target_x86_64_linux = { target_triple = "x86_64-pc-linux-gnu", data_layout = Data_Layout.x86_64_linux_layout }  
     
   datatype ty = 
       TInt of int 
@@ -149,6 +416,7 @@ structure LLVM_Builder : LLVM_BUILDER = struct
     | TDouble  
     | TPtr of ty 
     | TStruct of ty list 
+    | TUnion of ty * ty list (* repr type * variant types *)
     | TVector of int * ty 
     | TArray of int * ty 
     | TNamed of string
@@ -156,6 +424,7 @@ structure LLVM_Builder : LLVM_BUILDER = struct
 
   
   type T = {
+    target_info : target_info,
     next_id : int ref,
     next_attr : attributes ref,
     every_proc_attrs : attributes list ref,
@@ -168,7 +437,8 @@ structure LLVM_Builder : LLVM_BUILDER = struct
     named_tys : (string * ty option) Symtab.table ref (* Maps type name to type declaration. Empty string if not (yet) declared *)
   }
 
-  fun builder_aux () : T = { 
+  fun builder_aux ti : T = { 
+    target_info=ti,
     next_id = Unsynchronized.ref 0, 
     next_attr = Unsynchronized.ref 0, 
     every_proc_attrs = Unsynchronized.ref [],
@@ -231,19 +501,24 @@ structure LLVM_Builder : LLVM_BUILDER = struct
       Symtab.keys (!(#ext_funs b))
     |> space_implode "\n"
   
+    val target_triple = #target_triple (#target_info b)
+    val data_layout = Data_Layout.string_of (#data_layout (#target_info b))
+    
   in
-    (* TODO/FIXME: Hardcoded target! *)
     "; Generated by Isabelle/LLVM-shallow\n"
-  ^ "target datalayout = \"e-m:e-i64:64-f80:128-n8:16:32:64-S128\"\n" 
-  ^ "target triple = \"x86_64-pc-linux-gnu\"\n\n"
+  (*^ "target datalayout = \"e-m:e-i64:64-f80:128-n8:16:32:64-S128\"\n" 
+  ^ "target triple = \"x86_64-pc-linux-gnu\"\n\n"*)
+  ^ "target datalayout = \""^data_layout^"\"\n" 
+  ^ "target triple = \""^target_triple^"\"\n\n"
   ^ tydecls ^ "\n\n"
   ^ efdecls ^ "\n\n"
   end 
-    
+
+      
   fun string_of b = mk_prelude b ^ fold (fn s => fn acc => s () ^ acc) (!(#out b)) ""
 
-  fun builder () = let
-    val b = builder_aux ();
+  fun builder ti = let
+    val b = builder_aux ti
   in 
     b
   end 
@@ -285,6 +560,7 @@ structure LLVM_Builder : LLVM_BUILDER = struct
     TVector (n,ty)
   )
   fun mkty_struct tys = TStruct tys
+  
   fun mkty_named b name = (check_named_ty b name; TNamed name)
   fun mkty_fptr ty tys = TFptr (ty, tys)
 
@@ -294,10 +570,120 @@ structure LLVM_Builder : LLVM_BUILDER = struct
   fun isty_i (TInt _) = true | isty_i _ = false
   fun isty_f (TFloat) = true | isty_f (TDouble) = true | isty_f _ = false
   
+
+  fun alignment_of_ty b ty = let
+    val dl = #data_layout (#target_info b)
+
+    (*
+      As this is redundant code to LLVM's align computation, and part of trusted code base, 
+      we only support the cases we actually need, and raise an error otherwise. 
+    *)
+    fun al (TInt w) = Data_Layout.int_alignment dl w
+      | al TFloat = Data_Layout.float_alignment dl
+      | al TDouble = Data_Layout.double_alignment dl
+      | al (TPtr _) = Data_Layout.ptr_alignment dl
+      | al (TVector _) = raise Error ("Vector types not supported for alignment/sizeof computation") (* Not (yet) needed here *) 
+      | al (TArray (_, TInt 8)) = Data_Layout.int_alignment dl 8
+      | al (TArray (_, _)) = raise Error ("Array types other than i8[] not supported for alignment/sizeof computation")
+      | al (TStruct tys) = fold Alignment.max (map al tys) (Data_Layout.aggr_alignment dl)
+      | al (TUnion (rty,_)) = al rty (* rty has been constructed to have correct alignment *)
+      | al (TNamed n) = al (lookup_named_ty b n)
+      | al (TFptr _) = Data_Layout.ptr_alignment dl
+      
+  in
+    al ty
+  end
+
+  fun align_ofs_ty b ty = alignment_of_ty b ty |> Alignment.align_ofs
   
   
-  val size_w = 64
-  val size_t = mkty_i size_w (* TODO: Hardcoded target *)
+  fun sizeof_ty b ty = let
+    val dl = #data_layout (#target_info b)
+    
+    fun round_bit_to_byte n = (n+7) div 8
+    
+    val ptr_size_bytes = round_bit_to_byte (Data_Layout.ptr_size_bits dl)
+
+    fun incr_ofs sz ty ofs = align_ofs_ty b ty ofs + sz ty
+    
+    fun sz (TInt w) = round_bit_to_byte w
+      | sz TFloat = 4
+      | sz TDouble = 8
+      | sz (TPtr _) = ptr_size_bytes
+      | sz (TVector _) = raise Error ("Vector types not supported for alignment/sizeof computation")
+      | sz (TArray (n,TInt 8)) = n
+      | sz (TArray _) = raise Error ("Array types other than i8[] not supported for alignment/sizeof computation")
+      | sz (ty as TStruct tys) = fold (incr_ofs sz) tys 0 |> align_ofs_ty b ty
+      | sz (TUnion (rty, _)) = sz rty
+      | sz (TNamed n) = sz (lookup_named_ty b n)
+      | sz (TFptr _) = ptr_size_bytes
+      
+  
+  in
+    align_ofs_ty b ty (sz ty)
+  end
+  
+
+  fun maximum _ [] = raise Error "maximum: empty"
+    | maximum cmp (x::xs) = let
+        fun mx a b = if is_greater (cmp (a, b)) then a else b
+      in
+        fold mx xs x
+      end
+  
+  fun fill_ty b ty sz = let    
+    val sz1 = sizeof_ty b ty
+    val _ = assert (sz1 < sz) "fill_ty: nothing to fill"
+    val sz2 = sz -sz1
+    val res = mkty_struct [ty, mkty_array sz2 (mkty_i 8)]
+  in
+    assert (sz <= sizeof_ty b res) "sizeof fill_ty";
+    assert (alignment_of_ty b ty = alignment_of_ty b res) "alignment_of fill_ty";
+    
+    res
+  end
+      
+  fun mkty_union b tys = let
+    val _ = assert (not (null tys)) "mkty_union: empty union type"
+    
+    (*
+      If the largest sized variant also has largest alignment: take this!
+      Otherwise: type with largest alignment + i8[] to fill up to aligned largest size
+    *)
+    val al_of_ty = Alignment.to_bytes o alignment_of_ty b
+    val sz_of_ty = sizeof_ty b
+    
+    val ty_al_cmp = int_ord o apply2 sz_of_ty ||| int_ord o apply2 al_of_ty
+    val al_ty_cmp = int_ord o apply2 al_of_ty ||| int_ord o apply2 sz_of_ty
+    
+    val ty_sz = maximum ty_al_cmp tys
+    val ty_al = maximum al_ty_cmp tys
+    
+    val max_size = sz_of_ty ty_sz
+    val max_align = alignment_of_ty b ty_al
+    val max_align_bytes = Alignment.to_bytes max_align
+    
+    val repty = if al_of_ty ty_sz = max_align_bytes then ty_sz 
+                else fill_ty b ty_al (Alignment.align_ofs max_align max_size)
+    
+    val _ = assert (forall (fn ty => sz_of_ty ty <= sz_of_ty repty) tys) "mkty_union: repty size"
+    val _ = assert (forall (fn ty => al_of_ty ty <= al_of_ty repty) tys) "mkty_union: repty alignment"
+    
+  in
+    TUnion (repty,tys)
+  end  
+  
+  
+      
+  
+  fun size_w b = let
+    val dl = #data_layout (#target_info b)
+  in
+    Data_Layout.ptr_size_bits dl
+  end
+  
+  
+  val size_t = mkty_i o size_w
   
   
   fun quote_name n = n (* TODO: Put into quotes, and escape if necessary! *)  
@@ -382,6 +768,7 @@ structure LLVM_Builder : LLVM_BUILDER = struct
     | pr_ty (TVector (n, ty)) = "<" ^ Int.toString n ^# "x" ^# pr_ty ty ^">"
     | pr_ty (TArray (n, ty)) = "[" ^ Int.toString n ^# "x" ^# pr_ty ty ^"]"
     | pr_ty (TStruct tys) = "{" ^# pr_tys tys ^# "}"
+    | pr_ty (TUnion (rty,_)) = pr_ty rty
     | pr_ty (TFptr (ty,tys)) = pr_ty' ty ^# "(" ^# pr_tys tys ^# ")" ^# "*"
     | pr_ty (TNamed name) = pr_tyname name
   and pr_tys tys = separate ", " (map pr_ty tys) |> implode
@@ -717,8 +1104,8 @@ structure LLVM_Builder : LLVM_BUILDER = struct
   
 
   fun mk_size_of b dst ty = let
-    val t1 = mk_ofs_ptr b (SOME "t") (mkc_null (TPtr ty)) (mkc_i size_t 1)
-    val res = mk_conv_instr "ptrtoint" b dst t1 size_t
+    val t1 = mk_ofs_ptr b (SOME "t") (mkc_null (TPtr ty)) (mkc_i (size_t b) 1)
+    val res = mk_conv_instr "ptrtoint" b dst t1 (size_t b)
   in
     res  
   end  
@@ -726,16 +1113,16 @@ structure LLVM_Builder : LLVM_BUILDER = struct
   fun cnv_to_size_t b dst op1 = let
     val w = dstty_i (ty_of_val op1)
   in 
-    if w < size_w then
-      mk_conv_instr "zext" b dst op1 size_t
-    else if w = size_w then op1
+    if w < size_w b then
+      mk_conv_instr "zext" b dst op1 (size_t b)
+    else if w = size_w b then op1
     else raise Fail "Safe downcast to size_t not yet supported"
   end
   
   val i8ptr = mkty_ptr (mkty_i 8)
   
   fun mk_malloc b dst ty op1 = let
-    val calloc_name = decl_ext_fun b (SOME i8ptr) "isabelle_llvm_calloc" [size_t, size_t]
+    val calloc_name = decl_ext_fun b (SOME i8ptr) "isabelle_llvm_calloc" [size_t b, size_t b]
     val op1 = cnv_to_size_t b (SOME "") op1
     val sz = mk_size_of b (SOME "") ty
     val res = mk_call b (SOME "") i8ptr calloc_name [op1,sz]
@@ -794,8 +1181,8 @@ structure LLVM_Builder : LLVM_BUILDER = struct
     val _ = assert (ty_of_val op1 = ty_of_val op2) "ptrcmp_instr: different types"
     val _ = assert (can dstty_ptr (ty_of_val op1)) "ptrcmp_instr: expected pointer types"
     val _ = assert (cty="eq" orelse cty="ne") "ptrcmp_instr: Only supports eq and ne comparsion!"
-    val op1' = mk_conv_instr "ptrtoint" b (SOME "") op1 size_t
-    val op2' = mk_conv_instr "ptrtoint" b (SOME "") op2 size_t
+    val op1' = mk_conv_instr "ptrtoint" b (SOME "") op1 (size_t b)
+    val op2' = mk_conv_instr "ptrtoint" b (SOME "") op2 (size_t b)
   in
     mk_icmp_instr cty b dst op1' op2'
   end
@@ -817,7 +1204,53 @@ structure LLVM_Builder : LLVM_BUILDER = struct
   in
     mk_dst_instr b dst rty ("alloca" ^# pr_ty ty)
   end  
+
   
-        
+  fun union_repty _ (TUnion (rty, _)) = rty
+    | union_repty b (ty as TNamed _) = union_repty b (resolve_named_ty b ty)
+    | union_repty _ _ = raise Error "union_repty: expected union type"
+  
+  fun union_fty _ (TUnion (_, tys)) idx = (
+      assert (idx < length tys) "union_fty: index out of bounds";
+      nth tys idx)
+    | union_fty b (ty as TNamed _) idx = union_fty b (resolve_named_ty b ty) idx
+    | union_fty _ _ _ = raise Error "union_fty: expected union type"
+
+  fun union_internal_bitcast b dst sop dty = let
+    val sty = ty_of_val sop
+    val r = mk_alloca b (SOME "") sty  (* Reserve stack space *)
+    val _ = mk_store b sop r (* Write operand there *)
+    val r' = mk_conv_instr "bitcast" b (SOME "") r (mkty_ptr dty) (* Bitcast to target operand *)
+    val res = mk_load b dst r' (* Load *)
+  in
+    res
+  end  
+          
+  fun mk_dest_union b dst op1 idx = let
+    val dty = union_fty b (ty_of_val op1) idx
+    val res = union_internal_bitcast b dst op1 dty
+  in
+    res
+  end
+  
+  
+  fun mk_make_union b dst uty sop idx = let
+    val fty = union_fty b uty idx
+    val _ = assert (fty = ty_of_val sop) "make-union type mismatch"
+    val dty = union_repty b uty
+  in
+    union_internal_bitcast b dst sop dty
+  end
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
     
 end

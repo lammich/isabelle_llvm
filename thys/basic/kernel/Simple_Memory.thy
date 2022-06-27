@@ -11,11 +11,44 @@ begin
     
   lifting_update memory.lifting
   lifting_forget memory.lifting
-        
-  subsection \<open>LLVM Values\<close>
 
+          
+  subsection \<open>LLVM Values\<close>
+  
+  datatype llvm_struct = 
+    is_struct: VS_STRUCT (the_fields: "llvm_struct list") 
+  | is_union: VS_UNION (the_variants: "llvm_struct list") 
+  | is_int: VS_INT (the_width: nat)
+  | is_single: VS_SINGLE
+  | is_double: VS_DOUBLE
+  | is_ptr: VS_PTR 
+  hide_const (open) 
+    llvm_struct.is_struct llvm_struct.the_fields
+    llvm_struct.is_union llvm_struct.the_variants
+    llvm_struct.is_ptr
+    llvm_struct.is_single
+    llvm_struct.is_double
+    llvm_struct.is_int llvm_struct.the_width
+  
+
+  datatype 'v llvm_union = 
+      is_zero_init: UN_ZERO_INIT (structs: "llvm_struct list")
+    | is_sel: UN_SEL (lefts: "llvm_struct list") (the_val: 'v) (rights: "llvm_struct list")
+  
+  hide_const (open) 
+    llvm_union.is_zero_init
+    llvm_union.structs
+    llvm_union.is_sel
+    llvm_union.lefts
+    llvm_union.the_val
+    llvm_union.rights
+  
+    
+      
+  
   datatype llvm_val = 
     is_struct: LL_STRUCT (the_fields: "llvm_val list") 
+  | is_union: LL_UNION (the_union: "llvm_val llvm_union") 
   | is_int: LL_INT (the_int: lint) 
   | is_single: LL_SINGLE (the_single: single)
   | is_double: LL_DOUBLE (the_double: double) (* 
@@ -25,36 +58,39 @@ begin
   | is_ptr: LL_PTR (the_ptr: llvm_ptr)
   hide_const (open) 
     llvm_val.is_struct llvm_val.the_fields
+    llvm_val.is_union llvm_val.the_union
     llvm_val.is_int llvm_val.the_int
     llvm_val.is_single llvm_val.the_single
     llvm_val.is_double llvm_val.the_double
     llvm_val.is_ptr llvm_val.the_ptr
+
+  fun llvm_struct_of_union where
+    "llvm_struct_of_union _ (UN_ZERO_INIT ss) = ss"
+  | "llvm_struct_of_union sov (UN_SEL ls v rs) = (ls@sov v#rs)"
+
+  fun vals_of_union where
+    "vals_of_union (UN_ZERO_INIT _) = {}"
+  | "vals_of_union (UN_SEL _ v _) = {v}"  
+        
+  lemma llvm_struct_of_union_cong[fundef_cong]: 
+    "u=u' \<Longrightarrow> (\<And>x. x\<in>vals_of_union u' \<Longrightarrow> sov x = sov' x) \<Longrightarrow> llvm_struct_of_union sov u = llvm_struct_of_union sov' u'"
+    by (cases u; auto)
   
-  
-  datatype llvm_struct = 
-    is_struct: VS_STRUCT (the_fields: "llvm_struct list") 
-  | is_int: VS_INT (the_width: nat)
-  | is_single: VS_SINGLE
-  | is_double: VS_DOUBLE
-  | is_ptr: VS_PTR 
-  hide_const (open) 
-    llvm_struct.is_struct llvm_struct.the_fields
-    llvm_struct.is_ptr
-    llvm_struct.is_single
-    llvm_struct.is_double
-    llvm_struct.is_int llvm_struct.the_width
-  
-  
-  
+  lemma vals_of_union_smaller[termination_simp]: "x \<in> vals_of_union un \<Longrightarrow> size x < Suc (size_llvm_union size un)" apply (cases un) by auto 
+    
   fun llvm_struct_of_val where
     "llvm_struct_of_val (LL_STRUCT vs) = VS_STRUCT (map llvm_struct_of_val vs)"
+  | "llvm_struct_of_val (LL_UNION un) = VS_UNION (llvm_struct_of_union llvm_struct_of_val un)"
   | "llvm_struct_of_val (LL_INT i) = VS_INT (width i)"
   | "llvm_struct_of_val (LL_SINGLE _) = VS_SINGLE"
   | "llvm_struct_of_val (LL_DOUBLE _) = VS_DOUBLE"
   | "llvm_struct_of_val (LL_PTR _) = VS_PTR"
 
+  
+  
   fun llvm_zero_initializer where
     "llvm_zero_initializer (VS_STRUCT vss) = LL_STRUCT (map llvm_zero_initializer vss)"
+  | "llvm_zero_initializer (VS_UNION ss) = LL_UNION (UN_ZERO_INIT ss)"
   | "llvm_zero_initializer (VS_INT w) = LL_INT (lconst w 0)"
   | "llvm_zero_initializer (VS_SINGLE) = LL_SINGLE (single_of_word 0)"
   | "llvm_zero_initializer (VS_DOUBLE) = LL_DOUBLE (double_of_word 0)"
@@ -75,6 +111,41 @@ begin
 
     
   subsection \<open>Raw operations on values\<close>  
+  
+  
+  fun llvm_union_len where
+    "llvm_union_len (UN_ZERO_INIT ss) = length ss"
+  | "llvm_union_len (UN_SEL ls v rs) = Suc (length ls + length rs)"
+  
+  fun llvm_union_can_dest where
+    "llvm_union_can_dest (UN_ZERO_INIT ss) i \<longleftrightarrow> i < length ss"
+  | "llvm_union_can_dest (UN_SEL ls v rs) i \<longleftrightarrow> i = length ls"
+
+  fun llvm_union_dest where
+    "llvm_union_dest (UN_ZERO_INIT ss) i = llvm_zero_initializer (ss!i)"
+  | "llvm_union_dest (UN_SEL ls v rs) i = (if i=length ls then v else undefined ls v rs)"
+
+  definition "llvm_union_can_make ss v i \<equiv> i<length ss \<and> llvm_struct_of_val v = ss!i"
+  definition "llvm_union_make ss v i \<equiv> UN_SEL (take i ss) v (drop (Suc i) ss)"
+
+  context
+    fixes ss v i un
+    assumes can_make: "llvm_union_can_make ss v i"
+    defines [simp]: "un \<equiv> llvm_union_make ss v i"
+  begin
+    lemma un_make_simps[simp]:
+      "llvm_union_len un = length ss"
+      "llvm_union_can_dest un j \<longleftrightarrow> j=i"
+      "j=i \<Longrightarrow> llvm_union_dest un j = v"
+      "llvm_struct_of_union llvm_struct_of_val un = ss"
+      using can_make
+      by (auto simp: llvm_union_make_def llvm_union_can_make_def Cons_nth_drop_Suc)
+      
+  end  
+  
+    
+    
+  
   context
     includes monad_syntax_M
   begin
@@ -108,7 +179,22 @@ begin
     }
   | _ \<Rightarrow> fail"
 
-    
+  definition llvm_dest_union :: "llvm_val \<Rightarrow> nat \<Rightarrow> llvm_val llM" where
+    "llvm_dest_union v i \<equiv> case v of
+      LL_UNION un \<Rightarrow> doM {
+        assert llvm_union_can_dest un i;
+        return llvm_union_dest un i
+      }
+    | _ \<Rightarrow> fail"
+  
+  definition llvm_make_union :: "llvm_struct \<Rightarrow> llvm_val \<Rightarrow> nat \<Rightarrow> llvm_val llM" where
+    "llvm_make_union s x i \<equiv> case s of 
+      VS_UNION ss \<Rightarrow> do {
+        assert (llvm_union_can_make ss x i);
+        return LL_UNION (llvm_union_make ss x i)
+      }
+    | _ \<Rightarrow> fail"
+  
   subsection \<open>Interface functions\<close>
   
   subsubsection \<open>Typed arguments\<close>

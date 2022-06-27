@@ -281,6 +281,92 @@ context begin
   
 end
 
+subsection \<open>Unions\<close>
+
+datatype ('a,'b) ll_sum = is_Zero: Zero | is_Inl: Inl (the_left: 'a) | is_Inr: Inr (the_right: 'b)
+hide_const (open) 
+  ll_sum.Zero ll_sum.Inl ll_sum.Inr 
+  ll_sum.is_Zero ll_sum.is_Inl ll_sum.is_Inr 
+  ll_sum.the_left ll_sum.the_right
+
+instantiation ll_sum :: (llvm_rep,llvm_rep) llvm_rep
+begin
+
+  fun to_val_ll_sum :: "('a,'b) ll_sum \<Rightarrow> llvm_val" where
+    "to_val_ll_sum ll_sum.Zero = LL_UNION (UN_ZERO_INIT [struct_of TYPE('a),struct_of TYPE('b)])"
+  | "to_val_ll_sum (ll_sum.Inl l) = LL_UNION (UN_SEL [] (to_val l) [struct_of TYPE('b)])"
+  | "to_val_ll_sum (ll_sum.Inr r) = LL_UNION (UN_SEL [struct_of TYPE('a)] (to_val r) [])"
+
+  fun from_val_ll_sum :: "llvm_val \<Rightarrow> ('a,'b) ll_sum" where
+    "from_val_ll_sum (LL_UNION (UN_ZERO_INIT _)) = ll_sum.Zero"
+  | "from_val_ll_sum (LL_UNION (UN_SEL [] l [_])) = ll_sum.Inl (from_val l)"
+  | "from_val_ll_sum (LL_UNION (UN_SEL [_] r [])) = ll_sum.Inr (from_val r)"
+  | "from_val_ll_sum _ = undefined"  
+
+  definition struct_of_ll_sum :: "('a,'b) ll_sum itself \<Rightarrow> llvm_struct" where 
+    [simp]: "struct_of_ll_sum _ = VS_UNION [struct_of TYPE('a), struct_of TYPE('b)]"
+    
+  definition init_ll_sum :: "('a,'b) ll_sum" where [simp]: "init_ll_sum = ll_sum.Zero"  
+   
+  instance
+    apply standard
+    apply (all \<open>(clarsimp simp: comp_def fun_eq_iff)?\<close>)
+    subgoal for x by (cases x) auto  
+    subgoal for v by (cases v rule: from_val_ll_sum.cases) auto
+    subgoal for x by (cases x) auto
+    done
+
+end
+
+lemma struct_of_ll_sum[ll_struct_of]: "struct_of TYPE(('a::llvm_rep, 'b::llvm_rep) ll_sum) = VS_UNION [struct_of TYPE('a), struct_of TYPE('b)]"
+  by simp
+
+
+definition ll_sum_mk_left :: "'l \<Rightarrow> ('l::llvm_rep, 'r::llvm_rep) ll_sum llM" where 
+  [llvm_code,llvm_inline]: "ll_sum_mk_left x \<equiv> ll_make_union TYPE(('l,'r) ll_sum) x 0"
+
+definition ll_sum_mk_right :: "'r \<Rightarrow> ('l::llvm_rep, 'r::llvm_rep) ll_sum llM" where 
+  [llvm_code,llvm_inline]: "ll_sum_mk_right x \<equiv> ll_make_union TYPE(('l,'r) ll_sum) x 1"
+
+definition ll_sum_extr_left :: "('l::llvm_rep, 'r::llvm_rep) ll_sum \<Rightarrow> 'l llM" where 
+  [llvm_code,llvm_inline]: "ll_sum_extr_left x \<equiv> ll_dest_union x 0"
+
+definition ll_sum_extr_right :: "('l::llvm_rep, 'r::llvm_rep) ll_sum \<Rightarrow> 'r llM" where 
+  [llvm_code,llvm_inline]: "ll_sum_extr_right x \<equiv> ll_dest_union x 1"
+  
+  
+export_llvm 
+  "ll_sum_mk_left :: 32 word \<Rightarrow> (32 word, double) ll_sum llM"
+  "ll_sum_mk_right :: double \<Rightarrow> (32 word, double) ll_sum llM"
+  "ll_sum_extr_left :: (32 word, double) ll_sum \<Rightarrow> 32 word llM"
+  "ll_sum_extr_right :: (32 word, double) ll_sum \<Rightarrow> double llM"
+  file "../../regression/gencode/test_basic_union.ll"
+  
+  
+lemma ll_sum_mk_simps[vcg_normalize_simps]:
+  "ll_sum_mk_left l = Mreturn (ll_sum.Inl l)"
+  "ll_sum_mk_right r = Mreturn (ll_sum.Inr r)"
+  unfolding ll_sum_mk_left_def ll_sum_mk_right_def
+  by (simp_all add: ll_make_union_def checked_from_val_def llvm_make_union_def
+    llvm_union_can_make_def llvm_union_make_def)
+
+lemma ll_sum_extr_simps:
+  "ll_sum.is_Inl x \<Longrightarrow> ll_sum_extr_left x = Mreturn (ll_sum.the_left x)"
+  "ll_sum.is_Inr x \<Longrightarrow> ll_sum_extr_right x = Mreturn (ll_sum.the_right x)"
+  unfolding ll_sum_extr_left_def ll_sum_extr_right_def
+  apply (cases x; simp_all add: ll_dest_union_def checked_from_val_def llvm_dest_union_def)
+  apply (cases x; simp_all add: ll_dest_union_def checked_from_val_def llvm_dest_union_def)
+  done
+    
+      
+lemma ll_sum_extr_rules[vcg_rules]:
+  "llvm_htriple (\<up>(ll_sum.is_Inl x)) (ll_sum_extr_left x) (\<lambda>r. \<up>(r=ll_sum.the_left x))"    
+  "llvm_htriple (\<up>(ll_sum.is_Inr x)) (ll_sum_extr_right x) (\<lambda>r. \<up>(r=ll_sum.the_right x))"    
+  supply [vcg_normalize_simps] = ll_sum_extr_simps
+  by (vcg)
+
+(* TODO: Test this setup *)      
+
 
 text \<open>Example and Regression Tests using LLVM-VCG directly, 
 i.e., without Refinement Framework\<close>
@@ -308,8 +394,12 @@ end
 definition "my_sel_fst \<equiv> fst o Rep_my_pair"
 definition "my_sel_snd \<equiv> snd o Rep_my_pair"
 
-lemma my_pair_to_val[ll_to_val]: "to_val x = LL_STRUCT [to_val (my_sel_fst x), to_val (my_sel_snd x)]"
+lemma my_pair_struct_of[ll_struct_of]: "struct_of TYPE(('a::llvm_rep,'b::llvm_rep) my_pair) = VS_STRUCT [struct_of TYPE('a), struct_of TYPE('b)]"
+  by simp
+
+(*lemma my_pair_to_val[ll_to_val]: "to_val x = LL_STRUCT [to_val (my_sel_fst x), to_val (my_sel_snd x)]"
   by (auto simp: my_sel_fst_def my_sel_snd_def to_val_my_pair_def to_val_prod)
+*)  
 
 
 definition my_fst :: "('a::llvm_rep,'b::llvm_rep)my_pair \<Rightarrow> 'a llM" where [llvm_inline]: "my_fst x \<equiv> ll_extract_value x 0"
@@ -385,15 +475,21 @@ begin
     (* TODO: Clean proof here, not breaking abstraction barriers! *)
     apply (auto simp: to_val_word_def init_zero fun_eq_iff split: list_cell.splits)
     subgoal for v v1 v2 by (cases v) (auto)
-    subgoal by (metis init_ptr_def init_zero llvm_zero_initializer.simps(5) struct_of_ptr_def)
+    subgoal by (simp add: LLVM_Shallow.null_def to_val_ptr_def)
     done
 
 end
 
+lemma struct_of_list_cell[ll_struct_of]: 
+  "struct_of TYPE('a::llvm_rep list_cell) = VS_STRUCT [struct_of (TYPE('a)), struct_of (TYPE('a list_cell ptr))]"
+  by simp
+
+  (*
 lemma to_val_list_cell[ll_to_val]: "to_val x = LL_STRUCT [to_val (data x), to_val (next x)]"
   apply (cases x)
   apply (auto simp: to_val_list_cell_def)
   done
+  *)
 
 lemma [ll_identified_structures]: "ll_is_identified_structure ''list_cell'' TYPE(_ list_cell)"  
   unfolding ll_is_identified_structure_def
