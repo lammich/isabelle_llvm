@@ -40,6 +40,8 @@ begin
       
   *)
 
+  declare [[llc_compile_union=true]]  
+  
   ML \<open>
     structure Aggregate_Tests = struct
       local 

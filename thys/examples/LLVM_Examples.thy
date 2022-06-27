@@ -283,6 +283,8 @@ end
 
 subsection \<open>Unions\<close>
 
+declare [[llc_compile_union=true]]
+
 datatype ('a,'b) ll_sum = is_Zero: Zero | is_Inl: Inl (the_left: 'a) | is_Inr: Inr (the_right: 'b)
 hide_const (open) 
   ll_sum.Zero ll_sum.Inl ll_sum.Inr 
@@ -365,7 +367,7 @@ lemma ll_sum_extr_rules[vcg_rules]:
   supply [vcg_normalize_simps] = ll_sum_extr_simps
   by (vcg)
 
-(* TODO: Test this setup *)      
+(* TODO: Test this VCG setup *)      
 
 
 text \<open>Example and Regression Tests using LLVM-VCG directly, 

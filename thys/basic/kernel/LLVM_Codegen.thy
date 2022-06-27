@@ -206,6 +206,8 @@ begin
       
       val llc_compile_avx512f = Attrib.setup_config_bool @{binding llc_compile_avx512f} (K false)
 
+      val llc_compile_union = Attrib.setup_config_bool @{binding llc_compile_union} (K false)
+      
       val str_of_w32 = Word32.fmt StringCvt.HEX #> StringCvt.padLeft #"0" 8 #> prefix "0x";
       val str_of_w64 = Word64.fmt StringCvt.HEX #> StringCvt.padLeft #"0" 16 #> prefix "0x";
       
@@ -980,7 +982,13 @@ begin
         else if String.isSuffix "_f" s then unsuffix "_f" s
         else raise Fail("Expected floating point suffixed operation [_d,_f]: " ^ s)
       
-      
+
+      fun feature_check_union ctxt = let
+        val _ = Config.get ctxt llc_compile_union orelse
+                raise Fail "Union aggregate type is experimental and disabled! declare [[llc_compile_union=true]] to enable!"
+      in () end
+        
+              
       fun arith_instr_builder iname vtab dst [OOOp x1, OOOp x2] _ b = (
         LLVM_Builder.mk_arith_instr iname b dst (llc_op_to_val b vtab x1) (llc_op_to_val b vtab x2) |> SOME
       ) | arith_instr_builder _ _ _ _ _ _ = raise Fail "arith_instr_builder: invalid arguments"
@@ -1014,11 +1022,13 @@ begin
         LLVM_Builder.mk_insertvalue b dst (llc_op_to_val b vtab x1) (llc_op_to_val b vtab x2) idx |> SOME
       ) | insert_value_builder _ _ _ _ _ = raise Fail "insert_value_builder: invalid arguments"
 
-      fun make_union_builder vtab dst [OOType ty, OOOp x, OOCIdx idx] _ b = (
+      fun make_union_builder vtab dst [OOType ty, OOOp x, OOCIdx idx] ctxt b = (
+        feature_check_union ctxt;
         LLVM_Builder.mk_make_union b dst (llc_ty b ty) (llc_op_to_val b vtab x) idx |> SOME
       ) | make_union_builder _ _ _ _ _ = raise Fail "make_union_builder: invalid arguments"
       
-      fun dest_union_builder vtab dst [OOOp x, OOCIdx idx] _ b = (
+      fun dest_union_builder vtab dst [OOOp x, OOCIdx idx] ctxt b = (
+        feature_check_union ctxt;
         LLVM_Builder.mk_dest_union b dst (llc_op_to_val b vtab x) idx |> SOME
       ) | dest_union_builder _ _ _ _ _ = raise Fail "make_union_builder: invalid arguments"
             
