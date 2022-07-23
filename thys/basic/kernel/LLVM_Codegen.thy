@@ -2121,14 +2121,14 @@ begin
       
       fun chk_ty (CTYO_PRIM p) (CTYO_PRIM p') stab = ( amend_cprim p p'; stab )
         | chk_ty (CTYO_PTR p) (CTYO_PTR p') stab = chk_ty p p' stab
-        | chk_ty (CTYO_NAMED n) (CTYO_NAMED n') stab = (n=n' orelse error "C-Header: cannot override structure name"; stab)
+        | chk_ty (CTYO_NAMED n) (CTYO_NAMED n') stab = (n=n' orelse error ("C-Header: cannot override structure name: " ^ n ^ " -> " ^ n'); stab)
         | chk_ty (CTYO_STRUCT fs) (CTYO_STRUCT fs') stab = fold2 chk_fld fs fs' stab
         | chk_ty (CTYO_UNION fs) (CTYO_UNION fs') stab = fold2 chk_fld fs fs' stab
         | chk_ty ty (CTYO_NAMED n') stab = (case Symtab.lookup stab n' of
             NONE => chk_ty ty (clookup ctab' n') (Symtab.update (n',ty) stab)
           | SOME tyy => (tyy=ty orelse error "C-Header: ambiguous named override"; stab)  
         )
-        | chk_ty _ _ _ = error "C-Header: mismatched named override"
+        | chk_ty cty1 cty2 _ = error ("C-Header: mismatched named override " ^ @{make_string} cty1 ^ " --- " ^ @{make_string} cty2)
         
       and chk_fld (FLDO_NAMED (SOME ty,_)) (FLDO_NAMED (SOME ty',_)) = chk_ty ty ty'
         | chk_fld _ _ = error "C-Header: incomplete or mismatching structure in named override"
