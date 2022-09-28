@@ -401,9 +401,8 @@ subsection \<open>Preprocessor\<close>
       | dep_is_call_const t = let 
           val T = fastype_of t 
         in
-                  not (dep_is_ll_comb_t t) (* Not an internal name *)
-          andalso is_llM (body_type T)           (* Yields a monadic result *)
-          andalso not (exists (exists_subtype is_llM) (binder_types T)) (* No monadic parameters *)
+          not (dep_is_ll_comb_t t)      (* Not an internal name *)
+          andalso is_llM (body_type T)  (* Yields a monadic result *)
         end
       
     (*fun dep_is_call_const t = case try dest_head t of
