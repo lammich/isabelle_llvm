@@ -1,0 +1,30 @@
+\frametitle{Correctness theorem and TCB}
+Sepref generates $qsort_\dagger$ and theorem
+
+  \begin{lstlisting}
+    hnr (arr xs p * idx |xs| n) (qsort$_\dagger$ p n) (idx |xs| n) arr (=p) (qsort xs)
+  \end{lstlisting}
+
+  \pause
+  Combination with correctness theorem of $qsort$ yields
+
+  \begin{lstlisting}
+    {arr xs p * idx |xs| n}
+      qsort$_\dagger$ p n
+    {%r. \<exists>xs'. r=p $\ast$ arr xs' p $\ast$ sorted xs' $\ast$ mset xs' = mset xs}
+  \end{lstlisting}
+
+  \pause
+  Code generator generates LLVM text from $qsort_\dagger$.
+
+  \begin{lstlisting}
+    export_llvm qsort$_\dagger$ is "uint64* qsort_uint64(uint64*, size_t)"
+  \end{lstlisting}
+  \vspace*{-.5em}
+  (and, similar but more complicated for strings, ...)
+
+  \pause
+  \medskip
+  This can be compiled and linked against, e.g., benchmark suite
+
+
