@@ -25,7 +25,5 @@ session Isabelle_LLVM = Refine_Monadic +
     "sepref/IICF/IICF"  
     
   theories
-    "examples/sorting/Sorting_Export_Code"
-    "examples/Bin_Search"
-    "examples/KMP"
-    "examples/LLVM_Examples"
+    "examples/sorting/Sorting_Introsort"
+    "examples/sorting/Sorting_Strings"

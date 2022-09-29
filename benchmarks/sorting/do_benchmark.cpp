@@ -23,6 +23,36 @@ using namespace std;
 namespace bsort = boost::sort;
 namespace bsc = boost::sort::common;
 
+
+//////////////////////////////////
+// Parallel experiments
+//////////////////////////////////
+
+/// This is a helper function for the sort routine.
+template<typename I, typename Compare> void par_isort_aux(I first, I last, Compare comp, size_t d)
+  {
+    if (last-first < 10000 || d == 0) {
+      std::__sort(first,last,comp);
+    } else {
+      I cut = std::__unguarded_partition_pivot(first, last, comp);
+
+      auto s1 = std::async(std::launch::async, par_isort_aux<I,Compare>, first,cut,comp,d-1);
+      par_isort_aux(cut,last,comp,d-1);
+      s1.get();
+
+    }
+  }
+
+template<typename I, typename Compare> void par_isort(I first, I last, Compare comp)
+{
+  par_isort_aux(first, last, __gnu_cxx::__ops::__iter_comp_iter(comp), std::__lg(last - first) * 2);
+}
+
+
+/////////////////////////////////
+
+
+
 using bsc::time_point;
 using bsc::now;
 using bsc::subtract_time;
@@ -709,6 +739,7 @@ void test_uint(string name, size_t NITER, vector<uint64_t> B) {
   else if (name=="boost::pdqsort") sort_test(A,B,NITER,comp,[&]{ boost_pdqsort(A.begin (), A.end (), comp);});
   else if (name=="boost::pdqsort_bp") sort_test(A,B,NITER,comp,[&]{ boost::sort::pdqsort(A.begin (), A.end ());});
   else if (name=="boost::sample_sort") sort_test(A,B,NITER,comp,[&]{ boost::sort::sample_sort(A.begin (), A.end (), comp, 12);});
+  else if (name=="naive:parqsort") sort_test(A,B,NITER,comp,[&]{ par_isort(A.begin (), A.end (), comp);});
   else {
     cout<<"No such sorting algorithm "<<name<<endl;
     exit(1);
@@ -725,7 +756,8 @@ void test_llstring(string name, size_t NITER, vector<llstring> &B) {
   else if (name=="isabelle::pdqsort") sort_test(A,B,NITER,comp,[&]{ str_pdqsort(A.data (), 0, A.size());});
   else if (name=="boost::pdqsort") sort_test(A,B,NITER,comp,[&]{ boost_pdqsort(A.begin (), A.end (), comp);});
   else if (name=="std::sort") sort_test(A,B,NITER,comp,[&]{ std::sort(A.begin (), A.end (), comp);});
-  else if (name=="boost::sample_sort") sort_test(A,B,NITER,comp,[&]{ boost::sort::sample_sort(A.begin (), A.end (), comp, 12);});
+  else if (name=="boost::sample_sort") sort_test(A,B,NITER,comp,[&]{ boost::sort::sample_sort(A.begin (), A.end (), comp);});
+  else if (name=="naive:parqsort") sort_test(A,B,NITER,comp,[&]{ par_isort(A.begin (), A.end (), comp);});
   else {
     cout<<"No such sorting algorithm "<<name<<endl;
     exit(1);

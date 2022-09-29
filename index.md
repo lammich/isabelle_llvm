@@ -10,10 +10,11 @@ The main features are:
   * Support for stepwise refinement based verification
 
 ## News
-  * Updated to work with new Isabelle 2021 version
+  * July 2021: [ISASAT](https://m-fleury.github.io/isasat/isasat.html), a fully verified SAT solver that uses Isabelle-LLVM, has won the [2021 EDA](https://www.eda-ai.org/) Fixed CNF Encoding Race.
   * June 2021: released version 2.0. New features:
     * support of arbitrary structures, and pointers to structure itself (required for, e.g., linked lists)
     * faster export_llvm for big code
+  * Updated to work with new Isabelle 2021 version
 
 
 
