@@ -182,8 +182,8 @@ begin
   definition "ll_mul \<equiv> op_lift_arith2' (*)"
   definition "ll_udiv \<equiv> op_lift_arith2 udivrem_is_undef (div)"
   definition "ll_urem \<equiv> op_lift_arith2 udivrem_is_undef (mod)"
-  definition "ll_sdiv \<equiv> op_lift_arith2 sdivrem_is_undef (sdiv)"
-  definition "ll_srem \<equiv> op_lift_arith2 sdivrem_is_undef (smod)"
+  definition "ll_sdiv \<equiv> op_lift_arith2 sdivrem_is_undef (sdiv\<^sub>l\<^sub>i\<^sub>n\<^sub>t)"
+  definition "ll_srem \<equiv> op_lift_arith2 sdivrem_is_undef (smod\<^sub>l\<^sub>i\<^sub>n\<^sub>t)"
 
   subsubsection \<open>Binary Floating Point Operations\<close>  
   definition ndet_nan_double :: "double llM" where "ndet_nan_double \<equiv> Mspec is_nan_double"

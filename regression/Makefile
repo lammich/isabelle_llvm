@@ -1,4 +1,5 @@
-ISABELLE=isabelle build -b
+# ISABELLE=isabelle build -b
+ISABELLE=~/opt/Isabelle2022-RC2/bin/isabelle build -b
 
 all: tests
 

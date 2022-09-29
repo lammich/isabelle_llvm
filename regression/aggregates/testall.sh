@@ -1,5 +1,7 @@
 #!/bin/bash
 
+ISABELLE=~/opt/Isabelle2022-RC2/bin/isabelle
+
 set -e
 
 echo "Aggregate Tests"
@@ -10,7 +12,7 @@ rm -f generated/*
 
 echo "  Building thy and generating tests"
 
-isabelle build -c -d . Aggregate_Tests
+$ISABELLE build -c -d . Aggregate_Tests
 
 
 exitcode=0

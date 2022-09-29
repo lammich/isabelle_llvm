@@ -4,6 +4,8 @@ begin
 
 section \<open>More Tracing\<close>
 
+ML_val \<open>open Parse\<close>
+
 (* Copied from Eisbach_Tools *)
 ML \<open>
 
@@ -20,7 +22,7 @@ fun trace_method parser print =
 
     
 val trace_goal_method = trace_method 
-  (Scan.lift (Scan.optional Parse.text ""))
+  (Scan.lift (Scan.optional Parse.string ""))
   (fn ctxt => fn msg => fn st => 
     let
       val t = Logic.get_goal (Thm.prop_of st) 1
@@ -33,7 +35,7 @@ val trace_goal_method = trace_method
     end
   )
     
-val trace_msg_method = trace_method (Scan.lift Parse.text) (K (fn msg => K msg))
+val trace_msg_method = trace_method (Scan.lift Parse.string) (K (fn msg => K msg))
     
 in
 

@@ -71,7 +71,7 @@ definition [simp, autoref_tag_defs]: "UNPROTECT x \<equiv> x" \<comment> \<open>
   converted to @{term PR_CONST}, after unprotecting its content\<close>
 
 
-subsection {* Operation Identification *}
+subsection \<open> Operation Identification \<close>
 
 text \<open> Indicator predicate for conceptual typing of a constant \<close>
 definition intf_type :: "'a \<Rightarrow> 'b itself \<Rightarrow> bool" (infix "::\<^sub>i" 10) where
@@ -89,7 +89,7 @@ text \<open> Wrapper predicate for an conceptual type inference \<close>
 definition ID :: "'a \<Rightarrow> 'a \<Rightarrow> 'c itself \<Rightarrow> bool" 
   where [simp]: "ID t t' T \<equiv> t=t'"
 
-subsubsection {* Conceptual Typing Rules *}
+subsubsection \<open> Conceptual Typing Rules \<close>
 
 lemma ID_unfold_vars: "ID x y T \<Longrightarrow> x\<equiv>y" by simp
 lemma ID_PR_CONST_trigger: "ID (PR_CONST x) y T \<Longrightarrow> ID (PR_CONST x) y T" .

@@ -3,6 +3,18 @@ theory LLVM_Integer
 imports LLVM_More_Word "HOL-Library.Signed_Division"
 begin
 
+
+(* TODO: signed_division syntactic typeclass was lost in change 2021-1\<rightarrow>2022,
+  and the assumptions in 2022 version cannot be satisfied by the integers defined in here,
+  as operations are only partially defined.
+
+  Workaround for now: introduce new operator names, just for LLVM_Integer
+*)
+
+
+
+
+
 subsection \<open>Lifting of Operations\<close>  
 
 definition "cnv_uop1 f a \<equiv> bin_to_bl (length a) (f (bl_to_bin a))"
@@ -442,7 +454,7 @@ definition "lint_abort_bool (_::unit) \<equiv> undefined::bool"
 (*lemma l_abort_ne[simp]: "lint_abort () \<noteq> []" unfolding lint_abort_def by auto*)
 declare [[ code abort: lint_abort lint_abort_bool]]
 
-instantiation lint :: "{plus,minus,times,divide,modulo,uminus,signed_division}"
+instantiation lint :: "{plus,minus,times,divide,modulo,uminus}" (*,signed_division*)
 begin
   lift_definition plus_lint :: "lint \<Rightarrow> lint \<Rightarrow> lint" is "cnv_uop2 (lint_abort) (+)" by simp
   lift_definition minus_lint :: "lint \<Rightarrow> lint \<Rightarrow> lint" is "cnv_uop2 (lint_abort) (-)" by simp
@@ -455,17 +467,22 @@ begin
   definition sdivrem_ovf :: "lint \<Rightarrow> lint \<Rightarrow> bool" where
     "sdivrem_ovf a b \<equiv> lint_to_sint a sdiv lint_to_sint b \<notin> sints (width a)"
   
-  lift_definition signed_divide_lint :: "lint \<Rightarrow> lint \<Rightarrow> lint" 
-    is "\<lambda>a b. if bl_to_sbin a sdiv bl_to_sbin b \<in> sints (length a) then cnv_sop2 lint_abort (sdiv) a b else lint_abort ()"
-    by simp
-    
-  lift_definition signed_modulo_lint :: "lint \<Rightarrow> lint \<Rightarrow> lint" 
-    is "\<lambda>a b. if bl_to_sbin a sdiv bl_to_sbin b \<in> sints (length a) then cnv_sop2 lint_abort (smod) a b else lint_abort ()" 
-    by simp
-  
-  
   instance ..
+
 end
+
+(*
+  TODO (see header of file): signed-division typeclass no longer syntactic, can't use it anymore.
+*)
+
+lift_definition sdiv_lint :: "lint \<Rightarrow> lint \<Rightarrow> lint" (infixl "sdiv\<^sub>l\<^sub>i\<^sub>n\<^sub>t" 70)
+  is "\<lambda>a b. if bl_to_sbin a sdiv bl_to_sbin b \<in> sints (length a) then cnv_sop2 lint_abort (sdiv) a b else lint_abort ()"
+  by simp
+
+lift_definition smod_lint :: "lint \<Rightarrow> lint \<Rightarrow> lint" (infixl "smod\<^sub>l\<^sub>i\<^sub>n\<^sub>t" 70)
+  is "\<lambda>a b. if bl_to_sbin a sdiv bl_to_sbin b \<in> sints (length a) then cnv_sop2 lint_abort (smod) a b else lint_abort ()" 
+  by simp
+
 
 
 lemma width_plus[simp]:
@@ -531,14 +548,14 @@ lemma uint_divide[simp]:
 lemma width_sdivide[simp]:
   assumes "width a = width b" "width b \<noteq> 0"
   assumes "\<not>sdivrem_ovf a b"
-  shows "width (a sdiv b) = width b"
+  shows "width (a sdiv\<^sub>l\<^sub>i\<^sub>n\<^sub>t b) = width b"
   using assms unfolding sdivrem_ovf_def
   by transfer auto
 
 lemma sint_sdivide[simp]:
   assumes "width a = width b" "width b \<noteq> 0"
   assumes "\<not>sdivrem_ovf a b"
-  shows "lint_to_sint (a sdiv b) = sbintrunc (width b - 1) ((lint_to_sint a) sdiv (lint_to_sint b))"
+  shows "lint_to_sint (a sdiv\<^sub>l\<^sub>i\<^sub>n\<^sub>t b) = sbintrunc (width b - 1) ((lint_to_sint a) sdiv (lint_to_sint b))"
   using assms unfolding sdivrem_ovf_def
   by transfer auto
 
@@ -557,14 +574,14 @@ lemma uint_modulo[simp]:
 lemma width_srem[simp]:
   assumes "width a = width b" "width b \<noteq> 0"
   assumes "\<not>sdivrem_ovf a b"
-  shows "width (a smod b) = width b"
+  shows "width (a smod\<^sub>l\<^sub>i\<^sub>n\<^sub>t b) = width b"
   using assms unfolding sdivrem_ovf_def
   by transfer auto
 
 lemma sint_remainder[simp]:
   assumes "width a = width b" "width b \<noteq> 0"
   assumes "\<not>sdivrem_ovf a b"
-  shows "lint_to_sint (a smod b) = sbintrunc (width b - 1) ((lint_to_sint a) smod (lint_to_sint b))"
+  shows "lint_to_sint (a smod\<^sub>l\<^sub>i\<^sub>n\<^sub>t b) = sbintrunc (width b - 1) ((lint_to_sint a) smod (lint_to_sint b))"
   using assms unfolding sdivrem_ovf_def
   by transfer auto
 
@@ -660,7 +677,7 @@ lemma uint_AND[simp]:
   shows "lint_to_uint (a lliAND b) = lint_to_uint a AND lint_to_uint b"
   using assms apply (transfer)
   apply (auto simp: )
-  by (metis bin_trunc_ao(1) trunc_bl2bin_len)
+  by (metis trunc_bl2bin_len)
 
 lemma width_OR[simp]:
   assumes "width a = width b"
@@ -852,7 +869,7 @@ lemma word_to_lint_mod[word_to_lint_convs]: "word_to_lint (a mod b) = word_to_li
 lemma word_to_lint_sdiv[word_to_lint_convs]: 
   fixes a b :: "'a::len word"
   assumes "sint a sdiv sint b \<in> sints LENGTH('a)"
-  shows "word_to_lint (a sdiv b) = word_to_lint a sdiv word_to_lint b"
+  shows "word_to_lint (a sdiv b) = word_to_lint a sdiv\<^sub>l\<^sub>i\<^sub>n\<^sub>t word_to_lint b"
   using assms
   apply (auto simp: word_to_lint_def lint_to_word_def sints_def)
   apply transfer'
@@ -861,7 +878,7 @@ lemma word_to_lint_sdiv[word_to_lint_convs]:
 lemma word_to_lint_smod[word_to_lint_convs]: 
   fixes a b :: "'a::len word"
   assumes "sint a sdiv sint b \<in> sints LENGTH('a)"
-  shows "word_to_lint (a smod b) = word_to_lint a smod word_to_lint b"
+  shows "word_to_lint (a smod b) = word_to_lint a smod\<^sub>l\<^sub>i\<^sub>n\<^sub>t word_to_lint b"
   using assms
   apply (auto simp: word_to_lint_def lint_to_word_def sints_def)
   apply transfer'
@@ -910,7 +927,7 @@ lemma zext_in_range: "\<lbrakk>w'\<noteq>0; w'\<le>w; 0\<le>a; a<2^w'\<rbrakk> \
 lemma word_to_lint_ucast_up[word_to_lint_convs]: 
   "is_up UCAST('a::len\<rightarrow>'b::len) \<Longrightarrow> word_to_lint (UCAST('a\<rightarrow>'b) a) = zext LENGTH ('b) (word_to_lint a)"
   unfolding word_to_lint_def
-  by (simp add: zext_in_range is_up cast_simps)
+  by (simp add: zext_in_range cast_simps)
   
   
 lemma word_to_lint_scast_up[word_to_lint_convs]: 

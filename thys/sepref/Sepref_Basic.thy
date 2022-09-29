@@ -25,7 +25,7 @@ text \<open>
   specified in Imperative/HOL.
 \<close>
 
-subsection {* Values on Heap *}
+subsection \<open> Values on Heap \<close>
 text \<open>We tag every refinement assertion with the tag @{text hn_ctxt}, to
   avoid higher-order unification problems when the refinement assertion 
   is schematic.\<close>
@@ -217,7 +217,7 @@ lemma hn_refine_frame:
   apply simp
   apply (rule cons_post_rule)
   apply (erule frame_rule)
-  apply (auto simp: sep_algebra_simps pred_lift_extract_simps)
+  apply (auto simp: sep_algebra_simps)
   by (metis sep.mult_commute)
 
 lemma hn_refine_frame': "hn_refine \<Gamma> c \<Gamma>' R CP m \<Longrightarrow> hn_refine (\<Gamma>**F) c (\<Gamma>'**F) R CP m"  

@@ -122,14 +122,16 @@ end
 lemma int_of_word_of_int[simp]: "0\<le>x \<Longrightarrow> x<2^LENGTH('l) \<Longrightarrow> integer_of_word (word_of_integer x :: 'l::len word) = x"
   unfolding integer_of_word_def word_of_integer_def
   apply (auto simp: unat_of_nat integer_of_nat_eq_of_nat simp flip: nat_of_integer_mod_distrib)
-  by (simp add: unique_euclidean_semiring_numeral_class.mod_less)
+  by (metis max.absorb2 nat_mod_eq' nat_of_integer_mod_distrib of_nat_less_iff of_nat_numeral of_nat_of_integer semiring_1_class.of_nat_power)
     
 
 lemma integer_of_word_bounds[simp]:
   "0\<le>integer_of_word w" 
   "integer_of_word w < 2^LENGTH('l)"  for w :: "'l::len word"
   unfolding integer_of_word_def 
-  by (auto simp: integer_of_nat_eq_of_nat)
+  apply (auto simp: integer_of_nat_eq_of_nat)
+  apply (metis Word.of_nat_unat of_nat_0_le_iff)
+  by (metis Word.of_nat_unat of_nat_less_iff of_nat_numeral semiring_1_class.of_nat_power unsigned_less)
 
 
 

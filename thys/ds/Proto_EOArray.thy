@@ -44,19 +44,19 @@ begin
     
   lemma list_assn_cons1_conv: "\<upharpoonleft>(list_assn A) (x#xs) yys = (EXS y ys. \<up>(yys=y#ys) ** \<upharpoonleft>A x y ** \<upharpoonleft>(list_assn A) xs ys)"
     apply (cases yys)
-    by (auto simp: entails_eq_iff sep_algebra_simps pred_lift_extract_simps)
+    by (auto simp: entails_eq_iff sep_algebra_simps)
   
   lemma list_assn_cons2_conv: "\<upharpoonleft>(list_assn A) xxs (y#ys) = (EXS x xs. \<up>(xxs=x#xs) ** \<upharpoonleft>A x y ** \<upharpoonleft>(list_assn A) xs ys)"
     apply (cases xxs)
-    by (auto simp: entails_eq_iff sep_algebra_simps pred_lift_extract_simps)
+    by (auto simp: entails_eq_iff sep_algebra_simps)
   
   lemma list_assn_append1_conv: "\<upharpoonleft>(list_assn A) (xs\<^sub>1@xs\<^sub>2) yys = (EXS ys\<^sub>1 ys\<^sub>2. \<up>(yys=ys\<^sub>1@ys\<^sub>2) ** \<upharpoonleft>(list_assn A) xs\<^sub>1 ys\<^sub>1 ** \<upharpoonleft>(list_assn A) xs\<^sub>2 ys\<^sub>2)"
     apply (induction xs\<^sub>1 arbitrary: yys)
-    by (auto simp: sep_algebra_simps pred_lift_extract_simps list_assn_cons1_conv)
+    by (auto simp: sep_algebra_simps list_assn_cons1_conv)
   
   lemma list_assn_append2_conv: "\<upharpoonleft>(list_assn A) xxs (ys\<^sub>1@ys\<^sub>2) = (EXS xs\<^sub>1 xs\<^sub>2. \<up>(xxs=xs\<^sub>1@xs\<^sub>2) ** \<upharpoonleft>(list_assn A) xs\<^sub>1 ys\<^sub>1 ** \<upharpoonleft>(list_assn A) xs\<^sub>2 ys\<^sub>2)"
     apply (induction ys\<^sub>1 arbitrary: xxs)
-    by (auto simp: sep_algebra_simps pred_lift_extract_simps list_assn_cons2_conv)
+    by (auto simp: sep_algebra_simps list_assn_cons2_conv)
 
   lemma list_assn_neq_len[simp]: 
     "length xs \<noteq> length xsi \<Longrightarrow> \<upharpoonleft>(list_assn A) xs xsi = sep_false"  
@@ -105,7 +105,7 @@ begin
       using split_list_according[OF XSF True] .
       
     show ?thesis
-      by (simp add: nth_append list_update_append sep_algebra_simps sep_conj_ac)
+      by (simp add: nth_append list_update_append sep_algebra_simps sep_conj_c)
       
   qed simp
       

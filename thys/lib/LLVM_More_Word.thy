@@ -86,7 +86,7 @@ lemma srem_int_original_def: "(a::int) smod b = (if a\<ge>0 then \<bar>a\<bar> m
   
 text \<open>Standard properties of remainders\<close>
 lemma div_rem_rtz_id: "(a::int) sdiv b * b + a smod b = a"
-  by (simp add: smod_int_def)
+  by (rule signed_division_class.sdiv_mult_smod_eq)
 
 lemma abs_rem_rtz_lt: "b\<noteq>0 \<Longrightarrow> \<bar>a smod b\<bar> < \<bar>b::int\<bar>"
   using srem_int_original_def by auto
