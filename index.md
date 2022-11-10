@@ -1,9 +1,9 @@
 <!--
   IMPORTANT: If you landed here from a downloaded archive file, go to html/index.html to view this page in a browsable form!
 -->
-# ![Isabelle-LLVM Parallel Logo](logo_200.png) Isabelle-LLVM Parallel
+# ![Isabelle-LLVM Logo](logo_200.png) Isabelle-LLVM
 
-Isabelle-LLVM Parallel is a verification framework for Isabelle/HOL that targets LLVM as backend.
+Isabelle-LLVM is a verification framework for Isabelle/HOL that targets LLVM as backend.
 The main features are:
 
   * Shallowly embedded semantics of fragment of LLVM
@@ -14,7 +14,10 @@ The main features are:
   * Support for parallel programs
 
 ## News
-  * October 2021: Added support for parallel programs
+  * November 2022: ported to Isabelle 2022
+  * June 2022: added support for unions
+  * April 22: added support for floating point numbers
+  * October 2021: added support for parallel programs
   * July 2021: [ISASAT](https://m-fleury.github.io/isasat/isasat.html), a fully verified SAT solver that uses Isabelle-LLVM, has won the [2021 EDA](https://www.eda-ai.org/) Fixed CNF Encoding Race.
   * June 2021: released version 2.0. New features:
     * support of arbitrary structures, and pointers to structure itself (required for, e.g., linked lists)
@@ -28,8 +31,8 @@ The main features are:
 
   Warning: the .thy files in the download are best viewed with the [Isabelle/HOL](https://isabelle.in.tum.de) IDE.
 
-<!--### Git Repository
-  The project is hosted on github [https://github.com/lammich/isabelle_llvm](https://github.com/lammich/isabelle_llvm)-->
+### Git Repository
+  The project is hosted on github [github.com/lammich/isabelle_llvm](https://github.com/lammich/isabelle_llvm)
 
 ### Starting Points for Browsing
   Here are some default starting points for browsing the theories
@@ -122,7 +125,7 @@ The main features are:
 
 
 ## Talks and Publications
-  [Parallel Paper (this submission)](paper_llvm_par.pdf)
+  [ITP'22 Paper](paper_ITP2022.pdf) [Slides](slides_ITP2022.pdf)
 
   [IJCAR'2020 Paper](paper_IJCAR2020.pdf) [Slides](slides_IJCAR2020.pdf)
 

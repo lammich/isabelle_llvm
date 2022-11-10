@@ -53,9 +53,16 @@ if $REBUILD; then
   make
   cd $BASEDIR
 
-  cd papers/llvm_par
+  cd papers/ITP2022
   make
   cd $BASEDIR
+
+  cd papers/ITP2022
+  make
+  cd talk
+  make
+  cd $BASEDIR
+
 
   cd thys
   $ISABELLE build -v -D .
@@ -78,7 +85,7 @@ cp dist-2020.tgz html/
 cp dist-v1.1.tgz html/
 cp dist-v2.0.tgz html/
 cp LICENSE html/
-cp etc/logo/logo_200.png html/
+cp etc/logo/logo_*.png html/
 
 cp papers/IJCAR2020/main.pdf html/paper_IJCAR2020.pdf
 cp papers/IJCAR2020/talk/pres.pdf html/slides_IJCAR2020.pdf
@@ -91,14 +98,15 @@ cp papers/2020_Enschede_Talk/pres.pdf html/enschede2020.pdf
 cp papers/2021_Enschede_Talk/pres.pdf html/enschede2021.pdf
 cp papers/2021_RF_Pres/pres.pdf html/RF_pres.pdf
 
-cp papers/llvm_par/main.pdf html/paper_llvm_par.pdf
+cp papers/ITP2022/main.pdf html/paper_ITP2022.pdf
+cp papers/ITP2022/talk/pres.pdf html/slides_ITP2022.pdf
 
 
 pandoc -V pagetitle="Isabelle LLVM Parallel" -s index.md > html/index.html
 
 
 if $UPLOAD; then
-  LOCAL_DEST=~/devel/www21-lammich/isabelle_llvm_par
+  LOCAL_DEST=~/devel/www21-lammich/isabelle_llvm
   rm -rf $LOCAL_DEST
   cp -a html $LOCAL_DEST
   cd $LOCAL_DEST

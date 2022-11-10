@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ISABELLE=~/opt/Isabelle2022-RC2/bin/isabelle
+ISABELLE=isabelle
 
 set -e
 
