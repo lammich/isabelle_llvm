@@ -4,13 +4,6 @@ imports LLVM_More_Word "HOL-Library.Signed_Division"
 begin
 
 
-(* TODO: signed_division syntactic typeclass was lost in change 2021-1\<rightarrow>2022,
-  and the assumptions in 2022 version cannot be satisfied by the integers defined in here,
-  as operations are only partially defined.
-
-  Workaround for now: introduce new operator names, just for LLVM_Integer
-*)
-
 
 
 
