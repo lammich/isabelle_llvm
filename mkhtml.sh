@@ -79,6 +79,7 @@ mkdir -p html
 ISABELLE_BROWSER_INFO=$($ISABELLE getenv ISABELLE_BROWSER_INFO | sed -re 's/.*=//')
 
 cp -a $ISABELLE_BROWSER_INFO/Unsorted/Isabelle_LLVM html/
+cp -a $ISABELLE_BROWSER_INFO/Unsorted/Examples html/
 cp index.md html/
 cp dist.tgz html/
 cp dist-2020.tgz html/

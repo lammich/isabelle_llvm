@@ -14,6 +14,7 @@ The main features are:
   * Support for parallel programs
 
 ## News
+  * March 2023: added parallel partitioning algorithm
   * November 2022: ported to Isabelle 2022
   * June 2022: added support for unions
   * April 22: added support for floating point numbers
@@ -32,7 +33,7 @@ The main features are:
   Warning: the .thy files in the download are best viewed with the [Isabelle/HOL](https://isabelle.in.tum.de) IDE.
 
 ### Git Repository
-  The project is hosted on github [github.com/lammich/isabelle_llvm](https://github.com/lammich/isabelle_llvm)
+  The project is hosted on github [github.com/lammich/isabelle_llvm/tree/2022](https://github.com/lammich/isabelle_llvm/tree/2022)
 
 ### Starting Points for Browsing
   Here are some default starting points for browsing the theories
@@ -58,21 +59,27 @@ The main features are:
 
   [Sepref Tool](Isabelle_LLVM/Sepref.html) Including the parallel setup in [Sepref_Parallel.thy](Isabelle_LLVM/Sepref_Parallel.html).
 
-  [Sorting Algorithms](Isabelle_LLVM/Sorting_Export_Code.html) Contains the code export to LLVM, and the final correctness theorem.
-  Our parallel quicksort algorithm is in [Sorting_Parsort.thy](Isabelle_LLVM/Sorting_Parsort.html)
-  and the sampling partitioner is in [Sorting_Sample_Partition.thy](Isabelle_LLVM/Sorting_Sample_Partition.html).
+  [Interval array data structure](Examples/IICF_DS_Interval_List.html)
+
+  [With-Split Combinator](Isabelle_LLVM/IICF_Array.html#IICF_Array.WITH_SPLIT|const),
+  [With-Idxs Combinator](Examples/IICF_Shared_Lists.html#IICF_Shared_Lists.WITH_IDXS|const) and its [implementation on arrays](Examples/IICF_DS_Array_Idxs.html#IICF_DS_Array_Idxs.hn_WITH_IDXS_aux|fact).
+
+  [Sorting Algorithms](Examples/Sorting_Export_Code.html) Contains the code export to LLVM, and the final correctness theorem.
+  Our parallel quicksort algorithm is in [Sorting_Parsort.thy](Examples/Sorting_Parsort.html),
+  the sampling pivot finder is in [Sorting_Sample_Partition.thy](Examples/Sorting_Sample_Partition.html),
+  and the parallel partitioner is in [Sorting_Par_Partition.thy](Examples/Sorting_Par_Partition.html).
 
 
 #### Verified Algorithms
-  [Parallel Quicksort](Isabelle_LLVM/Sorting_Parsort.html)
+  [Parallel Quicksort](Examples/Sorting_Parsort.html)
   
-  [Introsort](Isabelle_LLVM/Sorting_Introsort.html)
+  [Introsort](Examples/Sorting_Introsort.html)
 
-  [PDQ Sort](Isabelle_LLVM/Sorting_PDQ.html)
+  [PDQ Sort](Examples/Sorting_PDQ.html)
 
-  [Knuth Morris Pratt String Search](Isabelle_LLVM/KMP.html)
+  [Knuth Morris Pratt String Search](Examples/KMP.html)
 
-  [Binary Search](Isabelle_LLVM/Bin_Search.html)
+  [Binary Search](Examples/Bin_Search.html)
   
   For the ISA-SAT verified SAT solver, see its own [homepage](https://m-fleury.github.io/isasat/isasat.html)
   
@@ -88,7 +95,7 @@ The main features are:
   * To re-check the proofs: Working installation of [Isabelle/HOL](https://isabelle.in.tum.de) 
     with the [Archive of Formal Proofs](https://www.isa-afp.org) installed 
     as as described on [https://www.isa-afp.org/using.shtml](https://www.isa-afp.org/using.shtml). 
-    We require version = Isabelle-2021-1, which, at the time of writing, is the current version.
+    We require version = Isabelle-2022, which, at the time of writing, is the current version.
   * To run the regression tests: [Valgrind](https://www.valgrind.org/) version >= 3.0.0
 
 ## Compiling and running benchmarks
@@ -110,7 +117,7 @@ The main features are:
       cd thys 
       isabelle build -D.
 
-  Here, <code>isabelle</code> must refer to <code>/your/path/to/Isabelle2021/bin/isabelle</code> from your Isabelle installation.
+  Here, <code>isabelle</code> must refer to <code>/your/path/to/Isabelle2022/bin/isabelle</code> from your Isabelle installation.
   This will invoke Isabelle to check all proofs and re-generate the exported code.
 
 ### Regression Test Script
