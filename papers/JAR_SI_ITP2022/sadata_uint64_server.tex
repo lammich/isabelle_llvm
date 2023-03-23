@@ -1,0 +1,42 @@
+
+\addplot+[color=red, mark color=black, mark options={fill=red}] coordinates {
+  (10000, 0.39)
+  (27826, 1.21)
+  (77426, 3.69)
+  (215443, 11.12)
+  (599484, 15.01)
+  (1668101, 19.28)
+  (4641589, 34.43)
+  (12915497, 84.48)
+  (35938137, 232.61)
+  (100000000, 733.26)
+};
+\addlegendentry{verified};
+
+\addplot+[color=black, mark color=black, mark options={fill=black}] coordinates {
+  (10000, 0.58)
+  (27826, 0.94)
+  (77426, 13.99)
+  (215443, 17.99)
+  (599484, 21.07)
+  (1668101, 29.71)
+  (4641589, 69.88)
+  (12915497, 176.65)
+  (35938137, 377.31)
+  (100000000, 765.52)
+};
+\addlegendentry{sample sort};
+
+\addplot+[color=blue, mark color=black, mark options={fill=blue}] coordinates {
+  (10000, 0.14)
+  (27826, 0.31)
+  (77426, 0.74)
+  (215443, 1.08)
+  (599484, 2.84)
+  (1668101, 7.83)
+  (4641589, 25.13)
+  (12915497, 95.56)
+  (35938137, 277.38)
+  (100000000, 821.05)
+};
+\addlegendentry{std::sort};

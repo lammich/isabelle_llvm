@@ -1,0 +1,60 @@
+Title
+  Refinement of Parallel Algorithms down to LLVM
+
+Abstract
+  We present a stepwise refinement approach to develop
+  verified parallel algorithms.
+
+  Extending the Isabelle Refinement Framework,
+  we provide tools to assist with algorithm development
+  and refinement down to efficient LLVM code.
+  The resulting algorithms' performance is competitive with their
+  counterparts implemented in C/C++.
+
+  As case study, we verify a simple parallel sorting algorithm, and
+  show that it performs on par with its C++ implementation,
+  and improves the runtime of the underlying sequential sorting algorithm
+  for most inputs.
+
+
+Contributions
+  shallow embedding of parallel semantics
+
+  technical: formalization of parallel separation logic
+  integration of parallel call into refinement framework. backwards compatible.
+
+  technical: automatic refinement with concrete-identity tracking
+
+  formalization of simple parallel quicksort, using state-of-the-art sequential sort as subroutine
+
+
+Structuring
+
+  Intro
+
+
+
+  Shallow embedding of parallel semantics
+    - extending LLVM backend
+
+  Parallel separation logic
+
+  Integration into automatic refinement
+    - identity tracking
+    - array splitting
+
+  Simple Parallel Quicksort
+
+
+  Benchmarks
+
+
+
+  Conclusions
+    future work:
+      fractional sep-logic,
+      extension to invariants, weak memory, etc.,
+      state-of-the-art parallel sorting
+
+
+ 

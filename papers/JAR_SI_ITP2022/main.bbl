@@ -1,0 +1,665 @@
+%% BioMed_Central_Bib_Style_v1.01
+
+\begin{thebibliography}{42}
+% BibTex style file: bmc-mathphys.bst (version 2.1), 2014-07-24
+\ifx \bisbn   \undefined \def \bisbn  #1{ISBN #1}\fi
+\ifx \binits  \undefined \def \binits#1{#1}\fi
+\ifx \bauthor  \undefined \def \bauthor#1{#1}\fi
+\ifx \batitle  \undefined \def \batitle#1{#1}\fi
+\ifx \bjtitle  \undefined \def \bjtitle#1{#1}\fi
+\ifx \bvolume  \undefined \def \bvolume#1{\textbf{#1}}\fi
+\ifx \byear  \undefined \def \byear#1{#1}\fi
+\ifx \bissue  \undefined \def \bissue#1{#1}\fi
+\ifx \bfpage  \undefined \def \bfpage#1{#1}\fi
+\ifx \blpage  \undefined \def \blpage #1{#1}\fi
+\ifx \burl  \undefined \def \burl#1{\textsf{#1}}\fi
+\ifx \doiurl  \undefined \def \doiurl#1{\url{https://doi.org/#1}}\fi
+\ifx \betal  \undefined \def \betal{\textit{et al.}}\fi
+\ifx \binstitute  \undefined \def \binstitute#1{#1}\fi
+\ifx \binstitutionaled  \undefined \def \binstitutionaled#1{#1}\fi
+\ifx \bctitle  \undefined \def \bctitle#1{#1}\fi
+\ifx \beditor  \undefined \def \beditor#1{#1}\fi
+\ifx \bpublisher  \undefined \def \bpublisher#1{#1}\fi
+\ifx \bbtitle  \undefined \def \bbtitle#1{#1}\fi
+\ifx \bedition  \undefined \def \bedition#1{#1}\fi
+\ifx \bseriesno  \undefined \def \bseriesno#1{#1}\fi
+\ifx \blocation  \undefined \def \blocation#1{#1}\fi
+\ifx \bsertitle  \undefined \def \bsertitle#1{#1}\fi
+\ifx \bsnm \undefined \def \bsnm#1{#1}\fi
+\ifx \bsuffix \undefined \def \bsuffix#1{#1}\fi
+\ifx \bparticle \undefined \def \bparticle#1{#1}\fi
+\ifx \barticle \undefined \def \barticle#1{#1}\fi
+\bibcommenthead
+\ifx \bconfdate \undefined \def \bconfdate #1{#1}\fi
+\ifx \botherref \undefined \def \botherref #1{#1}\fi
+\ifx \url \undefined \def \url#1{\textsf{#1}}\fi
+\ifx \bchapter \undefined \def \bchapter#1{#1}\fi
+\ifx \bbook \undefined \def \bbook#1{#1}\fi
+\ifx \bcomment \undefined \def \bcomment#1{#1}\fi
+\ifx \oauthor \undefined \def \oauthor#1{#1}\fi
+\ifx \citeauthoryear \undefined \def \citeauthoryear#1{#1}\fi
+\ifx \endbibitem  \undefined \def \endbibitem {}\fi
+\ifx \bconflocation  \undefined \def \bconflocation#1{#1}\fi
+\ifx \arxivurl  \undefined \def \arxivurl#1{\textsf{#1}}\fi
+\csname PreBibitemsHook\endcsname
+
+%%% 1
+\bibitem[\protect\citeauthoryear{Lammich}{2019}]{La19-llvm}
+\begin{bchapter}
+\bauthor{\bsnm{Lammich}, \binits{P.}}:
+\bctitle{{Generating Verified LLVM from Isabelle/HOL}}.
+In: \beditor{\bsnm{Harrison}, \binits{J.}},
+\beditor{\bsnm{O'Leary}, \binits{J.}},
+\beditor{\bsnm{Tolmach}, \binits{A.}} (eds.)
+\bbtitle{10th International Conference on Interactive Theorem Proving (ITP
+  2019)}.
+\bsertitle{Leibniz International Proceedings in Informatics (LIPIcs)},
+vol. \bseriesno{141},
+pp. \bfpage{22}--\blpage{12219}.
+\bpublisher{Schloss Dagstuhl--Leibniz-Zentrum fuer Informatik},
+\blocation{Dagstuhl, Germany}
+(\byear{2019}).
+\doiurl{10.4230/LIPIcs.ITP.2019.22} .
+\burl{http://drops.dagstuhl.de/opus/volltexte/2019/11077}
+\end{bchapter}
+\endbibitem
+
+%%% 2
+\bibitem[\protect\citeauthoryear{Esparza et~al.}{2013}]{ELNN13}
+\begin{bchapter}
+\bauthor{\bsnm{Esparza}, \binits{J.}},
+\bauthor{\bsnm{Lammich}, \binits{P.}},
+\bauthor{\bsnm{Neumann}, \binits{R.}},
+\bauthor{\bsnm{Nipkow}, \binits{T.}},
+\bauthor{\bsnm{Schimpf}, \binits{A.}},
+\bauthor{\bsnm{Smaus}, \binits{J.-G.}}:
+\bctitle{A fully verified executable {LTL} model checker}.
+In: \bbtitle{CAV}.
+\bsertitle{LNCS},
+vol. \bseriesno{8044},
+pp. \bfpage{463}--\blpage{478}.
+\bpublisher{Springer}, \blocation{???}
+(\byear{2013})
+\end{bchapter}
+\endbibitem
+
+%%% 3
+\bibitem[\protect\citeauthoryear{Brunner and Lammich}{2018}]{BrLa18}
+\begin{barticle}
+\bauthor{\bsnm{Brunner}, \binits{J.}},
+\bauthor{\bsnm{Lammich}, \binits{P.}}:
+\batitle{Formal verification of an executable {LTL} model checker with partial
+  order reduction}.
+\bjtitle{J. Autom. Reasoning}
+\bvolume{60}(\bissue{1}),
+\bfpage{3}--\blpage{21}
+(\byear{2018})
+\doiurl{10.1007/s10817-017-9418-4}
+\end{barticle}
+\endbibitem
+
+%%% 4
+\bibitem[\protect\citeauthoryear{Wimmer and Lammich}{2018}]{WiLa18}
+\begin{bchapter}
+\bauthor{\bsnm{Wimmer}, \binits{S.}},
+\bauthor{\bsnm{Lammich}, \binits{P.}}:
+\bctitle{Verified model checking of timed automata}.
+In: \bbtitle{TACAS 2018},
+pp. \bfpage{61}--\blpage{78}
+(\byear{2018})
+\end{bchapter}
+\endbibitem
+
+%%% 5
+\bibitem[\protect\citeauthoryear{Lammich}{2017a}]{La17_CADE}
+\begin{bchapter}
+\bauthor{\bsnm{Lammich}, \binits{P.}}:
+\bctitle{Efficient verified {(UN)SAT} certificate checking}.
+In: \bbtitle{Proc. of CADE}.
+\bpublisher{Springer}, \blocation{???}
+(\byear{2017})
+\end{bchapter}
+\endbibitem
+
+%%% 6
+\bibitem[\protect\citeauthoryear{Lammich}{2017b}]{La17_SAT}
+\begin{bchapter}
+\bauthor{\bsnm{Lammich}, \binits{P.}}:
+\bctitle{The {GRAT} tool chain - efficient {(UN)SAT} certificate checking with
+  formal correctness guarantees}.
+In: \bbtitle{SAT},
+pp. \bfpage{457}--\blpage{463}
+(\byear{2017})
+\end{bchapter}
+\endbibitem
+
+%%% 7
+\bibitem[\protect\citeauthoryear{Fleury et~al.}{2018}]{FBL18}
+\begin{bchapter}
+\bauthor{\bsnm{Fleury}, \binits{M.}},
+\bauthor{\bsnm{Blanchette}, \binits{J.C.}},
+\bauthor{\bsnm{Lammich}, \binits{P.}}:
+\bctitle{A verified {SAT} solver with watched literals using {Imperative}
+  {HOL}}.
+In: \bbtitle{Proc. of CPP},
+pp. \bfpage{158}--\blpage{171}
+(\byear{2018})
+\end{bchapter}
+\endbibitem
+
+%%% 8
+\bibitem[\protect\citeauthoryear{Lammich}{2014}]{La14}
+\begin{bchapter}
+\bauthor{\bsnm{Lammich}, \binits{P.}}:
+\bctitle{Verified efficient implementation of gabow’s strongly connected
+  component algorithm}.
+In: \bbtitle{International Conference on Interactive Theorem Proving},
+pp. \bfpage{325}--\blpage{340}
+(\byear{2014}).
+\bcomment{Springer}
+\end{bchapter}
+\endbibitem
+
+%%% 9
+\bibitem[\protect\citeauthoryear{Lammich and Sefidgar}{2016}]{LaSe16}
+\begin{bchapter}
+\bauthor{\bsnm{Lammich}, \binits{P.}},
+\bauthor{\bsnm{Sefidgar}, \binits{S.R.}}:
+\bctitle{Formalizing the {Edmonds-Karp} algorithm}.
+In: \bbtitle{Proc. of ITP},
+pp. \bfpage{219}--\blpage{234}
+(\byear{2016})
+\end{bchapter}
+\endbibitem
+
+%%% 10
+\bibitem[\protect\citeauthoryear{Lammich and Sefidgar}{2019}]{LaSe19}
+\begin{barticle}
+\bauthor{\bsnm{Lammich}, \binits{P.}},
+\bauthor{\bsnm{Sefidgar}, \binits{S.R.}}:
+\batitle{Formalizing network flow algorithms: {A} refinement approach in
+  {Isabelle/HOL}}.
+\bjtitle{J. Autom. Reasoning}
+\bvolume{62}(\bissue{2}),
+\bfpage{261}--\blpage{280}
+(\byear{2019})
+\doiurl{10.1007/s10817-017-9442-4}
+\end{barticle}
+\endbibitem
+
+%%% 11
+\bibitem[\protect\citeauthoryear{Lammich}{2020}]{La20}
+\begin{bchapter}
+\bauthor{\bsnm{Lammich}, \binits{P.}}:
+\bctitle{Efficient verified implementation of introsort and pdqsort}.
+In: \beditor{\bsnm{Peltier}, \binits{N.}},
+\beditor{\bsnm{Sofronie{-}Stokkermans}, \binits{V.}} (eds.)
+\bbtitle{Automated Reasoning - 10th International Joint Conference, {IJCAR}
+  2020, Paris, France, July 1-4, 2020, Proceedings, Part {II}}.
+\bsertitle{Lecture Notes in Computer Science},
+vol. \bseriesno{12167},
+pp. \bfpage{307}--\blpage{323}.
+\bpublisher{Springer}, \blocation{???}
+(\byear{2020}).
+\doiurl{10.1007/978-3-030-51054-1\_18} .
+\burl{https://doi.org/10.1007/978-3-030-51054-1\_18}
+\end{bchapter}
+\endbibitem
+
+%%% 12
+\bibitem[\protect\citeauthoryear{Lammich}{2022}]{La22}
+\begin{bchapter}
+\bauthor{\bsnm{Lammich}, \binits{P.}}:
+\bctitle{Refinement of parallel algorithms down to {LLVM}}.
+In: \beditor{\bsnm{Andronick}, \binits{J.}},
+\beditor{\bsnm{Moura}, \binits{L.}} (eds.)
+\bbtitle{13th International Conference on Interactive Theorem Proving, {ITP}
+  2022, August 7-10, 2022, Haifa, Israel}.
+\bsertitle{LIPIcs},
+vol. \bseriesno{237},
+pp. \bfpage{24}--\blpage{12418}.
+\bpublisher{Schloss Dagstuhl - Leibniz-Zentrum f{\"{u}}r Informatik},
+  \blocation{???}
+(\byear{2022}).
+\doiurl{10.4230/LIPIcs.ITP.2022.24} .
+\burl{https://doi.org/10.4230/LIPIcs.ITP.2022.24}
+\end{bchapter}
+\endbibitem
+
+%%% 13
+\bibitem[\protect\citeauthoryear{Lammich and Lochbihler}{2010}]{LaLo10}
+\begin{bchapter}
+\bauthor{\bsnm{Lammich}, \binits{P.}},
+\bauthor{\bsnm{Lochbihler}, \binits{A.}}:
+\bctitle{The {I}sabelle {C}ollections {F}ramework}.
+In: \bbtitle{{ITP} 2010}.
+\bsertitle{LNCS},
+vol. \bseriesno{6172},
+pp. \bfpage{339}--\blpage{354}.
+\bpublisher{Springer}, \blocation{???}
+(\byear{2010})
+\end{bchapter}
+\endbibitem
+
+%%% 14
+\bibitem[\protect\citeauthoryear{Lammich and Tuerk}{2012}]{LaTu12}
+\begin{bchapter}
+\bauthor{\bsnm{Lammich}, \binits{P.}},
+\bauthor{\bsnm{Tuerk}, \binits{T.}}:
+\bctitle{Applying data refinement for monadic programs to {H}opcroft's
+  algorithm}.
+In: \beditor{\bsnm{Beringer}, \binits{L.}},
+\beditor{\bsnm{Felty}, \binits{A.P.}} (eds.)
+\bbtitle{ITP 2012}.
+\bsertitle{{LNCS}},
+vol. \bseriesno{7406},
+pp. \bfpage{166}--\blpage{182}.
+\bpublisher{Springer}, \blocation{???}
+(\byear{2012})
+\end{bchapter}
+\endbibitem
+
+%%% 15
+\bibitem[\protect\citeauthoryear{Lammich}{2013}]{La13}
+\begin{bchapter}
+\bauthor{\bsnm{Lammich}, \binits{P.}}:
+\bctitle{Automatic data refinement}.
+In: \bbtitle{ITP}.
+\bsertitle{LNCS},
+vol. \bseriesno{7998},
+pp. \bfpage{84}--\blpage{99}.
+\bpublisher{Springer}, \blocation{???}
+(\byear{2013})
+\end{bchapter}
+\endbibitem
+
+%%% 16
+\bibitem[\protect\citeauthoryear{Lammich}{2015}]{La15}
+\begin{bchapter}
+\bauthor{\bsnm{Lammich}, \binits{P.}}:
+\bctitle{Refinement to {Imperative/HOL}}.
+In: \bbtitle{ITP}.
+\bsertitle{LNCS},
+vol. \bseriesno{9236},
+pp. \bfpage{253}--\blpage{269}.
+\bpublisher{Springer}, \blocation{???}
+(\byear{2015})
+\end{bchapter}
+\endbibitem
+
+%%% 17
+\bibitem[\protect\citeauthoryear{Haslbeck and Lammich}{2021}]{HaLa21}
+\begin{bchapter}
+\bauthor{\bsnm{Haslbeck}, \binits{M.P.L.}},
+\bauthor{\bsnm{Lammich}, \binits{P.}}:
+\bctitle{For a few dollars more - verified fine-grained algorithm analysis down
+  to {LLVM}}.
+In: \beditor{\bsnm{Yoshida}, \binits{N.}} (ed.)
+\bbtitle{Programming Languages and Systems - 30th European Symposium on
+  Programming, {ESOP} 2021, Held as Part of the European Joint Conferences on
+  Theory and Practice of Software, {ETAPS} 2021, Luxembourg City, Luxembourg,
+  March 27 - April 1, 2021, Proceedings}.
+\bsertitle{Lecture Notes in Computer Science},
+vol. \bseriesno{12648},
+pp. \bfpage{292}--\blpage{319}.
+\bpublisher{Springer}, \blocation{???}
+(\byear{2021}).
+\doiurl{10.1007/978-3-030-72019-3\_11} .
+\burl{https://doi.org/10.1007/978-3-030-72019-3\_11}
+\end{bchapter}
+\endbibitem
+
+%%% 18
+\bibitem[\protect\citeauthoryear{O'Hearn}{2004}]{OH04}
+\begin{bchapter}
+\bauthor{\bsnm{O'Hearn}, \binits{P.W.}}:
+\bctitle{Resources, concurrency and local reasoning}.
+In: \beditor{\bsnm{Gardner}, \binits{P.}},
+\beditor{\bsnm{Yoshida}, \binits{N.}} (eds.)
+\bbtitle{CONCUR 2004 - Concurrency Theory},
+pp. \bfpage{49}--\blpage{67}.
+\bpublisher{Springer},
+\blocation{Berlin, Heidelberg}
+(\byear{2004})
+\end{bchapter}
+\endbibitem
+
+%%% 19
+\bibitem[\protect\citeauthoryear{Huffman and Kuncar}{2013}]{HuKu13}
+\begin{bchapter}
+\bauthor{\bsnm{Huffman}, \binits{B.}},
+\bauthor{\bsnm{Kuncar}, \binits{O.}}:
+\bctitle{Lifting and transfer: {A} modular design for quotients in
+  isabelle/hol}.
+In: \beditor{\bsnm{Gonthier}, \binits{G.}},
+\beditor{\bsnm{Norrish}, \binits{M.}} (eds.)
+\bbtitle{Certified Programs and Proofs - Third International Conference, {CPP}
+  2013, Melbourne, VIC, Australia, December 11-13, 2013, Proceedings}.
+\bsertitle{Lecture Notes in Computer Science},
+vol. \bseriesno{8307},
+pp. \bfpage{131}--\blpage{146}.
+\bpublisher{Springer}, \blocation{???}
+(\byear{2013}).
+\doiurl{10.1007/978-3-319-03545-1\_9} .
+\burl{https://doi.org/10.1007/978-3-319-03545-1\_9}
+\end{bchapter}
+\endbibitem
+
+%%% 20
+\bibitem[\protect\citeauthoryear{}{}]{TBB}
+\begin{botherref}
+Intel oneAPI Threading Building Blocks.
+\url{https://software.intel.com/en-us/intel-tbb}
+\end{botherref}
+\endbibitem
+
+%%% 21
+\bibitem[\protect\citeauthoryear{Calcagno et~al.}{2007}]{CHY07}
+\begin{bchapter}
+\bauthor{\bsnm{Calcagno}, \binits{C.}},
+\bauthor{\bsnm{O'Hearn}, \binits{P.W.}},
+\bauthor{\bsnm{Yang}, \binits{H.}}:
+\bctitle{Local action and abstract separation logic}.
+In: \bbtitle{LICS 2007},
+pp. \bfpage{366}--\blpage{378}
+(\byear{2007})
+\end{bchapter}
+\endbibitem
+
+%%% 22
+\bibitem[\protect\citeauthoryear{Klein et~al.}{2012}]{KKB12}
+\begin{bchapter}
+\bauthor{\bsnm{Klein}, \binits{G.}},
+\bauthor{\bsnm{Kolanski}, \binits{R.}},
+\bauthor{\bsnm{Boyton}, \binits{A.}}:
+\bctitle{Mechanised separation algebra}.
+In: \bbtitle{ITP},
+pp. \bfpage{332}--\blpage{337}.
+\bpublisher{Springer}, \blocation{???}
+(\byear{2012})
+\end{bchapter}
+\endbibitem
+
+%%% 23
+\bibitem[\protect\citeauthoryear{MUSSER}{1997}]{Muss97}
+\begin{barticle}
+\bauthor{\bsnm{MUSSER}, \binits{D.R.}}:
+\batitle{Introspective sorting and selection algorithms}.
+\bjtitle{Software: Practice and Experience}
+\bvolume{27}(\bissue{8}),
+\bfpage{983}--\blpage{993}
+(\byear{1997})
+\doiurl{10.1002/(SICI)1097-024X(199708)27:8<983::AID-SPE117>3.0.CO;2-\#}
+\end{barticle}
+\endbibitem
+
+%%% 24
+\bibitem[\protect\citeauthoryear{Kamm{\"u}ller et~al.}{1999}]{KWP99}
+\begin{bchapter}
+\bauthor{\bsnm{Kamm{\"u}ller}, \binits{F.}},
+\bauthor{\bsnm{Wenzel}, \binits{M.}},
+\bauthor{\bsnm{Paulson}, \binits{L.C.}}:
+\bctitle{Locales a sectioning concept for isabelle}.
+In: \beditor{\bsnm{Bertot}, \binits{Y.}},
+\beditor{\bsnm{Dowek}, \binits{G.}},
+\beditor{\bsnm{Th{\'e}ry}, \binits{L.}},
+\beditor{\bsnm{Hirschowitz}, \binits{A.}},
+\beditor{\bsnm{Paulin}, \binits{C.}} (eds.)
+\bbtitle{Theorem Proving in Higher Order Logics},
+pp. \bfpage{149}--\blpage{165}.
+\bpublisher{Springer},
+\blocation{Berlin, Heidelberg}
+(\byear{1999})
+\end{bchapter}
+\endbibitem
+
+%%% 25
+\bibitem[\protect\citeauthoryear{Josuttis}{2012}]{Josu12}
+\begin{bbook}
+\bauthor{\bsnm{Josuttis}, \binits{N.M.}}:
+\bbtitle{The C++ Standard Library: A Tutorial and Reference},
+\bedition{2nd} edn.
+\bpublisher{Addison-Wesley Professional}, \blocation{???}
+(\byear{2012})
+\end{bbook}
+\endbibitem
+
+%%% 26
+\bibitem[\protect\citeauthoryear{Axtmann et~al.}{2022}]{AWFS22}
+\begin{barticle}
+\bauthor{\bsnm{Axtmann}, \binits{M.}},
+\bauthor{\bsnm{Witt}, \binits{S.}},
+\bauthor{\bsnm{Ferizovic}, \binits{D.}},
+\bauthor{\bsnm{Sanders}, \binits{P.}}:
+\batitle{Engineering in-place (shared-memory) sorting algorithms}.
+\bjtitle{{ACM} Trans. Parallel Comput.}
+\bvolume{9}(\bissue{1}),
+\bfpage{2}--\blpage{1262}
+(\byear{2022})
+\doiurl{10.1145/3505286}
+\end{barticle}
+\endbibitem
+
+%%% 27
+\bibitem[\protect\citeauthoryear{}{}]{libstdc++}
+\begin{botherref}
+The {GNU} {C++} Library 3.4.28.
+\url{https://gcc.gnu.org/onlinedocs/libstdc++/}
+\end{botherref}
+\endbibitem
+
+%%% 28
+\bibitem[\protect\citeauthoryear{}{}]{boost}
+\begin{botherref}
+Boost {C++} Libraries.
+\url{https://www.boost.org/}
+\end{botherref}
+\endbibitem
+
+%%% 29
+\bibitem[\protect\citeauthoryear{}{}]{boost-sort}
+\begin{botherref}
+Boost {C++} Libraries Sorting Algorithms.
+\url{https://www.boost.org/doc/libs/1_77_0/libs/sort/doc/html/index.html}
+\end{botherref}
+\endbibitem
+
+%%% 30
+\bibitem[\protect\citeauthoryear{Chhugani et~al.}{2008}]{CNLM08}
+\begin{barticle}
+\bauthor{\bsnm{Chhugani}, \binits{J.}},
+\bauthor{\bsnm{Nguyen}, \binits{A.D.}},
+\bauthor{\bsnm{Lee}, \binits{V.W.}},
+\bauthor{\bsnm{Macy}, \binits{W.}},
+\bauthor{\bsnm{Hagog}, \binits{M.}},
+\bauthor{\bsnm{Chen}, \binits{Y.-K.}},
+\bauthor{\bsnm{Baransi}, \binits{A.}},
+\bauthor{\bsnm{Kumar}, \binits{S.}},
+\bauthor{\bsnm{Dubey}, \binits{P.}}:
+\batitle{Efficient implementation of sorting on multi-core simd cpu
+  architecture}.
+\bjtitle{Proceedings of the VLDB Endowment}
+\bvolume{1}(\bissue{2}),
+\bfpage{1313}--\blpage{1324}
+(\byear{2008})
+\end{barticle}
+\endbibitem
+
+%%% 31
+\bibitem[\protect\citeauthoryear{Asiatici et~al.}{2021}]{AMI21}
+\begin{botherref}
+\oauthor{\bsnm{Asiatici}, \binits{M.}},
+\oauthor{\bsnm{Maiorano}, \binits{D.}},
+\oauthor{\bsnm{Ienne}, \binits{P.}}:
+How many cpu cores is an fpga worth? lessons learned from accelerating string
+  sorting on a cpu-fpga system.
+Journal of Signal Processing Systems,
+1--13
+(2021)
+\end{botherref}
+\endbibitem
+
+%%% 32
+\bibitem[\protect\citeauthoryear{Hinrichsen et~al.}{2019}]{HKBK20}
+\begin{botherref}
+\oauthor{\bsnm{Hinrichsen}, \binits{J.K.}},
+\oauthor{\bsnm{Bengtson}, \binits{J.}},
+\oauthor{\bsnm{Krebbers}, \binits{R.}}:
+Actris: Session-type based reasoning in separation logic.
+Proc. ACM Program. Lang.
+\textbf{4}(POPL)
+(2019)
+\doiurl{10.1145/3371074}
+\end{botherref}
+\endbibitem
+
+%%% 33
+\bibitem[\protect\citeauthoryear{Safari and Huisman}{2020}]{SaHu20}
+\begin{bchapter}
+\bauthor{\bsnm{Safari}, \binits{M.}},
+\bauthor{\bsnm{Huisman}, \binits{M.}}:
+\bctitle{A generic approach to the verification of the permutation property of
+  sequential and parallel swap-based sorting algorithms}.
+In: \bbtitle{International Conference on Integrated Formal Methods},
+pp. \bfpage{257}--\blpage{275}
+(\byear{2020}).
+\bcomment{Springer}
+\end{bchapter}
+\endbibitem
+
+%%% 34
+\bibitem[\protect\citeauthoryear{Habermann}{1972}]{Ha72}
+\begin{botherref}
+\oauthor{\bsnm{Habermann}, \binits{A.N.}}:
+Parallel neighbor-sort.
+Carnegie Mellon University
+(1972).
+\doiurl{10.1184/R1/6608258.v1} .
+\url{https://kilthub.cmu.edu/articles/journal_contribution/Parallel_neighbor-sort_or_the_glory_of_the_induction_principle_/6608258/1}
+\end{botherref}
+\endbibitem
+
+%%% 35
+\bibitem[\protect\citeauthoryear{Blom et~al.}{2017}]{Vercors}
+\begin{bchapter}
+\bauthor{\bsnm{Blom}, \binits{S.}},
+\bauthor{\bsnm{Darabi}, \binits{S.}},
+\bauthor{\bsnm{Huisman}, \binits{M.}},
+\bauthor{\bsnm{Oortwijn}, \binits{W.}}:
+\bctitle{The vercors tool set: Verification of parallel and concurrent
+  software}.
+In: \beditor{\bsnm{Polikarpova}, \binits{N.}},
+\beditor{\bsnm{Schneider}, \binits{S.}} (eds.)
+\bbtitle{Integrated Formal Methods},
+pp. \bfpage{102}--\blpage{110}.
+\bpublisher{Springer},
+\blocation{Cham}
+(\byear{2017})
+\end{bchapter}
+\endbibitem
+
+%%% 36
+\bibitem[\protect\citeauthoryear{}{}]{VST}
+\begin{botherref}
+Verified Software Toolchain Project Web Page.
+\url{https://vst.cs.princeton.edu/}
+\end{botherref}
+\endbibitem
+
+%%% 37
+\bibitem[\protect\citeauthoryear{Jung et~al.}{2018}]{JKJA18}
+\begin{barticle}
+\bauthor{\bsnm{Jung}, \binits{R.}},
+\bauthor{\bsnm{Krebbers}, \binits{R.}},
+\bauthor{\bsnm{Jourdan}, \binits{J.}},
+\bauthor{\bsnm{Bizjak}, \binits{A.}},
+\bauthor{\bsnm{Birkedal}, \binits{L.}},
+\bauthor{\bsnm{Dreyer}, \binits{D.}}:
+\batitle{Iris from the ground up: {A} modular foundation for higher-order
+  concurrent separation logic}.
+\bjtitle{J. Funct. Program.}
+\bvolume{28},
+\bfpage{20}
+(\byear{2018})
+\doiurl{10.1017/S0956796818000151}
+\end{barticle}
+\endbibitem
+
+%%% 38
+\bibitem[\protect\citeauthoryear{Bertot and Castran}{2010}]{BeCa10}
+\begin{bbook}
+\bauthor{\bsnm{Bertot}, \binits{Y.}},
+\bauthor{\bsnm{Castran}, \binits{P.}}:
+\bbtitle{Interactive Theorem Proving and Program Development: Coq'Art The
+  Calculus of Inductive Constructions},
+\bedition{1st} edn.
+\bpublisher{Springer}, \blocation{???}
+(\byear{2010})
+\end{bbook}
+\endbibitem
+
+%%% 39
+\bibitem[\protect\citeauthoryear{M\'{e}vel and Jourdan}{2021}]{MeJo21}
+\begin{botherref}
+\oauthor{\bsnm{M\'{e}vel}, \binits{G.}},
+\oauthor{\bsnm{Jourdan}, \binits{J.-H.}}:
+Formal verification of a concurrent bounded queue in a weak memory model.
+Proc. ACM Program. Lang.
+\textbf{5}(ICFP)
+(2021)
+\doiurl{10.1145/3473571}
+\end{botherref}
+\endbibitem
+
+%%% 40
+\bibitem[\protect\citeauthoryear{Spies et~al.}{2021}]{SGGT21}
+\begin{bchapter}
+\bauthor{\bsnm{Spies}, \binits{S.}},
+\bauthor{\bsnm{G{\"a}her}, \binits{L.}},
+\bauthor{\bsnm{Gratzer}, \binits{D.}},
+\bauthor{\bsnm{Tassarotti}, \binits{J.}},
+\bauthor{\bsnm{Krebbers}, \binits{R.}},
+\bauthor{\bsnm{Dreyer}, \binits{D.}},
+\bauthor{\bsnm{Birkedal}, \binits{L.}}:
+\bctitle{Transfinite iris: Resolving an existential dilemma of step-indexed
+  separation logic}.
+In: \bbtitle{Proceedings of the 42nd ACM SIGPLAN International Conference on
+  Programming Language Design and Implementation},
+pp. \bfpage{80}--\blpage{95}
+(\byear{2021})
+\end{bchapter}
+\endbibitem
+
+%%% 41
+\bibitem[\protect\citeauthoryear{Bornat et~al.}{2005}]{BCOP05}
+\begin{bchapter}
+\bauthor{\bsnm{Bornat}, \binits{R.}},
+\bauthor{\bsnm{Calcagno}, \binits{C.}},
+\bauthor{\bsnm{O'Hearn}, \binits{P.}},
+\bauthor{\bsnm{Parkinson}, \binits{M.}}:
+\bctitle{Permission accounting in separation logic}.
+In: \bbtitle{Proceedings of the 32Nd ACM SIGPLAN-SIGACT Symposium on Principles
+  of Programming Languages}.
+\bsertitle{POPL '05},
+pp. \bfpage{259}--\blpage{270}.
+\bpublisher{ACM},
+\blocation{New York, NY, USA}
+(\byear{2005}).
+\doiurl{10.1145/1040305.1040327} .
+\burl{http://doi.acm.org/10.1145/1040305.1040327}
+\end{bchapter}
+\endbibitem
+
+%%% 42
+\bibitem[\protect\citeauthoryear{Haslbeck and Lammich}{}]{HaLa21-toplas}
+\begin{botherref}
+\oauthor{\bsnm{Haslbeck}, \binits{M.P.L.}},
+\oauthor{\bsnm{Lammich}, \binits{P.}}:
+For a few dollars more - verified fine-grained algorithm analysis down to
+  {LLVM}.
+TOPLAS, S.I. ESOP'21.
+to appear
+\end{botherref}
+\endbibitem
+
+\end{thebibliography}

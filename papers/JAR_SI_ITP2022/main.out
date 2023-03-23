@@ -1,0 +1,29 @@
+\BOOKMARK [1][]{section.1}{Introduction}{}% 1
+\BOOKMARK [2][]{subsection.1.1}{Overview}{section.1}% 2
+\BOOKMARK [2][]{subsection.1.2}{Notation}{section.1}% 3
+\BOOKMARK [1][]{section.2}{A Back End for LLVM with Parallel Execution}{}% 4
+\BOOKMARK [2][]{subsection.2.1}{State-Nondeterminism-Error Monad with Access Reports}{section.2}% 5
+\BOOKMARK [2][]{subsection.2.2}{Memory Model}{section.2}% 6
+\BOOKMARK [2][]{subsection.2.3}{Access Reports}{section.2}% 7
+\BOOKMARK [2][]{subsection.2.4}{The Interface of the M-Monad}{section.2}% 8
+\BOOKMARK [2][]{subsection.2.5}{LLVM Instructions}{section.2}% 9
+\BOOKMARK [1][]{section.3}{Parallel Separation Logic}{}% 10
+\BOOKMARK [2][]{subsection.3.1}{Separation Algebra}{section.3}% 11
+\BOOKMARK [2][]{subsection.3.2}{Weakest Preconditions and Hoare Triples}{section.3}% 12
+\BOOKMARK [2][]{subsection.3.3}{Verification Condition Generator}{section.3}% 13
+\BOOKMARK [2][]{subsection.3.4}{Hoare-Triples for Instructions}{section.3}% 14
+\BOOKMARK [1][]{section.4}{Refinement for \(Parallel\) Programs}{}% 15
+\BOOKMARK [2][]{subsection.4.1}{Abstract Programs}{section.4}% 16
+\BOOKMARK [2][]{subsection.4.2}{The Sepref Tool}{section.4}% 17
+\BOOKMARK [2][]{subsection.4.3}{Modular Data Structure Development}{section.4}% 18
+\BOOKMARK [2][]{subsection.4.4}{Array Splitting}{section.4}% 19
+\BOOKMARK [2][]{subsection.4.5}{Refinement to Parallel Execution}{section.4}% 20
+\BOOKMARK [1][]{section.5}{A Parallel Sorting Algorithm}{}% 21
+\BOOKMARK [2][]{subsection.5.1}{Implementation and Correctness Theorem}{section.5}% 22
+\BOOKMARK [2][]{subsection.5.2}{Sampling Pivot Selection}{section.5}% 23
+\BOOKMARK [2][]{subsection.5.3}{Parallel Partitioning}{section.5}% 24
+\BOOKMARK [2][]{subsection.5.4}{Code Generation}{section.5}% 25
+\BOOKMARK [2][]{subsection.5.5}{Benchmarks}{section.5}% 26
+\BOOKMARK [1][]{section.6}{Conclusions}{}% 27
+\BOOKMARK [2][]{subsection.6.1}{Related Work}{section.6}% 28
+\BOOKMARK [2][]{subsection.6.2}{Future Work}{section.6}% 29
