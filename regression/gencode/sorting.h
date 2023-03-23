@@ -24,7 +24,9 @@ llstring* str_pdqsort(llstring*, int64_t, int64_t);
 llstring* str_par_sort(llstring*, int64_t);
 uint64_t* pdqsort(uint64_t*, int64_t, int64_t);
 llstring* str_introsort(llstring*, int64_t, int64_t);
+llstring* str_ppar_sort(llstring*, int64_t);
 uint64_t* par_sort(uint64_t*, int64_t);
 uint64_t* introsort(uint64_t*, int64_t, int64_t);
+uint64_t* ppar_sort(uint64_t*, int64_t);
 
 #endif

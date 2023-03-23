@@ -15,11 +15,23 @@
 
 #include <boost/sort/sort.hpp>
 
+// #include <parallel/algo.h>
+
+#include <tbb/tbb.h>
+
+#include "pcg_rand/pcg_random.hpp"
+
 #ifndef NO_LLVM
 extern "C" {
   #include "introsort.h"
 }
 #endif
+
+
+bool cfg_print_stats = false;
+size_t cfg_ppar_chunk_size = 1000000;   // Chunk size for parallel partitioning
+size_t cfg_psort_par_min_size = 100000; // Threshold for sequential sorting
+size_t cfg_max_samples = 64;            // Maximum numbers of samples
 
 using namespace std;
 namespace bsort = boost::sort;
@@ -57,7 +69,7 @@ std::atomic<size_t> small_partitions (0);
 template<typename I, typename Compare> I find_pivot(I first, I last, Compare comp) {
   size_t size = last-first;
 
-  size_t num_samples = std::min ((size_t)std::__lg(size) * 4, (size_t)64);
+  size_t num_samples = std::min ((size_t)std::__lg(size) * 4, cfg_max_samples);
 
   size_t samples[num_samples];
 
@@ -107,10 +119,426 @@ template<typename I, typename Compare> void pivot_to_first(I first, I last, Comp
   std::iter_swap(first,pvt);
 }
 
+
+template<typename I, typename Compare> I my_partition2(I first, I last, I pivot, Compare comp) {
+  assert (last-first > 4);
+  I first0 = first;
+  auto e0 = *first0; *first0=*pivot; ++first;
+  --last;
+  auto eN = *last; *last = *pivot;
+
+  /*
+   *  Now we have PVT ........... PVT
+   *                  ^           ^
+   *                  first       last
+   */
+  I mid = __unguarded_partition(first,last,first0,comp);
+
+  // Move saved elements back in
+  *first0 = e0;
+  *last = eN;
+
+  if (comp(pivot,first0)) {
+    --mid;
+    iter_swap(first0,mid);
+  }
+
+  if (comp(last,pivot)) {
+    iter_swap(mid,last);
+    ++mid;
+  }
+
+  return mid;
+}
+
+
+template<typename I, typename _Predicate>
+  I
+  my_partition(I __first, I __last,
+              _Predicate __pred)
+  {
+    if (__first == __last)
+      return __first;
+
+    while (__pred(__first))
+      if (++__first == __last)
+        return __first;
+
+    I __next = __first;
+
+    while (++__next != __last)
+      if (__pred(__next))
+        {
+          std::iter_swap(__first, __next);
+          ++__first;
+        }
+
+    return __first;
+  }
+
+
+struct intv {
+  size_t l;
+  size_t h;
+
+  intv(size_t __l, size_t __h) :l(__l), h(__h) {
+    assert(l<=h);
+  };
+
+  bool is_empty() {return l==h;}
+
+  bool contains(size_t i) {return l<=i && i<h; }
+
+  size_t size() {return h-l;}
+};
+
+struct swap_t {
+  size_t si;
+  size_t di;
+  size_t len;
+};
+
+
+template<typename F1, typename F2, typename R1, typename R2> pair<R1,R2> par(F1 f1, F2 f2) {
+  // TODO: do proper initialization, most likely move function results to uninit result.
+
+  R1 r1;
+  R2 r2;
+
+  auto f1r = [&]() { r1=f1(); };
+  auto f2r = [&]() { r2=f2(); };
+
+  tbb::parallel_invoke(f1r,f2r);
+
+  return {r1,r2};
+}
+
+
+template<typename Result, typename I, typename Compute> vector<Result> simple_par_map(Compute f, I first, I last) {
+  if (first==last) return vector<Result>();
+
+  vector<future<Result>> vfuture;
+
+  for (auto i = first; i<last; ++i) {vfuture.push_back(std::async(std::launch::async, f, *i)); ++threads_spawned; }
+
+  vector<Result> res;
+
+  for (auto &i : vfuture) res.push_back(i.get());
+
+  return res;
+}
+
+template<typename I, typename Compute> void simple_par_it(Compute f, I first, I last) {
+  vector<future<void>> vfuture;
+
+  for (auto i = first; i<last; ++i) {vfuture.push_back(std::async(std::launch::async, f, *i)); ++threads_spawned; }
+
+  for (auto &i : vfuture) i.get();
+}
+
+size_t get_num_blocks(size_t total_size, size_t chunk_size) {
+  size_t d = total_size / chunk_size;
+  if (d==0 || total_size % chunk_size > chunk_size/2) d++;
+
+  assert(d>0);
+
+  return d;
+}
+
+
+vector<vector<swap_t>> rebalance_swaps(vector<swap_t> & swaps) {
+  // Compute total size
+  size_t tlen = 0; for (auto &s : swaps) tlen+=s.len;
+  size_t chunk_size=1000000;
+
+  vector<vector<swap_t>> res;
+  auto c = swaps.begin();
+  auto end = swaps.end();
+
+  vector<swap_t> tc;
+  while (c!=end) {
+    tc.clear();
+
+    size_t cs=chunk_size;
+
+    while (c!=end && cs) {
+      if (c->len <= cs) { // Take swap if it still fits in size-limit
+        tc.push_back(*c);
+        cs-=c->len;
+        ++c; // We've taken the whole swap
+        continue;
+      }
+
+      if (c->len <= cs + chunk_size/4) { // Allow slack of 1/4 chunk_size, to avoid splitting the swap
+        tc.push_back(*c);
+        cs=0;
+        ++c; // We've taken the whole swap
+        continue;
+      }
+
+      // Otherwise, split the swap
+      assert(c->len > cs);
+
+      tc.push_back(swap_t{c->si, c->di, cs});
+      c->len-=cs;
+      c->si+=cs;
+      c->di+=cs;
+
+      cs=0;
+    }
+
+    assert(tc.size());
+    res.push_back(tc);
+  }
+
+  return res;
+}
+
+template<typename I> void do_swap(I it, swap_t s) {
+  assert(s.si + s.len <= s.di || s.di + s.len <= s.si ); // Assert non-overlapping
+  swap_ranges(it + s.si, it + s.si + s.len, it + s.di);
+};
+
+template<typename I> void do_swaps(I it, vector<swap_t> &ss) {
+  for (auto s : ss) do_swap(it,s);
+};
+
+
+template<typename I, typename Compare> I par_partition(I first, I last, I pivot, Compare comp) {
+
+  // auto comp_pivot = [&](I &b){ return comp(b,pivot); };
+
+  size_t chunk_size=cfg_ppar_chunk_size;
+
+  size_t n = last - first;
+
+  if (n<=chunk_size) {
+    return std::__unguarded_partition(first, last, pivot, comp);
+  }
+
+
+  vector<intv> lows;
+  vector<intv> highs;
+
+
+//   clog<<"par_partition with size "<<n<<endl;
+
+  {
+
+//       auto do_partition = [&](std::pair<I,I> lh) { return my_partition2(lh.first,lh.second,comp_pivot); };
+    auto do_partition = [&](std::pair<I,I> lh) { return my_partition2(lh.first,lh.second,pivot,comp); };
+    vector<std::pair<I,I>> partition_jobs;
+
+    // Dumb partitioner
+    {
+      size_t i=n;
+
+
+      while (i) {
+        size_t l;
+        size_t h = i;
+
+        if (h<chunk_size) l=0; else l=h-chunk_size;
+
+        I li = first + l;
+        I hi = first + h;
+        partition_jobs.push_back({li,hi});
+
+        i=l;
+      }
+      assert(i==0);
+
+    }
+
+// Original partitioner, that was accidentally flexible
+//     {
+//
+//       // Determine number of chunks
+//       size_t d = n / chunk_size;
+//       if (d==0 || n % chunk_size > chunk_size/2) d++;
+//
+//       assert(d>0);
+//
+//       // (Parallel) partition the chunks
+//       size_t r = n % d;
+//       size_t c = n / d;
+//
+//
+//       size_t i = 0;
+//
+//
+//       vector<std::pair<I,I>> partition_jobs;
+//
+//       while (i<n) {
+//         size_t l = i;
+//         i=i+c;
+//         if (r) {
+//           --r;
+//           ++i;
+//         }
+//
+//         size_t h=i;
+//
+//         {
+//           I li = first + l;
+//           I hi = first + h;
+//
+//           clog<<"pjob-size: "<<h-l<<endl;
+//
+//
+//           partition_jobs.push_back({li,hi});
+//
+// //           I mi = my_partition(li,hi,comp_pivot);
+// //
+// //           size_t m = mi - first;
+// //
+// //           lows.push_back(intv(l,m));
+// //           highs.push_back(intv(m,h));
+//         }
+//       }
+//       assert (i==n);
+//
+//
+//
+//     }
+
+
+    // Execute partition jobs
+//       vector<I> partition_results;
+//       for (auto job : partition_jobs) partition_results.push_back(do_partition(job));
+
+//     for (auto lh : partition_jobs) clog<<"pjob-size: "<<lh.second-lh.first<<endl;
+
+    vector<I> partition_results = simple_par_map<I>(do_partition, partition_jobs.begin(),partition_jobs.end());
+
+
+    // Gather results
+    for (size_t i=0;i<partition_results.size();++i) {
+      size_t l = partition_jobs[i].first - first;
+      size_t h = partition_jobs[i].second - first;
+      size_t m = partition_results[i] - first;
+
+      lows.push_back(intv(l,m));
+      highs.push_back(intv(m,h));
+    }
+
+
+
+
+  }
+
+  // Determine middle position
+  size_t m=0; for (auto i : lows) m+=i.size();
+
+
+  { // Sanity check
+    size_t mm=0; for (auto i : highs) mm+=i.size();
+
+    assert (m+mm == n);
+  }
+
+  // Determine out-of-order intervals
+  vector<intv> lows2;
+  vector<intv> highs2;
+
+  // Filter non-empty lows above mid-line. split first one if necessary
+  for (auto i : lows) {
+    if (i.is_empty()) continue;
+    if (i.h <= m) continue;
+
+    if (i.contains(m)) lows2.push_back(intv(m,i.h));
+    else lows2.push_back(i);
+  }
+
+  // Filter highs below mid-line, split last if necessary
+  for (auto i : highs) {
+    if (i.is_empty()) continue;
+    if (i.l >= m) continue;
+
+    if (i.contains(m)) highs2.push_back(intv(i.l,m));
+    else highs2.push_back(i);
+  }
+
+  // Compute swaps
+  auto cl = lows2.begin();
+  auto ch = highs2.begin();
+
+  vector<swap_t> swaps;
+
+  size_t total_swap_len = 0;
+
+  while (cl != lows2.end()) {
+    assert (ch != highs2.end());
+
+    size_t len = min(cl->size(),ch->size());
+    assert(len);
+
+    swaps.push_back({cl->l,ch->l,len});
+
+    total_swap_len+=len;
+
+    cl->l+=len; ch->l+=len;
+    if (cl->is_empty()) cl++;
+    if (ch->is_empty()) ch++;
+
+  }
+  assert (ch == highs2.end());
+
+  // Balance the swaps onto available threads (or by block-size)
+  // Do the swaps
+  // auto swapss = rebalance_swaps(swaps);
+
+  // Replaced by simple version for checking how important balancing is
+
+  vector<vector<swap_t>> swapss;
+  for (auto i : swaps) swapss.push_back({i});
+
+//   clog<<"Doing "<<swapss.size()<<" swap jobs with total len "<<total_swap_len<<endl;
+
+  simple_par_it([&](vector<swap_t> ss) { do_swaps(first,ss); },swapss.begin(),swapss.end());
+
+
+//   clog<<"Doing "<<swaps.size()<<" swap jobs with total len "<<total_swap_len<<endl;
+
+//   auto do_swap = [&](swap_t s) {
+//     assert(s.si + s.len <= s.di || s.di + s.len <= s.si ); // Assert non-overlapping
+//     swap_ranges(first + s.si, first + s.si + s.len, first + s.di);
+//   };
+//
+//   simple_par_it(do_swap,swaps.begin(),swaps.end());
+
+//   for ( auto s : swaps ) do_swap(s);
+
+//   for ( auto s : swaps ) {
+//     assert(s.si + s.len <= s.di || s.di + s.len <= s.si ); // Assert non-overlapping
+//     swap_ranges(first + s.si, first + s.si + s.len, first + s.di);
+//   }
+
+  return first + m;
+}
+
+
+
+
+
+
+
 template<typename I, typename Compare> I partition_pivot(I first, I last, Compare comp) {
   pivot_to_first(first,last,comp);
   return std::__unguarded_partition(first + 1,last, first, comp);
 }
+
+template<typename I, typename Compare> I partition_pivot_parallel(I first, I last, Compare comp) {
+  pivot_to_first(first,last,comp);
+
+//   // Estimate how much is lost by less efficient (guarded) partitioning
+//   auto comp_pivot = [&](I &b){ return comp(b,first); };
+//   return my_partition(first + 1,last, comp_pivot);
+
+  return par_partition(first + 1,last, first, comp);
+}
+
+
 
 /// This is a helper function for the sort routine.
 template<typename I, typename Compare> void par_isort_aux(I first, I last, Compare comp, size_t d)
@@ -220,6 +648,63 @@ template<typename I, typename Compare> void par_isort_aux3(size_t par_min_size, 
     }
   }
 
+template<typename T> struct SeqSort {};
+
+template<> struct SeqSort<llstring> {
+  template <typename I, typename Compare> static void sort(I first, I last, Compare comp) {
+    llstring *a = &*first;
+    size_t n = last-first;
+
+    str_par_sort(a,n);
+//     boost_pdqsort(first,last,comp);
+  }
+};
+
+template<> struct SeqSort<uint64_t> {
+  template <typename I, typename Compare> static void sort(I first, I last, Compare comp) {
+    boost_pdqsort(first,last,comp);
+  }
+};
+
+
+template<typename T, typename I, typename Compare> void par_isort_aux_pp(size_t par_min_size, I first, I last, Compare comp, size_t d)
+  {
+    size_t size = last-first;
+
+//     clog<<"Partition ("<<d<<"): "<<size<<endl;
+
+    if (d==0) {
+      ++depth_limit;
+    }
+
+    if (size < par_min_size || d == 0) {
+      ++small_partitions;
+      //std::__sort(first,last,comp);
+      //boost_pdqsort(first,last,comp);
+      SeqSort<T>::sort(first,last,comp);
+
+    } else {
+      ++big_partitions;
+      I cut = partition_pivot_parallel(first, last, __gnu_cxx::__ops::__iter_comp_iter(comp));
+
+//       clog<<"Partition: "<<cut - first<<"  "<<last-cut<<endl;
+
+      bool bad_partition = cut - first < size/8 || last-cut < size/8;
+
+      if (bad_partition) {
+        par_isort_aux_pp<T>(par_min_size,first,cut,comp,d-1);
+        par_isort_aux_pp<T>(par_min_size,cut,last,comp,d-1);
+        ++bad_partitions;
+      } else {
+        auto s1 = std::async(std::launch::async, par_isort_aux_pp<T,I,Compare>, par_min_size, first,cut,comp,d-1);
+        par_isort_aux_pp<T>(par_min_size, cut,last,comp,d-1);
+        s1.get();
+        ++threads_spawned;
+      }
+
+    }
+  }
+
 
 
 template<typename I, typename Compare> void par_isort(I first, I last, Compare comp)
@@ -271,13 +756,113 @@ template<typename I, typename Compare> void par_isort_vs(I first, I last, Compar
 //   clog<<"Depth limit reached: "<<depth_limit<<std::endl;
 }
 
-// void isa_parsort(uint64_t *data, size_t n) {
-//   par_sort_aux(data,n, std::__lg(n) * 2);
-// }
+template<typename T,typename I, typename Compare> void par_isort_vs_pp(I first, I last, Compare comp, size_t nthreads = 0)
+{
+  big_partitions=0;
+  small_partitions=0;
+  bad_partitions=0;
+  threads_spawned=0;
+  depth_limit=0;
+
+
+  if (nthreads==0) nthreads = std::thread::hardware_concurrency();
+
+  size_t size = last-first;
+
+  size_t par_min_size = cfg_psort_par_min_size; //max(size / (nthreads*4), (size_t)100000);
+
+  par_isort_aux_pp<T>(par_min_size, first, last, comp, std::__lg(last - first) * 2);
+
+
+//   clog<<std::endl;
+//   clog<<"nthreads: "<<nthreads<<endl;
+//   clog<<"par_min_size: "<<par_min_size<<endl;
 //
-// void str_isa_parsort(llstring *data, size_t n) {
-//   str_par_sort_aux(data,n, std::__lg(n) * 2);
-// }
+//   clog<<"Big partitions: "<<big_partitions<<std::endl;
+//   clog<<"Small partitions: "<<small_partitions<<std::endl;
+//   clog<<"Bad partitions: "<<bad_partitions<<std::endl;
+//   clog<<"Threads spawned: "<<threads_spawned<<std::endl;
+//   clog<<"Depth limit reached: "<<depth_limit<<std::endl;
+}
+
+
+
+
+
+
+template<typename I> class psort_data {
+  I first;
+  I last;
+  size_t t;
+
+  size_t n;
+  size_t d;
+  size_t r;
+
+
+  size_t ridx(size_t i) {
+    assert (i<=n);
+    if (i<=r) return i*(d+1);
+    else return r + i*d;
+  }
+
+public:
+  psort_data(I _first, I _last, size_t _t): first(_first), last(_last), t(_t) {
+    n = last-first;
+    d = n / t;
+    r = n % t;
+
+
+    assert(ridx(0) == 0);
+    assert(ridx(t) == n);
+
+    for (size_t i=0;i<t;++i) assert(ridx(i) < ridx(i+1));
+
+  }
+
+
+  I rstart(size_t i) {
+    return first + ridx(i);
+  }
+
+  template<typename Compare> void do_psort(size_t l, size_t h, Compare comp) {
+    assert(l<h);
+
+    if (l+1==h) {
+      // boost_pdqsort(rstart(l),rstart(h),comp);
+      boost::sort::spinsort<I, Compare>(rstart(l),rstart(h), comp);
+    } else {
+      size_t m=(l+h)/2;
+
+      tbb::parallel_invoke( [=]{ do_psort(l,m,comp); }, [=]{ do_psort(m,h,comp); } );
+
+//       // Copy data to buffer
+//       std::vector v(rstart(l),rstart(h));
+//
+//       // A bit of arithmetic to find bounds
+//
+//       auto vl = v.begin();
+//       auto vm = v.begin() + (ridx(m)-ridx(l));
+//       auto vh = v.begin() + (ridx(h)-ridx(l));
+
+      // Merge back
+
+      //std::merge(vl,vm,vm,vh,rstart(l));
+
+      std::inplace_merge(std::execution::par_unseq, rstart(l), rstart(m), rstart(h), comp);
+    }
+  }
+
+
+
+};
+
+
+template<typename I, typename Compare> void psort(I first, I last, Compare comp, size_t t = std::thread::hardware_concurrency()) {
+  psort_data<I> d(first,last,t);
+  d.do_psort(0,t,comp);
+}
+
 
 
 extern "C" {
@@ -370,23 +955,64 @@ void sort_test(std::vector<IA> &A, std::vector<IA> &B, size_t NITER, compare com
 class Int_Generator {
 public:
 
-  static vector<uint64_t> random(size_t NELEM) {
-    vector<uint64_t> A;
-    A.reserve (NELEM);
+  // using namespace oneapi::tbb;
+
+  class Apply_Fill_Vector {
+      uint64_t *this_a;
+  public:
+      void operator()( const tbb::blocked_range<size_t>& r ) const {
+        //std::mt19937_64 my_rand(r.begin());
+
+        pcg64 my_rand(r.begin());
+
+
+        clog<<"Chunk size: "<<(r.end()-r.begin())<<endl;
+
+        uint64_t *a = this_a;
+        for( size_t i=r.begin(); i!=r.end(); ++i ) a[i]=my_rand();
+      }
+      Apply_Fill_Vector( uint64_t a[] ) : this_a(a)
+      {}
+  };
+
+
+  static void fill_vector_direct_par(vector<uint64_t> &v, size_t n) {
+    assert(v.size() >= n);
+    size_t grain_size=100000;
+//     clog<<"Filling vector"<<endl;
+    tbb::parallel_for(tbb::blocked_range<size_t>(0,n,grain_size), Apply_Fill_Vector(v.data()),tbb::simple_partitioner());
+//     clog<<"Done"<<endl;
+  }
+
+
+  static void fill_vector_direct(vector<uint64_t> &v, size_t n, uint64_t seed=0) {
+    std::mt19937_64 my_rand(seed);
+
+    for (size_t i = 0;i<n; ++i) v.push_back(my_rand());
+  }
+
+
+
+  static void random(vector<uint64_t> &A, size_t NELEM) {
+//     vector<uint64_t> A(NELEM);
+//     fill_vector_direct_par(A,NELEM);
+//     clog<<"Filling vector"<<endl;
+
     A.clear ();
+    A.reserve (NELEM);
+//     fill_vector_direct(A,NELEM);
     if (fill_vector_uint64 ("input.bin", A, NELEM) != 0)
     {
         std::cout << "Error in the input file\n";
         exit(1);
     };
-    return A;
+//     clog<<"Done"<<endl;
   }
 
-  static vector<uint64_t> random_dup (size_t NELEM, size_t nvals)
+  static void random_dup (vector<uint64_t> &A, size_t NELEM, size_t nvals)
   {
-    vector<uint64_t> A;
-    A.reserve (NELEM);
     A.clear ();
+    A.reserve (NELEM);
     if (fill_vector_uint64 ("input.bin", A, NELEM) != 0)
     {
         std::cout << "Error in the input file\n";
@@ -394,47 +1020,36 @@ public:
     };
 
     for (size_t i=0;i<A.size();++i) A[i]%=nvals;
-
-    return A;
   }
 
 
 
 
-  static vector<uint64_t> sorted (size_t NELEM)
+  static void sorted (vector<uint64_t> &A, size_t NELEM)
   {
-    vector<uint64_t> A;
-
-    A.reserve (NELEM);
     A.clear ();
+    A.reserve (NELEM);
     for (size_t i = 0; i < NELEM; ++i)
         A.push_back (i);
-
-    return A;
   }
 
-  static vector<uint64_t> organ_pipe (size_t NELEM)
+  static void organ_pipe (vector<uint64_t> &A, size_t NELEM)
   {
-    vector<uint64_t> A;
-
-    A.reserve (NELEM);
     A.clear ();
+    A.reserve (NELEM);
 
     size_t n = NELEM/2;
     uint64_t v=0;
 
     for (size_t i=0;i<n;++i) A.push_back(v++);
     for (size_t i=n;i<2*n;++i) A.push_back(--v);
-    return A;
   }
 
 
-  static vector<uint64_t> almost_sorted (size_t NELEM, size_t nperm)
+  static void almost_sorted (vector<uint64_t> &A,size_t NELEM, size_t nperm)
   {
-    vector<uint64_t> A;
-
-    A.reserve (NELEM);
     A.clear ();
+    A.reserve (NELEM);
     for (size_t i = 0; i < NELEM; ++i)
         A.push_back (i);
 
@@ -451,36 +1066,30 @@ public:
     for (size_t i=0;i+1<P.size();i+=2) {
       std::swap(A[P[i]],A[P[i+1]]);
     }
-
-    return A;
   }
 
-  static vector<uint64_t> alleq (size_t NELEM)
+  static void alleq (vector<uint64_t> &A, size_t NELEM)
   {
-    vector<uint64_t> A(NELEM,42);
-    return A;
+    A.resize(NELEM,42);
   }
 
-  static vector<uint64_t> sorted_end (size_t NELEM,size_t n_last)
+  static void sorted_end (vector<uint64_t> &A, size_t NELEM,size_t n_last)
   {
-    vector<uint64_t> A;
-    A.reserve (NELEM);
     A.clear ();
+    A.reserve (NELEM);
     if (fill_vector_uint64 ("input.bin", A, NELEM + n_last) != 0)
     {
         std::cout << "Error in the input file\n";
         exit(1);
     };
     std::sort (A.begin (), A.begin () + NELEM);
-
-    return A;
   }
 
-  static vector<uint64_t> sorted_middle (size_t NELEM, size_t n_last)
+  static void sorted_middle (vector<uint64_t> &A, size_t NELEM, size_t n_last)
   {
-    vector<uint64_t> A, B, C;
-    A.reserve (NELEM);
+    vector<uint64_t> B, C;
     A.clear ();
+    A.reserve (NELEM);
     if (fill_vector_uint64 ("input.bin", A, NELEM + n_last) != 0)
     {
         std::cout << "Error in the input file\n";
@@ -505,27 +1114,22 @@ public:
     while (pos < A.size ())
         C.push_back (A[pos++]);
     A = C;
-    return A;
   }
 
-  static vector<uint64_t> reverse_sorted (size_t NELEM)
+  static void reverse_sorted (vector<uint64_t> &A, size_t NELEM)
   {
-    vector<uint64_t> A;
-
-    A.reserve (NELEM);
     A.clear ();
+    A.reserve (NELEM);
     for (size_t i = NELEM; i > 0; --i)
         A.push_back (i);
 
-    return A;
   }
 
 
-  static vector<uint64_t> reverse_sorted_end (size_t NELEM, size_t n_last)
+  static void reverse_sorted_end (vector<uint64_t> &A, size_t NELEM, size_t n_last)
   {
-    vector<uint64_t> A;
-    A.reserve (NELEM);
     A.clear ();
+    A.reserve (NELEM);
     if (fill_vector_uint64 ("input.bin", A, NELEM + n_last) != 0)
     {
         std::cout << "Error in the input file\n";
@@ -535,15 +1139,14 @@ public:
     for (size_t i = 0; i < (NELEM >> 1); ++i)
         std::swap (A[i], A[NELEM - 1 - i]);
 
-    return A;
   }
 
 
-  static vector<uint64_t> reverse_sorted_middle (size_t NELEM, size_t n_last)
+  static void reverse_sorted_middle (vector<uint64_t> &A, size_t NELEM, size_t n_last)
   {
-    vector<uint64_t> A, B, C;
-    A.reserve (NELEM);
+    vector<uint64_t> B, C;
     A.clear ();
+    A.reserve (NELEM);
     if (fill_vector_uint64 ("input.bin", A, NELEM + n_last) != 0)
     {
         std::cout << "Error in the input file\n";
@@ -568,11 +1171,10 @@ public:
     while (pos < A.size ())
         C.push_back (A[pos++]);
     A = C;
-    return A;
   };
 
 
-  static void stats(vector<uint64_t> &A) {
+  static void stats(vector<uint64_t> const &A) {
     auto B=A;
 
     // Count different values, min,max,avg length of strings
@@ -585,30 +1187,30 @@ public:
 
 
 public:
-  static vector<uint64_t> generate_aux(size_t NELEM, string name) {
-    if (name=="random") return random(NELEM);
-    else if (name=="random-dup-10") return random_dup(NELEM,NELEM/10);
-    else if (name=="random-boolean") return random_dup(NELEM,2);
-    else if (name=="organ-pipe") return organ_pipe(NELEM);
-    else if (name=="sorted") return sorted(NELEM);
-    else if (name=="equal") return alleq(NELEM);
-    else if (name=="almost-sorted-.1") return almost_sorted(NELEM,NELEM/1000);
-    else if (name=="almost-sorted-1") return almost_sorted(NELEM,NELEM/100);
-    else if (name=="almost-sorted-10") return almost_sorted(NELEM,NELEM/10);
-    else if (name=="almost-sorted-50") return almost_sorted(NELEM,NELEM/2);
-    else if (name=="sorted-end-.1") return sorted_end(NELEM,NELEM/1000);
-    else if (name=="sorted-end-1") return sorted_end(NELEM,NELEM/100);
-    else if (name=="sorted-end-10") return sorted_end(NELEM,NELEM/10);
-    else if (name=="sorted-middle-.1") return sorted_middle(NELEM,NELEM/1000);
-    else if (name=="sorted-middle-1") return sorted_middle(NELEM,NELEM/100);
-    else if (name=="sorted-middle-10") return sorted_middle(NELEM,NELEM/10);
-    else if (name=="rev-sorted") return reverse_sorted(NELEM);
-    else if (name=="rev-sorted-end-.1") return reverse_sorted_end(NELEM,NELEM/1000);
-    else if (name=="rev-sorted-end-1") return reverse_sorted_end(NELEM,NELEM/100);
-    else if (name=="rev-sorted-end-10") return reverse_sorted_end(NELEM,NELEM/10);
-    else if (name=="rev-sorted-middle-.1") return reverse_sorted_middle(NELEM,NELEM/1000);
-    else if (name=="rev-sorted-middle-1") return reverse_sorted_middle(NELEM,NELEM/100);
-    else if (name=="rev-sorted-middle-10") return reverse_sorted_middle(NELEM,NELEM/10);
+  static void generate_aux(vector<uint64_t> &A, size_t NELEM, string name) {
+    if (name=="random")                         random(A,NELEM);
+    else if (name=="random-dup-10")             random_dup(A,NELEM,NELEM/10);
+    else if (name=="random-boolean")            random_dup(A,NELEM,2);
+    else if (name=="organ-pipe")                organ_pipe(A,NELEM);
+    else if (name=="sorted")                    sorted(A,NELEM);
+    else if (name=="equal")                     alleq(A,NELEM);
+    else if (name=="almost-sorted-.1")          almost_sorted(A,NELEM,NELEM/1000);
+    else if (name=="almost-sorted-1")           almost_sorted(A,NELEM,NELEM/100);
+    else if (name=="almost-sorted-10")          almost_sorted(A,NELEM,NELEM/10);
+    else if (name=="almost-sorted-50")          almost_sorted(A,NELEM,NELEM/2);
+    else if (name=="sorted-end-.1")             sorted_end(A,NELEM,NELEM/1000);
+    else if (name=="sorted-end-1")              sorted_end(A,NELEM,NELEM/100);
+    else if (name=="sorted-end-10")             sorted_end(A,NELEM,NELEM/10);
+    else if (name=="sorted-middle-.1")          sorted_middle(A,NELEM,NELEM/1000);
+    else if (name=="sorted-middle-1")           sorted_middle(A,NELEM,NELEM/100);
+    else if (name=="sorted-middle-10")          sorted_middle(A,NELEM,NELEM/10);
+    else if (name=="rev-sorted")                reverse_sorted(A,NELEM);
+    else if (name=="rev-sorted-end-.1")         reverse_sorted_end(A,NELEM,NELEM/1000);
+    else if (name=="rev-sorted-end-1")          reverse_sorted_end(A,NELEM,NELEM/100);
+    else if (name=="rev-sorted-end-10")         reverse_sorted_end(A,NELEM,NELEM/10);
+    else if (name=="rev-sorted-middle-.1")      reverse_sorted_middle(A,NELEM,NELEM/1000);
+    else if (name=="rev-sorted-middle-1")       reverse_sorted_middle(A,NELEM,NELEM/100);
+    else if (name=="rev-sorted-middle-10")      reverse_sorted_middle(A,NELEM,NELEM/10);
 
     else {
       cout<<"No such integer generator "<<name<<endl;
@@ -616,10 +1218,9 @@ public:
     }
   }
 
-  static vector<uint64_t> generate(size_t NELEM, string name) {
-    auto A = generate_aux(NELEM,name);
-    stats(A);
-    return A;
+  static void generate(vector<uint64_t> &A, size_t NELEM, string name) {
+    generate_aux(A, NELEM,name);
+    if (cfg_print_stats) stats(A);
   }
 
 };
@@ -627,7 +1228,7 @@ public:
 
 #ifndef NO_LLVM
 
-llstring cnv_str(string s) {
+llstring cnv_str(string const &s) {
   llstring res;
   str_init(&res);
 
@@ -636,13 +1237,11 @@ llstring cnv_str(string s) {
 }
 
 
-std::vector<llstring> cnv_strvec(std::vector<string> v) {
-  std::vector<llstring> res;
+void cnv_strvec(std::vector<string> const &v, std::vector<llstring> &res) {
+  res.clear();
   res.reserve(v.size());
 
   for (auto i = v.begin();i!=v.end();++i) res.push_back(cnv_str(*i));
-
-  return res;
 }
 
 string bcnv_str(const llstring &s) {
@@ -735,7 +1334,8 @@ class String_Generator {
   static vector<string> random_dup(size_t NELEM, size_t nval)
   {
     std::vector<std::string> D = sorted(nval);
-    std::vector<size_t> S = Int_Generator::random_dup(NELEM,nval);
+    std::vector<size_t> S;
+    Int_Generator::random_dup(S,NELEM,nval);
 
     std::vector<std::string> A;
     A.reserve(NELEM);
@@ -879,7 +1479,7 @@ class String_Generator {
 public:
 
 
-  static void stats(vector<string> &A) {
+  static void stats(vector<string> const &A) {
     auto B=A;
 
     // Sum up all string length
@@ -933,10 +1533,10 @@ public:
     }
   }
 
-  static vector<llstring> generate(size_t NELEM, string name) {
-    auto A = generate_aux(NELEM,name);
-    stats(A);
-    return cnv_strvec(A);
+  static void generate(vector<llstring> &A, size_t NELEM, string name) {
+    auto Av = generate_aux(NELEM,name);
+    if (cfg_print_stats) stats(Av);
+    cnv_strvec(Av,A);
   }
 
 };
@@ -958,25 +1558,31 @@ struct less<llstring>
 
 
 
-void test_uint(string name, size_t NITER, vector<uint64_t> B) {
-  std::vector<uint64_t> A (B);
+void test_uint(string name, size_t NITER, vector<uint64_t> &B) {
+  std::vector<uint64_t> A;
+
 
   auto comp = std::less<uint64_t>();
 #ifndef NO_LLVM
   if (name=="isabelle::sort") sort_test(A,B,NITER,comp,[&]{ introsort(A.data (), 0, A.size());});
   else if (name=="isabelle::parqsort") sort_test(A,B,NITER,comp,[&]{ par_sort(A.data (), A.size());  });
+  else if (name=="isabelle::pparqsort") sort_test(A,B,NITER,comp,[&]{ ppar_sort(A.data (), A.size());  });
   else if (name=="isabelle::pdqsort") sort_test(A,B,NITER,comp,[&]{ pdqsort(A.data (), 0, A.size());});
   else
 #endif
   if (name=="std::sort") sort_test(A,B,NITER,comp,[&]{ std::sort(A.begin (), A.end (), comp);});
   else if (name=="std::parsort") sort_test(A,B,NITER,comp,[&]{
+    //std::sort(A.begin (), A.end (), comp,__gnu_parallel::quicksort_tag());
     std::sort(std::execution::par_unseq,A.begin (), A.end (), comp);
   });
   else if (name=="boost::pdqsort") sort_test(A,B,NITER,comp,[&]{ boost_pdqsort(A.begin (), A.end (), comp);});
   else if (name=="boost::pdqsort_bp") sort_test(A,B,NITER,comp,[&]{ boost::sort::pdqsort(A.begin (), A.end ());});
   else if (name=="boost::sample_sort") sort_test(A,B,NITER,comp,[&]{ boost::sort::sample_sort(A.begin (), A.end (), comp);});
+  else if (name=="boost::bi_sort") sort_test(A,B,NITER,comp,[&]{ boost::sort::block_indirect_sort(A.begin (), A.end (), comp);});
   else if (name=="naive::parqsort") sort_test(A,B,NITER,comp,[&]{ par_isort(A.begin (), A.end (), comp);});
+  else if (name=="naive::psort") sort_test(A,B,NITER,comp,[&]{ psort(A.begin (), A.end (), comp);});
   else if (name=="naive::parqsort_vs") sort_test(A,B,NITER,comp,[&]{ par_isort_vs(A.begin (), A.end (), comp);});
+  else if (name=="naive::parqsort_vs_pp") sort_test(A,B,NITER,comp,[&]{ par_isort_vs_pp<uint64_t>(A.begin (), A.end (), comp);});
   else {
     cout<<"No such sorting algorithm "<<name<<endl;
     exit(1);
@@ -985,19 +1591,22 @@ void test_uint(string name, size_t NITER, vector<uint64_t> B) {
 
 #ifndef NO_LLVM
 void test_llstring(string name, size_t NITER, vector<llstring> &B) {
-  std::vector<llstring> A (B);
+  std::vector<llstring> A;
 
   auto comp = std::less<llstring>();
 
   if (name=="isabelle::sort") sort_test(A,B,NITER,comp,[&]{ str_introsort(A.data (), 0, A.size());});
   else if (name=="isabelle::parqsort") sort_test(A,B,NITER,comp,[&]{ str_par_sort(A.data (), A.size());  });
+  else if (name=="isabelle::pparqsort") sort_test(A,B,NITER,comp,[&]{ str_ppar_sort(A.data (), A.size());  });
   else if (name=="isabelle::pdqsort") sort_test(A,B,NITER,comp,[&]{ str_pdqsort(A.data (), 0, A.size());});
   else if (name=="boost::pdqsort") sort_test(A,B,NITER,comp,[&]{ boost_pdqsort(A.begin (), A.end (), comp);});
   else if (name=="std::sort") sort_test(A,B,NITER,comp,[&]{ std::sort(A.begin (), A.end (), comp);});
   else if (name=="std::parsort") sort_test(A,B,NITER,comp,[&]{ std::sort(std::execution::par_unseq, A.begin (), A.end (), comp);});
   else if (name=="boost::sample_sort") sort_test(A,B,NITER,comp,[&]{ boost::sort::sample_sort(A.begin (), A.end (), comp);});
+  else if (name=="boost::bi_sort") sort_test(A,B,NITER,comp,[&]{ boost::sort::block_indirect_sort(A.begin (), A.end (), comp);});
   else if (name=="naive::parqsort") sort_test(A,B,NITER,comp,[&]{ par_isort(A.begin (), A.end (), comp);});
   else if (name=="naive::parqsort_vs") sort_test(A,B,NITER,comp,[&]{ par_isort_vs(A.begin (), A.end (), comp);});
+  else if (name=="naive::parqsort_vs_pp") sort_test(A,B,NITER,comp,[&]{ par_isort_vs_pp<llstring>(A.begin (), A.end (), comp);});
   else {
     cout<<"No such sorting algorithm "<<name<<endl;
     exit(1);
@@ -1005,22 +1614,56 @@ void test_llstring(string name, size_t NITER, vector<llstring> &B) {
 }
 #endif
 
+void print_usage() {
+  cout<<"Usage: do_benchmark [options] type algo-name data-name NELEM NITER"<<endl;
+  cout<<"Options: "<<endl;
+  cout<<"  --stats       print statistics of random data to be sorted (slow!)"<<endl;
+  cout<<"  --ppar-chunk-size"<<endl;
+  cout<<"  --psort-par-min-size"<<endl;
+  cout<<"  --max-samples"<<endl;
+}
+
 int main(int argc, char** argv) {
 
-  if (argc != 6) {
-    cout<<"Usage: do_benchmark type algo-name data-name NELEM NITER"<<endl;
+  int argi=1;
+
+  while (argi < argc) {
+    string a = argv[argi];
+    ++argi;
+
+    if (a=="--stats") cfg_print_stats=true;
+    else if (a=="--ppar-chunk-size") {
+      if (argi>=argc) {cerr<<"Expecting argument for "<<a<<endl; exit(1);}
+      cfg_ppar_chunk_size = stoul(argv[argi++]);
+    } else if (a=="--psort-par-min-size") {
+      if (argi>=argc) {cerr<<"Expecting argument for "<<a<<endl; exit(1);}
+      cfg_psort_par_min_size = stoul(argv[argi++]);
+    } else if (a=="--max-samples") {
+      if (argi>=argc) {cerr<<"Expecting argument for "<<a<<endl; exit(1);}
+      cfg_max_samples = stoul(argv[argi++]);
+    } else {
+      --argi;
+      break;
+    }
+  }
+
+  if (argc-argi != 5) {
+    print_usage();
     exit(1);
   }
 
-  string type_name=argv[1];
-  string algo_name=argv[2];
-  string data_name=argv[3];
-  size_t NELEM=stoul(argv[4]);
-  size_t NITER=stoul(argv[5]);
+  string type_name=argv[argi++];
+  string algo_name=argv[argi++];
+  string data_name=argv[argi++];
+  size_t NELEM=stoul(argv[argi++]);
+  size_t NITER=stoul(argv[argi++]);
+
+  assert(argi==argc);
 
 
   if (type_name == "uint64") {
-    auto A = Int_Generator::generate(NELEM,data_name);
+    vector<uint64_t> A;
+    Int_Generator::generate(A,NELEM,data_name);
 #ifdef NO_LLVM
     cout<<"NO_LLVM ";
 #endif
@@ -1028,7 +1671,8 @@ int main(int argc, char** argv) {
     test_uint(algo_name,NITER,A);
 #ifndef NO_LLVM
   } else if (type_name == "llstring") {
-    auto A = String_Generator::generate(NELEM,data_name);
+    vector<llstring> A;
+    String_Generator::generate(A,NELEM,data_name);
     cout<<type_name<<" "<<algo_name<<" "<<data_name<<" "<<NELEM<<"x"<<NITER<<std::flush;
     test_llstring(algo_name,NITER,A);
 #endif

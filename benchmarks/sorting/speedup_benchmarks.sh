@@ -31,12 +31,19 @@ export NSELEM=10000000 # Number of string elements
 
 # Quick benchmark run
 # export NITER=3   # Number of iterations
-# export NIELEM=1000000 # Number of integer elements
-# export NSELEM=1000000 # Number of string elements
+# export NIELEM=100000 # Number of integer elements
+# export NSELEM=100000 # Number of string elements
 
 export INT_DATA="random"
 
 export STR_DATA="random"
+
+# export INT_ALGOS="isabelle::parqsort isabelle::pparqsort std::parsort boost::sample_sort"
+# export STR_ALGOS="isabelle::parqsort isabelle::pparqsort std::parsort boost::sample_sort"
+
+export INT_ALGOS="isabelle::pparqsort naive::parqsort_vs_pp"
+export STR_ALGOS="isabelle::pparqsort naive::parqsort_vs_pp"
+
 
 # CUSTOM Ad-HOC Overrides
 
@@ -49,7 +56,7 @@ export STR_DATA="random"
 ########################## END CONFIG SECTION ##################
 
 
-export LOGFILE="log/sortbench-$(date -Iseconds).log"
+export LOGFILE="log/sortbench-speedup-$(date -Iseconds).log"
 
 echo "Writing log to $LOGFILE"
 
@@ -69,32 +76,18 @@ function run() {
 }
 
 for distr in $INT_DATA; do
-  for ((j=1;j<=$TNUM;++j)); do
-    run $j uint64 isabelle::parqsort $distr $NIELEM $NITER
-  done
-  for ((j=1;j<=$TNUM;++j)); do
-    run $j uint64 std::parsort $distr $NIELEM $NITER
-  done
-  for ((j=1;j<=$TNUM;++j)); do
-    run $j uint64 naive::parqsort $distr $NIELEM $NITER
-  done
-  for ((j=1;j<=$TNUM;++j)); do
-    run $j uint64 boost::sample_sort $distr $NIELEM $NITER
+  for algo in $INT_ALGOS; do
+    for ((j=1;j<=$TNUM;++j)); do
+      run $j uint64 $algo $distr $NIELEM $NITER
+    done
   done
 done
 
 for distr in $STR_DATA; do
-  for ((j=1;j<=$TNUM;++j)); do
-    run $j llstring isabelle::parqsort $distr $NSELEM $NITER
-  done
-  for ((j=1;j<=$TNUM;++j)); do
-    run $j llstring std::parsort $distr $NSELEM $NITER
-  done
-  for ((j=1;j<=$TNUM;++j)); do
-    run $j llstring naive::parqsort $distr $NSELEM $NITER
-  done
-  for ((j=1;j<=$TNUM;++j)); do
-    run $j llstring boost::sample_sort $distr $NSELEM $NITER
+  for algo in $STR_ALGOS; do
+    for ((j=1;j<=$TNUM;++j)); do
+      run $j llstring $algo $distr $NSELEM $NITER
+    done
   done
 done
 

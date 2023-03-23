@@ -12,7 +12,7 @@ extern "C" {
 }
 
 
-size_t const N = 1000000;
+size_t const N = 2000000;
 size_t const STRLEN = 50;
 size_t const NSTR = 500000;
 
@@ -57,6 +57,11 @@ void isa_parqsort_uint(vector<uint64_t> &xs) {
   par_sort(xs.data(),xs.size());
 }
 
+void isa_pparqsort_uint(vector<uint64_t> &xs) {
+  ppar_sort(xs.data(),xs.size());
+}
+
+
 void isa_introsort_llstring(vector<llstring> &xs) {
   str_introsort(xs.data(),0,xs.size());
 }
@@ -69,6 +74,9 @@ void isa_parqsort_llstring(vector<llstring> &xs) {
   str_par_sort(xs.data(),xs.size());
 }
 
+void isa_pparqsort_llstring(vector<llstring> &xs) {
+  str_ppar_sort(xs.data(),xs.size());
+}
 
 
 template <class Op> void sort_test_uint64(string name, Op op) {
@@ -130,11 +138,13 @@ int main (int argc, char**argv) {
   sort_test_uint64("introsort-uint64",isa_introsort_uint);
   sort_test_uint64("pdqsort-uint64",isa_pdqsort_uint);
   sort_test_uint64("parqsort-uint64",isa_parqsort_uint);
+  sort_test_uint64("pparqsort-uint64",isa_pparqsort_uint);
 
 
   sort_test_llstring("introsort-llstring",isa_introsort_llstring);
   sort_test_llstring("pdqsort-llstring",isa_pdqsort_llstring);
   sort_test_llstring("parqsort-llstring",isa_parqsort_llstring);
+  sort_test_llstring("pparqsort-llstring",isa_pparqsort_llstring);
 
   return 0;
 }

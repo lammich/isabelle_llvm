@@ -5,11 +5,11 @@ set -e
 rm -f ~/tmp/data*.tex
 
 # cat log/sortbench-2020-01-all.log | ./__eval_benchmark.awk > /tmp/data.tex
-cat log/par-2021.log | ./__eval_benchmark.awk S uint64 > ~/tmp/data_server_uint64.tex
-cat log/par-2021.log | ./__eval_benchmark.awk S llstring > ~/tmp/data_server_llstring.tex
+cat log/server/par-2023.log | ./__eval_benchmark.awk S uint64 > ~/tmp/data_server_uint64.tex
+cat log/server/par-2023.log | ./__eval_benchmark.awk S llstring > ~/tmp/data_server_llstring.tex
 
-cat log/par-2021.log | ./__eval_benchmark.awk L uint64 > ~/tmp/data_laptop_uint64.tex
-cat log/par-2021.log | ./__eval_benchmark.awk L llstring > ~/tmp/data_laptop_llstring.tex
+cat log/par-2023.log | ./__eval_benchmark.awk L uint64 > ~/tmp/data_laptop_uint64.tex
+cat log/par-2023.log | ./__eval_benchmark.awk L llstring > ~/tmp/data_laptop_llstring.tex
 
 # cat log/par-2021.log | ./__eval_benchmark.awk
 #
@@ -22,4 +22,4 @@ cat log/par-2021.log | ./__eval_benchmark.awk L llstring > ~/tmp/data_laptop_lls
 # gawk '$1=="@" { echo=($2=="server"); next }  echo {print} ' ~/tmp/data.tex  > ~/tmp/data_server.tex
 # gawk '$1=="@" { echo=($2=="laptop"); next }  echo {print} ' ~/tmp/data.tex > ~/tmp/data_laptop.tex
 #
-cp ~/tmp/data*.tex ../../papers/llvm_par/
+cp ~/tmp/data*.tex ../../papers/JAR_SI_ITP2022/

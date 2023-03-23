@@ -230,8 +230,9 @@ function output_pgf_abs (machine, elem_type) {
 
 
 #   pr_res_pgf_abs("std::sort","green",elem_type,"S","std::sort");
-  pr_res_pgf_abs("verified","red",elem_type,machine,"isabelle::parqsort");
-  pr_res_pgf_abs("std::sort(par-unseq)","blue",elem_type,machine,"std::parsort");
+  pr_res_pgf_abs("verified","red",elem_type,machine,"isabelle::pparqsort");
+#   pr_res_pgf_abs("verified-old","red",elem_type,machine,"isabelle::parqsort");
+  pr_res_pgf_abs("std::sort","blue",elem_type,machine,"std::parsort");
   pr_res_pgf_abs("sample sort","black",elem_type,machine,"boost::sample_sort");
 
 

@@ -19,6 +19,20 @@ export INT_DATA="random random-dup-10 random-boolean organ-pipe sorted equal alm
 
 export STR_DATA="random random-dup-10 random-boolean organ-pipe sorted equal   almost-sorted-.1 almost-sorted-1 almost-sorted-10 almost-sorted-50 sorted-end-.1 sorted-end-1 sorted-end-10 sorted-middle-.1 sorted-middle-1 sorted-middle-10 rev-sorted rev-sorted-end-.1 rev-sorted-end-1 rev-sorted-end-10 rev-sorted-middle-.1 rev-sorted-middle-1 rev-sorted-middle-10"
 
+
+export ALL_INT_ALGOS="isabelle::sort isabelle::parqsort isabelle::pparqsort isabelle::pdqsort std::sort std::parsort boost::pdqsort boost::pdqsort_bp boost::sample_sort boost::bi_sort naive::parqsort naive::psort naive::parqsort_vs naive::parqsort_vs_pp"
+
+export ALL_STR_ALGOS="isabelle::sort isabelle::parqsort isabelle::pparqsort isabelle::pdqsort boost::pdqsort std::sort std::parsort boost::sample_sort boost::bi_sort naive::parqsort naive::parqsort_vs naive::parqsort_vs_pp"
+
+export INT_ALGOS="isabelle::parqsort isabelle::pparqsort std::parsort boost::sample_sort"
+export STR_ALGOS="isabelle::parqsort isabelle::pparqsort std::parsort boost::sample_sort"
+
+
+export INT_ALGOS="isabelle::pparqsort naive::parqsort_vs_pp"
+export STR_ALGOS="isabelle::pparqsort naive::parqsort_vs_pp"
+
+
+
 # CUSTOM Ad-HOC Overrides
 
 # export INT_DATA="random organ-pipe"
@@ -122,12 +136,9 @@ function run_int_gcc() {
 
 for i in $INT_DATA; do
 
-  run_int_std $i
-  run_int_std_par $i
-  run_int_isa_par $i
-  run_int_naive_par $i
-  run_int_sample $i
-
+  for a in $INT_ALGOS; do
+    run uint64 $a $i $NIELEM $NITER
+  done
 
 #   run_int_isa $i
 #   run_int_std $i
@@ -137,11 +148,16 @@ for i in $INT_DATA; do
 done
 
 for i in $STR_DATA; do
-  run_str_std $i
-  run_str_std_par $i
-  run_str_isa_par $i
-  run_str_naive_par $i
-  run_str_sample $i
+
+  for a in $STR_ALGOS; do
+    run llstring $a $i $NSELEM $NITER
+  done
+
+#   run_str_std $i
+#   run_str_std_par $i
+#   run_str_isa_par $i
+#   run_str_naive_par $i
+#   run_str_sample $i
 
 #   run_str_isa $i
 #   run_str_std $i

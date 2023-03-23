@@ -3,9 +3,23 @@
 
 BEGIN {
   # Change to configure what is included in plot
-  type_display["isabelle::parqsort"] = "red,verified"
+  type_display["isabelle::pparqsort"] = "red,verified"
+#   type_display["isabelle::parqsort"] = "red,verified-old"
   type_display["boost::sample_sort"] = "black,sample sort"
-  type_display["std::parsort"] = "blue,std::sort(par-unseq)"
+  type_display["std::parsort"] = "blue,std::sort"
+
+
+  if (ARGC==2) {
+    element_type=ARGV[1]
+
+    ARGC=0
+  } else {
+    print "Usage: __eval_speedup <elem-type>"
+    exit 1
+  }
+
+
+
 
 
   has_data=0
@@ -41,8 +55,6 @@ function printout() {
         printf "\\addlegendentry{" name "};\n"
       }
     }
-    has_data=0
-    delete data
   }
 }
 
@@ -52,9 +64,9 @@ function printout() {
     next
 }
 
-$1=="@" {
-  printout()
-  print
+$1=="@" {  # Ignore old-style @ machine_type  annot
+#   printout()
+#   print
   next
 }
 
@@ -65,6 +77,9 @@ $2=="cores" {
 }
 
 NF>=9 {
+
+  if ($1 != element_type) next;
+
   has_data=1
   type=$2
   time=$9
