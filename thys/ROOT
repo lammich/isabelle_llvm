@@ -31,6 +31,7 @@ session Isabelle_LLVM = Refine_Monadic +
     "sepref/IICF/Impl/Proto_IICF_EOArray"
     
 session Examples in examples = Isabelle_LLVM +
+  options [browser_info]
   directories
     sorting
   theories

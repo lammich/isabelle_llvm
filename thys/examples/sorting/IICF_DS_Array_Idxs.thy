@@ -1,11 +1,23 @@
 theory IICF_DS_Array_Idxs
-imports "Isabelle_LLVM.LLVM_DS_NArray" "Isabelle_LLVM.Proto_IICF_EOArray" IICF_Shared_Lists Sorting_Setup
+imports "Isabelle_LLVM.LLVM_DS_NArray" "Isabelle_LLVM.Proto_IICF_EOArray" IICF_Shared_Lists
 begin
 
   (* TODO: Move *)
   lemma entailsD1: "a=b \<Longrightarrow> a\<turnstile>b" by auto
   lemma entailsD2: "a=b \<Longrightarrow> b\<turnstile>a" by auto
 
+    
+  (* TODO: Move *)  
+  lemma htriple_exI: "\<lbrakk>\<And>x. htriple (P x) c Q\<rbrakk> \<Longrightarrow> htriple (EXS x. P x) c Q"  
+    unfolding htriple_def STATE_def by blast
+    
+  
+  
+  (* TODO: Move *)  
+  lemma mk_assn_dr_prefix_eq[simp]: "mk_assn \<upharpoonleft>A = A" unfolding mk_assn_def dr_assn_prefix_def by simp
+  lemma dr_prefix_mk_assn_eq[simp]: "\<upharpoonleft>(mk_assn A) = A" unfolding mk_assn_def dr_assn_prefix_def by simp
+    
+  
   (* TODO: Move *)  
   lemma sint_in_int_image_cnv: "snat_invar ii \<Longrightarrow> sint ii \<in> int ` s \<longleftrightarrow> snat ii \<in> s"  
     by (force simp add: cnv_snat_to_uint simp del: nat_uint_eq) 
@@ -20,96 +32,7 @@ begin
   (* TODO: Move *)  
   lemma SOLVE_AUTO_DEFER_FALSE[simp]: "SOLVE_AUTO_DEFER False = False" unfolding SOLVE_AUTO_DEFER_def by simp 
       
-
-  (* TODO: Move *)  
     
-  lemma sl_of_list_empty[simp]: "sl_of_list [] = []"
-    by (auto simp: sl_of_list_def)
-  
-  lemma sl_of_list_eq_empty_conv[simp]: "sl_of_list xs = [] \<longleftrightarrow> xs=[]"
-    by (auto simp: sl_of_list_def)
-  
-  lemma sl_split_empty[simp]: "sl_split s [] = []" by (auto simp: sl_split_def) 
-    
-  lemma sl_split_eq_empty_conv[simp]: "sl_split s xs = [] \<longleftrightarrow> xs=[]"  by (auto simp: sl_split_def)
-
-  lemma sl_struct_empty[simp]: "sl_struct [] = []" by (auto simp: sl_struct_def)
-  lemma sl_struct_eq_empty_conv[simp]: "sl_struct xs = [] \<longleftrightarrow> xs=[]" by (auto simp: sl_struct_def)
-  
-  lemma sl_compat_empty[simp]: "sl_compat [] []" unfolding sl_compat_def by auto
-  lemma sl_compat_empty_conv[simp]: 
-    "sl_compat [] xs\<^sub>2 \<longleftrightarrow> xs\<^sub>2 = []" 
-    "sl_compat xs\<^sub>1 [] \<longleftrightarrow> xs\<^sub>1 = []" 
-    unfolding sl_compat_def by auto
-  
-  
-  lemma sl_join_empty[simp]: 
-    "sl_join [] xs = []"
-    "sl_join xs [] = []"
-    unfolding sl_join_def by auto
-  
-  lemma sl_join_eq_empty_conv[simp]: "sl_compat (sl_struct xs\<^sub>1) (sl_struct xs\<^sub>2) \<Longrightarrow> sl_join xs\<^sub>1 xs\<^sub>2 = [] \<longleftrightarrow> xs\<^sub>1=[] \<and> xs\<^sub>2=[]"  
-    unfolding sl_join_def
-    by auto
-    
-  lemma sl_indexes_empty[simp]: "sl_indexes [] = {}"
-    unfolding sl_indexes_def by auto
-  
-  lemma list_eq_iff_sl_eq: "xs=xs' 
-    \<longleftrightarrow> (length xs = length xs' \<and> sl_indexes' xs = sl_indexes' xs' \<and> (\<forall>i\<in>sl_indexes' xs'. sl_get xs i = sl_get xs' i))"
-    apply (rule iffI)
-    apply (auto; fail)
-    apply (clarsimp simp: sl_indexes_alt sl_get_def list_eq_iff_nth_eq)
-    by (smt (verit) mem_Collect_eq option.exhaust_sel option.sel)
-    
-    
-  lemma sl_join_split_eq: "sl_join (sl_split ls xs) (sl_split (-ls) xs) = xs"  
-    apply (auto simp: list_eq_iff_sl_eq sl_compat_splitI sl_indexes_split )
-    apply (subst sl_get_join)
-    apply (simp add: sl_compat_splitI; fail)
-    apply (auto dest: sl_indexes_lengthD; fail) []
-    apply (auto simp: sl_get_split sl_indexes_split)
-    done
-    
-  lemma sl_put_empty_iff[simp]: "sl_put xs i x = [] \<longleftrightarrow> xs=[]"  
-    unfolding sl_put_def by auto
-  
-  
-  lemma sl_get_put[simp]: "i\<in>sl_indexes' xs \<Longrightarrow> sl_get (sl_put xs i x) i = x"  
-    unfolding sl_get_def sl_put_def
-    by (auto dest: sl_indexes_lengthD)
-
-  lemma sl_get_put_indep[simp]: "i\<noteq>j \<Longrightarrow> sl_get (sl_put xs i x) j = sl_get xs j"  
-    unfolding sl_get_def sl_put_def
-    by (auto)
-
-  lemma sl_put_get[simp]: "i\<in>sl_indexes' xs \<Longrightarrow> sl_put xs i (sl_get xs i) = xs"  
-    unfolding sl_get_def sl_put_def sl_indexes_alt
-    by auto
-    
-    
-  definition "sl_split1' b x \<equiv> if b then x else None"  
-  lemma sl_split1'_simp[simp]:
-    "sl_split1' True x = x"
-    "sl_split1' False x = None"
-    "sl_split1' b None = None"
-    unfolding sl_split1'_def by auto
-  
-        
-  lemma sl_split_snoc: "sl_split ls (xs@[x]) = sl_split ls xs @ [ sl_split1' (length xs \<in> ls) x]"  
-    unfolding sl_split_def
-    by auto
-    
-  lemma sl_struct_Cons[simp]: "sl_struct (x#xs) = (x=None)#sl_struct xs"
-    by (auto simp: sl_struct_def)
-  
-
-  lemma sl_compat_Cons[simp]: "sl_compat (x#xs) (y#ys) \<longleftrightarrow> (x\<or>y) \<and> sl_compat xs ys"  
-    unfolding sl_compat_def
-    by simp
-        
-  lemma sl_join_Cons[simp]: "sl_join (x#xs) (y#ys) = join_option x y # sl_join xs ys"  
-    unfolding sl_join_def by simp
 
 (* TODO: Move *)    
 lemma fri_ll_range_cong: 
@@ -120,17 +43,17 @@ lemma fri_ll_range_cong:
   by (simp add: PRECOND_def SOLVE_AUTO_def cong: ll_range_cong)
 
 
-  (* TODO: Move *)
-  lemma entails_pure_triv_simps[simp]: 
-    "(\<box> \<turnstile> \<up>Q) \<longleftrightarrow> Q"  
-    "(\<up>P \<turnstile> \<box>)"  
-    "(\<up>P \<turnstile> \<up>Q) \<longleftrightarrow> (P \<longrightarrow> Q)"  
-    by (auto simp: sep_algebra_simps entails_def)
-  
-  lemma entails_exE: 
-    assumes "\<And>x. P x \<turnstile> Q"
-    shows "(EXS x. P x) \<turnstile> Q"  
-    using assms by (auto simp: entails_def)
+(* TODO: Move *)
+lemma entails_pure_triv_simps[simp]: 
+  "(\<box> \<turnstile> \<up>Q) \<longleftrightarrow> Q"  
+  "(\<up>P \<turnstile> \<box>)"  
+  "(\<up>P \<turnstile> \<up>Q) \<longleftrightarrow> (P \<longrightarrow> Q)"  
+  by (auto simp: sep_algebra_simps entails_def)
+
+lemma entails_exE: 
+  assumes "\<And>x. P x \<turnstile> Q"
+  shows "(EXS x. P x) \<turnstile> Q"  
+  using assms by (auto simp: entails_def)
 
   
   
@@ -140,31 +63,13 @@ lemma list_assn_append2[simp]: "length xs\<^sub>2 = length ys\<^sub>2
   by (smt (verit, del_insts) add.commute add_diff_cancel_right' length_append list_assn_append list_assn_neq_len(2) sep_conj_commute)
     
 
-sepref_decl_op slist_swap: "swap:: _ option list \<Rightarrow> _ "
-  :: "[\<lambda>((l,i),j). i\<in>sl_indexes' l \<and> j\<in>sl_indexes' l]\<^sub>f (\<langle>\<langle>A\<rangle>option_rel\<rangle>list_rel \<times>\<^sub>r nat_rel) \<times>\<^sub>r nat_rel \<rightarrow> \<langle>\<langle>A\<rangle>option_rel\<rangle>list_rel" 
-  apply rule
-  apply (clarsimp dest!: sl_indexes_lengthD)
-  apply parametricity
-  by auto
-
-sepref_decl_op sl_of_list :: "\<langle>Id::'a rel\<rangle>list_rel \<rightarrow> \<langle>\<langle>Id::'a rel\<rangle>option_rel\<rangle>list_rel" . 
-  
-sepref_decl_op list_of_sl :: "[\<lambda>xs. sl_complete (sl_struct xs) ]\<^sub>f \<langle>\<langle>Id::'a rel\<rangle>option_rel\<rangle>list_rel \<rightarrow> \<langle>Id::'a rel\<rangle>list_rel" by auto 
     
-  
+section \<open>Arrays with Partial Index Ownership\<close>  
 
 context begin
 
   interpretation llvm_prim_mem_setup .
 
-  (*  
-  definition "dom_opt_list xs \<equiv> {i. i<length xs \<and> xs!i\<noteq>None}"
-  
-  lemma dom_opt_list_map_Some: "dom_opt_list (map Some xs) = {0..<length xs}"
-    unfolding dom_opt_list_def
-    by auto
-  *)
-  
   definition "array_idxs_dr_assn \<equiv> mk_assn (\<lambda>xs p. 
     if xs=[] then \<box>
     else \<upharpoonleft>(ll_range (int ` sl_indexes' xs)) (sl_get xs o nat) p
@@ -282,13 +187,6 @@ context begin
     Mreturn p
   }"  
   
-  lemma length_sl_put[simp]: "length (sl_put xs i x) = length xs" unfolding sl_put_def by auto
-  
-
-  lemma sl_swap_aux: "\<lbrakk>i \<in> sl_indexes' xs; j \<in> sl_indexes' xs\<rbrakk> 
-    \<Longrightarrow> sl_put (sl_put xs i (sl_get xs j)) j (sl_get xs i) = swap xs i j"
-    by (auto simp add: list_eq_iff_nth_eq sl_put_def sl_get_def sl_indexes_alt swap_def)
-    
   
   (* TODO: raw_array_swap should be implemented for more arrays. *)
   lemma raw_array_swap_idxs_rule[vcg_rules]: "llvm_htriple 
@@ -304,11 +202,7 @@ context begin
     
     
     
-    
-    
-    
-    
-        
+  subsection \<open>Composition with Assertion for Elements\<close>    
     
   context
     fixes A :: "('a,'c) dr_assn"
@@ -509,11 +403,6 @@ context begin
     apply fri
     done
     
-  term raw_array_slice_assn
-  term eoarray_slice_assn
-  term woarray_slice_assn
-
-  find_theorems some_rel
   
   (* TODO: There's a simproc for that in HOL. And there was one in Sep_Logic_Imp_HOL. *)
   lemma EXS_det_simple: 
@@ -586,11 +475,6 @@ context begin
     unfolding sao_assn_def
     by (simp add: list_oelem_assn_map_Some_conv sep_conj_commute)
     
-  (* TODO: Move *)  
-  lemma mk_assn_dr_prefix_eq[simp]: "mk_assn \<upharpoonleft>A = A" unfolding mk_assn_def dr_assn_prefix_def by simp
-  lemma dr_prefix_mk_assn_eq[simp]: "\<upharpoonleft>(mk_assn A) = A" unfolding mk_assn_def dr_assn_prefix_def by simp
-    
-    
   lemma woarray_slice_to_idxs: "woarray_slice_assn A xs p = \<upharpoonleft>(oarray_idxs_dr_assn (mk_assn A)) (sl_of_list xs) p"
     unfolding woarray_slice_assn_def hr_comp_def
     apply (clarsimp 
@@ -602,19 +486,9 @@ context begin
     unfolding eoarray_slice_assn_def
     by (simp add: sao_assn_map_Some_conv array_slice_to_idxs sl_of_list_def)
 
-  (* TODO: Move *)  
-  lemma sl_complete_sl_of_list_of_sl[simp]: "sl_complete (sl_struct xs) \<Longrightarrow> sl_of_list (list_of_sl xs) = xs"
-    unfolding sl_of_list_def list_of_sl_def sl_complete_def
-    apply (induction xs)
-    by auto
-    
   lemma idxs_to_woarray_slice: "sl_complete (sl_struct xs) \<Longrightarrow> \<upharpoonleft>(oarray_idxs_dr_assn A) xs p = woarray_slice_assn (\<upharpoonleft>A) (list_of_sl xs) p"
     apply (subst woarray_slice_to_idxs)
     by simp
-    
-  (* TODO: Move *)  
-  lemma htriple_exI: "\<lbrakk>\<And>x. htriple (P x) c Q\<rbrakk> \<Longrightarrow> htriple (EXS x. P x) c Q"  
-    unfolding htriple_def STATE_def by blast
     
     
   lemma list_option_assn_swap: 
@@ -635,27 +509,8 @@ context begin
     "PRECOND (SOLVE_DEFAULT_AUTO (i<length xs \<and> j<length xs)) \<Longrightarrow> \<upharpoonleft>(list_option_assn A) xs xs' \<turnstile> \<upharpoonleft>(list_option_assn A) (swap xs i j) (swap xs' i j)"  
     by (simp add: PRECOND_def SOLVE_DEFAULT_AUTO_def list_option_assn_swap)
     
-    
-  (*    
-  lemma list_option_assn_swap_shift:
-    "\<lbrakk>i<length xs; j<length xs\<rbrakk> \<Longrightarrow> \<upharpoonleft>(list_option_assn A) (swap xs i j) xs' = \<upharpoonleft>(list_option_assn A) xs (swap xs' i j)"  
-    unfolding list_option_assn_def list_assn_def
-    apply (cases "length xs = length xs'"; simp add: sep_algebra_simps)
-    apply (cases "i=j"; simp?)
-    apply (rewrite in "\<hole>=_" sep_set_img_remove[of i], simp)
-    apply (rewrite in "\<hole>=_" sep_set_img_remove[of j], simp)
-    apply (rewrite in "_=\<hole>" sep_set_img_remove[of i], simp)
-    apply (rewrite in "_=\<hole>" sep_set_img_remove[of j], simp)
-    apply (simp add: swap_def)
-    apply (rule entails_eqI)
-    apply fri+
-    done
-  *)
-    
   lemma sl_struct_eq_imp_length_eq: "sl_struct xs = sl_struct ys \<Longrightarrow> length xs = length ys"  
     unfolding sl_struct_def by (rule map_eq_imp_length_eq)
-    
-    
   
   lemma raw_array_swap_oidxs_rule[vcg_rules]: "llvm_htriple 
     (\<upharpoonleft>(oarray_idxs_dr_assn A) xs p ** \<upharpoonleft>snat.assn i ii ** \<upharpoonleft>snat.assn j ji ** \<up>\<^sub>d(i\<in>sl_indexes' xs \<and> j\<in>sl_indexes' xs))
@@ -812,16 +667,6 @@ context begin
       done  
       
         
-  (* Additional setup for unit-result *)    
-  definition [llvm_inline]: "oidxs_with_idxs'_nores p m \<equiv> doM { (_,_) \<leftarrow> m p p; Mreturn p }"
-  
-  lemma oidxs_with_idxs'_bind_unit[sepref_opt_simps2]: 
-    " doM { (uu::unit,xs) \<leftarrow> oidxs_with_idxs' p m; mm uu xs }
-    = doM { xs \<leftarrow> oidxs_with_idxs'_nores p (\<lambda>xs\<^sub>1 xs\<^sub>2. map_res snd (m xs\<^sub>1 xs\<^sub>2)); mm () xs }"
-    unfolding oidxs_with_idxs'_def oidxs_with_idxs'_nores_def map_res_def
-    by simp
-      
-      
       
   lemma slist_swap_oidxs_hnr: "(uncurry2 raw_array_swap,uncurry2 mop_slist_swap) 
     \<in> [\<lambda>_. True]\<^sub>c (oarray_idxs_assn A)\<^sup>d *\<^sub>a snat_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow> oarray_idxs_assn A [\<lambda>((xsi,_),_) ri. ri=xsi]\<^sub>c"

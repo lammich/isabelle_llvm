@@ -2,6 +2,24 @@ theory Sorting_Par_Partition
 imports Sorting_Setup Sorting_Guarded_Partition IICF_DS_Interval_List IICF_Shared_Lists IICF_DS_Array_Idxs Sorting_Sample_Partition
 begin
 
+(* TODO: Move near set_drop_conv *)
+lemma set_take_conv_nth: "set (take m xs) = {xs!i| i. i<m \<and> i<length xs}"
+  by (auto 0 3 simp: in_set_conv_nth) 
+
+lemma set_drop_conv_nth: "set (drop m xs) = {xs!i| i. i\<ge>m \<and> i<length xs}" by (rule set_drop_conv)
+      
+(* TODO: Move *)  
+lemma slice_eq_mset_whole_iff: 
+  "slice_eq_mset 0 (length xs) xs' xs \<longleftrightarrow> mset xs' = mset xs"  
+  "slice_eq_mset 0 (length xs') xs' xs \<longleftrightarrow> mset xs' = mset xs"  
+  unfolding slice_eq_mset_def Misc.slice_def
+  apply clarsimp
+  apply (metis dual_order.refl mset_eq_length take_all_iff)
+  apply clarsimp
+  apply (metis dual_order.refl mset_eq_length take_all_iff)
+  done
+
+
 (* TODO: Move *)
 
 definition nat_div_round_up :: "nat \<Rightarrow> nat \<Rightarrow> nat nres" where "nat_div_round_up p q \<equiv> doN {
@@ -40,14 +58,6 @@ sepref_def nat_div_round_up_impl is "uncurry nat_div_round_up" :: "(snat_assn' T
 (* TODO: Move *)
 
 (* Copy-nth implementation for woarray_slice_assn *)
-
-term woarray_slice_assn
-
-find_theorems woarray_slice_assn
-
-thm eoarray_slice_assn_def
-
-term sao_assn
 
 definition [llvm_inline]: "array_cp_nth (cp :: 'a::llvm_rep \<Rightarrow> 'a llM) p i \<equiv> doM {
   r\<leftarrow>array_nth p i;
@@ -102,24 +112,6 @@ end
 section \<open>Abstract Algorithm\<close>
 
   
-  subsection \<open>Step 1: Partition the Array\<close>
-
-  (* TODO: Move near set_drop_conv *)
-  lemma set_take_conv_nth: "set (take m xs) = {xs!i| i. i<m \<and> i<length xs}"
-    by (auto 0 3 simp: in_set_conv_nth) 
-
-  lemma set_drop_conv_nth: "set (drop m xs) = {xs!i| i. i\<ge>m \<and> i<length xs}" by (rule set_drop_conv)
-      
-(* TODO: Move *)  
-lemma slice_eq_mset_whole_iff: 
-  "slice_eq_mset 0 (length xs) xs' xs \<longleftrightarrow> mset xs' = mset xs"  
-  "slice_eq_mset 0 (length xs') xs' xs \<longleftrightarrow> mset xs' = mset xs"  
-  unfolding slice_eq_mset_def Misc.slice_def
-  apply clarsimp
-  apply (metis dual_order.refl mset_eq_length take_all_iff)
-  apply clarsimp
-  apply (metis dual_order.refl mset_eq_length take_all_iff)
-  done
 
 context weak_ordering begin  
 
@@ -152,11 +144,12 @@ context weak_ordering begin
     
 end
 
+subsection \<open>Step 1: Partition the Array\<close>
+
 (*
   Step 1: partition the array, and keep track of the set of small/big indices
     in practice, the array will be partitioned into multiple slices, and the sets will be intervals
 *)
-
 
 (* An array together with sets of small/big elements *)
 locale is_ppart = weak_ordering + 
@@ -744,23 +737,6 @@ end
 
 section \<open>Refinement to Parallel Swap\<close>
 
-  
-(* TODO: Move *)
-
-lemma sl_indexes_finite[simp, intro!]: "finite (sl_indexes s)" by (auto simp: sl_indexes_def)
-
-lemma sl_struct_join_split: "sl_struct_join (sl_struct_split I s) (sl_struct_split (-I) s) = s"
-  unfolding sl_struct_join_def sl_struct_split_def
-  by (auto simp: map2_map_conv map_nth) 
-
-
-lemma sl_join_split_eq: "sl_join (sl_split s xs) (sl_split (-s) xs) = xs"  
-  unfolding sl_join_def sl_split_def 
-  apply (rewrite at "_ = \<hole>" map_nth[symmetric])
-  by (auto simp: map2_map_conv)
-  
-    
-thm list_induct2    
     
 locale swap_opt_spec_pre = 
   fixes src dst :: "nat set" and xs :: "'a option list"
@@ -773,12 +749,7 @@ begin
   lemma finite_src[simp,intro!]: "finite src" apply (rule finite_subset[OF src_ss]) by auto
   lemma finite_dst[simp,intro!]: "finite dst" apply (rule finite_subset[OF dst_ss]) by auto
 
-   
-  (*assumes idxs_dj: "src \<inter> dst = {}"
-  assumes idxs_card_eq: "card src = card dst"
-  *)
   lemma idxs_in_bounds: "src\<union>dst \<subseteq> sl_indexes' xs" using src_ss dst_ss by auto
-  
 
 end
   
@@ -932,13 +903,6 @@ lemma (in swap_opt_spec_pre) split_sets_eq_SPEC_swap_rl:
   apply clarsimp_all
   done
 
-(*
-definition "swap_opt_pre_split_SPEC ss bs xs \<equiv> do {
-  ASSERT (swap_opt_spec_pre ss bs xs);
-  SPEC (\<lambda>((ss\<^sub>1,ss\<^sub>2),(bs\<^sub>1,bs\<^sub>2)). swap_opt_spec_pre_split ss bs xs ss\<^sub>1 ss\<^sub>2 bs\<^sub>1 bs\<^sub>2)
-}"
-*)
-
 
 definition "par_swap_aux ss bs xs \<equiv> RECT (\<lambda>par_swap (ss,bs,xs). do {
   ASSERT (swap_opt_spec_pre ss bs xs);
@@ -1051,12 +1015,6 @@ context swap_spec_pre begin
 
 end
 
-(* TODO: Move *)
-lemma mset_of_list_permut: "mset xs = mset (sl_of_list xs\<^sub>0) \<Longrightarrow> mset (list_of_sl xs) = mset xs\<^sub>0" 
-  unfolding sl_of_list_def list_of_sl_def
-  by (simp add: mset_map_id)
-
-
 
 
 context swap_opt_spec begin
@@ -1120,16 +1078,6 @@ lemma swap_opt_spec_empty[simp]: "swap_opt_spec {} {} xs\<^sub>0 xs\<^sub>0"
   apply unfold_locales
   by auto
 
-(* TODO: Move *)  
-lemma sl_struct_swap[simp]: "\<lbrakk> i\<in>sl_indexes' xs; j\<in>sl_indexes' xs \<rbrakk> \<Longrightarrow> sl_struct (swap xs i j) = sl_struct xs"
-  by (simp flip: sl_swap_aux)
-  
-  
-lemma sl_get_swap_iff: "\<lbrakk> i\<in>sl_indexes' xs; j\<in>sl_indexes' xs \<rbrakk> \<Longrightarrow> sl_get (swap xs i j) k = (if k=i then sl_get xs j else if k=j then sl_get xs i else sl_get xs k)"  
-  by (auto simp add: sl_get_def swap_nth dest!: sl_indexes_lengthD)
-  
-lemma sl_get_swap_other: "\<lbrakk>k\<noteq>i; k\<noteq>j\<rbrakk> \<Longrightarrow> sl_get (swap xs i j) k = sl_get xs k"  
-  by (simp add: sl_get_def)
   
   
 lemma swap_o_intv_aux_correct:
@@ -1256,11 +1204,6 @@ definition "ppart2 d p n xs \<equiv> do {
 }"
   
 
-
-term gpartition_all_spec
-
-thm ppart1_valid_partitition
-
 lemma ppart2_refine: "\<lbrakk> 0<d; (xs,xs')\<in>\<langle>Id\<rangle>list_rel; n=length xs' \<rbrakk> \<Longrightarrow> ppart2 d p n xs \<le> \<Down>Id (ppart1 p n xs')"
   unfolding ppart2_def ppart1_def ppart_mpos_def
   apply (refine_rcg gpartition_slices_refine par_swap_refine)
@@ -1275,15 +1218,6 @@ proof -
   also note ppart1_valid_partitition
   finally show ?thesis using assms by simp
 qed
-
-
-term partition3_spec
-thm partition3_spec_def
-
-term qs_partition
-
-term WITH_SPLIT
-
 
 definition "ppart_partition_pivot_par d xs n \<equiv> doN {
   ASSERT (n=length xs \<and> 4\<le>length xs);
@@ -1656,8 +1590,6 @@ context sort_impl_copy_context begin
   
 end      
     
-  
-find_consts name: "ll_cmp"
 
 (*
 global_interpretation test: sort_impl_copy_context "(\<le>)" "(<)" ll_icmp_ult "unat_assn' TYPE(size_t)" Mreturn free_pure

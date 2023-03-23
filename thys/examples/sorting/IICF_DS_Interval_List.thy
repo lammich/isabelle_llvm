@@ -116,6 +116,8 @@ sepref_decl_op set_card: "card" :: "\<langle>A\<rangle>set_rel \<rightarrow> nat
 
 section "Interval Lists" 
 
+subsection \<open>Additional set ADT operations\<close>
+
 (* Quite specific operations. Maybe move them up? *)
 sepref_decl_op set_range: "\<lambda>l h. {l..<h}" :: "(Id::'a::ord rel) \<rightarrow> (Id::'a rel) \<rightarrow> \<langle>Id::'a rel\<rangle>set_rel" .
 sepref_decl_op set_range_lb: "\<lambda>l. {l..}" :: "(Id::'a::ord rel) \<rightarrow> \<langle>Id::'a rel\<rangle>set_rel" .
@@ -145,7 +147,9 @@ sepref_register mop_set_rm_subset
 definition [simp]: "mop_set_split_card n s \<equiv> doN { ASSERT (s\<noteq>{} \<and> finite s \<and> n \<le> card s); SPEC (\<lambda>(s\<^sub>1,s\<^sub>2). s=s\<^sub>1\<union>s\<^sub>2 \<and> s\<^sub>1\<inter>s\<^sub>2={} \<and> card s\<^sub>1 = n ) }"
 sepref_register mop_set_split_card
 
+subsection \<open>Intermediate Level DS\<close>
   
+subsubsection \<open>Closed Intervals\<close>
 type_synonym iv = "nat \<times> nat"
 
 definition iv_\<alpha> :: "iv \<Rightarrow> nat set" where "iv_\<alpha> \<equiv> \<lambda>(l,h). {l..<h}"
@@ -196,10 +200,8 @@ lemma iv_split_card_refine: "(iv_split_card, mop_set_split_card) \<in> nat_rel \
   apply (refine_vcg RETURN_SPEC_refine)
   unfolding iv_rel_def
   by (auto simp: in_br_conv iv_\<alpha>_def)
-  
 
-
-
+subsubsection \<open>Open Intervals\<close>
 
 definition "iv_lb_rel \<equiv> { (l,{l..}) |l. True }"
 
@@ -212,8 +214,8 @@ definition "iv_inter_lb \<equiv> \<lambda>l (l',h'). (max l l', h')"
 lemma iv_inter_lb_refine: "(iv_inter_lb, op_set_inter) \<in> iv_lb_rel \<rightarrow> iv_rel \<rightarrow> iv_rel"
   by (auto simp: iv_inter_lb_def iv_lb_rel_def iv_rel_def in_br_conv iv_\<alpha>_def)
   
-  
-
+    
+subsubsection \<open>Interval Lists\<close>  
 
 
 type_synonym ivl = "nat set list"
@@ -236,6 +238,9 @@ begin
     using finite unfolding ivl_\<alpha>_def
     by blast
     
+  lemma finite_Un_ivl[simp, intro!]: "finite (\<Union> (set ivl))"
+    using ivl_\<alpha>_def ivl_\<alpha>_finite by presburger
+
       
 end  
 
@@ -244,7 +249,9 @@ lemmas [simp, intro] = ivl_invar.ivl_\<alpha>_finite
 
 definition "ivl_rel \<equiv> br ivl_\<alpha> ivl_invar"
 
-
+text \<open>We start with defining properties of the refinement relation wrt lists. 
+  These will later be used to prove the actual refinement lemmas
+\<close>
 lemma ivl_\<alpha>_empty_list[simp]: "ivl_\<alpha> [] = {}" by (simp add: ivl_\<alpha>_def)
 
 lemma ivl_\<alpha>_Cons[simp]: "ivl_\<alpha> (iv#ivls) = iv \<union> ivl_\<alpha> ivls"
@@ -308,7 +315,15 @@ lemma ivl_invar_sort[simp]: "ivl_invar (sort_key f xs) = ivl_invar xs"
   unfolding ivl_invar_def
   by auto 
 
+
+text \<open>
+  To later implement the list by dynamic arrays, we will need to show that the dynamic 
+  array does not grow out of bounds, i.e., greater than what can be represented by its length field.
   
+  For this, we estimate the length of the list by the maximum set element it contains,
+  thus linking the length bound to the bound on set elements: if we use the same/lower bit-width 
+  for storing the set elements as for the array's length counter, we can show that the bound will not be exceeded.
+\<close>    
 definition iv_maxl :: "nat set \<Rightarrow> nat" where "iv_maxl iv \<equiv> if iv={} \<or> infinite iv then 0 else 2 + Max iv"
 
 definition "ivl_maxl ivl \<equiv> if \<not>ivl_invar ivl then 0 else if ivl=[] then 1 else Max (iv_maxl`set ivl)"
@@ -381,7 +396,6 @@ lemma ivl_max_append: "ivl_invar (ivl@[iv]) \<Longrightarrow> ivl_maxl (ivl@[iv]
   by (metis Max.union Un_empty ivl_\<alpha>_Cons ivl_invar.ivl_\<alpha>_finite ivl_invar_Cons)
 
 
-  
 lemma "(\<forall>x\<in>s. x<N) \<Longrightarrow> card s \<le> N" for s :: "nat set"
   by (simp add: subsetI subset_eq_atLeast0_lessThan_card)
     
@@ -416,12 +430,33 @@ context ivl_invar begin
 end  
   
     
-  
-  
+text \<open>The actual implementations of the set operations\<close>  
   
 definition "ivl_empty = []"
 definition "ivl_is_empty ivls \<longleftrightarrow> ivls=[]"
 
+definition "ivl_add iv ivl \<equiv> doN { 
+  if (op_set_is_empty iv) then 
+    RETURN ivl 
+  else doN {
+    ASSERT (length ivl+1 < max (ivl_maxl ivl) (iv_maxl iv)); \<comment> \<open>This assertion will be used to show that we don't exceed the length bound when implementing the list by an array\<close>
+    RETURN (ivl@[iv])
+  }
+}"
+  
+  
+definition "ivl_rm_subset (ivl::ivl) \<equiv> doN {
+  mop_list_pop_last ivl
+}"  
+  
+
+definition "ivl_card (ivl::ivl) \<equiv> doN {
+  nfoldli ivl (\<lambda>_. True) (\<lambda>s acc. doN {
+    c \<leftarrow> mop_set_card s;
+    ASSERT (acc + c < ivl_maxl ivl);
+    RETURN (acc+c)
+  }) 0
+}"
 
 
 lemma ivl_empty_invar[simp]: "ivl_invar ivl_empty" 
@@ -434,16 +469,6 @@ lemma ivl_is_empty_\<alpha>[simp]: "ivl_invar ivls \<Longrightarrow> ivl_is_empt
   apply auto 
   by (metis ex_in_conv set_empty)
   
-    
-(*lemma 
-  assumes INV: "ivl_invar ivls" and PRE: "l<h" "{l..<h} \<inter> ivl_\<alpha> ivls = {}"
-  shows ivl_add_invar[simp]: "ivl_invar (ivl_add l h ivls)"
-    and ivl_add_\<alpha>[simp]: "ivl_\<alpha> (ivl_add l h ivls) = {l..<h} \<union> ivl_\<alpha> ivls"
-  using assms
-  unfolding ivl_add_def  
-  by auto
-*)  
-
   
 lemma ivl_empty_refine: "(ivl_empty,op_set_empty) \<in> ivl_rel"  
   by (auto simp: ivl_rel_def in_br_conv)
@@ -451,15 +476,6 @@ lemma ivl_empty_refine: "(ivl_empty,op_set_empty) \<in> ivl_rel"
 lemma ivl_is_empty_refine: "(ivl_is_empty, op_set_is_empty) \<in> ivl_rel \<rightarrow> bool_rel"  
   by (auto simp: ivl_rel_def in_br_conv)
     
-definition "ivl_add iv ivl \<equiv> doN { 
-  if (op_set_is_empty iv) then 
-    RETURN ivl 
-  else doN {
-    ASSERT (length ivl+1 < max (ivl_maxl ivl) (iv_maxl iv));
-    RETURN (ivl@[iv])
-  }
-}"
-  
 
 lemma m_ivl_add_bound_aux: 
   assumes "ivl_invar ivl" "iv\<noteq>{}" "iv \<inter> ivl_\<alpha> ivl = {}" "finite iv"
@@ -469,21 +485,11 @@ proof -
   from ivl_length_bound[OF this] ivl_max_append[OF this] show ?thesis by simp
 qed    
 
-term b_rel
-
-
 lemma ivl_add_refine: "(ivl_add, mop_set_union_disj) \<in> b_rel Id finite \<rightarrow> ivl_rel \<rightarrow> \<langle>ivl_rel\<rangle>nres_rel"
   unfolding ivl_add_def
   apply clarsimp
   apply refine_vcg
   by (auto simp: iv_rel_def ivl_rel_def in_br_conv m_ivl_add_bound_aux)
-  
-  
-
-  
-definition "ivl_rm_subset (ivl::ivl) \<equiv> doN {
-  mop_list_pop_last ivl
-}"  
   
 
 lemma ivl_rm_subset_refine: "(ivl_rm_subset,mop_set_rm_subset) \<in> ivl_rel \<rightarrow> \<langle>Id \<times>\<^sub>r ivl_rel\<rangle>nres_rel"
@@ -494,14 +500,6 @@ lemma ivl_rm_subset_refine: "(ivl_rm_subset,mop_set_rm_subset) \<in> ivl_rel \<r
   subgoal for ivl by (cases ivl rule: rev_cases; auto)
   done
   
-
-definition "ivl_card (ivl::ivl) \<equiv> doN {
-  nfoldli ivl (\<lambda>_. True) (\<lambda>s acc. doN {
-    c \<leftarrow> mop_set_card s;
-    ASSERT (acc + c < ivl_maxl ivl);
-    RETURN (acc+c)
-  }) 0
-}"
   
 lemma ivl_card_refine: "(ivl_card,mop_set_card) \<in> ivl_rel \<rightarrow> \<langle>nat_rel\<rangle>nres_rel"
   unfolding ivl_card_def
@@ -516,16 +514,6 @@ lemma ivl_card_refine: "(ivl_card,mop_set_card) \<in> ivl_rel \<rightarrow> \<la
   done
   
   
-(*abbreviation (input) iv_assn' :: "'l itself \<Rightarrow> nat \<times> nat \<Rightarrow> 'l::len2 word \<times> 'l word \<Rightarrow> ll_assn" 
-  where "iv_assn' TYPE('l) \<equiv> iv_assn"
-*)  
-
-context ivl_invar begin
-(* TODO: Move *)
-lemma finite_Un_ivl[simp, intro!]: "finite (\<Union> (set ivl))"
-  using ivl_\<alpha>_def ivl_\<alpha>_finite by presburger
-
-end
 
 lemma ivl_max_bound_aux:
   assumes "Suc 0 \<le> N"
@@ -536,6 +524,7 @@ lemma ivl_max_bound_aux:
   by auto
 
 
+subsection \<open>Refinement to LLVM\<close>  
   
 context
   fixes L
@@ -543,6 +532,8 @@ context
                                       Otherwise, sepref_decl_impl generalizes too much when 
                                       trying to prove parametricity of LENGTH('l) precond *)
 begin
+
+  subsubsection \<open>Open and Closed Intervals\<close>
 
   private abbreviation (input) "sA \<equiv> snat_assn' TYPE('l)"
   definition "iv_assn_raw \<equiv> sA \<times>\<^sub>a sA"
@@ -578,7 +569,9 @@ begin
   sepref_definition iv_incr_elems_impl [llvm_inline] is "uncurry (RETURN oo iv_incr_elems)" :: "[\<lambda>(n,iv). iv_incr_elems_pre_aux n iv (max_snat L)]\<^sub>a sA\<^sup>k *\<^sub>a ivA\<^sup>k \<rightarrow> ivA"  
     unfolding iv_incr_elems_def iv_assn_raw_def iv_incr_elems_pre_aux_def L_def
     by sepref
+
     
+  text \<open>Composing of Refinement Theorems\<close>      
   definition "iv_assn \<equiv> hr_comp ivA iv_rel"  
   abbreviation "iv_assn' TYPE('l) \<equiv> iv_assn"
   
@@ -594,8 +587,6 @@ begin
     by solve_constraint 
     
   lemmas [sepref_frame_free_rules] = mk_free_is_pure[OF iv_assn_pure] mk_free_is_pure[OF iv_lb_assn_pure]
-    
-    
         
   lemma rdomp_iv_assn_strong: "rdomp iv_assn s \<Longrightarrow> finite s \<and> iv_maxl s \<le> max_snat LENGTH('l)"
     apply (auto 
@@ -632,16 +623,13 @@ begin
     sepref_decl_impl iv_inter_impl.refine[FCOMP iv_inter_refine, THEN hfref_ttnd_commute_op, simplified is_comm_simps Inter_is_commutative] uses op_set_inter.fref[of Id, simplified id_set_constraint_simps] .
     sepref_decl_impl iv_inter_lb_impl.refine[FCOMP iv_inter_lb_refine, THEN hfref_ttnd_commute_op, simplified is_comm_simps Inter_is_commutative] uses op_set_inter.fref[of Id, simplified id_set_constraint_simps] .
     
-    thm auto_weaken_pre_comp_PRE_I
-    thm fcomp_prenorm_simps
-    
-    
     sepref_decl_impl iv_incr_elems_impl.refine[FCOMP iv_incr_elems_refine] by simp
     
     
     lemmas [sepref_fr_rules] = iv_split_card_impl.refine[FCOMP iv_split_card_refine]
   end
 
+  subsubsection \<open>Interval Lists\<close>
   
   definition "ivl_assn_raw \<equiv> al_assn' TYPE('l::len2) iv_assn"  
   private abbreviation (input) "ivlA \<equiv> ivl_assn_raw"
@@ -695,7 +683,8 @@ begin
     apply (subst hr_comp_elim_b_rel)
     apply (simp add: rdomp_iv_assn)
     by simp
-  
+
+  text \<open>Composition of Refinement Lemmas\<close>    
   context 
     notes [fcomp_norm_simps] = ivl_assn_def[symmetric] set_rel_id_simp iv_assn_comp_finite_eq
   begin
@@ -714,13 +703,15 @@ begin
     
   end    
 
+(*  
 end
 
-
+text \<open>Custom constructors\<close>
 context  
   fixes L
   defines "L \<equiv> LENGTH ('l::len2)"
 begin  
+*)
 
 definition [simp]: "op_ivl_empty TYPE('l) = op_set_empty"
 definition [simp]: "mop_ivl_empty TYPE('l) = mop_set_empty"
@@ -734,8 +725,8 @@ lemma ivl_empty_fold_aux:
   by auto
   
 lemmas [sepref_fr_rules] = 
-  ivl_empty_hnr[where 'l='l,unfolded ivl_empty_fold_aux]
-  ivl_empty_hnr_mop[where 'l='l,unfolded ivl_empty_fold_aux]
+  ivl_empty_hnr[unfolded ivl_empty_fold_aux]
+  ivl_empty_hnr_mop[unfolded ivl_empty_fold_aux]
   
 lemma ivl_fold_custom_empty:
   "{} = op_ivl_empty TYPE('l)"  
@@ -744,6 +735,8 @@ lemma ivl_fold_custom_empty:
   by auto
 
 end
+
+subsection \<open>Directly Refined Set Operations\<close>
 
 definition "set_finite_inter s\<^sub>1 s\<^sub>2 \<equiv> doN {
   ASSERT (finite s\<^sub>2);

@@ -1,5 +1,5 @@
 theory Sorting_Setup
-imports "Isabelle_LLVM.IICF" "Isabelle_LLVM.Proto_IICF_EOArray" Sorting_Misc 
+imports "Isabelle_LLVM.IICF" "Isabelle_LLVM.Proto_IICF_EOArray" IICF_DS_Array_Idxs Sorting_Misc 
 begin
   hide_const (open) Word.slice LLVM_DS_Array.array_assn LLVM_DS_NArray.array_slice_assn
 
@@ -1253,6 +1253,17 @@ lemma ars_with_split_bind_unit[sepref_opt_simps2]: "doM {
   unfolding ars_with_split_def ars_with_split_nores_def map_res_def 
   apply pw
   done
+  
+definition [llvm_inline]: "oidxs_with_idxs'_nores p m \<equiv> doM { (_,_) \<leftarrow> m p p; Mreturn p }"
+
+lemma oidxs_with_idxs'_bind_unit[sepref_opt_simps2]: 
+  " doM { (uu::unit,xs) \<leftarrow> oidxs_with_idxs' p m; mm uu xs }
+  = doM { xs \<leftarrow> oidxs_with_idxs'_nores p (\<lambda>xs\<^sub>1 xs\<^sub>2. map_res snd (m xs\<^sub>1 xs\<^sub>2)); mm () xs }"
+  unfolding oidxs_with_idxs'_def oidxs_with_idxs'_nores_def map_res_def
+  by simp
+    
+    
+  
     
   
 lemma sepref_adhoc_opt_case_add_const[sepref_opt_simps]:
