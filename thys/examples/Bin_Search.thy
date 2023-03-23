@@ -1,5 +1,5 @@
 theory Bin_Search
-imports "../sepref/IICF/IICF" "List-Index.List_Index"
+imports "Isabelle_LLVM.IICF" "List-Index.List_Index"
 begin
 
   subsection \<open>Binary Search\<close>

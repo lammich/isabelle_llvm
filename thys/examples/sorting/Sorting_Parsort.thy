@@ -1,6 +1,6 @@
 section \<open>Parallel Quicksort\<close>
 theory Sorting_Parsort
-imports Sorting_Introsort Sorting_PDQ Sorting_Sample_Partition
+imports Sorting_Introsort Sorting_PDQ Sorting_Par_Partition
 begin
 
 
@@ -23,6 +23,7 @@ context weak_ordering begin
       by simp
     
     abbreviation "par_sort_seq_threshold::nat \<equiv> 100000"  
+    abbreviation "ppar_chunk_size::nat \<equiv> 1000000"  
       
     definition "par_sort_aux xs d \<equiv> RECT (\<lambda>par_sort_aux (xs,d::nat). doN {
       let n = length xs;
@@ -143,6 +144,32 @@ context weak_ordering begin
     }
   }) (xs,n,d)"
 
+  
+  definition "ppar_sort_aux3 xs n d \<equiv> RECT (\<lambda>par_sort_aux (xs,n,d::nat). doN {
+    ASSERT (n = length xs);
+    if d=0 \<or> n<par_sort_seq_threshold then
+      pdqsort xs 0 n
+    else doN {
+      (xs,m) \<leftarrow> ppart_partition_pivot ppar_chunk_size xs n;
+      bad \<leftarrow> bad_partition m n;
+      (_,xs) \<leftarrow> WITH_SPLIT m xs (\<lambda>xs\<^sub>1 xs\<^sub>2. doN {
+        ASSERT (length xs\<^sub>2 = length xs - m);
+        ASSERT (d>0);
+        ASSERT (n\<ge>m);
+        (xs\<^sub>1,xs\<^sub>2) \<leftarrow> if bad then doN {
+          xs\<^sub>1 \<leftarrow> par_sort_aux (xs\<^sub>1,m,d-1);
+          xs\<^sub>2 \<leftarrow> par_sort_aux (xs\<^sub>2,n-m,d-1);
+          RETURN (xs\<^sub>1,xs\<^sub>2)
+        } else doM {
+          nres_par par_sort_aux par_sort_aux (xs\<^sub>1,m,d-1) (xs\<^sub>2,n-m,d-1)
+        };
+          
+        RETURN ((),xs\<^sub>1,xs\<^sub>2)
+      });
+      RETURN xs
+    }
+  }) (xs,n,d)"
+  
 
   (* TODO: Move *)
   lemma introsort4_refines_spec: "\<lbrakk>(xs',xs)\<in>\<langle>Id\<rangle>list_rel; (l',l)\<in>nat_rel; (h',h)\<in>nat_rel\<rbrakk> \<Longrightarrow> introsort4 xs' l' h' \<le> \<Down> Id (slice_sort_spec (\<^bold><) xs l h)"
@@ -157,24 +184,57 @@ context weak_ordering begin
     apply (refine_rcg partition_pivot_sample_correct introsort4_refines_spec pdqsort_refines_spec)
     apply refine_dref_type
     by auto    
+
+  lemma ppart_partition_pivot_refines_part3': "\<lbrakk>0<d'; n=length xs; (xs',xs)\<in>Id; (n',n)\<in>Id; l=0\<rbrakk> 
+    \<Longrightarrow> ppart_partition_pivot d' xs' n' \<le> \<Down>Id (partition3_spec xs l n)"
+    using ppart_partition_pivot_refines_part3
+    by (simp add: ) 
     
+    
+  lemma ppar_sort_aux3_refine: "ppar_sort_aux3 xs n d \<le>\<Down>Id (par_sort_aux2 xs n d)"
+    unfolding ppar_sort_aux3_def par_sort_aux2_def
+    find_theorems ppart_partition_pivot
+    thm ppart_partition_pivot_refines_part3[THEN refine_IdI]
+    apply (refine_rcg ppart_partition_pivot_refines_part3' introsort4_refines_spec pdqsort_refines_spec)
+    apply refine_dref_type
+    by auto    
+    
+        
   (* TODO: Move *)  
   lemma slice_sort_spec_complete: "slice_sort_spec lt xs 0 (length xs) = SPEC (sort_spec lt xs)"  
     unfolding slice_sort_spec_def sort_spec_def
     apply clarsimp
     by (metis le_refl mset_eq_length slice_complete)
-    
-  lemma par_sort_aux3_correct:
+
+  lemma par_sort_aux2_correct:
     assumes "n=length xs"  
-    shows "par_sort_aux3 xs n d \<le> SPEC (sort_spec (\<^bold><) xs)"
+    shows "par_sort_aux2 xs n d \<le> SPEC (sort_spec (\<^bold><) xs)"
   proof -
-    note par_sort_aux3_refine[where d=d]
-    also note par_sort_aux2_refine[OF assms]
+    note par_sort_aux2_refine[OF assms]
     also note par_sort_aux_correct
     also note slice_sort_spec_complete
     finally show ?thesis by simp 
   qed
     
+        
+  lemma par_sort_aux3_correct:
+    assumes "n=length xs"  
+    shows "par_sort_aux3 xs n d \<le> SPEC (sort_spec (\<^bold><) xs)"
+  proof -
+    note par_sort_aux3_refine[where d=d]
+    also note par_sort_aux2_correct[OF assms]
+    finally show ?thesis by simp 
+  qed
+
+  lemma ppar_sort_aux3_correct:
+    assumes "n=length xs"  
+    shows "ppar_sort_aux3 xs n d \<le> SPEC (sort_spec (\<^bold><) xs)"
+  proof -
+    note ppar_sort_aux3_refine[where d=d]
+    also note par_sort_aux2_correct[OF assms]
+    finally show ?thesis by simp 
+  qed
+      
   
   text \<open>Initializing depth bound\<close>
   definition "par_sort xs n \<equiv> doN {
@@ -183,54 +243,27 @@ context weak_ordering begin
     } else RETURN xs
   }"
   
-  thm sort_spec_def
-  
   lemma par_sort_correct: "n=length xs \<Longrightarrow> par_sort xs n \<le> SPEC (sort_spec (\<^bold><) xs)"
     unfolding par_sort_def 
     apply (refine_vcg par_sort_aux3_correct)
     by (simp add: sort_spec_def sorted_wrt01)
-        
+
+    
+  definition "ppar_sort xs n \<equiv> doN {
+    if n>1 then doN {
+      ppar_sort_aux3 xs n (Discrete.log n * 2)
+    } else RETURN xs
+  }"
+  
+  lemma ppar_sort_correct: "n=length xs \<Longrightarrow> ppar_sort xs n \<le> SPEC (sort_spec (\<^bold><) xs)"
+    unfolding ppar_sort_def 
+    apply (refine_vcg ppar_sort_aux3_correct)
+    by (simp add: sort_spec_def sorted_wrt01)
+            
 end    
     
 subsection \<open>Refining to LLVM\<close>
 
-(* TODO: Move *)
-definition "map_res f m \<equiv> doM { x\<leftarrow>m; Mreturn (f x) }"
-
-lemma map_res_return[sepref_opt_simps2]: "map_res \<phi> (Mreturn x) = Mreturn (\<phi> x)"
-  unfolding map_res_def by auto
-
-lemma map_res_bind[sepref_opt_simps2]: "map_res \<phi> (doM {x\<leftarrow>m; f x}) = doM {x\<leftarrow>m; map_res \<phi> (f x)}"  
-  unfolding map_res_def by auto
-
-lemma map_res_prod_case[sepref_opt_simps2]: "map_res \<phi> (case p of (a,b) \<Rightarrow> f a b) = (case p of (a,b) \<Rightarrow> map_res \<phi> (f a b))" 
-  by (rule prod.case_distrib)
-
-lemmas [sepref_opt_simps2] = prod.sel  
-  
-  
-definition [llvm_inline]: "ars_with_split_nores i a m \<equiv> doM {
-  (a\<^sub>1,a\<^sub>2) \<leftarrow> ars_split i a;
-  (_,_) \<leftarrow> m a\<^sub>1 a\<^sub>2;
-  ars_join a\<^sub>1 a\<^sub>2;
-  Mreturn a
-}"
-
-
-lemma ars_with_split_bind_unit[sepref_opt_simps2]: "doM {
-  (uu::unit,xs) \<leftarrow> ars_with_split i a m;
-  mm uu xs
-} = doM {
-  xs\<leftarrow>ars_with_split_nores i a (\<lambda>xs1 xs2. map_res snd (m xs1 xs2));
-  mm () xs
-}"
-  unfolding ars_with_split_def ars_with_split_nores_def map_res_def 
-  apply pw
-  done
-    
-  
-lemma sepref_adhoc_opt_case_add_const[sepref_opt_simps]:
-  "(case case x of (a1c, a2c) \<Rightarrow> (c, a1c, a2c) of (uu, a, b) \<Rightarrow> m uu a b) = (case x of (a,b) \<Rightarrow> m c a b)" by simp
 
 context sort_impl_context begin
   
@@ -269,6 +302,7 @@ context sort_impl_context begin
   done
   
 
+  sepref_register par_sort
   sepref_def par_sort_impl is "uncurry (PR_CONST par_sort)" 
     :: "[\<lambda>_. True]\<^sub>c (arr_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k  
     \<rightarrow> arr_assn [\<lambda>(ai,_) r. r=ai]\<^sub>c"
@@ -278,7 +312,7 @@ context sort_impl_context begin
     by sepref
   
   thm par_sort_impl.refine[to_hnr, unfolded hn_ctxt_def, of xs xsi n ni]
-    
+      
   subsection \<open>Final Correctness Theorem as Hoare-Triple\<close>
   
   lemma par_sort_refine_aux: "(uncurry par_sort, uncurry (\<lambda>xs n. doN {ASSERT (n=length xs); SPEC (sort_spec (\<^bold><) xs) })) \<in> Id \<times>\<^sub>r Id \<rightarrow> \<langle>Id\<rangle>nres_rel"  
@@ -314,5 +348,90 @@ context sort_impl_context begin
     
 
 end
+
+
+context sort_impl_copy_context begin
+  sepref_register ppar_sort_aux3
+  sepref_def ppar_sort_aux_impl is "uncurry2 (PR_CONST ppar_sort_aux3)" 
+    :: "[\<lambda>_. True]\<^sub>c (arr_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k *\<^sub>a size_assn\<^sup>k  
+    \<rightarrow> arr_assn [\<lambda>((ai,_),_) r. r=ai]\<^sub>c"
+  unfolding ppar_sort_aux3_def PR_CONST_def
+  supply [[goals_limit = 1]]
+  apply (annot_snat_const "TYPE(size_t)")
+  apply (rewrite RECT_cp_annot[where CP="\<lambda>(ai,_,_) r. r=ai"])
+  
+  supply [sepref_comb_rules] = hn_RECT_cp_annot_noframe
+  apply sepref
+(* 
+  (* debugging boilerplate: *)
+  apply sepref_dbg_preproc
+  apply sepref_dbg_cons_init
+  apply sepref_dbg_id
+  apply sepref_dbg_monadify
+  apply sepref_dbg_opt_init
+  apply sepref_dbg_trans
+  apply sepref_dbg_opt
+  apply sepref_dbg_cons_solve
+  apply sepref_dbg_cons_solve
+  apply sepref_dbg_cons_solve_cp
+  apply sepref_dbg_constraints
+*)  
+  done
+  
+  sepref_register ppar_sort
+  sepref_def ppar_sort_impl is "uncurry (PR_CONST ppar_sort)" 
+    :: "[\<lambda>_. True]\<^sub>c (arr_assn)\<^sup>d *\<^sub>a size_assn\<^sup>k  
+    \<rightarrow> arr_assn [\<lambda>(ai,_) r. r=ai]\<^sub>c"
+    unfolding ppar_sort_def PR_CONST_def
+    apply (annot_snat_const "TYPE(size_t)")
+    supply [intro!] = introsort_depth_limit_in_bounds_aux 
+    by sepref
+  
+  thm ppar_sort_impl.refine[to_hnr, unfolded hn_ctxt_def, of xs xsi n ni]
+      
+  subsection \<open>Final Correctness Theorem as Hoare-Triple\<close>
+  
+  lemma ppar_sort_refine_aux: "(uncurry ppar_sort, uncurry (\<lambda>xs n. doN {ASSERT (n=length xs); SPEC (sort_spec (\<^bold><) xs) })) \<in> Id \<times>\<^sub>r Id \<rightarrow> \<langle>Id\<rangle>nres_rel"  
+    using ppar_sort_correct[OF refl]
+    by (auto simp: pw_nres_rel_iff pw_le_iff refine_pw_simps)
+        
+  text \<open>We unfold the definition of \<open>hnr\<close>, to extract a correctness statement as Hoare-Triple\<close>  
+  theorem ppar_sort_impl_correct: "llvm_htriple (arr_assn xs xsi ** snat_assn n ni ** \<up>(n = length xs)) 
+    (ppar_sort_impl xsi ni) 
+    (\<lambda>r. \<up>(r=xsi) ** (EXS xs'. arr_assn xs' xsi ** \<up>(sort_spec (\<^bold><) xs xs')))"
+    apply (cases "n=length xs"; simp)
+    apply (rule cons_rule)
+    supply R = ppar_sort_impl.refine[unfolded PR_CONST_def,FCOMP ppar_sort_refine_aux, to_hnr, simplified]
+    supply R = R[of xs xsi n ni]
+    apply (rule R[THEN hn_refineD])
+    apply (simp)
+    apply (simp add: hn_ctxt_def sep_algebra_simps)
+    apply (auto simp add: hn_ctxt_def sep_algebra_simps pure_def invalid_assn_def)
+    done
+  
+  text \<open>With the sorting specification unfolded, too. 
+    Note that \<^const>\<open>mset\<close> and \<^const>\<open>sorted_wrt\<close> are standard concepts from Isabelle's library.
+  \<close>  
+  theorem ppar_sort_impl_correct': "llvm_htriple (arr_assn xs xsi ** snat_assn n ni ** \<up>(n = length xs)) 
+    (ppar_sort_impl xsi ni) 
+    (\<lambda>r. \<up>(r=xsi) ** (EXS xs'. arr_assn xs' xsi ** \<up>(mset xs' = mset xs \<and> sorted_wrt (\<^bold>\<le>) xs')))"
+    apply (rule cons_rule[OF ppar_sort_impl_correct])
+    apply simp
+    apply (clarsimp simp add: sep_algebra_simps)
+    apply (auto simp: sort_spec_def le_by_lt)
+    done
+    
+    
+
+end
+
+
+
+
+
+
+
+
+
 
 end

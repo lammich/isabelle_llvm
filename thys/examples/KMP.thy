@@ -3,7 +3,7 @@
   Adapted from Fabian Hellauer, Peter Lammich: AFP/Knuth_Morris_Pratt by 
 *)
 theory KMP
-  imports "../sepref/IICF/IICF"
+  imports "Isabelle_LLVM.IICF"
     "HOL-Library.Sublist"
 begin
 

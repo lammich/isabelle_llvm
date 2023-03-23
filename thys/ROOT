@@ -11,8 +11,6 @@ session Isabelle_LLVM = Refine_Monadic +
     "basic/kernel"
     "basic/preproc"
     ds
-    examples
-    "examples/sorting"
     lib
     "lib/MM"
     "lib/IEEE_Floating_Point"
@@ -26,11 +24,18 @@ session Isabelle_LLVM = Refine_Monadic +
     vcg
 
   theories
+    "ds/LLVM_DS_All"
     "sepref/IICF/IICF"  
+
+    "sepref/Proto_Sepref_Borrow"
+    "sepref/IICF/Impl/Proto_IICF_EOArray"
     
+session Examples in examples = Isabelle_LLVM +
+  directories
+    sorting
   theories
-    "examples/sorting/Sorting_Export_Code"
-    "examples/Bin_Search"
-    "examples/KMP"
-    "examples/LLVM_Examples"
+    "sorting/Sorting_Export_Code"
+    "Bin_Search"
+    "KMP"
+    "LLVM_Examples"
 

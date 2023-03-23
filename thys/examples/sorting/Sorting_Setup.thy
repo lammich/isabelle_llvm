@@ -1,8 +1,42 @@
 theory Sorting_Setup
-imports "../../sepref/IICF/IICF" "../../sepref/IICF/Impl/Proto_IICF_EOArray" Sorting_Misc 
+imports "Isabelle_LLVM.IICF" "Isabelle_LLVM.Proto_IICF_EOArray" Sorting_Misc 
 begin
   hide_const (open) Word.slice LLVM_DS_Array.array_assn LLVM_DS_NArray.array_slice_assn
 
+  
+(* TODO: This is even cited at count-list definition, and should be somewhere in HOL! *)
+lemma count_list_eq_count_mset: "count_list = count o mset"
+proof (clarsimp simp: fun_eq_iff)
+  fix xs :: "'a list" and x
+  show "count_list xs x = count (mset xs) x"
+    by (induction xs) auto
+qed  
+
+
+lemma permut_alt: "mset xs = mset xs' \<longleftrightarrow> (\<forall>x. count_list xs x = count_list xs' x)"
+  by (auto simp: count_list_eq_count_mset multi_count_eq)
+
+
+  
+(* TODO: Move *)  
+  
+(* General copy setup *)
+
+definition "is_copy A cp \<equiv> (cp,RETURN o COPY) \<in> A\<^sup>k \<rightarrow>\<^sub>a A"
+
+lemma is_copy_rule[sepref_fr_rules]:
+  "GEN_ALGO cp (is_copy A) \<Longrightarrow> (cp,RETURN o COPY) \<in> A\<^sup>k \<rightarrow>\<^sub>a A"
+  unfolding is_copy_def GEN_ALGO_def by auto
+
+(* Note: this is not in sepref's gen-algos, as currently the rule hnr_pure_copy is in, and tried first *)  
+lemma is_copy_pure_gen_algo: "CONSTRAINT is_pure A \<Longrightarrow> GEN_ALGO (Mreturn) (is_copy A)"  
+  unfolding is_copy_def GEN_ALGO_def
+  by (rule hnr_pure_COPY)
+  
+(* TODO: Move. Make inline? This is meant for instantiating locales that require a free operation. *)
+definition [llvm_code]: "free_pure x \<equiv> Mreturn ()"
+  
+  
   
 
 definition "le_by_lt lt a b \<equiv> \<not>lt b a"  
@@ -149,6 +183,14 @@ lemma sorted_sorted_wrt_lt: "sorted = sorted_wrt_lt ((<)::_::linorder \<Rightarr
 
 
 definition "sort_spec lt xs xs' \<equiv> mset xs'=mset xs \<and> sorted_wrt_lt lt xs'" 
+
+lemma (in weak_ordering) "sort_spec (\<^bold><) xs xs' \<longleftrightarrow>
+  (\<forall>x. count_list xs' x = count_list xs x)
+\<and> (\<forall>i j. i<j \<and> j<length xs' \<longrightarrow> \<not> xs'!j \<^bold>< xs'!i)"
+  unfolding sort_spec_def permut_alt
+  by (auto simp: sorted_wrt_iff_nth_less le_by_lt_def) 
+
+
   
 definition "slice_sort_spec lt xs\<^sub>0 l h \<equiv> doN {
     ASSERT (l\<le>h \<and> h\<le>length xs\<^sub>0);
@@ -196,6 +238,45 @@ lemma sort_spec_permute: "\<lbrakk>mset xs' = mset xs; sort_spec lt xs' ys\<rbra
   unfolding sort_spec_def by auto
 
 
+(* TODO: Move! *)    
+sepref_decl_op idx_v_swap: "\<lambda>xs i v. (xs!i,xs[i:=v])" :: "[\<lambda>((xs,i),v). i<length xs]\<^sub>f (\<langle>A\<rangle>list_rel \<times>\<^sub>r nat_rel) \<times>\<^sub>r A \<rightarrow> A \<times>\<^sub>r \<langle>A\<rangle>list_rel" .
+
+definition "idx_v_swap2 xs\<^sub>0 i v \<equiv> do {
+  xs \<leftarrow> mop_to_eo_conv xs\<^sub>0;
+  (v',xs) \<leftarrow> mop_eo_extract xs i;
+  xs \<leftarrow> mop_eo_set xs i v;
+  xs \<leftarrow> mop_to_wo_conv xs;
+  RETURN (v',xs)
+}"
+
+lemma idx_v_swap2_refine: "(idx_v_swap2,mop_idx_v_swap) \<in> Id \<rightarrow> Id \<rightarrow> Id \<rightarrow> \<langle>Id\<rangle>nres_rel"
+  unfolding idx_v_swap2_def
+  apply clarsimp
+  apply refine_vcg
+  apply (auto simp: map_update)
+  by (metis None_notin_image_Some list.set_map map_update)
+
+sepref_def idx_v_swap_impl_woarray [llvm_code] is "uncurry2 idx_v_swap2" 
+  :: "[\<lambda>_. True]\<^sub>c (woarray_assn A)\<^sup>d *\<^sub>a snat_assn\<^sup>k *\<^sub>a A\<^sup>d \<rightarrow> A \<times>\<^sub>a woarray_assn A [\<lambda>((ai,_),_) (_,r). r=ai]\<^sub>c"
+  unfolding idx_v_swap2_def
+  by sepref
+  
+sepref_def idx_v_swap_impl_woarray_slice [llvm_code] is "uncurry2 idx_v_swap2" 
+  :: "[\<lambda>_. True]\<^sub>c (woarray_slice_assn A)\<^sup>d *\<^sub>a snat_assn\<^sup>k *\<^sub>a A\<^sup>d \<rightarrow> A \<times>\<^sub>a woarray_slice_assn A [\<lambda>((ai,_),_) (_,r). r=ai]\<^sub>c"
+  unfolding idx_v_swap2_def
+  by sepref
+
+context notes [fcomp_norm_unfold] = list_rel_id_simp option_rel_id_simp begin
+  sepref_decl_impl (ismop) idx_v_swap_impl_woarray.refine[FCOMP idx_v_swap2_refine] uses mop_idx_v_swap.fref[where A=Id] .
+  sepref_decl_impl (ismop) idx_v_swap_impl_woarray_slice.refine[FCOMP idx_v_swap2_refine] uses mop_idx_v_swap.fref[where A=Id] .
+end
+      
+find_theorems swap_eo  
+  
+thm gen_mop_list_swap  
+find_theorems mop_list_swap array_slice_assn
+  
+
 context weak_ordering begin  
   sepref_decl_op cmpo_idxs: "\<lambda>xs i j. the (xs!i) \<^bold>< the (xs!j)" 
     :: "[\<lambda>((xs,i),j). i<length xs \<and> j<length xs \<and> xs!i\<noteq>None \<and> xs!j\<noteq>None]\<^sub>f 
@@ -212,7 +293,16 @@ context weak_ordering begin
 
   sepref_decl_op cmpo_idx_v: "\<lambda>xs i v. the (xs!i) \<^bold>< v" :: "[\<lambda>((xs,i),v). i<length xs \<and> xs!i\<noteq>None]\<^sub>f (\<langle>\<langle>Id::'a rel\<rangle>option_rel\<rangle>list_rel \<times>\<^sub>r nat_rel) \<times>\<^sub>r (Id::'a rel) \<rightarrow> bool_rel"
     by simp
-        
+
+    
+  sepref_decl_op cmp_v_idx: "\<lambda>xs v j. v \<^bold>< xs!j" :: "[\<lambda>((xs,v),j). j<length xs]\<^sub>f (\<langle>Id::'a rel\<rangle>list_rel \<times>\<^sub>r (Id::'a rel)) \<times>\<^sub>r nat_rel \<rightarrow> bool_rel"
+    by simp
+
+  sepref_decl_op cmp_idx_v: "\<lambda>xs i v. xs!i \<^bold>< v" :: "[\<lambda>((xs,i),v). i<length xs]\<^sub>f (\<langle>Id::'a rel\<rangle>list_rel \<times>\<^sub>r nat_rel) \<times>\<^sub>r (Id::'a rel) \<rightarrow> bool_rel"
+    by simp
+    
+    
+            
 (*
   definition refines_cmp_idxs :: "('a list \<Rightarrow> _ \<Rightarrow> assn) \<Rightarrow> (_ \<Rightarrow> 'l::len2 word \<Rightarrow> 'l word \<Rightarrow> 1 word llM) \<Rightarrow> bool" 
     where "refines_cmp_idxs A ci_impl \<equiv> (uncurry2 ci_impl, uncurry2 (PR_CONST mop_cmp_idxs)) \<in> A\<^sup>k *\<^sub>a snat_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
@@ -303,7 +393,24 @@ begin
     unborrow xs xs\<^sub>0;
     RETURN b
   }"  
+
+  definition "cmp_idx_v2 xs\<^sub>0 i v \<equiv> doN {
+    xs \<leftarrow> mop_to_eo_conv xs\<^sub>0;
+    b \<leftarrow> cmpo_idx_v2 xs i v;
+    xs \<leftarrow> mop_to_wo_conv xs;
+    unborrow xs xs\<^sub>0;
+    RETURN b
+  }"  
   
+  definition "cmp_v_idx2 xs\<^sub>0 v j \<equiv> doN {
+    xs \<leftarrow> mop_to_eo_conv xs\<^sub>0;
+    b \<leftarrow> cmpo_v_idx2 xs v j;
+    xs \<leftarrow> mop_to_wo_conv xs;
+    unborrow xs xs\<^sub>0;
+    RETURN b
+  }"  
+  
+    
   lemma cmpo_idxs2_refine: "(uncurry2 cmpo_idxs2, uncurry2 (PR_CONST mop_cmpo_idxs)) \<in> [\<lambda>((xs,i),j). i\<noteq>j]\<^sub>f (Id\<times>\<^sub>rId)\<times>\<^sub>rId \<rightarrow> \<langle>Id\<rangle>nres_rel"
     unfolding cmpo_idxs2_def
     apply (intro frefI nres_relI)
@@ -337,7 +444,26 @@ begin
     apply (rule order_trans)
     apply (rule cmpo_idxs2_refine[param_fo, THEN nres_relD], assumption, (rule IdI)+)
     by (auto simp: pw_le_iff refine_pw_simps)
+
+  lemma cmp_idx_v2_refine: "(uncurry2 cmp_idx_v2,uncurry2 (PR_CONST mop_cmp_idx_v))\<in>(Id\<times>\<^sub>rId)\<times>\<^sub>rId \<rightarrow> \<langle>Id\<rangle>nres_rel"
+    unfolding cmp_idx_v2_def mop_cmp_idx_v_def PR_CONST_def
+    apply (intro fun_relI nres_relI)
+    apply clarsimp
+    apply refine_vcg
+    apply (rule order_trans)
+    apply (rule cmpo_idx_v2_refine[param_fo, THEN nres_relD, OF IdI IdI IdI])
+    by (auto simp: pw_le_iff refine_pw_simps)
     
+  lemma cmp_v_idx2_refine: "(uncurry2 cmp_v_idx2,uncurry2 (PR_CONST mop_cmp_v_idx))\<in>(Id\<times>\<^sub>rId)\<times>\<^sub>rId \<rightarrow> \<langle>Id\<rangle>nres_rel"
+    unfolding cmp_v_idx2_def mop_cmp_v_idx_def PR_CONST_def
+    apply (intro fun_relI nres_relI)
+    apply clarsimp
+    apply refine_vcg
+    apply (rule order_trans)
+    apply (rule cmpo_v_idx2_refine[param_fo, THEN nres_relD, OF IdI IdI IdI])
+    by (auto simp: pw_le_iff refine_pw_simps)
+    
+        
         
   sepref_definition cmp_idxs_impl [llvm_inline] is "uncurry2 cmp_idxs2" :: "(woarray_slice_assn elem_assn)\<^sup>k *\<^sub>a snat_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
     unfolding cmp_idxs2_def cmpo_idxs2_def PR_CONST_def
@@ -359,15 +485,44 @@ begin
     unfolding cmpo_idx_v2_def PR_CONST_def
     supply [sepref_fr_rules] = eo_hnr_dep
     by sepref
+
     
+  sepref_definition cmp_idx_v_impl [llvm_inline] is "uncurry2 cmp_idx_v2" :: "(woarray_slice_assn elem_assn)\<^sup>k *\<^sub>a snat_assn\<^sup>k *\<^sub>a elem_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
+    unfolding cmp_idx_v2_def cmpo_idx_v2_def PR_CONST_def
+    supply [sepref_fr_rules] = eo_hnr_dep
+    by sepref
+    
+  sepref_definition cmp_v_idx_impl [llvm_inline] is "uncurry2 cmp_v_idx2" :: "(woarray_slice_assn elem_assn)\<^sup>k *\<^sub>a elem_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
+    unfolding cmp_v_idx2_def cmpo_v_idx2_def PR_CONST_def
+    supply [sepref_fr_rules] = eo_hnr_dep
+    by sepref
+    
+        
   context notes [fcomp_norm_unfold] = list_rel_id_simp option_rel_id_simp begin
     sepref_decl_impl (ismop) cmp_idxs_impl.refine[FCOMP cmp_idxs2_refine] .
     sepref_decl_impl (ismop) cmpo_idxs_impl.refine[FCOMP cmpo_idxs2_refine] .
     sepref_decl_impl (ismop) cmpo_v_idx_impl.refine[FCOMP cmpo_v_idx2_refine] .
     sepref_decl_impl (ismop) cmpo_idx_v_impl.refine[FCOMP cmpo_idx_v2_refine] .
+    
+    sepref_decl_impl (ismop) cmp_v_idx_impl.refine[FCOMP cmp_v_idx2_refine] .
+    sepref_decl_impl (ismop) cmp_idx_v_impl.refine[FCOMP cmp_idx_v2_refine] .
+    
   end  
     
 end
+
+(*
+  Sort-impl context that allows copying and freeing of elements
+*)
+locale sort_impl_copy_context = sort_impl_context + 
+  fixes copy_elem_impl free_elem_impl
+  assumes elem_assn_copy[sepref_gen_algo_rules]: "GEN_ALGO copy_elem_impl (is_copy elem_assn)"
+  assumes elem_assn_free[sepref_frame_free_rules]: "MK_FREE elem_assn free_elem_impl"
+begin
+  (* Prevent default pure copy rule *)
+  lemmas [safe_constraint_rules] = CN_FALSEI[of is_pure elem_assn]
+end  
+
 
 locale pure_sort_impl_context = sort_impl_context +
   assumes pureA[safe_constraint_rules]: "CONSTRAINT is_pure elem_assn"
@@ -379,49 +534,66 @@ begin
     ASSERT (i<length xs \<and> j<length xs);
     RETURN (xs!i \<^bold>< xs!j)
   }"  
+
+  definition "cmp_idx_v2' xs i v \<equiv> doN {
+    ASSERT (i<length xs);
+    RETURN (xs!i \<^bold>< v)
+  }"  
+
+  definition "cmp_v_idx2' xs v j \<equiv> doN {
+    ASSERT (j<length xs);
+    RETURN (v \<^bold>< xs!j)
+  }"  
   
   lemma cmp_idxs2'_refine: "(cmp_idxs2',PR_CONST mop_cmp_idxs)\<in>Id\<rightarrow>Id\<rightarrow>Id\<rightarrow>\<langle>Id\<rangle>nres_rel"  
     unfolding cmp_idxs2'_def mop_cmp_idxs_def
     apply clarsimp
     apply refine_vcg
     by auto
+
+  
+  lemma cmp_idx_v2'_refine: "(cmp_idx_v2',PR_CONST mop_cmp_idx_v)\<in>Id\<rightarrow>Id\<rightarrow>Id\<rightarrow>\<langle>Id\<rangle>nres_rel"  
+    unfolding cmp_idx_v2'_def mop_cmp_idx_v_def
+    apply clarsimp
+    by refine_vcg
+
+  lemma cmp_v_idx2'_refine: "(cmp_v_idx2',PR_CONST mop_cmp_v_idx)\<in>Id\<rightarrow>Id\<rightarrow>Id\<rightarrow>\<langle>Id\<rangle>nres_rel"  
+    unfolding cmp_v_idx2'_def
+    apply clarsimp
+    by refine_vcg
+    
         
+            
   sepref_definition cmp_idxs'_impl [llvm_inline] is "uncurry2 cmp_idxs2'" :: "(woarray_slice_assn elem_assn)\<^sup>k *\<^sub>a snat_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
     unfolding cmp_idxs2'_def PR_CONST_def
     by sepref
     
+  sepref_definition cmp_idx_v'_impl [llvm_inline] is "uncurry2 cmp_idx_v2'" :: "(woarray_slice_assn elem_assn)\<^sup>k *\<^sub>a snat_assn\<^sup>k *\<^sub>a elem_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
+    unfolding cmp_idx_v2'_def PR_CONST_def
+    by sepref
+
+  sepref_definition cmp_v_idx'_impl [llvm_inline] is "uncurry2 cmp_v_idx2'" :: "(woarray_slice_assn elem_assn)\<^sup>k *\<^sub>a elem_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
+    unfolding cmp_v_idx2'_def PR_CONST_def
+    by sepref
+  
     
+        
     
   context notes [fcomp_norm_unfold] = list_rel_id_simp option_rel_id_simp begin
     sepref_decl_impl (ismop) cmp_idxs'_impl.refine[FCOMP cmp_idxs2'_refine] .
+    sepref_decl_impl (ismop) cmp_v_idx'_impl.refine[FCOMP cmp_v_idx2'_refine] .
+    sepref_decl_impl (ismop) cmp_idx_v'_impl.refine[FCOMP cmp_idx_v2'_refine] .
   end  
     
   
-  
-  
-  
-  (*  
-  xxx, ctd here: Adapt sorting algorithms to use cmp_idxs! 
-    then refine to delayed swap and eo-optimizations!
-  *)  
-    
-  
-  (*
-  lemma mop_cmp_idxs_alt: "mop_cmp_idxs xs i j = doN { x \<leftarrow> mop_list_get xs i; y \<leftarrow> mop_list_get xs j; RETURN (x \<^bold>< y) }"
-    by (auto simp: pw_eq_iff refine_pw_simps)
-
-  sepref_def cmp_idxs_impl [llvm_inline] is "uncurry2 (PR_CONST mop_cmp_idxs)" :: "(array_assn elem_assn)\<^sup>k *\<^sub>a snat_assn\<^sup>k *\<^sub>a snat_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
-    unfolding mop_cmp_idxs_alt PR_CONST_def
-    apply sepref_dbg_keep
-    done
-  *)
-  (*    
-  sublocale sort_impl_context "(\<^bold>\<le>)" "(\<^bold><)" cmp_idxs_impl "array_assn elem_assn"
+  sublocale sort_impl_copy_context "(\<^bold>\<le>)" "(\<^bold><)" lt_impl elem_assn Mreturn free_pure
     apply unfold_locales
-    apply rule
-    by (rule cmp_idxs_impl.refine)  
-  *)  
-    
+    subgoal
+      apply (rule is_copy_pure_gen_algo)
+      by solve_constraint
+    subgoal using mk_free_is_pure[OF CONSTRAINT_D[OF pureA]] unfolding free_pure_def by auto
+    done
+  
 end  
 
 
@@ -648,7 +820,23 @@ begin
     unborrow xs xs\<^sub>0;
     RETURN b
   }"  
+
+  definition "pcmp_idx_v2 cparam xs\<^sub>0 i v \<equiv> doN {
+    xs \<leftarrow> mop_to_eo_conv xs\<^sub>0;
+    b \<leftarrow> pcmpo_idx_v2 cparam xs i v;
+    xs \<leftarrow> mop_to_wo_conv xs;
+    unborrow xs xs\<^sub>0;
+    RETURN b
+  }"  
   
+  definition "pcmp_v_idx2 cparam xs\<^sub>0 v j \<equiv> doN {
+    xs \<leftarrow> mop_to_eo_conv xs\<^sub>0;
+    b \<leftarrow> pcmpo_v_idx2 cparam xs v j;
+    xs \<leftarrow> mop_to_wo_conv xs;
+    unborrow xs xs\<^sub>0;
+    RETURN b
+  }"  
+    
   lemma pcmpo_idxs_refine[refine]: "\<lbrakk>
     (xs',xs)\<in> cdom_olist_rel cparam;
     i\<noteq>j;
@@ -698,7 +886,25 @@ begin
            list_update_swap[of i j] map_update[symmetric])
     using nth_mem by blast
     
+  lemma pcmp_idx_v_refine[refine]: "\<lbrakk>
+    (xs',xs)\<in> cdom_list_rel cparam;
+    (i',i)\<in>Id;
+    (v',v)\<in>Id; v\<in>cdom cparam
+  \<rbrakk> \<Longrightarrow> pcmp_idx_v2 cparam xs' i' v' \<le> \<Down> bool_rel (WO.mop_cmp_idx_v cparam xs i v)"  
+    unfolding pcmp_idx_v2_def pcmpo_idx_v2_def
+    apply simp
+    apply refine_vcg
+    by (auto 0 3 simp: cdom_list_rel_alt in_br_conv map_update[symmetric] less'_def ext_lt_def)
     
+  lemma pcmp_v_idx_refine[refine]: "\<lbrakk>
+    (xs',xs)\<in> cdom_list_rel cparam;
+    (v',v)\<in>Id; v\<in>cdom cparam;
+    (j',j)\<in>Id
+  \<rbrakk> \<Longrightarrow> pcmp_v_idx2 cparam xs' v' j' \<le> \<Down> bool_rel (WO.mop_cmp_v_idx cparam xs v j)"  
+    unfolding pcmp_v_idx2_def pcmpo_v_idx2_def
+    apply simp
+    apply refine_vcg
+    by (auto 0 3 simp: cdom_list_rel_alt in_br_conv map_update[symmetric] less'_def ext_lt_def intro: nth_mem)
     
 end
 
@@ -986,8 +1192,72 @@ begin
     by sepref
 
 
+  sepref_def pcmp_v_idx_impl [llvm_inline] is "uncurry3 (PR_CONST pcmp_v_idx2)" :: 
+    "cparam_assn\<^sup>k *\<^sub>a wo_assn\<^sup>k *\<^sub>a elem_assn\<^sup>k *\<^sub>a size_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
+    unfolding pcmp_v_idx2_def PR_CONST_def
+    supply [sepref_fr_rules] = eo_hnr_dep
+    by sepref
+
+  sepref_def pcmp_idx_v_impl [llvm_inline] is "uncurry3 (PR_CONST pcmp_idx_v2)" :: 
+    "cparam_assn\<^sup>k *\<^sub>a wo_assn\<^sup>k *\<^sub>a size_assn\<^sup>k *\<^sub>a elem_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
+    unfolding pcmp_idx_v2_def PR_CONST_def
+    supply [sepref_fr_rules] = eo_hnr_dep
+    by sepref
+    
+    
 end  
 
+subsection \<open>Additional Setup for Code Generation\<close>
+
+(*
+  The LLVM code generator cannot handle unit-valued variables (they do not exist in LLVM).
+  However, they occur for some higher-order constructs, like with-split or with-idxs, when
+  only the lists are modified, but the returned result is unit.
+  
+  The following setup is an ad-hoc solution to set up sepref to optimize those away.
+  
+  TODO: Ultimately, we could do that in Isabelle-LLVMs preprocessor!
+*)
 
 
+(* TODO: Move *)
+definition "map_res f m \<equiv> doM { x\<leftarrow>m; Mreturn (f x) }"
+
+lemma map_res_return[sepref_opt_simps2]: "map_res \<phi> (Mreturn x) = Mreturn (\<phi> x)"
+  unfolding map_res_def by auto
+
+lemma map_res_bind[sepref_opt_simps2]: "map_res \<phi> (doM {x\<leftarrow>m; f x}) = doM {x\<leftarrow>m; map_res \<phi> (f x)}"  
+  unfolding map_res_def by auto
+
+lemma map_res_prod_case[sepref_opt_simps2]: "map_res \<phi> (case p of (a,b) \<Rightarrow> f a b) = (case p of (a,b) \<Rightarrow> map_res \<phi> (f a b))" 
+  by (rule prod.case_distrib)
+
+lemmas [sepref_opt_simps2] = prod.sel  
+  
+  
+definition [llvm_inline]: "ars_with_split_nores i a m \<equiv> doM {
+  (a\<^sub>1,a\<^sub>2) \<leftarrow> ars_split i a;
+  (_,_) \<leftarrow> m a\<^sub>1 a\<^sub>2;
+  ars_join a\<^sub>1 a\<^sub>2;
+  Mreturn a
+}"
+
+
+lemma ars_with_split_bind_unit[sepref_opt_simps2]: "doM {
+  (uu::unit,xs) \<leftarrow> ars_with_split i a m;
+  mm uu xs
+} = doM {
+  xs\<leftarrow>ars_with_split_nores i a (\<lambda>xs1 xs2. map_res snd (m xs1 xs2));
+  mm () xs
+}"
+  unfolding ars_with_split_def ars_with_split_nores_def map_res_def 
+  apply pw
+  done
+    
+  
+lemma sepref_adhoc_opt_case_add_const[sepref_opt_simps]:
+  "(case case x of (a1c, a2c) \<Rightarrow> (c, a1c, a2c) of (uu, a, b) \<Rightarrow> m uu a b) = (case x of (a,b) \<Rightarrow> m c a b)" by simp
+
+  
+  
 end

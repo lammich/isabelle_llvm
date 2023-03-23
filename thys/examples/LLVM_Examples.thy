@@ -1,8 +1,8 @@
 section \<open>Examples\<close>
 theory LLVM_Examples
 imports 
-  "../ds/LLVM_DS_All"
-  "../ds/LLVM_DS_Array_List"
+  "Isabelle_LLVM.LLVM_DS_All"
+  "Isabelle_LLVM.LLVM_DS_Array_List"
 begin
 
 text \<open>Examples on top of Isabelle-LLVM basic layer. 

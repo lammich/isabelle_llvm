@@ -2,6 +2,38 @@ theory Sorting_Strings
 imports "HOL-Library.List_Lexorder" Sorting_Setup
 begin
 
+  (* TODO: Move *)
+  definition arl_copy :: "('a::llvm_rep,'l::len2) array_list \<Rightarrow> ('a,'l) array_list llM"
+    where [llvm_code]: "arl_copy al \<equiv> doM {
+      let (l,c,a) = al;
+      a' \<leftarrow> narray_new TYPE('a) l; \<comment> \<open>Compacts the new array\<close>
+      arraycpy a' a l;
+      Mreturn (l,l,a')
+    }"    
+  
+  lemma arl_copy_rule[vcg_rules]: "llvm_htriple
+    (\<upharpoonleft>arl_assn xs xsi) (arl_copy xsi) (\<lambda>r. \<upharpoonleft>arl_assn xs xsi ** \<upharpoonleft>arl_assn xs r)"  
+    unfolding arl_copy_def arl_assn_def arl_assn'_def
+    by vcg
+    
+  
+  lemma al_copy_hnr: "(arl_copy,RETURN o op_list_copy) \<in> (al_assn A)\<^sup>k \<rightarrow>\<^sub>a al_assn A"  
+    unfolding al_assn_def hr_comp_def
+    apply sepref_to_hoare 
+    by vcg
+  
+  sepref_decl_impl al_copy_hnr uses op_list_copy.fref[of Id, simplified] .
+
+
+  lemma al_copy_gen_algo[sepref_gen_algo_rules]: "GEN_ALGO arl_copy (is_copy (al_assn A))"
+    using al_copy_hnr 
+    unfolding GEN_ALGO_def is_copy_def COPY_def op_list_copy_def 
+    .
+     
+    
+
+
+
   text \<open>The string comparison algorithm from libstdc++, abstractly: Compare min-length first, then compare lengths to break tie\<close>
   lemma list_lexorder_alt: "xs < ys \<longleftrightarrow> (let n=min (length xs) (length ys) in (take n xs < take n ys) \<or> (take n xs = take n ys \<and> length xs < length ys))"
   proof (cases "length xs < length ys")
@@ -140,6 +172,17 @@ begin
     apply (auto simp: strcmp_refines_relp)
     done
   
-  
+  lemma strcmp_sort_impl_copy_context: 
+    "sort_impl_copy_context (\<le>) (<) strcmp_impl (string_assn' TYPE('size_t::len2) TYPE('w::len)) arl_copy arl_free"  
+  proof -
+    from strcmp_sort_impl_context 
+    interpret sort_impl_context "(\<le>)" "(<)" strcmp_impl "(string_assn' TYPE('size_t::len2) TYPE('w::len))" .
+    
+    show ?thesis
+      apply unfold_locales
+      apply (rule al_copy_gen_algo)
+      apply (rule al_assn_free)
+      done
+  qed    
   
 end

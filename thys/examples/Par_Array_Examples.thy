@@ -3,7 +3,7 @@
   only the minimum required VCG setup!
 *)
 theory Par_Array_Examples
-imports "../sepref/IICF/Impl/IICF_Array"
+imports "Isabelle_LLVM.IICF_Array"
 begin
 
   (* TODO: Move *)

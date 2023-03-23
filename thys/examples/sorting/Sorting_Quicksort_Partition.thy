@@ -209,6 +209,7 @@ definition "qs_partition li\<^sub>0 hi\<^sub>0 pi xs\<^sub>0 \<equiv> doN {
   RETURN (xs,li)
 }"  
 
+
 lemma qs_partition_correct:
   "\<lbrakk> pi<li; li<hi; hi\<le>length xs\<^sub>0; \<exists>i\<in>{li..<hi}. xs\<^sub>0!pi\<^bold>\<le>xs\<^sub>0!i; \<exists>i\<in>{li..<hi}. xs\<^sub>0!i\<^bold>\<le>xs\<^sub>0!pi \<rbrakk> \<Longrightarrow> qs_partition li hi pi xs\<^sub>0 
   \<le> SPEC (\<lambda>(xs,i). slice_eq_mset li hi xs xs\<^sub>0 \<and> li\<le>i \<and> i<hi \<and> (\<forall>i\<in>{li..<i}. xs!i\<^bold>\<le>xs\<^sub>0!pi) \<and> (\<forall>i\<in>{i..<hi}. xs!i\<^bold>\<ge>xs\<^sub>0!pi) )"  
@@ -223,7 +224,7 @@ lemma qs_partition_correct:
   subgoal by fastforce
   subgoal by auto
   subgoal
-    by (metis le_trans order.strict_implies_order slice_eq_mset_eq_length swap_length) 
+    by (metis slice_eq_mset_eq_length swap_length) 
   subgoal apply (clarsimp simp: swap_def)
     by (metis (full_types) More_List.swap_def atLeastSucLessThan_greaterThanLessThan greaterThanLessThan_iff less_le_trans swap_nth2) 
   subgoal
@@ -249,7 +250,7 @@ lemma qs_partition_correct:
   subgoal
     by (metis greaterThanLessThan_iff strict_itrans le_neq_implies_less)
   done    
-    
+
 
 definition "partition_pivot xs\<^sub>0 l h \<equiv> doN {
   ASSERT (l\<le>h \<and> h\<le>length xs\<^sub>0 \<and> h-l\<ge>4);
