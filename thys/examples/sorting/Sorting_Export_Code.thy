@@ -116,13 +116,39 @@ thm str_sort.introsort_impl_correct
 thm str_sort.pdqsort_impl.refine
 
 text \<open>We explicitly unfold one here, to be similar to the one displayed in the paper:\<close>
-lemma "llvm_htriple 
+lemma unat_par_sort_impl_correct: "llvm_htriple 
   (woarray_slice_assn unat_assn xs xsi \<and>* snat_assn n ni \<and>* \<up>(n = length xs)) 
   (unat_par_sort_impl xsi ni)
   (\<lambda>r. \<up>(r = xsi) \<and>* (\<lambda>s. \<exists>xs'. (woarray_slice_assn unat_assn xs' xsi \<and>* \<up>(sorted xs' \<and> mset xs'=mset xs)) s))"
   using unat_sort.par_sort_impl_correct[of xs xsi n ni] 
   unfolding sort_spec_def
   by (auto simp: conj_commute)
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
