@@ -51,13 +51,10 @@
 In: \beditor{\bsnm{Harrison}, \binits{J.}},
 \beditor{\bsnm{O'Leary}, \binits{J.}},
 \beditor{\bsnm{Tolmach}, \binits{A.}} (eds.)
-\bbtitle{10th International Conference on Interactive Theorem Proving (ITP
-  2019)}.
-\bsertitle{Leibniz International Proceedings in Informatics (LIPIcs)},
+\bbtitle{ITP},
 vol. \bseriesno{141},
 pp. \bfpage{22}--\blpage{12219}.
-\bpublisher{Schloss Dagstuhl--Leibniz-Zentrum fuer Informatik},
-\blocation{Dagstuhl, Germany}
+\bpublisher{Dagstuhl Publishing}, \blocation{???}
 (\byear{2019}).
 \doiurl{10.4230/LIPIcs.ITP.2019.22} .
 \burl{http://drops.dagstuhl.de/opus/volltexte/2019/11077}
@@ -194,9 +191,8 @@ pp. \bfpage{219}--\blpage{234}
 \bctitle{Efficient verified implementation of introsort and pdqsort}.
 In: \beditor{\bsnm{Peltier}, \binits{N.}},
 \beditor{\bsnm{Sofronie{-}Stokkermans}, \binits{V.}} (eds.)
-\bbtitle{Automated Reasoning - 10th International Joint Conference, {IJCAR}
-  2020, Paris, France, July 1-4, 2020, Proceedings, Part {II}}.
-\bsertitle{Lecture Notes in Computer Science},
+\bbtitle{Proc. of IJCAR (II)}.
+\bsertitle{LNCS},
 vol. \bseriesno{12167},
 pp. \bfpage{307}--\blpage{323}.
 \bpublisher{Springer}, \blocation{???}
@@ -213,13 +209,11 @@ pp. \bfpage{307}--\blpage{323}.
 \bctitle{Refinement of parallel algorithms down to {LLVM}}.
 In: \beditor{\bsnm{Andronick}, \binits{J.}},
 \beditor{\bsnm{Moura}, \binits{L.}} (eds.)
-\bbtitle{13th International Conference on Interactive Theorem Proving, {ITP}
-  2022, August 7-10, 2022, Haifa, Israel}.
+\bbtitle{ITP}.
 \bsertitle{LIPIcs},
 vol. \bseriesno{237},
 pp. \bfpage{24}--\blpage{12418}.
-\bpublisher{Schloss Dagstuhl - Leibniz-Zentrum f{\"{u}}r Informatik},
-  \blocation{???}
+\bpublisher{Dagstuhl Publishing}, \blocation{???}
 (\byear{2022}).
 \doiurl{10.4230/LIPIcs.ITP.2022.24} .
 \burl{https://doi.org/10.4230/LIPIcs.ITP.2022.24}
@@ -295,11 +289,8 @@ pp. \bfpage{253}--\blpage{269}.
 \bctitle{For a few dollars more - verified fine-grained algorithm analysis down
   to {LLVM}}.
 In: \beditor{\bsnm{Yoshida}, \binits{N.}} (ed.)
-\bbtitle{Programming Languages and Systems - 30th European Symposium on
-  Programming, {ESOP} 2021, Held as Part of the European Joint Conferences on
-  Theory and Practice of Software, {ETAPS} 2021, Luxembourg City, Luxembourg,
-  March 27 - April 1, 2021, Proceedings}.
-\bsertitle{Lecture Notes in Computer Science},
+\bbtitle{Proc. of ESOP}.
+\bsertitle{LNCS},
 vol. \bseriesno{12648},
 pp. \bfpage{292}--\blpage{319}.
 \bpublisher{Springer}, \blocation{???}
@@ -333,9 +324,8 @@ pp. \bfpage{49}--\blpage{67}.
   isabelle/hol}.
 In: \beditor{\bsnm{Gonthier}, \binits{G.}},
 \beditor{\bsnm{Norrish}, \binits{M.}} (eds.)
-\bbtitle{Certified Programs and Proofs - Third International Conference, {CPP}
-  2013, Melbourne, VIC, Australia, December 11-13, 2013, Proceedings}.
-\bsertitle{Lecture Notes in Computer Science},
+\bbtitle{Proc. of CPP}.
+\bsertitle{LNCS},
 vol. \bseriesno{8307},
 pp. \bfpage{131}--\blpage{146}.
 \bpublisher{Springer}, \blocation{???}
@@ -405,10 +395,9 @@ In: \beditor{\bsnm{Bertot}, \binits{Y.}},
 \beditor{\bsnm{Th{\'e}ry}, \binits{L.}},
 \beditor{\bsnm{Hirschowitz}, \binits{A.}},
 \beditor{\bsnm{Paulin}, \binits{C.}} (eds.)
-\bbtitle{Theorem Proving in Higher Order Logics},
+\bbtitle{TPHOLs},
 pp. \bfpage{149}--\blpage{165}.
-\bpublisher{Springer},
-\blocation{Berlin, Heidelberg}
+\bpublisher{Springer}, \blocation{???}
 (\byear{1999})
 \end{bchapter}
 \endbibitem
@@ -623,8 +612,7 @@ Proc. ACM Program. Lang.
 \bauthor{\bsnm{Birkedal}, \binits{L.}}:
 \bctitle{Transfinite iris: Resolving an existential dilemma of step-indexed
   separation logic}.
-In: \bbtitle{Proceedings of the 42nd ACM SIGPLAN International Conference on
-  Programming Language Design and Implementation},
+In: \bbtitle{Proc. of PLDI},
 pp. \bfpage{80}--\blpage{95}
 (\byear{2021})
 \end{bchapter}
@@ -638,9 +626,7 @@ pp. \bfpage{80}--\blpage{95}
 \bauthor{\bsnm{O'Hearn}, \binits{P.}},
 \bauthor{\bsnm{Parkinson}, \binits{M.}}:
 \bctitle{Permission accounting in separation logic}.
-In: \bbtitle{Proceedings of the 32Nd ACM SIGPLAN-SIGACT Symposium on Principles
-  of Programming Languages}.
-\bsertitle{POPL '05},
+In: \bbtitle{Proc. of POPL},
 pp. \bfpage{259}--\blpage{270}.
 \bpublisher{ACM},
 \blocation{New York, NY, USA}

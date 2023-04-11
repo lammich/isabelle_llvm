@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2021.2.23)  22 MAR 2023 23:19
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2021.2.23)  24 MAR 2023 16:54
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1334,25 +1334,13 @@ Underfull \hbox (badness 1715) in paragraph at lines 247--247
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [2]
-Underfull \hbox (badness 3668) in paragraph at lines 361--365
-[]\T1/cmr/m/n/10 Type vari-ables are [][][][][][][][][][][] and a func-tion typ
-es are writ-ten cur-ried
- []
-
-
-Underfull \hbox (badness 5711) in paragraph at lines 361--365
-\T1/cmr/m/n/10 as [][][][][][][][][][][][][][]. Types can be anno-tated to any 
-sym-bol or term, e.g.,
- []
-
-
-Underfull \hbox (badness 3039) in paragraph at lines 366--370
+Underfull \hbox (badness 3039) in paragraph at lines 368--372
 []\T1/cmr/m/n/10 Algebraic datatypes are writ-ten as [][][][][][][][][][][][][]
 [][][][][][][][][]. This
  []
 
 
-Underfull \hbox (badness 4181) in paragraph at lines 382--389
+Underfull \hbox (badness 4181) in paragraph at lines 384--391
 \T1/cmr/m/n/10 We for-mal-ize a seman-tics for par-al-lel exe-cu-tion, shal-low
 ly embed-ded into
  []
@@ -1400,7 +1388,7 @@ Underfull \vbox (badness 10000) has occurred while \output is active []
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [12]
-Overfull \hbox (1.53969pt too wide) in paragraph at lines 1067--1068
+Overfull \hbox (1.53969pt too wide) in paragraph at lines 1069--1070
 [][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][
 ][][][][][][][][][][][][][][][][][][][][][][][][][][][][][] 
  []
@@ -1424,7 +1412,7 @@ Underfull \vbox (badness 10000) has occurred while \output is active []
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [18]
-Overfull \hbox (2.7512pt too wide) in paragraph at lines 1402--1403
+Overfull \hbox (2.7512pt too wide) in paragraph at lines 1404--1405
 [][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][
 ][][][][][][][][][][][][][][] 
  []
@@ -1460,22 +1448,22 @@ Missing character: There is no ; in font nullfont!
 Missing character: There is no ; in font nullfont!
 Missing character: There is no ; in font nullfont!
 )
-Underfull \hbox (badness 10000) in paragraph at lines 2245--2258
+Underfull \hbox (badness 10000) in paragraph at lines 2247--2260
 [][]
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 2245--2258
+Underfull \hbox (badness 10000) in paragraph at lines 2247--2260
 []
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 2245--2258
+Underfull \hbox (badness 10000) in paragraph at lines 2247--2260
 []
  []
 
 
-LaTeX Warning: Float too large for page by 14.7626pt on input line 2264.
+LaTeX Warning: Float too large for page by 14.7626pt on input line 2266.
 
 (./sudata_uint64_laptop.tex
 Missing character: There is no ; in font nullfont!
@@ -1504,7 +1492,7 @@ Missing character: There is no ; in font nullfont!
 Missing character: There is no ; in font nullfont!
 Missing character: There is no ; in font nullfont!
 )
-Overfull \hbox (16.10614pt too wide) in paragraph at lines 2399--2421
+Overfull \hbox (16.10614pt too wide) in paragraph at lines 2401--2423
 [][] [] 
  []
 
@@ -1525,16 +1513,28 @@ Underfull \vbox (badness 10000) has occurred while \output is active []
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [27]
+Underfull \hbox (badness 1303) in paragraph at lines 190--204
+\T1/cmr/m/n/10 Peltier, N., Sofronie-Stokkermans, V. (eds.) Proc. of IJCAR (II)
+. LNCS,
+ []
+
+
+Underfull \hbox (badness 4279) in paragraph at lines 190--204
+\T1/cmr/m/n/10 vol. 12167, pp. 307--323. Springer, ??? (2020). [][]$https : / /
+ doi . org / 10 . 1007 /
+ []
+
+
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [28]
-Underfull \hbox (badness 1701) in paragraph at lines 351--355
+Underfull \hbox (badness 1701) in paragraph at lines 341--345
 []\T1/cmr/m/n/10 Intel oneAPI Thread-ing Build-ing Blocks. [][]$https : / / sof
 tware . intel . com / en-[]us /
  []
 
 
-Underfull \hbox (badness 1789) in paragraph at lines 386--395
+Underfull \hbox (badness 1789) in paragraph at lines 376--385
 \T1/cmr/m/n/10 tice and Expe-ri-ence \T1/cmr/bx/n/10 27\T1/cmr/m/n/10 (8), 983-
 -993 (1997) [][]$https : / / doi . org / 10 . 1002 / (SICI )
  []
@@ -1543,36 +1543,33 @@ Underfull \hbox (badness 1789) in paragraph at lines 386--395
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [29]
-Underfull \hbox (badness 10000) in paragraph at lines 533--541
+Underfull \hbox (badness 10000) in paragraph at lines 522--530
 []\T1/cmr/m/n/10 Habermann, A.N.: Par-al-lel neighbor-sort. Carnegie Mel-lon Un
 i-ver-sity
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 533--541
+Underfull \hbox (badness 10000) in paragraph at lines 522--530
 \T1/cmr/m/n/10 (1972). [][]$https : / / doi . org / 10 . 1184 / R1 / 6608258 . 
 v1$[][] . [][]$https : / / kilthub . cmu . edu /
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 533--541
+Underfull \hbox (badness 10000) in paragraph at lines 522--530
 \T1/cmr/m/n/10 articles / journal _ contribution / Parallel _ neighbor-[]sort _
  or _ the _ glory _ of _ the _
  []
 
-
+)
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
- [30])
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [31]
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 2615.
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 2615.
+ [30]
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 2617.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 2617.
 
 (./main.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 2615.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 2615.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 2617.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 2617.
 
 Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: D51C96F3F86FA517581F0F64CB6EF4F1;1985.
@@ -1581,13 +1578,13 @@ Package rerunfilecheck Info: File `main.out' has not changed.
 LaTeX Font Warning: Size substitutions with differences
 (Font)              up to 0.47939pt have occurred.
 
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 2615.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 2617.
  ) 
 Here is how much of TeX's memory you used:
- 37701 strings out of 481239
- 852891 string characters out of 5920377
- 1422642 words of memory out of 5000000
- 51783 multiletter control sequences out of 15000+600000
+ 37699 strings out of 481239
+ 852876 string characters out of 5920377
+ 1421657 words of memory out of 5000000
+ 51782 multiletter control sequences out of 15000+600000
  559894 words of font info for 99 fonts, out of 8000000 for 9000
  1151 hyphenation exceptions out of 8191
  63i,20n,107p,928b,2289s stack positions out of 5000i,500n,10000p,200000b,80000s
@@ -1614,10 +1611,10 @@ re/texmf/fonts/type1/public/cm-super/sfrm1440.pfb></usr/share/texmf/fonts/type1
 x1000.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfti0700.pfb></usr/shar
 e/texmf/fonts/type1/public/cm-super/sfti1000.pfb></usr/share/texmf/fonts/type1/
 public/cm-super/sftt1000.pfb>
-Output written on main.pdf (31 pages, 601008 bytes).
+Output written on main.pdf (30 pages, 599528 bytes).
 PDF statistics:
- 1012 PDF objects out of 1200 (max. 8388607)
- 927 compressed objects within 10 object streams
- 440 named destinations out of 1000 (max. 500000)
+ 1006 PDF objects out of 1200 (max. 8388607)
+ 922 compressed objects within 10 object streams
+ 439 named destinations out of 1000 (max. 500000)
  341 words of extra memory for PDF output out of 10000 (max. 10000000)
 

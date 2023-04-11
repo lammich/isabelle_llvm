@@ -283,9 +283,7 @@ While there exist back ends for purely functional code~\cite{LaTu12,La13},
 and sequential imperative code~\cite{La15,La19-llvm}, this paper describes a back end
 for parallel imperative LLVM code (Section~\ref{sec:parsem}).
 
-On top of the back-end, a program logic is used to prove programs correct.
-It uses separation logic, and provides automation like a verification condition generator (VCG).
-In Section~\ref{sec:seplogic}, we describe our formalization of concurrent separation logic~\cite{OH04}, and our VCG.
+On top of the back-end, we formalize a concurrent separation logic~\cite{OH04} and implement a verification condition generator (VCG). (Section~\ref{sec:seplogic}).
 
 At the level of the program logic and VCG, our framework can be used to verify simple low-level algorithms and data structures,
 like dynamic arrays and linked lists. More complex developments typically use a stepwise refinement approach,
@@ -298,9 +296,9 @@ disjoint parts of the same array.
 
 Using our approach, complex algorithms and data structures can be developed and
 refined to optimized efficient code. The stepwise refinement ensures a separation of concerns
-between high-level algorithmic ideas and low-level optimizations. We have used this approach to
-verify a wide range of practically efficient algorithms~\cite{ELNN13,BrLa18,WiLa18,La17_CADE,La17_SAT,FBL18,La14,LaSe16,LaSe19,La20}.
-In Section~\ref{sec:parsort}, we use our techniques to verify a parallel sorting algorithm,
+between high-level algorithmic ideas and low-level optimizations. We have already used this approach to
+verify a wide range of practically efficient sequential algorithms~\cite{ELNN13,BrLa18,WiLa18,La17_CADE,La17_SAT,FBL18,La14,LaSe16,LaSe19,La20}.
+In Section~\ref{sec:parsort}, we use our extended techniques to verify a parallel sorting algorithm,
 with competitive performance wrt.\ unverified state-of-the-art algorithms.
 
 Section~\ref{sec:concl} concludes the paper and discusses related and future work.
@@ -354,27 +352,31 @@ Section~\ref{sec:concl} concludes the paper and discusses related and future wor
 %   sample partitioning scheme, template instantiation by preprocessor
 
 \subsection{Notation}
+Formal statements in this paper correspond to theorems proved in our Isabelle/HOL formalization,
+though sometimes simplified to improve the clarity of the presentation.
+
 We mainly use Isabelle/HOL notation, with some shortcuts and adaptations for presentation in a paper.
 In this section, we give examples of the more unusual notations: for implication, we always write \is{==>},
-e.g., \is{\<forall>x. x<4 ==> x<=3} (in Isabelle, one must use \is{-->} here).
+e.g., \is{\<forall>x. x<4 ==> x<=4} (in Isabelle, one must use \is{-->} here). Free variables are
+universally quantified at the top-level.
 
-Type variables are \is{'a, 'b, ...} and a function types are written curried as \is{'a => 'b => 'c}.
-Types can be annotated to any symbol or term, e.g., \is{(x::nat) < 4 ==> x<=3}.
-Function application is written as \is{f x}, and function update is \is{f(x:=y)}.
+Type variables are \is{'a, 'b, ...} and function types are written curried as \is{'a => 'b => 'c}.
+Types can be annotated to any term, e.g., \is{(x::nat) < 4 ==> x<=3}.
+Function application is written as \is{f x y}, and function update is \is{f(x:=y)}.
 For definitions, we use \is{==}, e.g., \is{f x == x+1}.
 
 Algebraic datatypes are written as \is{'a option == Some (the: 'a) | None}. This also defines the selector function \is{the :: 'a option => 'a}.
-Values of the tuple type \is{'a_1 \x ... \x 'a_n} are written as \is{(a_1,...,a_n)}. Lists have type \is{'a list},
+Values of the tuple type \is{'a_1 \x ... \x 'a$_n$} are written as \is{(a_1,...,a$_n$)}. Lists have type \is{'a list},
 and we write \is{[]} for the empty list, \is{x#xs} for the list with head \is{x} and tail \is{xs}, and \is{xs_1@xs_2} for list concatenation.
-We also use the list notation \is{[1,2,3]}. Then length of list \is{xs} is \is{|xs|}.
+We also use the list notation \is{[1,2,3]}. The length of list \is{xs} is \is{|xs|}.
 
 The empty set is \is${} :: 'a set$. The set \is${l..<h}$ contains all elements between $l$ inclusive and $h$ exclusive, and the set \is${l..}$ contains all elements greater than or equal to $l$.
 Disjoint union is written as \is{$\dot\cup$}. We only write \is{$\dot\cup$} if it is clear from the context where the disjointness constraint belongs to.
-Otherwise, we will explicitly write, e.g. \is$ s = s_1 \union s_2  &  s_1 \inter s_2 = {}$. The cardinality of the finite set \is{s} is \is{|s|}.
+Otherwise, we will explicitly write, e.g., \is$ s = s_1 \union s_2  &  s_1 \inter s_2 = {}$. The cardinality of the finite set \is{s} is \is{|s|}.
 
 Lambda abstraction is written as \is{\<lambda>x. x+1}. When clear from the context, we omit the \is{\<lambda>}, e.g. \is{spec x. x>42}.
 We also use Haskell-like sections for infix operators, e.g. \is{(+1)} for \is{\<lambda>x. x+1}.
-Also, we can use underscores to indicate the parameter positions, e.g., \is${_..<_}$ for \is$\<lambda>l h. {l..<h}$.
+We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ for \is$\<lambda>l h. {l..<h}$.
 
 
 
@@ -403,10 +405,10 @@ Also, we can use underscores to indicate the parameter positions, e.g., \is${_..
   failing if there is a possibility to fail. We use the notation \is{x<-m; f x} for \is{bind m (\<lambda>x. f x)},
   and \is{m_1; m_2} for \is{bind m_1 (\<lambda>_. m_2)}.
 
-  Now assume that we have a state (memory) type \is{'\mu}, and an access report type \is{'\rho}, which forms a monoid (\is{0,+}).
+  Now assume that we have a state (memory) type \is{\mu}, and an access report type \is{\rho}, which forms a monoid (\is{0,+}).
   With this, we define our state-nondeterminism-error monad with access reports, just called \is{M} for brevity:
   \begin{lstlisting}
-    'x M == '\mu => ('x \x '\rho \x '\mu) neM
+    'x M == \mu => ('x \x \rho \x \mu) neM
     return$_M$ x \mu == return$_{ne}$ (x,0,\mu)
     bind$_M$ m f \mu == (x_1,r_1,\mu) <- m \mu; (x_2,r_2,\mu) <- f x_1 \mu; return$_{ne}$ (x_2,r_1+r_2,\mu)
   \end{lstlisting}
@@ -417,8 +419,8 @@ Also, we can use underscores to indicate the parameter positions, e.g., \is${_..
   Moreover, if parallel executions can allocate memory, we must detect those
   executions where the memory manager allocated the same block in both parallel strands.
   As we assume a thread safe memory manager, those \emph{infeasible} executions can safely be ignored.
-  Let \is{feasible :: '\rho => '\rho => bool} and \is{norace :: '\rho => '\rho => bool} be symmetric predicates,
-  and let \is{combine :: ('\rho \x '\mu) => ('\rho \x '\mu) => ('\rho \x '\mu) } be a commutative operator to
+  Let \is{feasible :: \rho => \rho => bool} and \is{norace :: \rho => \rho => bool} be symmetric predicates,
+  and let \is{combine :: (\rho \x \mu) => (\rho \x \mu) => (\rho \x \mu) } be a commutative operator to
   combine two pairs of access reports and states. Then, we define a parallel composition operator for \is{M}:
   \begin{lstlisting}
     (m_1 || m_2) \mu ==
@@ -433,7 +435,7 @@ Also, we can use underscores to indicate the parameter positions, e.g., \is${_..
   Here, we use \is{assume} to ignore infeasible executions, and \is{assert} to fail on data races.
   Note that, if one parallel strand fails, and the other parallel strand has no possible
   results (\is{spec (\<lambda>_. False)}), the behaviour of the parallel composition is not clear.
-  For this reason, we fix an invariant \is{invar$_M$ :: ('\mu => ('x \x '\rho \x '\mu) neM) => bool},
+  For this reason, we fix an invariant \is{invar$_M$ :: (\mu => ('x \x \rho \x \mu) neM) => bool},
   which implies that every non-failing execution has at least one possible result.
   We define the actual type \is{M} as the subtype satisfying \is{invar$_M$}.
   Thus, we have to prove that every combinator and instruction of our semantics
@@ -547,9 +549,9 @@ Also, we can use underscores to indicate the parameter positions, e.g., \is${_..
     This function selects an arbitrary fresh block \is$b$, and initializes it with the given list \is$vs$ of values.
     It returns the allocated block, an access report for the allocation, and the updated memory.
 
-    We then show that \is{malloc} satisfies the invariant of M: we correctly report the allocated block,
-    and we can select any fresh block. As our memory model guarantees an infinite supply of fresh blocks,
-    any finite set of blocks can be avoided:
+    We then show that \is{malloc} satisfies the invariant of M: we correctly report the allocated block.
+    Moreover, we can select any fresh block. As our memory model guarantees an infinite supply of fresh blocks,
+    any finite set of blocks can be avoided.
     \begin{lstlisting}
       invarM_malloc: invarM (malloc vs)
     \end{lstlisting}
@@ -1014,7 +1016,7 @@ Also, we can use underscores to indicate the parameter positions, e.g., \is${_..
     by the fixed-width\footnote{We use Isabelle's word library here, which encodes the actual width as a type variable,
     such that our functions work with any bit width. For code generation, we will fix the width to 64 bit.} word \is{i$_\dagger$} (\is{idx$_A$ i$_\dagger$ i}),
     the \is{aget} operation will return the same result as the \is{lget} operation (\is{id$_A$}).
-    The resulting memory will still contain the original array. Note that there is no explicit precondition ($\top$) that the array access
+    The resulting memory will still contain the original array. Note that there is no explicit precondition that the array access
     is in bounds, as this follows already from the assertion in the abstract \is{lget} operation.
     The \is{aset} operation will return a pointer to an array that refines the updated list returned by \is{lset}.
     As the array is updated in place, the original refinement of the array is no longer valid.
@@ -1102,7 +1104,7 @@ Also, we can use underscores to indicate the parameter positions, e.g., \is${_..
   a non-empty set from the list:
   \begin{lstlisting}
     ivl$_R$ :: nat set list => nat set => bool
-    ivl$_R$ ls s == s = \<Union> set s & pw_disjoint ls & \<forall>x:set ls. finite x & x ~= {}
+    ivl$_R$ ls s == s = \<Union>set s  &  pw_disjoint ls  &  (\<forall>x:set ls. finite x & x ~= {})
 
     ivl_empty == []                                 ivl_empty, {} : ivl$_R$
     ivl_is_empty ls == ls=[]                       ivl_is_empty, (={}) : ivl$_R$ -> id$_R$
@@ -1114,7 +1116,7 @@ Also, we can use underscores to indicate the parameter positions, e.g., \is${_..
 
   We then refine the lists of sets to array lists (dynamic arrays) of intervals: \is{al$_A$ iv$_A$}.
   Here, \is{al$_A$} is the refinement assertion from lists to the array list data structure from the IRF collections library.
-  As argument, it takes a refinement assertion for the list elements.
+  As argument, it takes the refinement relation for the list elements.
   Again, Sepref automatically generates imperative implementations of the \is{ivl} functions and proves the corresponding
   refinement lemmas. Combining them with the refinements to sets yields the desired imperative interval list data structure,
   with the refinement relation \is{ivl$_A$ == al$_A$ iv$_A$ O ivl$_R$}.
@@ -1218,7 +1220,7 @@ Also, we can use underscores to indicate the parameter positions, e.g., \is${_..
   the list \is{xs} into the lists with the indexes \is{s}, and without the indexes \is{s}, executes \is{f} on these lists,
   and joins the resulting lists:
   \begin{lstlisting}
-  with_idxs s xs m ==
+  with_idxs s xs f ==
     assert (\<forall>i\<in>s. i<|xs| & xs!i ~= None);
     let (xs_1, xs_2) = (sl_split s xs, sl_split (-s) xs);
     (xs$_1'$,xs$_2'$) <- f xs_1 xs_2;
@@ -1314,7 +1316,7 @@ Also, we can use underscores to indicate the parameter positions, e.g., \is${_..
   \caption{Abstract version of our parallel quicksort algorithm.}\label{fig:psort}
   \end{figure}
 
-  Figure~\ref{fig:psort} show our abstract parallel sorting algorithm \is{psort}.
+  Figure~\ref{fig:psort} shows our abstract parallel sorting algorithm \is{psort}.
   This algorithm is derived from the well-known quicksort and introsort algorithms~\cite{Muss97}:
   like quicksort, it partitions the list (line~\ref{l:psort:partition}), and then recursively sorts the partitions in parallel (l.~\ref{l:psort:rec_par}).
   Like introsort, when the recursion gets too deep, or the list too short, we fall back to
@@ -1426,10 +1428,10 @@ Also, we can use underscores to indicate the parameter positions, e.g., \is${_..
   that the abstract function is a weak ordering, and that the concrete function refines the abstract one.
   For our example of sorting indexes into an array, where the array elements themselves are compared by a function \is{lt}, we get:
   \begin{lstlisting}
-    interpretation idx: pcmp lt_idx lt_idx$_\dagger$ arr$_A$ idx$_A$   \<proof>
-
     lt_idx xs i j == lt (xs!i) (xs!j)
     lt_idx$_\dagger$ xs$_\dagger$ i$_\dagger$ j$_\dagger$ == x$_\dagger$<-aget xs$_\dagger$ i$_\dagger$; y$_\dagger$<-aget xs$_\dagger$ j$_\dagger$; lt$_\dagger$ x$_\dagger$ y$_\dagger$
+
+    interpretation idx: pcmp lt_idx lt_idx$_\dagger$ arr$_A$ idx$_A$   \<proof>
   \end{lstlisting}
   This yields sorting algorithms for sorting indexes, taking an extra parameter for the array to index into.
   For our sampling application, we use \is{idx.introsort xs}.
@@ -1549,8 +1551,8 @@ Also, we can use underscores to indicate the parameter positions, e.g., \is${_..
   \begin{lstlisting}
     ppart_spec p xs == spec (xs',ls,rs).
       mset xs' = mset xs
-    & ls \union rs = {0..<|xs'|} & ls \inter rs = {}
-    & (\<forall>i\<in>ls. xs'!i <= p) & (\<forall>i\<in>rs. xs'!i <= p)
+    & ls \union rs = {0..<|xs'|}  &  ls \inter rs = {}
+    & (\<forall>i\<in>ls. xs'!i <= p)  &  (\<forall>i\<in>rs. xs'!i <= p)
   \end{lstlisting}
 
   The whole partitioning algorithm is specified as follows:
@@ -2416,7 +2418,7 @@ Also, we can use underscores to indicate the parameter positions, e.g., \is${_..
       \legend{}
     \end{loglogaxis}
   \end{tikzpicture}
-  \caption{Performance for sorting small arrays of randomly distributed integers and strings.
+  \caption{Runtimes for sorting small arrays of randomly distributed integers and strings.
     The $y$-axis shows the runtime in milliseconds, and the $x$-axis the array size. Note that both axis are logarithmic.
   }\label{fig:smallarrays}
 
@@ -2498,7 +2500,7 @@ Also, we can use underscores to indicate the parameter positions, e.g., \is${_..
     This greatly simplified reusing of existing verification projects, like the sequential pdqsort algorithm~\cite{La20}.
 
     While the verification of our sorting algorithms uses a top-down approach, we actually started with
-    implementing, benchmarking, and fine-tuning the algorithms in C++. This gave us a quick option to
+    implementing, benchmarking, and fine-tuning the algorithms in C++. This gave us a quick way to
     find an algorithm that is efficient, and, at the same time not too complex for verification,
     without having to verify each intermediate step towards this algorithm.
     Only then we used our top-down approach to first formalize the abstract ideas behind the algorithm,
@@ -2533,7 +2535,7 @@ Also, we can use underscores to indicate the parameter positions, e.g., \is${_..
 
 
     \subsection{Related Work}
-    While there is extensive work on parallel sorting algorithm (e.g.~\cite{AWFS22,CNLM08,AMI21}),
+    While there is extensive work on parallel sorting algorithms (e.g.~\cite{AWFS22,CNLM08,AMI21}),
     there seems to be almost no work on their formal verification. The only work we are aware of is
     a distributed merge sort algorithm~\cite{HKBK20}, for which ''no effort has been made to make it efficient''\cite[Sec.~2]{HKBK20},
     nor any executable code has been generated or benchmarked. Another verification~\cite{SaHu20} uses
