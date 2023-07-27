@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ISABELLE=isabelle
+[ -z "$ISABELLE" ] && ISABELLE=isabelle
 
 set -e
 

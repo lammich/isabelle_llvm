@@ -113,7 +113,7 @@ fun new_entry binding init = let
   in Data.put sstab context end  
   
 in
-  Local_Theory.declaration {syntax=false, pervasive=true} decl
+  Local_Theory.declaration {syntax=false, pervasive=true, pos=\<^here>} decl
 end    
 
 

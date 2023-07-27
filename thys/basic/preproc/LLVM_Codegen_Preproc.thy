@@ -629,7 +629,7 @@ subsection \<open>Code Generator Driver\<close>
         fun prepare_path ctxt (s,pos) = let
           val _ = Position.report pos (Markup.language_path false);
           val path = Path.explode s;
-          val _ = Position.report pos (Markup.path (Path.implode_symbolic path));
+          val _ = Position.report pos (Markup.path (Path.implode path));
           val path = using_master_directory ctxt path
         in path end
       

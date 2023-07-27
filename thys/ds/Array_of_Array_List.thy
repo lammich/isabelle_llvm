@@ -162,7 +162,7 @@ subsection \<open>Arrays that own their Elements\<close>
   definition "iseg_map n f (i::nat) \<equiv> if i<n then Some (f i) else None"
   lemma iseg_mapZ[simp]: "iseg_map 0 f = Map.empty" unfolding iseg_map_def by (intro ext) (auto)
   
-  lemma iseg_map_upd_end_eq: "iseg_map n f(n \<mapsto> x) = iseg_map (Suc n) (f(n:=x))" 
+  lemma iseg_map_upd_end_eq: "(iseg_map n f)(n \<mapsto> x) = iseg_map (Suc n) (f(n:=x))" 
     apply (intro ext)
     by (auto simp: iseg_map_def restrict_map_def)
     

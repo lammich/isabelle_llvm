@@ -184,7 +184,6 @@ text \<open>
         type T = (Proof.context -> conv) Name_Space.table
         val empty = Name_Space.empty_table "static rule transformers"
         val merge = Name_Space.merge_tables
-        val extend = I
       );
     
       
@@ -350,7 +349,6 @@ text \<open>
       (
         type T = (thm * bool * binding * (Proof.context -> int -> tactic)) Item_Net.T;
         val empty: T = Item_Net.init (fn (a,b) => #3 a = #3 b) (single o Thm.concl_of o #1);             
-        val extend = I;
         val merge : T * T -> T = Item_Net.merge;
       );
 

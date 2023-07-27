@@ -299,7 +299,7 @@ fun extract_recursion_eqs [] _ def_thm lthy = ((def_thm,[],[]),lthy)
   val lthy = Local_Theory.end_nested lthy
 
   (* Transfer Results *)
-  val xfer = Local_Theory.standard_form lthy1 lthy Morphism.thm
+  val xfer = Local_Theory.standard_form lthy1 lthy (Morphism.entity Morphism.thm)
   
   val code_thm = xfer code_thm
   val aux_code_thms = map xfer aux_code_thms

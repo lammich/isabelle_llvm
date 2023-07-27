@@ -1,10 +1,13 @@
 # ISABELLE=isabelle build -b
-ISABELLE=isabelle build -b
+
+
+
+ISABELLE ?= "isabelle"
 
 all: tests
 
 isabelle:
-	$(ISABELLE) -D ../thys
+	$(ISABELLE) build -b -D ../thys
 
 tests: isabelle
 	$(MAKE) -C src

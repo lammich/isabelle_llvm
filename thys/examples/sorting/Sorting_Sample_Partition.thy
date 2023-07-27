@@ -70,7 +70,7 @@ context weak_ordering begin
     
     apply (auto simp: in_set_conv_nth nth_list_update' set_subset_conv_nth distinct_conv_nth)
     subgoal by (metis div_le_dividend div_mult_self1_is_m less_eq_Suc_le nat_add_left_cancel_le trans_le_add1 zero_less_diff)
-    subgoal by (smt (z3) Euclidean_Division.div_less add_less_cancel_left diff_is_0_eq div_mult_self_is_m div_positive le_neq_implies_less less_add_same_cancel1 less_trans not_less_eq_eq)
+    subgoal by (smt (z3) Euclidean_Rings.div_less add_less_cancel_left diff_is_0_eq div_mult_self_is_m div_positive le_neq_implies_less less_add_same_cancel1 less_trans not_less_eq_eq)
     subgoal by (meson less_SucI less_antisym trans_less_add1)
     subgoal by (metis less_SucE nat_less_le)
     subgoal by (metis less_SucE nat_less_le)
