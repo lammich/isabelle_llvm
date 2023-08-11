@@ -105,6 +105,20 @@ subsection \<open>Reflection of Maximum Representable Values\<close>
   
 definition ll_max_uint :: "'l::len word llM" where [llvm_inline]: "ll_max_uint \<equiv> ll_sub 0 1"
 definition ll_max_sint :: "'l::len2 word llM" where [llvm_inline]: "ll_max_sint \<equiv> doM {r \<leftarrow> ll_max_uint; ll_lshr r 1}"
+(* TODO: ll_min_sint! *)
+definition ll_max_unat :: "'l::len2 word llM" where [llvm_inline]: "ll_max_unat \<equiv> ll_max_uint"
+
+definition [llvm_inline]: "ll_max_snat \<equiv> ll_max_sint"
+
+lemma word_of_int_max_uint: "(word_of_int (max_uint LENGTH('l::len))::'l word) = 0"
+  unfolding max_uint_def by simp
+
+lemma uint_minus_1: "uint (- 1::'l::len word) = max_uint LENGTH('l) - 1"
+  unfolding max_uint_def
+  by (simp add: mask_eq_exp_minus_1 unsigned_minus_1_eq_mask)
+
+
+
   
 context llvm_prim_arith_setup begin  
 
@@ -135,7 +149,7 @@ qed
 lemma ll_max_sint_simp[vcg_normalize_simps]: "(ll_max_sint::'l::len2 word llM) = Mreturn (word_of_int (max_sint LENGTH('l) - 1))"
   unfolding ll_max_sint_def 
   apply vcg_normalize
-  by (metis (mono_tags, lifting) One_nat_def arith_simps(1) arith_simps(45) exp_eq_zero_iff mask_eq_decr_exp max_sint_def max_uint_def numeral_code(1) of_int_numeral of_int_power of_nat_numeral semiring_1_class.of_nat_power shiftr_mask2 word_exp_length_eq_0)
+  by (metis One_nat_def diff_0 mask_eq_exp_minus_1 mask_full max_sint_def of_int_numeral of_int_power order.refl shiftr_mask2 word_of_int_max_uint)
     
 
 lemma ll_max_uint_rule[vcg_rules]: "llvm_htriple \<box> (ll_max_uint::'l::len word llM) (\<lambda>r. \<up>(uint r = max_uint (LENGTH('l)) - 1))"
@@ -196,7 +210,27 @@ lemmas sint_rules[vcg_rules] =
   sint_bin_ops[THEN sint.bin_op_tmpl]
   sint_cmp_ops[THEN sint.cmp_op_tmpl]
   
+
+lemma ll_max_sint_rule[vcg_rules]: "llvm_htriple 
+  (\<box>) 
+  ll_max_sint 
+  (\<lambda>r::'l word. \<upharpoonleft>sint.assn (max_sint LENGTH('l::len2) - 1) r)"
+proof -
+  have [simp]: "max_sint LENGTH('l) - 1 = sint ((word_of_int (max_sint LENGTH('l))::'l word) - 1)"
+    apply (simp add: max_sint_def)
+    apply (simp add: sint_word_ariths sint_int_max_plus_1)
+    by (smt (verit) sbintrunc_If signed_take_bit_int_greater_eq_minus_exp signed_take_bit_int_less_exp)
+  
+  show ?thesis
+    unfolding sint.assn_def
+    apply simp
+    by vcg
     
+qed  
+  
+  
+  
+      
 definition signed :: "'a::len word \<Rightarrow> 'a word" where [llvm_inline]: "signed c \<equiv> c"  
   
 declare [[vcg_const "signed (numeral a)"]]
@@ -288,7 +322,20 @@ lemmas uint_rules[vcg_rules] =
   uint_bin_ops[THEN uint.bin_op_tmpl]
   uint_cmp_ops[THEN uint.cmp_op_tmpl]
   
+
+lemma ll_max_uint_rule[vcg_rules]: "llvm_htriple (\<box>) ll_max_uint (\<lambda>r::'l word. \<upharpoonleft>uint.assn (max_uint LENGTH('l::len2) - 1) r)"
+proof -
+  have [simp]: "max_uint LENGTH('l) - 1 = uint ((word_of_int (max_uint LENGTH('l))::'l word) - 1)"
+    by (simp add: uint_minus_1 word_of_int_max_uint)
   
+  show ?thesis
+    unfolding uint.assn_def
+    apply simp
+    by vcg
+qed  
+  
+  
+    
 definition unsigned :: "'a::len word \<Rightarrow> 'a word" where [llvm_inline]: "unsigned c \<equiv> c"  
   
 declare [[vcg_const "unsigned (numeral a)"]]
@@ -376,7 +423,23 @@ lemmas unat_rules[vcg_rules] =
   unat_bin_ops[THEN unat.bin_op_tmpl]
   unat_un_ops[THEN unat.un_op_tmpl]
   unat_cmp_ops[THEN unat.cmp_op_tmpl]
+
+lemma ll_max_unat_rule[vcg_rules]: "llvm_htriple (\<box>) ll_max_unat (\<lambda>r::'l word. \<upharpoonleft>unat.assn (max_unat LENGTH('l::len2) - 1) r)"
+proof -
+  have [simp]: "max_uint LENGTH('l) - 1 = uint r \<Longrightarrow> max_unat LENGTH('l) - Suc 0 = unat r" for r :: "'l word"
+    unfolding max_uint_def max_unat_def
+    by (metis One_nat_def mask_eq_exp_minus_1 unsigned_minus_1_eq_mask word_eq_iff_unsigned)
+
+  show ?thesis
+    unfolding ll_max_unat_def
+    apply vcg
+    unfolding unat.assn_def uint.assn_def
+    apply (clarsimp simp: word_of_int_max_uint uint_minus_1)
+    by fri
   
+qed    
+  
+    
   
 definition unsigned_nat :: "'a::len word \<Rightarrow> 'a word" where [llvm_inline]: "unsigned_nat c \<equiv> c"  
   
@@ -495,7 +558,19 @@ lemma snat_bin_ops:
     apply (meson le_less_trans mod_less_eq_dividend)
     done
   done
-  
+
+lemma snat_bin_ops_bitwise:
+  "snat.is_bin_op (\<lambda>_ _ _. True) ll_and (AND) (AND)" 
+  "snat.is_bin_op (\<lambda>_ _ _. True) ll_or (OR) (OR)" 
+  "snat.is_bin_op (\<lambda>_ _ _. True) ll_xor (XOR) (XOR)" 
+  apply (all \<open>prove_snat_op simp: unsigned_and_eq unsigned_or_eq unsigned_xor_eq\<close>)
+  apply (simp_all add: snat_def signed_or_eq signed_xor_eq)
+  subgoal by (simp flip: take_bit_nat_eq_self_iff)
+  subgoal by (simp add: sint_eq_uint_2pl word_less_nat_alt or_nat_def) 
+  subgoal by (simp flip: take_bit_nat_eq_self_iff)
+  subgoal by (simp add: sint_eq_uint_2pl word_less_nat_alt xor_nat_def) 
+  done  
+    
 lemma snat_un_ops: "snat.is_un_op' (\<lambda>x. ll_add x 1) (\<lambda>x. x+1) Suc"
   by (prove_snat_op simp: unat_word_ariths)
   
@@ -519,6 +594,7 @@ lemma snat_cmp_ops:
   
 lemmas snat_rules[vcg_rules] =
   snat_bin_ops[THEN snat.bin_op_tmpl]
+  snat_bin_ops_bitwise[THEN snat.bin_op_tmpl]
   snat_un_ops[THEN snat.un_op_tmpl]
   snat_cmp_ops[THEN snat.cmp_op_tmpl]
   
@@ -567,7 +643,6 @@ lemma lt_exp2n_snat_estimate[simp]:
 
 
 
-definition [llvm_inline]: "ll_max_snat \<equiv> ll_max_sint"
 
 lemma ll_max_snat_rule[vcg_rules]: "llvm_htriple (\<box>) ll_max_snat (\<lambda>r::'l word. \<upharpoonleft>snat.assn (max_snat LENGTH('l::len2) - 1) r)"
 proof -
