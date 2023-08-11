@@ -76,6 +76,9 @@ lemma fri_end: (* Potential premises get solved by entails_refl. *)
   "Ps \<turnstile> F \<Longrightarrow> FRAME_INFER Ps FRI_END F"
   by (auto simp: FRAME_INFER_def FRI_END_def)
 
+lemma fri_drop_pure_prem: "\<up>P \<turnstile> \<box>" "Q \<turnstile> \<box> \<Longrightarrow> \<up>P ** Q \<turnstile> \<box>"
+  by(cases P; auto simp: sep_algebra_simps)+
+
 lemma fri_step_rl:  
   assumes "P \<turnstile> Q"  (* Gets instantiated with frame_infer_rules *)
   assumes "FRAME_INFER Ps Qs F"
@@ -220,7 +223,8 @@ ML \<open>
     fun end_tac ctxt =   
       simp_ai_tac ctxt
       THEN' resolve_tac ctxt @{thms fri_end}
-      THEN' resolve_tac ctxt @{thms entails_refl entails_true}
+      THEN' (resolve_tac ctxt @{thms entails_refl entails_true} 
+        ORELSE' SOLVED' (REPEAT_DETERM' (resolve_tac ctxt @{thms fri_drop_pure_prem})))
       
       
     fun start_round_tac ctxt =
