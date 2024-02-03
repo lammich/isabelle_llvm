@@ -261,9 +261,14 @@ begin
     
       datatype llc_eqn =              
                 EQN of llc_type option * string * (llc_type * string) list * llc_block
+              | EXT of llc_type option * string * llc_type list   
     
       datatype llc_named_type = Named_Type of string * llc_type list                
                 
+      
+      fun name_of_eqn (EQN (_,name,_,_)) = name
+        | name_of_eqn (EXT (_,name,_)) = name
+      
       
       fun pretty_mstr m s = Pretty.markup m [Pretty.str s]
       
@@ -326,10 +331,23 @@ begin
         Pretty.block (Pretty.fbreaks (pblst blk))
       end
         
-      fun pretty_eqn (EQN (ty,name,params,block)) = Pretty.block [
-        Pretty.block [pretty_type' ty, Pretty.brk 1, Pretty.str name, Pretty.list "(" ")" (map pretty_tname params), Pretty.str " {", 
-          Pretty.fbrk, Pretty.blk (4,[pretty_block block]), Pretty.fbrk, Pretty.str "}"], Pretty.fbrk
-        ]
+      (* pretty_eqn_body NONE = Pretty.block [Pretty.str "=", Pretty.brk 1, Pretty.str "external"]
+        |*)      
+      
+      fun pretty_eqn_body block = Pretty.block [
+            Pretty.str " {", 
+              Pretty.fbrk, Pretty.blk (4,[pretty_block block]), Pretty.fbrk, 
+            Pretty.str "}"]
+      
+      fun pretty_eqn (EQN (ty,name,params,body)) = Pretty.block [
+            Pretty.block [pretty_type' ty, Pretty.brk 1, Pretty.str name, Pretty.list "(" ")" (map pretty_tname params), pretty_eqn_body body], 
+            Pretty.fbrk
+          ]
+        | pretty_eqn (EXT (ty,name,params)) = Pretty.block [
+            Pretty.block [pretty_type' ty, Pretty.brk 1, Pretty.str name, Pretty.list "(" ")" (map pretty_type params)],
+            Pretty.fbrk
+          ]
+        
 
       fun pretty_eqns eqns = Pretty.block (Pretty.fbreaks (map pretty_eqn eqns))
       
@@ -582,15 +600,24 @@ begin
       val analyze_eqn_thm = analyze_eqn o Thm.prop_of
       val check_eqn_thm = check_eqn o Thm.prop_of
       
-      fun compute_fun_names fixes thms = let
+      fun compute_fun_names fixes extfuns thms = let
         val fixes = map (apfst Envir.beta_eta_contract) fixes
+        val extfuns = map (apfst Envir.beta_eta_contract) extfuns
+        
         val _ = map (assert_ground_term o fst) fixes
-      
+        val _ = map (assert_ground_term o fst) extfuns
         
         val fixtab = Termtab.make fixes
-        (* Pre-populate with fixed names, AND ensure no duplicate fixes *)
-        val names = fold (fn (_,n) => Symtab.update_new (n,())) fixes Symtab.empty
+        (* Pre-populate name table with fixed and external function names, AND ensure no duplicates *)
+        val names = map snd fixes @ map snd extfuns
+        val names = fold (fn n => Symtab.update_new (n,())) names Symtab.empty
         
+        (* Add external functions to ftab *)
+        fun add_extfun (c,n) ftab = Termtab.update_new (c,n) ftab
+        
+        val ftab = fold add_extfun extfuns Termtab.empty
+
+        (* Add code equations, and disambiguate non-fixed names *)        
         fun add_thm thm (ftab,names) = let
           val ((_,(c,_)),_) = check_eqn_thm thm
         in
@@ -608,7 +635,7 @@ begin
           end
         end
         
-        val (ftab,_) = fold add_thm thms (Termtab.empty,names)
+        val (ftab,_) = fold add_thm thms (ftab,names)
       in
         ftab
       end
@@ -918,20 +945,38 @@ begin
           
       end      
       
+      fun llc_parse_extfun (c,fname) ctxt = let
+        val c = Envir.beta_eta_contract c
+        
+        val _ = is_llvm_instr_t c andalso raise TERM("External declaration for internal LLVM instruction",[c])
+
+        val (ptys,rty) = strip_type (fastype_of c)
+                
+        val (pltys,ctxt) = fold_map llc_parse_type ptys ctxt
+        val (rlty,ctxt) = llc_parse_vtype (dest_llM rty) ctxt
+      in
+        (EXT (rlty,fname,pltys), ctxt)
+      end
+      
+      
       fun parse_cthms_aux thms ctxt = fold_map (llc_parse_eqn o Thm.prop_of) thms ctxt
       
-      fun parse_cthms fixes nt_ovr thms ctxt = let
-        val ftab = compute_fun_names fixes thms      
+      fun parse_cthms fixes nt_ovr extfuns thms ctxt = let
+        val ftab = compute_fun_names fixes extfuns thms      
       
         val ctxt = Fun_Tab.put ftab ctxt
         
         val ctxt = fold add_named_type_override nt_ovr ctxt
         
+        (* Parse external function declarations *)
+        val (ext_eqns, ctxt) = fold_map llc_parse_extfun extfuns ctxt
+        
+        (* Parse code theorems *)
         val (eqns,ctxt) = parse_cthms_aux thms (build_named_type_tables ctxt)
         
         val named_tys = Identified_Structures.get ctxt |> Symtab.dest |> map Named_Type
       in 
-        (named_tys,eqns)
+        (named_tys,ext_eqns@eqns)
       end
      
     end
@@ -1439,20 +1484,24 @@ begin
         
         
       fun build_eqn ctxt b (EQN (rty, pname, params, blk)) = let
-        val params = map (apfst (llc_ty b)) params
-        val rty = map_option (llc_ty b) rty
-        
-        val paramsv = LLVM_Builder.open_proc b rty pname params []
-        
-        val vtab = fold (Symtab.update_new o apfst snd) (params ~~ paramsv) Symtab.empty
-        
-        val retv = build_block ctxt b vtab blk
-        
-        val _ = LLVM_Builder.mk_return b retv
-        val _ = LLVM_Builder.close_proc b
-      in
-        ()
-      end
+            val params = map (apfst (llc_ty b)) params
+            val rty = map_option (llc_ty b) rty
+          
+            val paramsv = LLVM_Builder.open_proc b rty pname params []
+            
+            val vtab = fold (Symtab.update_new o apfst snd) (params ~~ paramsv) Symtab.empty
+            
+            val retv = build_block ctxt b vtab blk
+            
+            val _ = LLVM_Builder.mk_return b retv
+            val _ = LLVM_Builder.close_proc b
+            
+          in () end
+        | build_eqn _ b (EXT (rty, pname, params)) = let
+            val params = map (llc_ty b) params
+            val rty = map_option (llc_ty b) rty
+            val _ = LLVM_Builder.decl_ext_fun b rty pname params
+          in () end 
 
       fun build_named_ty b (Named_Type (name,ftys)) = let
         val ltys = map (llc_ty b) ftys
@@ -2213,8 +2262,10 @@ begin
       fun cty_of_rlty NONE = CRTYO_VOID
         | cty_of_rlty (SOME lty) = CRTYO_TY (cty_of_lty lty)
     
-      fun csig_of_eqn (EQN (rlty,name,largs,_)) 
-        = CSIGO (cty_of_rlty rlty, SOME name, SOME (map (SOME o cty_of_lty o fst) largs))
+      fun csig_of_eqn (EQN (rlty,name,largs,_)) = 
+            CSIGO (cty_of_rlty rlty, SOME name, SOME (map (SOME o cty_of_lty o fst) largs))
+        | csig_of_eqn (EXT (rlty,name,largs)) =
+            CSIGO (cty_of_rlty rlty, SOME name, SOME (map (SOME o cty_of_lty) largs))
         
       fun cfield_of_lty lty = FLDO_NAMED (SOME (cty_of_lty lty), NONE)
         
@@ -2255,6 +2306,7 @@ begin
           | SOME x => x
       
       fun rc_eqn (EQN (rty,_,args,_)) = rc_rty rty #> fold rc_ty (map fst args)
+        | rc_eqn (EXT (rty,_,args)) = rc_rty rty #> fold rc_ty args
       and rc_rty NONE = I
         | rc_rty (SOME ty) = rc_ty ty
       and rc_ty (TPtr ty) = rc_ty ty

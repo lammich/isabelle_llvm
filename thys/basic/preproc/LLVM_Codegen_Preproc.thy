@@ -69,6 +69,13 @@ subsection \<open>Preprocessor\<close>
   
   named_theorems llvm_code_raw \<open>Isabelle-LLVM code theorems\<close>
   
+  (* These code theorems are used to mark external functions *)
+  definition LLVM_EXTERNAL :: "'a \<Rightarrow> string \<Rightarrow> bool" where
+    "LLVM_EXTERNAL _ _ = True"
+  
+  lemma LLVM_EXTERNALI: "LLVM_EXTERNAL c n" unfolding LLVM_EXTERNAL_def by simp
+    
+  
   ML \<open> structure LLC_Preprocessor = struct
     open LLC_Lib
         
@@ -355,11 +362,40 @@ subsection \<open>Preprocessor\<close>
     (* TODO: Use net *)
 
     
+    fun is_external_cthm thm = case Thm.prop_of thm of
+      @{mpat "Trueprop (LLVM_EXTERNAL _ _)"} => true
+    | _ => false  
+
+    fun check_external_fun (c,name) = let
+      val _ = check_valid_fname c
+      val _ = is_Const c orelse raise TERM("check_external_fun: expected simple constant",[c])
+      
+      val _ = Symbol.is_ascii_identifier name orelse raise TERM("check_external_fun: expected ascii id, but got '"^name^"'",[c])
+    in
+      (c,name)
+    end
+    
+    
+    fun dest_external_cthm thm = case Thm.prop_of thm of
+      @{mpat "Trueprop (LLVM_EXTERNAL ?c ?n)"} => check_external_fun (c, HOLogic.dest_string n)
+    | _ => raise THM ("dest_external_cthm",~1,[thm])
+    
+    
+    fun dep_prep_code_thm thm = 
+      if is_external_cthm thm then (fst (dest_external_cthm thm), thm)
+      else let 
+        val ((_,(c,_)),_) = LLC_Compiler.analyze_eqn_thm thm
+      in
+        (c,thm)
+      end
+    
+    (*
     fun dep_prep_code_thm thm = let
       val ((_,(c,_)),_) = LLC_Compiler.analyze_eqn_thm thm
     in
       (c,thm)
     end
+    *)
     
     fun dep_try_instantiate_code_thm ctxt c (l,thm) = let
       val c = Thm.cterm_of ctxt c
@@ -428,7 +464,6 @@ subsection \<open>Preprocessor\<close>
       val pthms = Named_Theorems.get lthy @{named_theorems llvm_code_raw}
         |> map dep_prep_code_thm
         |> Refine_Util.subsume_sort fst thy
-    
         
       val tim = Config.get lthy cfg_llvm_preproc_timing  
         
@@ -437,58 +472,84 @@ subsection \<open>Preprocessor\<close>
       fun process_root c (ctab, lthy) = let
         val _ = check_valid_fname c
         val basename = name_of_head c |> Long_Name.base_name
+        
+        fun process_code_eqn teqn = let
+          val _ = trace (fn () => "Processing " ^ basename)
+          val startt = Time.now ()
+        
+          (* Monadify and inline RHS *)
+          val teqn = monadify_inline_cthm lthy teqn
+          
+          (* Extract recursion equations *)
+          val exs = default_extractions lthy
+          
+          val ((teqn,add_eqns,_),lthy) = Definition_Utils.extract_recursion_eqs exs basename teqn lthy
+          val teqns = teqn::add_eqns
+          
+          (* Inline and format again *)
+          val teqns = map (monadify_inline_cthm lthy #> cthm_format lthy) teqns
+
+          (* Update table *)
+          val ctab = fold Termtab.update_new (map dep_prep_code_thm teqns) ctab
+                        
+          (* Find calls *)
+          val calls = map calls_of_cthm teqns |> flat
+          
+          val stopt = Time.now()
+          val _ = trace (fn () => "Done " ^ basename ^ ": " ^ Time.toString (stopt - startt))
+
+          
+          (* Recurse *)
+
+          (** Recursion error traceback message *)                            
+          fun msg () = let
+            val p_msg = Pretty.block[ Pretty.str "from ", Syntax.pretty_term lthy c ]
+            val p_eqns = map (Thm.pretty_thm lthy) teqns |> Pretty.fbreaks |> Pretty.block
+            
+            val p = Pretty.block [p_msg, Pretty.fbrk, p_eqns]
+          in
+            Pretty.string_of p
+          end
+          
+          val (ctab,lthy) = trace_exn msg (fold process_root calls) (ctab,lthy)
+        in
+          (ctab, lthy)
+        end
+        
+        
+        fun process_external_cthm thm = let
+            val ctab = Termtab.update_new (dep_prep_code_thm thm) ctab
+          in 
+            (ctab, lthy)
+          end
+        
+        
       in
         case Termtab.lookup ctab c of
           SOME _ => (ctab, lthy)
         | NONE => let
-            val _ = trace (fn () => "Processing " ^ basename)
-            val startt = Time.now ()
-        
-            (* Get code theorem and inline it *)
-            val teqn = dep_find_code_thm lthy pthms c |> monadify_inline_cthm lthy
-            
-            (* Extract recursion equations *)
-            val exs = default_extractions lthy
-            
-            val ((teqn,add_eqns,_),lthy) = Definition_Utils.extract_recursion_eqs exs basename teqn lthy
-            val teqns = teqn::add_eqns
-            
-            (* Inline and format again *)
-            val teqns = map (monadify_inline_cthm lthy #> cthm_format lthy) teqns
-
-            (* Update table *)
-            val ctab = fold Termtab.update_new (map dep_prep_code_thm teqns) ctab
-                          
-            (* Find calls *)
-            val calls = map calls_of_cthm teqns |> flat
-            
-            val stopt = Time.now()
-            val _ = trace (fn () => "Done " ^ basename ^ ": " ^ Time.toString (stopt - startt))
-
-            
-            (* Recurse *)
-
-            (** Recursion error traceback message *)                            
-            fun msg () = let
-              val p_msg = Pretty.block[ Pretty.str "from ", Syntax.pretty_term lthy c ]
-              val p_eqns = map (Thm.pretty_thm lthy) teqns |> Pretty.fbreaks |> Pretty.block
-              
-              val p = Pretty.block [p_msg, Pretty.fbrk, p_eqns]
+              (* Get code theorem *)
+              val cthm = dep_find_code_thm lthy pthms c 
             in
-              Pretty.string_of p
+              if is_external_cthm cthm then
+                process_external_cthm cthm
+              else
+                process_code_eqn cthm
             end
             
-            val (ctab,lthy) = trace_exn msg (fold process_root calls) (ctab,lthy)
-          in
-            (ctab, lthy)
-          end
+            
+            
       end 
       
       val (ctab,lthy) = fold process_root roots (Termtab.empty,lthy)
       val thms = Termtab.dest ctab |> map snd
       
+      val eqn_thms = filter_out is_external_cthm thms
+      val ext_funs = filter is_external_cthm thms
+        |> map dest_external_cthm
+      
     in
-      (thms,lthy)
+      ((eqn_thms,ext_funs),lthy)
     end
       
   end
@@ -550,6 +611,19 @@ subsection \<open>Code Generator Driver\<close>
       val cfg_llvm_timing = Attrib.setup_config_bool @{binding llvm_timing} (K false)
       val cfg_llvm_gen_header = Attrib.setup_config_bool @{binding llvm_gen_header} (K true)
     
+      fun pretty_extfun ctxt (c,fname) = 
+        Pretty.block [
+          Syntax.pretty_term ctxt c, 
+          Pretty.brk 1, Pretty.str "::", Pretty.brk 1, Syntax.pretty_typ ctxt (fastype_of c),
+          Pretty.brk 1, Pretty.str "is",Pretty.brk 1,Pretty.str fname]
+      
+      fun pretty_extfuns ctxt extfuns  = let
+        val ctxt = Config.put Syntax_Trans.eta_contract false ctxt      
+      in
+        Pretty.big_list "External Functions" (map (pretty_extfun ctxt) extfuns)
+      end
+      
+      
       fun pretty_cthms ctxt cthms = let 
         val ctxt = Config.put Syntax_Trans.eta_contract false ctxt      
       in Pretty.big_list "Code Theorems" (map (Thm.pretty_thm ctxt) cthms) end
@@ -576,7 +650,7 @@ subsection \<open>Code Generator Driver\<close>
         | (true,_) => (trace (fn () => Pretty.str msg); f x)
         | _ => f x
         
-        val (cthms,lthy) = trtimed "Gathering code theorems" (LLC_Preprocessor.gather_code_thms (map fst cns)) lthy
+        val ((cthms,extfuns),lthy) = trtimed "Gathering code theorems" (LLC_Preprocessor.gather_code_thms (map fst cns)) lthy
         val _ = trace (fn () => pretty_cthms lthy cthms)
         
         fun cmp_fixes () = let
@@ -591,7 +665,8 @@ subsection \<open>Code Generator Driver\<close>
         val fixes = trtimed "Computing fixes table" cmp_fixes ()
         (*val _ = trace (fn () => pretty_ftab lthy ftab)*)
                   
-        val (tys,eqns) = trtimed "Translating code theorems to IL" (LLC_Compiler.parse_cthms fixes nt_ovr cthms) lthy
+        
+        val (tys,eqns) = trtimed "Translating code theorems to IL" (LLC_Compiler.parse_cthms fixes nt_ovr extfuns cthms) lthy
         val _ = trace (fn () => LLC_Intermediate.pretty_llc (tys,eqns))
         
         val _ = trace (fn () => Pretty.str "Writing LLVM")
@@ -604,7 +679,7 @@ subsection \<open>Code Generator Driver\<close>
           
               val sigtab = Symtab.make (map dest_sig sigspecs)
               
-              fun match_eqn (eqn as LLC_Intermediate.EQN (_,name,_,_)) = case Symtab.lookup sigtab name of
+              fun match_eqn eqn = case Symtab.lookup sigtab (LLC_Intermediate.name_of_eqn eqn) of
                 NONE => NONE
               | SOME sg => SOME (eqn,sg)  
               
@@ -730,12 +805,13 @@ subsection \<open>Code Generator Driver\<close>
               val cns = map (Syntax.read_term lthy) cns
               val _ = writeln "Gathering code theorems"
               
-              val (cthms,lthy) = LLC_Preprocessor.gather_code_thms cns lthy
+              val ((cthms,extfuns),lthy) = LLC_Preprocessor.gather_code_thms cns lthy
               val (_,lthy) = Local_Theory.note (bnd,cthms) lthy 
               
               val _ = writeln "Done"
               
               val _ = pretty_cthms lthy cthms |> Pretty.string_of |> writeln
+              val _ = pretty_extfuns lthy extfuns |> Pretty.string_of |> writeln
           
              in lthy end 
           )
@@ -939,6 +1015,17 @@ declare [[llc_compile_par_call=true]]
 
 export_llvm test_ppar file "test_par.ll"
  
+definition external_fun :: "64 word \<Rightarrow> 64 word llM" where "external_fun \<equiv> undefined"
+
+definition [llvm_code]: "uses_external_fun x \<equiv> doM {y \<leftarrow> external_fun x; external_fun y}"
+
+context 
+  notes [llvm_code_raw] = LLVM_EXTERNALI[of external_fun "''external_fun''"]
+begin
+  export_llvm uses_external_fun is "uint64_t uses_external_fun(uint64_t)"
+    file "../../../regression/gencode/test_external_fun.ll"
+end
+
   
 (* Higher-Order stuff *)
 

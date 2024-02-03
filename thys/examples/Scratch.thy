@@ -1,6 +1,72 @@
 theory Scratch
-imports "../sepref/IICF/IICF"
+imports "../basic/LLVM_Basic_Main"
 begin
+
+
+  definition external_fun :: "8 word ptr \<Rightarrow> 64 word \<Rightarrow> 64 word llM" where "external_fun _ _ \<equiv> Mreturn 0"
+
+  
+  lemmas foo[llvm_code_raw] = LLVM_EXTERNALI[of external_fun "''external_fun''"]
+  
+  definition [llvm_code]: "foo (a::8 word ptr) \<equiv> doM {
+    n \<leftarrow> external_fun a 42;
+    external_fun a n
+  }"
+  
+  (*lemmas [llvm_code] = external_fun_def*)
+  
+  llvm_deps foo
+  
+  
+  export_llvm foo is "foobar"
+
+  
+  oops
+  xxx, ctd here:
+    stress test for
+    - invalid names
+    - non-ground external functions
+    
+
+
+  
+
+oops end end end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
  abbreviation my_array_assn where
     \<open>my_array_assn \<equiv> al_assn' TYPE(64) (word_assn :: 64 word \<Rightarrow> _)\<close>

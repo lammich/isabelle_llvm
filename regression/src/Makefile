@@ -1,7 +1,7 @@
 
-all: test_open_list test_bin_search test_kmp test_sorting test_float test_double test_avx512f test_float_ops
+all: test_open_list test_bin_search test_kmp test_sorting test_external_fun test_float test_double test_avx512f test_float_ops
 
-.PHONY: test_open_list test_bin_search test_kmp test_sorting test_float test_double test_avx512f test_float_ops
+.PHONY: test_open_list test_bin_search test_kmp test_sorting test_external_fun test_float test_double test_avx512f test_float_ops
 
 BIN=../bin
 CC= clang   -O3 -g -I "../gencode" -Wall -lpthread                                      ../../src/lib_isabelle_llvm.c
@@ -31,6 +31,14 @@ test_kmp: $(BIN)/kmp
 	$(BIN)/kmp
 	$(VG) $(BIN)/kmp
 
+$(BIN)/test_external_fun: test_external_fun.c ../gencode/test_external_fun.h ../gencode/test_external_fun.ll
+	$(CC) test_external_fun.c ../gencode/test_external_fun.ll -o $(BIN)/test_external_fun
+
+test_external_fun: $(BIN)/test_external_fun
+	$(BIN)/test_external_fun
+	$(VG) $(BIN)/test_external_fun
+	
+	
 $(BIN)/test_float: test_float.c double_lib.c ../gencode/test_float.h ../gencode/test_float.ll
 	$(CC) -lm -ffp-contract=off -ffp-model=strict test_float.c ../gencode/test_float.ll -o $(BIN)/test_float
 
@@ -67,6 +75,6 @@ test_sorting: $(BIN)/sorting
 	$(BIN)/sorting
 	$(VG) $(BIN)/sorting
 
-clean:
-	@ rm -f $(BIN)/open_list $(BIN)/bin_search $(BIN)/kmp $(BIN)/sorting
+# clean:
+# 	@ rm -f $(BIN)/open_list $(BIN)/bin_search $(BIN)/kmp $(BIN)/sorting
 

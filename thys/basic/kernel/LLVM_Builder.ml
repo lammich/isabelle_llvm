@@ -350,12 +350,25 @@ signature LLVM_BUILDER = sig
   val mk_call_void: T -> string -> value list -> unit
   val mk_return: T -> value option -> unit
 
-  (** Call and declare function as external, e.g., for intrinsics *)
+  (** Declare external function. 
+    When used multiple times for the same function, only one declaration is generated. 
+    Thus can be used to ensure that function is declared.
+  *)
+  val decl_ext_fun_attrs: T -> ty option -> string -> ty list -> string list list -> unit  
+  val decl_ext_fun: T -> ty option -> string -> ty list -> unit
+  
+  
+  (** Call and declare function as external, e.g., for intrinsics.
+    Note: these functions will automatically declare the called function as external, 
+        so no need to additionally call decl_ext_fun
+  
+  *)
   val mk_external_call: T -> regname -> ty -> string -> value list -> value
   val mk_external_call_void: T -> string -> value list -> unit
   
   val mk_external_call_attrs: T -> regname -> ty -> string -> value list -> string list list -> value
   val mk_external_call_void_attrs: T -> string -> value list -> string list list -> unit
+  
   
   (** Parallel *)
   val mk_par_call: T -> regname -> 
@@ -797,7 +810,7 @@ structure LLVM_Builder : LLVM_BUILDER = struct
     val raw = "declare" ^# pr_ty' rty ^# pr_proc name ^ "(" ^ pr_tys_attrs ptys pattrs ^ ")"
   in
     decl_ext_fun_raw b raw;
-    name
+    ()
   end  
     
   fun decl_ext_fun b rty name ptys = decl_ext_fun_attrs b rty name ptys (map (K []) ptys)
@@ -1033,25 +1046,25 @@ structure LLVM_Builder : LLVM_BUILDER = struct
     )
   
   fun mk_external_call b dst rty proc args = let
-    val proc = decl_ext_fun b (SOME rty) proc (map ty_of_val args)
+    val _ = decl_ext_fun b (SOME rty) proc (map ty_of_val args)
   in
     mk_call b dst rty proc args
   end
   
   fun mk_external_call_void b proc args = let
-    val proc = decl_ext_fun b NONE proc (map ty_of_val args)
+    val _ = decl_ext_fun b NONE proc (map ty_of_val args)
   in
     mk_call_void b proc args
   end
 
   fun mk_external_call_attrs b dst rty proc args attrs = let
-    val proc = decl_ext_fun_attrs b (SOME rty) proc (map ty_of_val args) attrs
+    val _ = decl_ext_fun_attrs b (SOME rty) proc (map ty_of_val args) attrs
   in
     mk_call b dst rty proc args
   end
   
   fun mk_external_call_void_attrs b proc args attrs = let
-    val proc = decl_ext_fun_attrs b NONE proc (map ty_of_val args) attrs
+    val _ = decl_ext_fun_attrs b NONE proc (map ty_of_val args) attrs
   in
     mk_call_void b proc args
   end
@@ -1122,7 +1135,8 @@ structure LLVM_Builder : LLVM_BUILDER = struct
   val i8ptr = mkty_ptr (mkty_i 8)
   
   fun mk_malloc b dst ty op1 = let
-    val calloc_name = decl_ext_fun b (SOME i8ptr) "isabelle_llvm_calloc" [size_t b, size_t b]
+    val calloc_name = "isabelle_llvm_calloc"
+    val _ = decl_ext_fun b (SOME i8ptr) calloc_name [size_t b, size_t b]
     val op1 = cnv_to_size_t b (SOME "") op1
     val sz = mk_size_of b (SOME "") ty
     val res = mk_call b (SOME "") i8ptr calloc_name [op1,sz]
@@ -1132,7 +1146,8 @@ structure LLVM_Builder : LLVM_BUILDER = struct
   end
   
   fun mk_free b op1 = let
-    val free_name = decl_ext_fun b NONE "isabelle_llvm_free" [i8ptr]
+    val free_name = "isabelle_llvm_free"
+    val _ = decl_ext_fun b NONE free_name [i8ptr]
     val _ = assert (can dstty_ptr (ty_of_val op1)) "free: expected pointer type"
     val op1 = mk_conv_instr "bitcast" b (SOME "") op1 i8ptr
     val _ = mk_call_void b free_name [op1]
