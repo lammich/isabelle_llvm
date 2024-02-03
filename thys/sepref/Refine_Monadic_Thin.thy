@@ -2,7 +2,6 @@ section \<open>The Monadic Refinement Framework --- Naked\<close>
 (* TODO: Move to Refine_Monadic entry! *)
 theory Refine_Monadic_Thin
 imports 
-  "Refine_Monadic.Refine_Chapter"
   "Refine_Monadic.Refine_Basic"
   "Refine_Monadic.Refine_Leof"
   "Refine_Monadic.Refine_Heuristics"

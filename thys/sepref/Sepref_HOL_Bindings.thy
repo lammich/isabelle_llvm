@@ -1918,7 +1918,7 @@ begin
     apply vcg'
     done
   
-  lemma hn_Some[sepref_fr_rules]: "(Mreturn, RETURN o Some) \<in> A\<^sup>d \<rightarrow>\<^sub>a option_assn"  
+  lemma hn_Some[sepref_fr_rules]: "(Mreturn, RETURN o Some) \<in> [\<lambda>_. True]\<^sub>c A\<^sup>d \<rightarrow> option_assn [\<lambda>a b. b=a]\<^sub>c"  
     apply sepref_to_hoare
     subgoal for a c
       apply (cases "c=dflt")
@@ -1928,7 +1928,7 @@ begin
       done
     done
   
-  lemma hn_the[sepref_fr_rules]: "(Mreturn, RETURN o the) \<in> [\<lambda>x. x \<noteq> None]\<^sub>a option_assn\<^sup>d \<rightarrow> A"
+  lemma hn_the[sepref_fr_rules]: "(Mreturn, RETURN o the) \<in> [\<lambda>x. x \<noteq> None]\<^sub>a [\<lambda>_. True]\<^sub>c option_assn\<^sup>d \<rightarrow>\<^sub>d (\<lambda>_. A) [\<lambda>a b. b=a]\<^sub>c"
     apply sepref_to_hoare
     unfolding option_assn_def 
     apply clarsimp

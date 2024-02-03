@@ -1,5 +1,5 @@
 session Isabelle_LLVM = Refine_Monadic +
-  options [browser_info]
+  (* options [browser_info] *)
   
   sessions
     "Refine_Imperative_HOL"
