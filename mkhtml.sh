@@ -75,7 +75,7 @@ fi
 
 htmlbase=https://lammich.github.io/isabelle_llvm
 
-sed -re "s|\(HTML:([^)]*)\)|($htmlbase/\1)|g" README.in.md > README.md
+sed -re "s|:HTML:|$htmlbase|g" README.in.md > README.md
 
 cat index.in.md \
 | sed -re 's|:Isabelle_LLVM:|browser_info/Unsorted/Isabelle_LLVM|g'\
