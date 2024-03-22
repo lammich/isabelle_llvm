@@ -151,6 +151,7 @@
 <body>
 <!--
   IMPORTANT: If you landed here from a downloaded archive file, go to html/index.html to view this page in a browsable form!
+
 -->
 <h1 id="isabelle-llvm-logo-isabelle-llvm"><img src="logo_200.png" alt="Isabelle-LLVM Logo" /> Isabelle-LLVM</h1>
 <p>Isabelle-LLVM is a verification framework for Isabelle/HOL that targets LLVM as backend. The main features are:</p>
@@ -178,7 +179,7 @@
 <li>Updated to work with new Isabelle 2021 version</li>
 </ul>
 <h2 id="getting-started">Getting Started</h2>
-<p>You can <a href="Isabelle_LLVM/">browse the theories</a> or <a href="dist.tgz">download</a> the files. (The download link won’t work if you are browsing this from inside the downloaded archive!)</p>
+<p>You can <a href="browser_info/Unsorted/Isabelle_LLVM/">browse the theories</a> or <a href="dist.tgz">download</a> the files. (The download link won’t work if you are browsing this from inside the downloaded archive!)</p>
 <p>Warning: the .thy files in the download are best viewed with the <a href="https://isabelle.in.tum.de">Isabelle/HOL</a> IDE.</p>
 <h3 id="git-repository">Git Repository</h3>
 <p>The project is hosted on github <a href="https://github.com/lammich/isabelle_llvm/tree/2022">github.com/lammich/isabelle_llvm/tree/2022</a></p>
@@ -186,27 +187,27 @@
 <p>Here are some default starting points for browsing the theories</p>
 <h4 id="parallel-paper">Parallel Paper</h4>
 <p>Some starting points, structured according to the parallel paper:</p>
-<p><a href="Isabelle_LLVM/NEMonad.html">NE Monad</a></p>
-<p><a href="Isabelle_LLVM/MMonad.html">M Monad</a> Includes the parallel combinator</p>
-<p><a href="Isabelle_LLVM/Generic_Memory.html">Memory Model</a> Including access reports</p>
-<p><a href="Isabelle_LLVM/Simple_Memory.html">LLVM Values stored in Memory</a></p>
-<p><a href="Isabelle_LLVM/LLVM_Shallow.html">LLVM Instructions</a></p>
-<p><a href="Isabelle_LLVM/LLVM_Codegen.html">Code Generator</a> Including the <a href="Isabelle_LLVM/files/par_wrapper.tmpl.ml.html">template for translating llc_par</a></p>
-<p><a href="Isabelle_LLVM/LLVM_VCG_Main.html">Separation Logic and VCG</a> A bit more general than described in paper, parameterized over memory model. The general rules are proved in <a href="Isabelle_LLVM/Sep_Generic_Wp.html">Sep_Generic_Wp.thy</a>, e.g. lemma ht_par for the parallel rule. The instantiated parallel rule is ht_llc_par in <a href="Isabelle_LLVM/Sepref_Parallel.html">Sepref_Parallel.thy</a>.</p>
-<p><a href="Isabelle_LLVM/Sepref.html">Sepref Tool</a> Including the parallel setup in <a href="Isabelle_LLVM/Sepref_Parallel.html">Sepref_Parallel.thy</a>.</p>
-<p><a href="Examples/IICF_DS_Interval_List.html">Interval array data structure</a></p>
-<p><a href="Isabelle_LLVM/IICF_Array.html#IICF_Array.WITH_SPLIT%7Cconst">With-Split Combinator</a>, <a href="Examples/IICF_Shared_Lists.html#IICF_Shared_Lists.WITH_IDXS%7Cconst">With-Idxs Combinator</a> and its <a href="Examples/IICF_DS_Array_Idxs.html#IICF_DS_Array_Idxs.hn_WITH_IDXS_aux%7Cfact">implementation on arrays</a>.</p>
-<p><a href="Examples/Sorting_Export_Code.html">Sorting Algorithms</a> Contains the code export to LLVM, and the final correctness theorem. Our parallel quicksort algorithm is in <a href="Examples/Sorting_Parsort.html">Sorting_Parsort.thy</a>, the sampling pivot finder is in <a href="Examples/Sorting_Sample_Partition.html">Sorting_Sample_Partition.thy</a>, and the parallel partitioner is in <a href="Examples/Sorting_Par_Partition.html">Sorting_Par_Partition.thy</a>.</p>
+<p><a href="browser_info/Unsorted/Isabelle_LLVM/NEMonad.html">NE Monad</a></p>
+<p><a href="browser_info/Unsorted/Isabelle_LLVM/MMonad.html">M Monad</a> Includes the parallel combinator</p>
+<p><a href="browser_info/Unsorted/Isabelle_LLVM/Generic_Memory.html">Memory Model</a> Including access reports</p>
+<p><a href="browser_info/Unsorted/Isabelle_LLVM/Simple_Memory.html">LLVM Values stored in Memory</a></p>
+<p><a href="browser_info/Unsorted/Isabelle_LLVM/LLVM_Shallow.html">LLVM Instructions</a></p>
+<p><a href="browser_info/Unsorted/Isabelle_LLVM/LLVM_Codegen.html">Code Generator</a> Including the <a href="browser_info/Unsorted/Isabelle_LLVM/files/par_wrapper.tmpl.ml.html">template for translating llc_par</a></p>
+<p><a href="browser_info/Unsorted/Isabelle_LLVM/LLVM_VCG_Main.html">Separation Logic and VCG</a> A bit more general than described in paper, parameterized over memory model. The general rules are proved in <a href="browser_info/Unsorted/Isabelle_LLVM/Sep_Generic_Wp.html">Sep_Generic_Wp.thy</a>, e.g. lemma ht_par for the parallel rule. The instantiated parallel rule is ht_llc_par in <a href="browser_info/Unsorted/Isabelle_LLVM/Sepref_Parallel.html">Sepref_Parallel.thy</a>.</p>
+<p><a href="browser_info/Unsorted/Isabelle_LLVM/Sepref.html">Sepref Tool</a> Including the parallel setup in <a href="browser_info/Unsorted/Isabelle_LLVM/Sepref_Parallel.html">Sepref_Parallel.thy</a>.</p>
+<p><a href="browser_info/Unsorted/Examples/IICF_DS_Interval_List.html">Interval array data structure</a></p>
+<p><a href="browser_info/Unsorted/Isabelle_LLVM/IICF_Array.html#IICF_Array.WITH_SPLIT%7Cconst">With-Split Combinator</a>, <a href="browser_info/Unsorted/Examples/IICF_Shared_Lists.html#IICF_Shared_Lists.WITH_IDXS%7Cconst">With-Idxs Combinator</a> and its <a href="browser_info/Unsorted/Examples/IICF_DS_Array_Idxs.html#IICF_DS_Array_Idxs.hn_WITH_IDXS_aux%7Cfact">implementation on arrays</a>.</p>
+<p><a href="browser_info/Unsorted/Examples/Sorting_Export_Code.html">Sorting Algorithms</a> Contains the code export to LLVM, and the final correctness theorem. Our parallel quicksort algorithm is in <a href="browser_info/Unsorted/Examples/Sorting_Parsort.html">Sorting_Parsort.thy</a>, the sampling pivot finder is in <a href="browser_info/Unsorted/Examples/Sorting_Sample_Partition.html">Sorting_Sample_Partition.thy</a>, and the parallel partitioner is in <a href="browser_info/Unsorted/Examples/Sorting_Par_Partition.html">Sorting_Par_Partition.thy</a>.</p>
 <h4 id="verified-algorithms">Verified Algorithms</h4>
-<p><a href="Examples/Sorting_Parsort.html">Parallel Quicksort</a></p>
-<p><a href="Examples/Sorting_Introsort.html">Introsort</a></p>
-<p><a href="Examples/Sorting_PDQ.html">PDQ Sort</a></p>
-<p><a href="Examples/KMP.html">Knuth Morris Pratt String Search</a></p>
-<p><a href="Examples/Bin_Search.html">Binary Search</a></p>
+<p><a href="browser_info/Unsorted/Examples/Sorting_Parsort.html">Parallel Quicksort</a></p>
+<p><a href="browser_info/Unsorted/Examples/Sorting_Introsort.html">Introsort</a></p>
+<p><a href="browser_info/Unsorted/Examples/Sorting_PDQ.html">PDQ Sort</a></p>
+<p><a href="browser_info/Unsorted/Examples/KMP.html">Knuth Morris Pratt String Search</a></p>
+<p><a href="browser_info/Unsorted/Examples/Bin_Search.html">Binary Search</a></p>
 <p>For the ISA-SAT verified SAT solver, see its own <a href="https://m-fleury.github.io/isasat/isasat.html">homepage</a></p>
 <h4 id="isabelle-llvm">Isabelle-LLVM</h4>
-<p><a href="Isabelle_LLVM/IICF.html">IICF (Isabelle-LLVM + Refinement Framework + Collection Framework)</a></p>
-<p><a href="Isabelle_LLVM/LLVM_Shallow.html">Shallow Embedding of LLVM Semantics</a></p>
+<p><a href="browser_info/Unsorted/Isabelle_LLVM/IICF.html">IICF (Isabelle-LLVM + Refinement Framework + Collection Framework)</a></p>
+<p><a href="browser_info/Unsorted/Isabelle_LLVM/LLVM_Shallow.html">Shallow Embedding of LLVM Semantics</a></p>
 <h2 id="prerequisites">Prerequisites</h2>
 <ul>
 <li>To compile the LLVM code: Working installation of <a href="http://releases.llvm.org/">LLVM</a> version &gt;= 10.0.0.</li>

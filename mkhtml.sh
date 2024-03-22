@@ -77,6 +77,13 @@ htmlbase=https://lammich.github.io/isabelle_llvm
 
 sed -re "s|\(HTML:([^)]*)\)|($htmlbase/\1)|g" README.in.md > README.md
 
+cat index.in.md \
+| sed -re 's|:Isabelle_LLVM:|browser_info/Unsorted/Isabelle_LLVM|g'\
+| sed -re 's|:Examples:|browser_info/Unsorted/Examples|g' > index.md
+
+
+
+
 
 HTMLDIR=docs
 
