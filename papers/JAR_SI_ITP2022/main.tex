@@ -124,7 +124,7 @@
   We present a stepwise refinement approach to develop
   verified parallel algorithms, down to efficient LLVM code.
   The resulting algorithms' performance is competitive with their
-  counterparts implemented in C/C++.
+  counterparts implemented in C++.
 %
   Our approach is backwards compatible with the Isabelle Refinement Framework,
   such that existing sequential formalizations can easily be adapted
@@ -167,7 +167,7 @@ re-using an existing verification of state-of-the-art sequential sorting algorit
 Our verified parallel sorting algorithm is competitive to state-of-the-art parallel sorting algorithms
 from GNU's C++ standard library and the Boost C++ Libraries.
 
-This paper is an extended version of our ITP 2023 paper~\cite{La22}.
+This paper is an extended version of our ITP 2022 paper~\cite{La22}.
 The main new contribution is a verified parallel partitioning algorithm,
 which significantly improves the efficiency and scalability of our sorting algorithm from~\cite{La22}.
 To this end, we added a description of the interval list data structure (Section~\ref{sec:mod_ds})
@@ -194,7 +194,7 @@ contains updated and more extensive benchmarks.
 %   \item the first verified implementation of a parallel sorting algorithm.
 % \end{itemize}
 
-\noindent The formalization is available at \href{https://www21.in.tum.de/~lammich/isabelle_llvm_par/}{www21.in.tum.de/$\sim$lammich/isabelle\_llvm\_par}.
+The formalization is available at \href{https://www21.in.tum.de/~lammich/isabelle_llvm_par/}{www21.in.tum.de/$\sim$lammich/isabelle\_llvm\_par}.
 
 
 \subsection{Overview}\label{sec:intro_overview}
@@ -283,7 +283,7 @@ While there exist back ends for purely functional code~\cite{LaTu12,La13},
 and sequential imperative code~\cite{La15,La19-llvm}, this paper describes a back end
 for parallel imperative LLVM code (Section~\ref{sec:parsem}).
 
-On top of the back-end, we formalize a concurrent separation logic~\cite{OH04} and implement a verification condition generator (VCG). (Section~\ref{sec:seplogic}).
+On top of the back-end, we formalize a concurrent separation logic~\cite{OH04} and implement a verification condition generator (VCG), cf.\ Section~\ref{sec:seplogic}.
 
 At the level of the program logic and VCG, our framework can be used to verify simple low-level algorithms and data structures,
 like dynamic arrays and linked lists. More complex developments typically use a stepwise refinement approach,
@@ -357,24 +357,24 @@ though sometimes simplified to improve the clarity of the presentation.
 
 We mainly use Isabelle/HOL notation, with some shortcuts and adaptations for presentation in a paper.
 In this section, we give examples of the more unusual notations: for implication, we always write \is{==>},
-e.g., \is{\<forall>x. x<4 ==> x<=4} (in Isabelle, one must use \is{-->} here). Free variables are
+e.g., \is{\<forall>x. x\:<\:4 ==> x\:<=\:4} (in Isabelle, one must use \is{-->} here). Free variables are
 universally quantified at the top-level.
 
 Type variables are \is{'a, 'b, ...} and function types are written curried as \is{'a => 'b => 'c}.
-Types can be annotated to any term, e.g., \is{(x::nat) < 4 ==> x<=3}.
+Types can be annotated to any term, e.g., \is{(x::nat)\:<\:4 ==> x\:<=\:3}.
 Function application is written as \is{f x y}, and function update is \is{f(x:=y)}.
 For definitions, we use \is{==}, e.g., \is{f x == x+1}.
 
 Algebraic datatypes are written as \is{'a option == Some (the: 'a) | None}. This also defines the selector function \is{the :: 'a option => 'a}.
 Values of the tuple type \is{'a_1 \x ... \x 'a$_n$} are written as \is{(a_1,...,a$_n$)}. Lists have type \is{'a list},
-and we write \is{[]} for the empty list, \is{x#xs} for the list with head \is{x} and tail \is{xs}, and \is{xs_1@xs_2} for list concatenation.
+and we write \is{[]} for the empty list, \is{x#xs} for the list with head \is{x} and tail \is{xs}, and \is{xs_1@\:xs_2} for list concatenation.
 We also use the list notation \is{[1,2,3]}. The length of list \is{xs} is \is{|xs|}.
 
 The empty set is \is${} :: 'a set$. The set \is${l..<h}$ contains all elements between $l$ inclusive and $h$ exclusive, and the set \is${l..}$ contains all elements greater than or equal to $l$.
 Disjoint union is written as \is{$\dot\cup$}. We only write \is{$\dot\cup$} if it is clear from the context where the disjointness constraint belongs to.
-Otherwise, we will explicitly write, e.g., \is$ s = s_1 \union s_2  &  s_1 \inter s_2 = {}$. The cardinality of the finite set \is{s} is \is{|s|}.
+Otherwise, we will explicitly write, e.g., \is$ s = s_1 \union s_2  &  s_1 \inter s_2 = {}$. The cardinality of a finite set \is{s} is \is{|s|}.
 
-Lambda abstraction is written as \is{\<lambda>x. x+1}. When clear from the context, we omit the \is{\<lambda>}, e.g. \is{spec x. x>42}.
+Lambda abstraction is written as \is{\<lambda>x. x+1}. When clear from the context, we omit the \is{\<lambda>}, e.g. \is{spec x. x\:>\:42}.
 We also use Haskell-like sections for infix operators, e.g. \is{(+1)} for \is{\<lambda>x. x+1}.
 We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ for \is$\<lambda>l h. {l..<h}$.
 
@@ -413,7 +413,7 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
     bind$_M$ m f \mu == (x_1,r_1,\mu) <- m \mu; (x_2,r_2,\mu) <- f x_1 \mu; return$_{ne}$ (x_2,r_1+r_2,\mu)
   \end{lstlisting}
   Here, \is{return} does not change the state, and reports no accesses (\is$0$),
-  and \is{bind} sequentially composes the executions, threading through the state $\mu$ and adding up the access reports \is$r_1$ and \is$r_2$.
+  and \is{bind} sequentially composes the executions, threading through the state $\mu$ and adding up the access reports \is$r_1$ and \is$r_2$. Note that we use the names \is$r :: \rho$ for reports, \is$\mu :: \mu$ for memory, and \is$m :: _ M$ for monads.
 
   Typically, the access report will contain read and written addresses, such that data races can be detected.
   Moreover, if parallel executions can allocate memory, we must detect those
@@ -449,23 +449,24 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
   \subsection{Memory Model}
   Our memory model supports blocks of values, where values can be integers, structures, or pointers into a block:
   \begin{lstlisting}
-    datatype addr == ADDR (bidx: nat) (idx: nat)
-    datatype ptr == PTR_NULL   |   PTR_ADDR (the_addr: addr)
-    datatype val == LL_INT lint   |   LL_STRUCT val list   |   LL_PTR ptr
+    bidx == nat
+    addr == ADDR bidx nat
+    ptr == PTR_NULL   |   PTR_ADDR (the_addr: addr)
+    val == LL_INT lint   |   LL_STRUCT val list   |   LL_PTR ptr
 
-    datatype block == FRESH   |   FREED   |   is_alloc: ALLOC (vals: "val list")
-    typedef memory == { \mu :: nat => block. finite {b. \mu b ~= FRESH} }
+    block == FRESH   |   FREED   |   is_alloc: ALLOC (vals: "val list")
+    typedef memory == { \mu :: bidx => block. finite {b. \mu b ~= FRESH} }
   \end{lstlisting}
-  A block is either fresh, freed, or allocated, and a memory is a mapping from block indexes to blocks,
+  A block is either fresh, freed, or allocated, and a memory is a mapping from block indexes (\is{bidx}) to blocks,
   such that only finitely many blocks are not fresh. Every block's state transitions from fresh to
   allocated to freed. This avoids ever reusing the same block, and thus allows us to semantically detect use after free errors.
   Every program execution can only allocate finitely many blocks,
   such that we will never run out of fresh blocks\footnote{If the actual system does run out of memory, we will terminate the program in a defined way.}.
-  An allocated block contains an array of values, modelled as a list. Thus, an address consists of a block number, and an index into the array.
+  An allocated block contains an array of values, modelled as a list. Thus, an address \is$ADDR bi i$ consists of a block index \is$bi$, and an index \is{i} into the array.
 
   To access and modify memory, we define the functions \is{valid}, \is{get}, and \is{put}:
   \begin{lstlisting}
-    valid \mu (ADDR b i) == is_alloc (\mu b) & i<|vals (\mu b)|
+    valid \mu (ADDR b i) == is_alloc (\mu b) & i < |vals (\mu b)|
     get \mu (ADDR b i) == vals (\mu b) ! i
     put \mu (ADDR b i) x == \mu(b := ALLOC ((vals (\mu b))[i:=x]))
   \end{lstlisting}
@@ -481,9 +482,9 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
   We now fix the state of the M-monad to be memory, and the access reports to be tuples \is{(r,w,a,f)} of
   read and written addresses, as well as sets of allocated and freed blocks:
   \begin{lstlisting}
-    acc == addr set \x addr set \x nat set \x nat set
+    acc == addr set \x addr set \x bidx set \x bidx set
     0 == ( {},{},{},{} )
-    (r_1,w_1,a_1,f_1) + (r_2,w_2,a_2,f_2) == ( r_1\union r_2, w_1\union w_2, a_1\union a_2, f_1\union f_2 )
+    (r_1,w_1,a_1,f_1) + (r_2,w_2,a_2,f_2) == ( r_1 \union r_2, w_1 \union w_2, a_1 \union a_2, f_1 \union f_2 )
   \end{lstlisting}
 
   Two parallel executions are feasible if they did not allocate the same block. They have a data race
@@ -511,7 +512,7 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
   \begin{lstlisting}
     (4)  addr \in w_1 \or b \in a_1 ==> get \mu' addr = get \mu_1 addr
     (5)  addr \in w_2 \or b \in a_2 ==> get \mu' addr = get \mu_2 addr
-    (6)  addr ~: w_1\<union>w_2 & b ~: a_1\<union>a_2 ==> get \mu' addr = get \mu addr
+    (6)  addr ~: w_1\:\<union>\:w_2 & b ~: a_1\:\<union>\:a_2 ==> get \mu' addr = get \mu addr
   \end{lstlisting}
   The properties (1)--(3) define the state of blocks in the combined memory:
   a fresh block in \is{\mu'} was fresh already in \is{\mu}, and has not been allocated (1);
@@ -566,14 +567,14 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
   \subsection{LLVM Instructions}
   Based on the M-monad, we define shallowly embedded LLVM instructions. For most instructions,
   this is analogous to the sequential case~\cite{La19-llvm}.
-  Additionally, we define an instruction for parallel function call:
+  Additionally, we define an instruction for a parallel function call:
   \begin{lstlisting}
     llc_par f g a b == f a || g b
   \end{lstlisting}
   The code generator only accepts this, if \is{f} and \is{g} are constants (i.e., function names).
   It then generates some type-casting boilerplate, and a call to an external
   \is{parallel} function, which we implement using the Threading Building Blocks~\cite{TBB} library:
-  \begin{lstlisting}[language=C++]
+  \begin{lstlisting}[language=C++, basicstyle=\ttfamily]
   void parallel(void (*f1)(void*), void (*f2)(void*), void *x1, void *x2) {
     tbb::parallel_invoke([=]{f1(x1);}, [=]{f2(x2);}); }
   \end{lstlisting}
@@ -788,7 +789,7 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
 
   For our memory model, we define the following abstraction function:
   \begin{lstlisting}
-    \alpha :: memory => (addr => val option) \x (nat => nat option)
+    \alpha :: memory => (addr => val option) \x (bidx => nat option)
     \alpha \mu == (\alpha$_m$ \mu, \alpha$_b$ \mu)
 
     \alpha$_m$ \mu addr == if valid \mu addr then Some (get \mu addr) else 0
@@ -837,7 +838,7 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
                                  & (\<forall>i. b i ~= 0 ==> i ~: f)
   \end{lstlisting}
   that is, when executed on memory \is{\mu}, the program \is{c} does not fail, every return value \is{x} and new memory \is{\mu'} satisfies \is{Q},
-  and no memory described by the frame \is{amf} is accessed.
+  and no memory described by the frame \is{amf}~~is accessed.
 
   Equipped with \is{wpf}, we define a Hoare-triple:
   \begin{lstlisting}
@@ -931,7 +932,7 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
   For a detailed description on using the \is{ne}-monad for stepwise refinement based program verification, we refer the reader to~\cite{LaTu12}.
 
   \begin{example}[Swapping multiple elements]\label{ex:swap_spec}
-    We specify an operation to perform multiple swaps. It takes two disjoint sets of indices \is{s_1} and \is{s_2}, and a list \is{xs}. It then swaps each index in \is{s_1} with some index in \is{s_2}.
+    We specify an operation to perform multiple swaps. It takes two disjoint sets of indexes \is{s_1} and \is{s_2}, and a list \is{xs}. It then swaps each index in \is{s_1} with some index in \is{s_2}.
     The precondition of this operation assumes that the index sets are in range, disjoint, and have the same cardinality:
     \begin{lstlisting}
       swap_spec_pre s_1 s_2 xs == s_1 \inter s_2 = {} & s_1 \union s_2 \<subseteq> {0..<|xs|} & |s_1| = |s_2|
@@ -940,9 +941,10 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
     the elements at indexes outside \is{s_1 \union s_2} are unchanged, and that each element in \is{s_1} is swapped with one in \is{s_2}:
     \begin{lstlisting}
       swap_spec_post s_1 s_2 xs xs' ==
-        mset xs' = mset xs & (\<forall>i\<notin>s_1 \union s_2. i < |xs| ==> xs'!i=xs!i)
-      & (\<forall>i\<in>s_1. \<exists>j\<in>s_2. xs'!i=xs!j) & (\<forall>j\<in>s_2. \<exists>i\<in>s_1. xs'!j=xs!i)
+        mset xs' = mset xs & (\<forall>i\<notin>s_1 \union s_2. i < |xs| ==> xs'!i = xs!i)
+      & (\<forall>i\<in>s_1. \<exists>j\<in>s_2. xs'!i = xs!j) & (\<forall>j\<in>s_2. \<exists>i\<in>s_1. xs'!j = xs!i)
     \end{lstlisting}
+    Here, \is{mset xs} is the multiset of elements of the list \is{xs}, and \is{mset xs = mset xs'} is the standard way to express permutation in Isabelle.
 
     As a sanity check, we prove that our specification is not vacuous, i.e., that for every input that satisfies the precondition, there
     exists an output that satisfies the postcondition:
@@ -989,8 +991,8 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
   \begin{example}(Refinement of lists to arrays)\label{ex:ref_array}
     We define abstract programs for indexing and updating a list:
     \begin{lstlisting}
-      lget xs i == assert (i<|xs|); return xs!i
-      lset xs i x == assert (i<|xs|); return xs[i:=x]
+      lget xs i == assert (i < |xs|); return xs!i
+      lset xs i x == assert (i < |xs|); return xs[i:=x]
     \end{lstlisting}
     These programs assert that the index is in bounds, and then return the accessed element (\is{xs!i})
     or the updated list (\is{xs[i:=x]}) respectively. The following assertion links a pointer to a list of
@@ -1007,10 +1009,11 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
       aget p i == ll_ofs_ptr p i; ll_load p
       aset p i x == ll_ofs_ptr p i; ll_store x p; return p
     \end{lstlisting}
+    where \is{ll_ofs_ptr} is the Isabelle-LLVM instruction for offsetting a pointer by an index.
     The abstract and concrete programs are linked by the following refinement theorems:
     \begin{lstlisting}
       hnr (arr$_A$ xs$_\dagger$ xs * idx$_A$ i$_\dagger$ i)$\hspace*{-1pt}$ (aget xs$_\dagger$ i$_\dagger$)$\hspace*{-1pt}$ (arr$_A$ xs$_\dagger$ xs$\hspace*{1pt}$*$\hspace*{1pt}$idx$_A$ i$_\dagger$ i)$\hspace*{-1pt}$ id$_A$$\hspace*{-1pt}$ $\top$$\hspace*{-1pt}$ (lget xs i)
-      hnr (arr$_A$ xs$_\dagger$ xs * idx$_A$ i$_\dagger$ i) (aset xs$_\dagger$ i$_\dagger$ x) (idx$_A$ i$_\dagger$ i) arr$_A$ (%r. r=xs$_\dagger$) (lset xs i x)
+      hnr (arr$_A$ xs$_\dagger$ xs * idx$_A$ i$_\dagger$ i) (aset xs$_\dagger$ i$_\dagger$ x) (idx$_A$ i$_\dagger$ i) arr$_A$ (%r. r\:=\:xs$_\dagger$) (lset xs i x)
     \end{lstlisting}
     That is, if the list \is$xs$ is refined by array \is{xs$_\dagger$}, and the natural number \is$i$ is refined
     by the fixed-width\footnote{We use Isabelle's word library here, which encodes the actual width as a type variable,
@@ -1028,13 +1031,13 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
     The theorems for the array operations above can also be written as:
     \begin{lstlisting}
       aget, lget : arr$_A$ -> idx$_A$ -> id$_A$
-      aset, lset : arr$_A$^d:xs$_\dagger$ -> idx$_A$ -> id$_A$ -> arr$_A$:r [r=xs$_\dagger$]
+      aset, lset : arr$_A$^d:xs$_\dagger$ -> idx$_A$ -> id$_A$ -> arr$_A$:r [r\:=\:xs$_\dagger$]
     \end{lstlisting}
     The first theorem simply states that the first argument is refined by \is{arr$_A$},
     the second argument by \is{idx$_A$}, and the result by \is{id$_A$}.
     The second theorem adds the annotation $\cdot^d$ to the refinement for the array argument,
     indicating that this argument will be destroyed, i.e., the refinement is no longer valid when the function returns.
-    Moreover, it binds the array argument to the name \is{xs$_\dagger$} and the result to $r$. These names are used in the pointer equality predicate \is{[r=xs$_\dagger$]}
+    Moreover, it binds the array argument to the name \is{xs$_\dagger$} and the result to $r$. These names are used in the pointer equality predicate \is{[r\:=\:xs$_\dagger$]}
     at the end, indicating that the result will be the same pointer as the array argument.
 
 
@@ -1065,9 +1068,9 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
     iv$_R$ :: (nat \x nat) => nat set => bool                    iv$_R$ (l,h) s == s = {l..<h}
 
     iv l h == (l,h)                                                 iv, {_..<_} : id$_R$ -> id$_R$ -> iv$_R$
-    iv_is_empty (l,h) == h<=l                                    iv_is_empty, (={}) : iv$_R$ -> id$_R$
+    iv_is_empty (l,h) == h\:<=\:l                                   iv_is_empty, (={}) : iv$_R$ -> id$_R$
     iv_inter (l_1,h_1) (l_2,h_2) == ( max l_1 l_2, min h_1 h_2 )     iv_inter, (\inter) : iv$_R$ -> iv$_R$ -> iv$_R$
-    iv_card (l,h) == if h<l then 0 else h-l                iv_card, |_| : iv$_R$ -> id$_R$
+    iv_card (l,h) == if h\:<\:l then 0 else h-l               iv_card, |_| : iv$_R$ -> id$_R$
   \end{lstlisting}
   Note that \is$h<l ==> {l..<h} = {}$, and we do not enforce $l\le h$ for our representation. Thus, no checks are needed for construction and intersection.
   However, we use a check to avoid underflow when computing the cardinality.
@@ -1107,11 +1110,11 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
     ivl$_R$ ls s == s = \<Union>set s  &  pw_disjoint ls  &  (\<forall>x:set ls. finite x & x ~= {})
 
     ivl_empty == []                                 ivl_empty, {} : ivl$_R$
-    ivl_is_empty ls == ls=[]                       ivl_is_empty, (={}) : ivl$_R$ -> id$_R$
+    ivl_is_empty ls == ls = []                     ivl_is_empty, (={}) : ivl$_R$ -> id$_R$
     ivl_dj_un s ls == s#ls                         ivl_dj_un, ($\dot\cup$) : id$_R$ -> ivl$_R$ -> ivl$_R$
     ivl_card ls == fold (%s c. c=c+|s|) ls 0     ivl_card, card : ivl$_R$ -> id$_R$
     ivl_split (s#ls) == (s,ls)                      ivl_split, split : ivl$_R$ -> id$_R$ \x ivl$_R$
-      split s == assert (s~={}); spec (s_1,s_2). s = s_1 $\dot\cup$ s_2 & s_1~={}
+      split s == assert (s ~= {}); spec (s_1,s_2). s = s_1 $\dot\cup$ s_2 & s_1 ~= {}
   \end{lstlisting}
 
   We then refine the lists of sets to array lists (dynamic arrays) of intervals: \is{al$_A$ iv$_A$}.
@@ -1146,7 +1149,7 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
   We have demonstrated one way of modularly developing an interval list data structure based on a dynamic array.
   By separating the actual intervals from the list data structure, the proofs about the interval
   list where independent of the interval implementation.
-  This is a design choice, and a more direct design, using \is{(nat \x nat) list} as intermediate data structure, is certainly possible.
+  This is a design choice, and a more direct design, e.g., using \is{(nat \x nat) list} as intermediate data structure, is certainly possible.
 
   \subsection{Array Splitting}\label{sec:array_split}
   An important concept for parallel programs is to concurrently operate on disjoint parts of the memory,
@@ -1161,7 +1164,7 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
       assert (i < |xs|);
       (xs_1,xs_2) <- f (take i xs) (drop i xs);
       assert (|xs_1| = i \and |xs_2| = |xs| - i);
-      return (xs_1@xs_2)
+      return (xs_1@\:xs_2)
   \end{lstlisting}
   Abstractly, this is an annotation that is inlined when proving the abstract program correct.
   However, Sepref will translate it to the concrete combinator \is{awith_split}:
@@ -1171,26 +1174,26 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
   The corresponding refinement theorem is:
   \begin{lstlisting}
     awith_split, with_split :
-      arr$_A$^d:p -> idx$_A$ -> (arr$_A$^d:p_1 -> arr$_A$^d:p_2 -> arr$_A$:r_1 \x arr$_A$:r_2 [r_1=p_1 & r_2=p_2])
+      arr$_A$^d:p -> idx$_A$ -> (arr$_A$^d:p_1 -> arr$_A$^d:p_2 -> arr$_A$:r_1 \x arr$_A$:r_2 [r_1=\:p_1 & r_2=\:p_2])
       -> arr$_A$:r [r=p]
   \end{lstlisting}
   or, equivalently, in pointwise notation:
   \begin{lstlisting}
     hnr (arr$_A$ p_1 xs_1 * arr$_A$ p_2 xs_2) (f$_\dagger$ p_1 p_2) \<box>
-        (arr$_A$ \x arr$_A$) (%(r_1,r_2). r_1=p_1 \and r_2 = p_2)
+        (arr$_A$ \x arr$_A$) (%(r_1,r_2). r_1\:=\:p_1 \and r_2\:=\:p_2)
         (f xs_1 xs_2)"
     ==>
     hnr (arr$_A$ p xs * idx$_A$ i$_\dagger$ i) (awith_split i$_\dagger$ p f$_\dagger$)
-        (idx$_A$ i$_\dagger$ i) arr$_A$ (%r. r=p)
+        (idx$_A$ i$_\dagger$ i) arr$_A$ (%r. r\:=\:p)
         (with_split i xs f)
   \end{lstlisting}
   The refinement of the function argument (\is{f} to \is{f$_\dagger$}) requires an additional proof that the returned pointers
   are equal to the argument pointers (\is{r_1 = p_1 \and r_2 = p_2}).
   Sepref tries to prove that automatically, using its pointer equality heuristics.
 
-  Splitting an array into two halves allows us to abstractly treat the array and its two halves just as lists,
-  which simplifies the abstract proofs: the fact that the two halves come from the same array is only visible
-  at a later refinement stage. However, while splitting an array in halves is adequate for many operations,
+  Splitting an array into two parts allows us to abstractly treat the array and its two parts just as lists,
+  which simplifies the abstract proofs: the fact that the two parts come from the same array is only visible
+  at a later refinement stage. However, while splitting an array in parts is adequate for many operations,
   it is not a workable abstraction for swapping multiple elements in parallel (cf.~Sec.~\ref{ex:swap_spec}):
   while, in theory, we could split the array element-wise, this would incur a considerable proof burden.
 
@@ -1207,6 +1210,9 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
     sl_struct :: 'a option list => bool list        sl_struct xs == map (=None) xs
     sl_compat :: bool list => bool list => bool   sl_compat s_1 s_2 == list_all2 (\<or>) s_1 s_2
   \end{lstlisting}
+  Here, \is{list_all2} is the natural relator for lists, i.e., \is{list_all2 (\<or>) s_1 s_2} means that the lists
+  \is{s_1} and \is{s_2} have the same length, and for each index, the element in at least one of the lists is true.
+
   We also define functions to split and join lists:
   \begin{lstlisting}
     sl_split s xs == map (%i. if i\<in>s & i < |xs| then xs!i else None) [0..<|xs|${}$]
@@ -1214,14 +1220,14 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
     sl_join xs_1 xs_2 == map2 join_option xs_1 xs_2
   \end{lstlisting}
   Here, \is{sl_split s xs} returns a list that owns the indexes that are in \is{s} and owned by \is{xs},
-  and \is{sl_join xs_1 xs_2} joins the elements of two (compatible) lists.
+  and \is{sl_join xs_1 xs_2} joins the elements of two (compatible) lists. The function \is{map2 f xs ys == map (\<lambda>(x,y). f x y) (zip xs ys)} combines two lists element-wise, using the binary function \is$f$.
 
   Analogously to \is{with_split}, we define a combinator \is{with_idxs s xs f}, that splits
   the list \is{xs} into the lists with the indexes \is{s}, and without the indexes \is{s}, executes \is{f} on these lists,
   and joins the resulting lists:
   \begin{lstlisting}
   with_idxs s xs f ==
-    assert (\<forall>i\<in>s. i<|xs| & xs!i ~= None);
+    assert (\<forall>i\<in>s. i\:<\:|xs| & xs!i ~= None);
     let (xs_1, xs_2) = (sl_split s xs, sl_split (-s) xs);
     (xs$_1'$,xs$_2'$) <- f xs_1 xs_2;
     assert (sl_struct xs$_1'$ = sl_struct xs_1 & sl_struct xs$_2'$ = sl_struct xs_2);
@@ -1231,13 +1237,13 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
   On the concrete side, we define the refinement assertion \is{oarr$_A$} between arrays and lists of options.
   It only owns the indexes of the array that are not None:
   \begin{lstlisting}
-  oarr$_A$ p xs == range {i | i. i<length xs & xs!i~=None}) p (%i. the (xs!i))
+  oarr$_A$ p xs == range {i | i. i\:<\:length xs & xs!i\:~=\:None}) p (%i. the (xs!i))
   \end{lstlisting}
 
   We implement abstract operations for accessing the list, and show the corresponding refinement lemmas:
   \begin{lstlisting}
-    olget xs i == assert (i<|xs| & xs!i ~= None); return the (xs!i)
-    olset xs i x == assert (i<|xs| & xs!i ~= None); return the (xs[i:=x])
+    olget xs i == assert (i < |xs| & xs!i ~= None); return the (xs!i)
+    olset xs i x == assert (i < |xs| & xs!i ~= None); return the (xs[i:=x])
 
     aget, olget : oarr$_A$ -> idx$_A$ -> id$_A$
     aset, olset : oarr$_A$^d:p -> idx$_A$ -> id$_A$ -> oarr$_A$:r [r=p]
@@ -1286,7 +1292,7 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
   To test the usability of our framework, we verify a parallel sorting algorithm.
   We start with the abstract specification of an algorithm that sorts a list:
   \begin{lstlisting}
-  sort_spec xs == spec xs'. mset xs'=mset xs & sorted xs
+  sort_spec xs == spec xs'. mset xs' = mset xs & sorted xs
   \end{lstlisting}
   I.e., we return a sorted permutation of the original list.
   This is a standard specification of sorting in Isabelle, and easily proved equivalent to other, more explicit specifications:
@@ -1299,14 +1305,14 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
   \begin{figure}
   \begin{lstlisting}[numbers=left,xleftmargin=1.9em,frame=single,framexleftmargin=.5em]
     psort xs n ==
-      assert n=|xs|; if n<=1 then return xs else psort_aux$\hspace*{-1pt}$ xs$\hspace*{-1pt}$ n$\hspace*{-1pt}$ (log2$\hspace*{-1pt}$ n$\hspace*{-1pt}$ *$\hspace*{-1pt}$ 2)
+      assert n\:=\:|xs|; if n\:<=\:1 then return xs else psort_aux$\hspace*{-1pt}$ xs$\hspace*{-1pt}$ n$\hspace*{-1pt}$ (log2$\hspace*{-1pt}$ n$\hspace*{-1pt}$ *$\hspace*{-1pt}$ 2)
 
     psort_aux xs n d ==
-      assert n=|xs|
-      if d=0 \or n<100000 then sort_spec xs $\label{l:psort:fallback}$
+      assert n = |xs|
+      if d = 0 \or n < 100000 then sort_spec xs $\label{l:psort:fallback}$
       else
         (xs,m) <- partition_spec xs; $\label{l:psort:partition}$
-        let bad = m<n div 8 \or (n-m < n div 8)  $\label{l:psort:bad}$
+        let bad = m < n div 8 \or (n-m < n div 8)  $\label{l:psort:bad}$
         (_,xs) <- with_split m xs (%xs_1 xs_2.
           if bad then nseq psort_aux psort_aux (xs_1,m,d-1) (xs_2,n-m,d-1) $\label{l:psort:rec_seq}$
           else npar psort_aux psort_aux (xs_1,m,d-1) (xs_2,n-m,d-1)  $\label{l:psort:rec_par}$
@@ -1342,14 +1348,14 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
   Given implementations of \is{sort_spec} and \is{partition_spec}, Sepref
   generates an LLVM program \is{psort$_\dagger$} from the abstract \is{psort}, and proves a corresponding refinement lemma:
   \begin{lstlisting}
-    psort$_\dagger$, psort : arr$_A$^d:xs$_\dagger$ -> idx$_A$ -> arr$_A$:r [r=xs$_\dagger$]
+    psort$_\dagger$, psort : arr$_A$^d:xs$_\dagger$ -> idx$_A$ -> arr$_A$:r [r = xs$_\dagger$]
   \end{lstlisting}
   Combining this with the correctness lemma of the abstract \is{psort} algorithm, and unfolding the definition of \is{hnr},
   we prove the following Hoare-triple for our final implementation:
   \begin{lstlisting}
   "ht (arr$_A$ xs$_\dagger$ xs  *  idx$_A$ n$_\dagger$ n  *  n = |xs|)
     (psort$_\dagger$ xs$_\dagger$ n$_\dagger$)
-    (%r. r=xs$_\dagger$  *  \<exists> xs'. arr$_A$ xs$_\dagger$ xs'  *  sorted xs'  *  mset xs' = mset xs)"
+    (%r. r = xs$_\dagger$  *  \<exists> xs'. arr$_A$ xs$_\dagger$ xs'  *  sorted xs'  *  mset xs' = mset xs)"
   \end{lstlisting}
   That is, for a pointer \is{xs$_\dagger$} to an array, whose content is described by list \is{xs} (\is{arr$_A$}), and a fixed-size word \is{n$_\dagger$} representing the natural number \is{n} (\is{idx$_A$}),
   which must be the number of elements in the list \is{xs}, our sorting algorithm returns the original pointer \is{xs$_\dagger$}, and the array content now is \is{xs'}, which is sorted and a permutation of \is{xs}.
@@ -1559,7 +1565,7 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
   \begin{lstlisting}
     ppart1 p xs ==
       (xs,ls,rs) <- ppart_spec p xs;   --"\rightcomment{Step 1 and 2}"
-      let m = |ls|; ss = {i\<in>ls. m<=i}; bs = {i\<in>rs. i<m};   --"\rightcomment{Step 3}"
+      let m = |ls|; ss = {i\<in>ls. m\:<=\:i}; bs = {i\<in>rs. i\:<\:m};   --"\rightcomment{Step 3}"
       xs <- swap_spec ss bs xs;        --"\rightcomment{Step 4}"
       return (m,xs)
   \end{lstlisting}
@@ -1585,9 +1591,9 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
 
   par_swap_aux ss bs xs ==
     ((ss_1,ss_2),(bs_1,bs_2))
-      <- spec ((ss_1,ss_2),(bs_1,bs_2)). ss=ss_1$\dot\cup$ss_2 & bs=bs_1$\dot\cup$bs_2 & |ss_1|=|bs_1| & ss_1~={}
+      <- spec ((ss_1,ss_2),(bs_1,bs_2)). ss\:=\:ss_1$\dot\cup$ss_2 & bs\:=\:bs_1$\dot\cup$bs_2 & |ss_1|\:=\:|bs_1| & ss_1~={}
 
-    if (ss_2={}) then swap_opt_spec ss_1 bs_1 xs
+    if (ss_2 = {}) then swap_opt_spec ss_1 bs_1 xs
     else
       with_idxs (ss_1 \union bs_1) xs (%xs_1 xs_2.
         (xs_1,xs_2) <- npar swap_opt_spec par_swap_aux (ss_1,bs_1,xs_1) (ss_2,bs_2,xs_2);
@@ -2226,7 +2232,7 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
       ybar=0pt,
       width=\textwidth,
       height=.249\textheight,
-      bar width=3pt,
+      bar width=2.5pt,
       xtick=data,
       symbolic x coords={rev-sorted-end-10,rev-sorted-end-1,sorted-end-.1,almost-sorted-50,random-boolean,organ-pipe,sorted-end-10,equal,rev-sorted-middle-.1,rev-sorted,sorted-middle-1,rev-sorted-middle-10,random,almost-sorted-.1,sorted,rev-sorted-middle-1,sorted-middle-.1,almost-sorted-10,almost-sorted-1,sorted-middle-10,rev-sorted-end-.1,sorted-end-1,random-dup-10,}
       ,
@@ -2244,12 +2250,12 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
   }
 
   \begin{figure}
-    \plottim{Laptop, uint64}{data_laptop_uint64}{xticklabels={}}{\legend{}}
-    \plottim{Server, uint64}{data_server_uint64}{xticklabels={},ymax=1000}{\legend{}}
-    \plottim{Laptop, string}{data_laptop_llstring}{xticklabels={}}{\legend{}}
+    \plottim{Laptop, uint64}{data_laptop_uint64}{xticklabels={},ytick distance={200}}{\legend{}}
+    \plottim{Server, uint64}{data_server_uint64}{xticklabels={},ytick distance={200},ymax=1100}{\legend{}}
+    \plottim{Laptop, string}{data_laptop_llstring}{xticklabels={},ytick distance={200},ymax=1100}{\legend{}}
     \plottim{Server, string}{data_server_llstring}{
       xlabel near ticks, x tick label style={rotate=45,anchor=east,font=\tiny},
-      ymax=1000,
+      ytick distance={200},ymax=1000,
       legend style = {
 %         legend pos= north east,
         at = {(.87,.97)},
@@ -2430,12 +2436,13 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
   The result was that both implementations have the same runtime, up to some minor noise.
   This indicates that there is no systemic slowdown: algorithms verified with our framework run as fast as their unverified counterparts implemented in C++.
 
-  We also benchmarked against the state-of-the-art implementations \is{std::sort} with execution policy \is{par_unseq} from the
-  GNU C++ standard library~\cite{libstdc++},
+  We also benchmarked against the old verified algorithm with sequential partitioning from our ITP 2022 paper~\cite{La22}, as well as against the state-of-the-art implementations \is{std::sort} with execution policy \is{par_unseq} from the GNU C++ standard library~\cite{libstdc++},
   and \is{sample_sort} from the Boost C++ libraries~\cite{boost,boost-sort}.
   We have benchmarked the algorithm on two different machines, and various input distributions. The results are shown in Figure~\ref{fig:benchres}:
   our verified algorithm is clearly competitive with the unverified state-of-the-art implementations.
   Only for a few string-sorting benchmarks, it is slightly slower. We leave improving on this for future work.
+  Compared to the old verified algorithm, the parallel partitioning algorithm is more efficient in many cases, and there are only a few cases where it is slightly less efficient.
+
 %
 %
 %   While our verified algorithm is clearly competitive for integer sorting on the less parallel laptop
@@ -2444,7 +2451,7 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
 %   and leave further optimizations to future work.
 
   We also measured the speedup that the implementations achieve for a certain number of cores.
-  The results are displayed in Figure~\ref{fig:speedup}: again, our verified implementation is clearly competitive.
+  The results are displayed in Figure~\ref{fig:speedup}: again, our verified implementation is clearly competitive, and it scales better than the old verified algorithm.
 
   The previous two benchmarks used relatively large input sizes.
   Figure~\ref{fig:smallarrays} displays a benchmark for smaller input sizes. While we are still competitive with \is{sample_sort},
@@ -2503,12 +2510,67 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
     implementing, benchmarking, and fine-tuning the algorithms in C++. This gave us a quick way to
     find an algorithm that is efficient, and, at the same time not too complex for verification,
     without having to verify each intermediate step towards this algorithm.
-    Only then we used our top-down approach to first formalize the abstract ideas behind the algorithm,
+    Only then did we use our top-down approach to first formalize the abstract ideas behind the algorithm,
     and then refine it to an efficient implementation close to what we had written in C++.
     At this point, one may ask why not directly verify the C++ implementation: while this might be
     possible, the required work and steps would be similar: to manage the complexity of such a verification,
     several bottom-up refinement steps would be necessary, ultimately arriving at something similarly abstract
     as our initial abstract algorithm.
+
+    \subsection{Statistics}
+    The Isabelle Refinement Framework for LLVM consists of roughly 45k lines of theory text and Isabelle-ML code (referred to as kLOC from now on). The sorting algorithms comprise another 14kLOC.
+
+    Integrating the initial version of the parallel semantics into the framework, and verifying the parallel sorting algorithm with sequential partitioning, as reported in our ITP 2022 paper~\cite{La22}, took us roughly 6 months\footnote{As we do not have precise work time logs, we report calendar months during which we worked almost full-time on the project.}. During this time, we abandoned an initial formalization for the Imperative/HOL back end, as the achievable performance was unsatisfactory. We also abandoned a naive formalization of the parallel operator for the LLVM back end, to finally arrive at what is described in our ITP 2022 paper. Effectively, we added about 6kLOC to the framework and adapted most of the remaining code. The parallel sorting algorithm adds another kLOC.
+    The parallel partitioning algorithm and its support data structures add 4kLOC, and took us one month to develop.
+
+%
+%     Developing the parallel partitioning algorithm took us another month, adding 4000kLOC.
+%
+%
+%     May 2021--October 2021  first versions (Imp-HOL, par as seq semantics, parallel sorting) 5month
+%       framework: +3kLOC, adapted most of 40kLOC
+%       sorting: +1000kLOC
+%
+%     Jan 2022 second version (ndet par semantics) 1month
+%       framework: heavily changed 3000kLOC, adapted rest (40 kLOC)
+%
+%     Mar 2023 parallel partitioning 1 month
+%       +4000kLOC
+%
+%     We have started developing the parallel extension to Isabelle LLVM in May 2021: we first worked on a prototype for the Imperative HOL back end, which we then ported to the LLVM back end, to obtain the first verified parallel sorting algorithms by October. We then decided to change our initial semantics of parallel calls again to what is described in the paper
+%
+%
+%     Code: the parallel extension: around 3000LOC added to the Backend and Program Logic, and adapted a substantial amount of the 40kLOC that made up the higher levels of the Refinement Framework.
+%
+%
+%
+%    par-sort (seq partitioning):
+%
+%    431 Sorting_Parsort.thy
+%    320 Sorting_Sample_Partition.thy
+%
+%
+%    parallel partioning:
+%
+%    705 IICF_DS_Array_Idxs.thy
+%    884 IICF_DS_Interval_List.thy
+%    512 IICF_Shared_Lists.thy
+%    536 Sorting_Guarded_Partition.thy
+%   1612 Sorting_Par_Partition.thy
+%
+%   5000 total
+%
+%
+%
+% Back-End basic: 6429
+% Low-Level Alg + ds: 3544
+% lib: 12145
+% sepref: 19104
+% Program logic and vcg: 3243
+%
+% NE-Monad (from AFP) 10kLOC
+%
+% examples/sorting: 14001
 
 %     The effort for our formalization is hard to estimate. We have no precise records how long it
 %     took us to formalize the parallel extension to Isabelle LLVM: the initial idea was born when trying to solve
@@ -2537,7 +2599,7 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
     \subsection{Related Work}
     While there is extensive work on parallel sorting algorithms (e.g.~\cite{AWFS22,CNLM08,AMI21}),
     there seems to be almost no work on their formal verification. The only work we are aware of is
-    a distributed merge sort algorithm~\cite{HKBK20}, for which ''no effort has been made to make it efficient''\cite[Sec.~2]{HKBK20},
+    a distributed merge sort algorithm~\cite{HKBK20}, for which ''no effort has been made to make it efficient''~\cite[Sec.~2]{HKBK20},
     nor any executable code has been generated or benchmarked. Another verification~\cite{SaHu20} uses
     the VerCors deductive verifier to prove the permutation property (\is{mset xs' = mset xs})
     of odd-even transposition sort~\cite{Ha72}, but neither the sortedness property nor termination.
@@ -2578,6 +2640,9 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
       Finally, the Sepref framework has recently been extended to reason about complexity of (sequential)
       LLVM programs~\cite{HaLa21-toplas,HaLa21}. This could be combined with our parallel extension, to verify the
       complexity (e.g. work and span) of parallel algorithms.
+
+      An important aspect is the scalability of our tools. The current implementation scales to small software, like the verified IsaSAT-solver~\cite{FlLa23}, which actually uses our sequential sorting algorithms. However, for projects of this size, the times needed by Sepref and the LLVM code exporter easily get into the order of dozens of minutes, and some manual performance tweaks are required (cf.~\cite{FlLa23}[Sec.~5]).
+      Further improvement of the scalability is left to future work.
 
       Another direction for future work is to further optimize our verified sorting algorithm.
       We expect that tuning our parallelization scheme will improve the speedup for smaller input sizes.

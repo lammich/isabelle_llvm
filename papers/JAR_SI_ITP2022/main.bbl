@@ -1,6 +1,6 @@
 %% BioMed_Central_Bib_Style_v1.01
 
-\begin{thebibliography}{42}
+\begin{thebibliography}{43}
 % BibTex style file: bmc-mathphys.bst (version 2.1), 2014-07-24
 \ifx \bisbn   \undefined \def \bisbn  #1{ISBN #1}\fi
 \ifx \binits  \undefined \def \binits#1{#1}\fi
@@ -54,7 +54,8 @@ In: \beditor{\bsnm{Harrison}, \binits{J.}},
 \bbtitle{ITP},
 vol. \bseriesno{141},
 pp. \bfpage{22}--\blpage{12219}.
-\bpublisher{Dagstuhl Publishing}, \blocation{???}
+\bpublisher{Dagstuhl Publishing},
+\blocation{Portland}
 (\byear{2019}).
 \doiurl{10.4230/LIPIcs.ITP.2019.22} .
 \burl{http://drops.dagstuhl.de/opus/volltexte/2019/11077}
@@ -75,7 +76,8 @@ In: \bbtitle{CAV}.
 \bsertitle{LNCS},
 vol. \bseriesno{8044},
 pp. \bfpage{463}--\blpage{478}.
-\bpublisher{Springer}, \blocation{???}
+\bpublisher{Springer},
+\blocation{Saint Petersburg}
 (\byear{2013})
 \end{bchapter}
 \endbibitem
@@ -102,6 +104,7 @@ pp. \bfpage{463}--\blpage{478}.
 \bauthor{\bsnm{Lammich}, \binits{P.}}:
 \bctitle{Verified model checking of timed automata}.
 In: \bbtitle{TACAS 2018},
+\bconflocation{Thessaloniki},
 pp. \bfpage{61}--\blpage{78}
 (\byear{2018})
 \end{bchapter}
@@ -113,7 +116,8 @@ pp. \bfpage{61}--\blpage{78}
 \bauthor{\bsnm{Lammich}, \binits{P.}}:
 \bctitle{Efficient verified {(UN)SAT} certificate checking}.
 In: \bbtitle{Proc. of CADE}.
-\bpublisher{Springer}, \blocation{???}
+\bpublisher{Springer},
+\blocation{Gothenburg}
 (\byear{2017})
 \end{bchapter}
 \endbibitem
@@ -148,7 +152,7 @@ pp. \bfpage{158}--\blpage{171}
 \bibitem[\protect\citeauthoryear{Lammich}{2014}]{La14}
 \begin{bchapter}
 \bauthor{\bsnm{Lammich}, \binits{P.}}:
-\bctitle{Verified efficient implementation of gabow’s strongly connected
+\bctitle{Verified efficient implementation of {G}abow’s strongly connected
   component algorithm}.
 In: \bbtitle{International Conference on Interactive Theorem Proving},
 pp. \bfpage{325}--\blpage{340}
@@ -195,7 +199,8 @@ In: \beditor{\bsnm{Peltier}, \binits{N.}},
 \bsertitle{LNCS},
 vol. \bseriesno{12167},
 pp. \bfpage{307}--\blpage{323}.
-\bpublisher{Springer}, \blocation{???}
+\bpublisher{Springer},
+\blocation{Paris}
 (\byear{2020}).
 \doiurl{10.1007/978-3-030-51054-1\_18} .
 \burl{https://doi.org/10.1007/978-3-030-51054-1\_18}
@@ -213,7 +218,8 @@ In: \beditor{\bsnm{Andronick}, \binits{J.}},
 \bsertitle{LIPIcs},
 vol. \bseriesno{237},
 pp. \bfpage{24}--\blpage{12418}.
-\bpublisher{Dagstuhl Publishing}, \blocation{???}
+\bpublisher{Dagstuhl Publishing},
+\blocation{Haifa}
 (\byear{2022}).
 \doiurl{10.4230/LIPIcs.ITP.2022.24} .
 \burl{https://doi.org/10.4230/LIPIcs.ITP.2022.24}
@@ -230,7 +236,8 @@ In: \bbtitle{{ITP} 2010}.
 \bsertitle{LNCS},
 vol. \bseriesno{6172},
 pp. \bfpage{339}--\blpage{354}.
-\bpublisher{Springer}, \blocation{???}
+\bpublisher{Springer},
+\blocation{Edinburgh}
 (\byear{2010})
 \end{bchapter}
 \endbibitem
@@ -248,7 +255,8 @@ In: \beditor{\bsnm{Beringer}, \binits{L.}},
 \bsertitle{{LNCS}},
 vol. \bseriesno{7406},
 pp. \bfpage{166}--\blpage{182}.
-\bpublisher{Springer}, \blocation{???}
+\bpublisher{Springer},
+\blocation{Princeton}
 (\byear{2012})
 \end{bchapter}
 \endbibitem
@@ -262,7 +270,8 @@ In: \bbtitle{ITP}.
 \bsertitle{LNCS},
 vol. \bseriesno{7998},
 pp. \bfpage{84}--\blpage{99}.
-\bpublisher{Springer}, \blocation{???}
+\bpublisher{Springer},
+\blocation{Rennes}
 (\byear{2013})
 \end{bchapter}
 \endbibitem
@@ -276,7 +285,8 @@ In: \bbtitle{ITP}.
 \bsertitle{LNCS},
 vol. \bseriesno{9236},
 pp. \bfpage{253}--\blpage{269}.
-\bpublisher{Springer}, \blocation{???}
+\bpublisher{Springer},
+\blocation{Nanjing}
 (\byear{2015})
 \end{bchapter}
 \endbibitem
@@ -293,7 +303,8 @@ In: \beditor{\bsnm{Yoshida}, \binits{N.}} (ed.)
 \bsertitle{LNCS},
 vol. \bseriesno{12648},
 pp. \bfpage{292}--\blpage{319}.
-\bpublisher{Springer}, \blocation{???}
+\bpublisher{Springer},
+\blocation{Luxemburg}
 (\byear{2021}).
 \doiurl{10.1007/978-3-030-72019-3\_11} .
 \burl{https://doi.org/10.1007/978-3-030-72019-3\_11}
@@ -328,7 +339,8 @@ In: \beditor{\bsnm{Gonthier}, \binits{G.}},
 \bsertitle{LNCS},
 vol. \bseriesno{8307},
 pp. \bfpage{131}--\blpage{146}.
-\bpublisher{Springer}, \blocation{???}
+\bpublisher{Springer},
+\blocation{Melbourne}
 (\byear{2013}).
 \doiurl{10.1007/978-3-319-03545-1\_9} .
 \burl{https://doi.org/10.1007/978-3-319-03545-1\_9}
@@ -365,7 +377,8 @@ pp. \bfpage{366}--\blpage{378}
 \bctitle{Mechanised separation algebra}.
 In: \bbtitle{ITP},
 pp. \bfpage{332}--\blpage{337}.
-\bpublisher{Springer}, \blocation{???}
+\bpublisher{Springer},
+\blocation{Princeton}
 (\byear{2012})
 \end{bchapter}
 \endbibitem
@@ -397,7 +410,8 @@ In: \beditor{\bsnm{Bertot}, \binits{Y.}},
 \beditor{\bsnm{Paulin}, \binits{C.}} (eds.)
 \bbtitle{TPHOLs},
 pp. \bfpage{149}--\blpage{165}.
-\bpublisher{Springer}, \blocation{???}
+\bpublisher{Springer},
+\blocation{Nice}
 (\byear{1999})
 \end{bchapter}
 \endbibitem
@@ -408,7 +422,8 @@ pp. \bfpage{149}--\blpage{165}.
 \bauthor{\bsnm{Josuttis}, \binits{N.M.}}:
 \bbtitle{The C++ Standard Library: A Tutorial and Reference},
 \bedition{2nd} edn.
-\bpublisher{Addison-Wesley Professional}, \blocation{???}
+\bpublisher{Addison-Wesley Professional},
+\blocation{{}}
 (\byear{2012})
 \end{bbook}
 \endbibitem
@@ -582,7 +597,8 @@ Verified Software Toolchain Project Web Page.
 \bbtitle{Interactive Theorem Proving and Program Development: Coq'Art The
   Calculus of Inductive Constructions},
 \bedition{1st} edn.
-\bpublisher{Springer}, \blocation{???}
+\bpublisher{Springer},
+\blocation{Heidelberg}
 (\byear{2010})
 \end{bbook}
 \endbibitem
@@ -643,9 +659,30 @@ pp. \bfpage{259}--\blpage{270}.
 \oauthor{\bsnm{Lammich}, \binits{P.}}:
 For a few dollars more - verified fine-grained algorithm analysis down to
   {LLVM}.
-TOPLAS, S.I. ESOP'21.
-to appear
+TOPLAS, S.I. ESOP'21
 \end{botherref}
+\endbibitem
+
+%%% 43
+\bibitem[\protect\citeauthoryear{Fleury and Lammich}{2023}]{FlLa23}
+\begin{bchapter}
+\bauthor{\bsnm{Fleury}, \binits{M.}},
+\bauthor{\bsnm{Lammich}, \binits{P.}}:
+\bctitle{A more pragmatic {CDCL} for isasat and targetting {LLVM} (short
+  paper)}.
+In: \beditor{\bsnm{Pientka}, \binits{B.}},
+\beditor{\bsnm{Tinelli}, \binits{C.}} (eds.)
+\bbtitle{Automated Deduction - {CADE} 29 - 29th International Conference on
+  Automated Deduction, Rome, Italy, July 1-4, 2023, Proceedings}.
+\bsertitle{Lecture Notes in Computer Science},
+vol. \bseriesno{14132},
+pp. \bfpage{207}--\blpage{219}.
+\bpublisher{Springer},
+\blocation{Rome, Italy}
+(\byear{2023}).
+\doiurl{10.1007/978-3-031-38499-8\_12} .
+\burl{https://doi.org/10.1007/978-3-031-38499-8\_12}
+\end{bchapter}
 \endbibitem
 
 \end{thebibliography}

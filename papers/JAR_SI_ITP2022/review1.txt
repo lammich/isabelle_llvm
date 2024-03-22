@@ -1,0 +1,196 @@
+Review for the article "Refinement of Parallel Algorithms down to LLVM applied to
+practically efficient parallel sorting"
+
+
+The given article of Peter Lammich is an extended version of an earlier ITP 2022
+paper. The extensions are clearly indicated in the article, and I fully agree to
+their descriptions. In particular, more parts of the overall sorting algorithm
+have been parallelized.
+
+(1) A verified parallel partitioning algorithm has been integrated to the
+parallel sorting algorithm. This partitioning algorithm is not at all trivial
+and required further setup, e.g., by an auxiliary data structures for interval
+lists and parallel combinators to support more fine-grained parallel access to
+separate parts of the memory.
+
+(2) As a consequence, the efficiency of the verified parallel sorting algorithm
+has been improved even further, such that it is competitive to non-verified
+algorithms of standard libraries.
+  
+Indeed, the experimental data w.r.t. (2) is really impressive. To see the diff
+w.r.t. the ITP 2022 paper, it would just have been nice to include the
+performance of the implementation of the 2022 paper in this article as well. (so
+if possible generate diagrams/experimental data with four configurations: 2022
+verified, 2023 verified, std:sort, sample sort) 
+# Added data for the old algorithm. Except for the small-arrays benchmark, on which we didn't report in the ITP-2022 paper at all, and thus had no data.
+
+
+Regarding the content of the paper, there is a clear high-level structure that
+covers most aspects in the overall workflow to verify parallel programs.
+1. Introduction / Isabelle notation
+2. Model of LLVM, including memory model, monads, ...
+3. Separation logic in the parallel setting, including verification condition 
+   generation
+4. Refinements for Parallel Programs, with special support for splitting arrays
+5. Applications: Parallel Sorting and Parallel Partioning, experiments
+6. Conclusion
+
+Because of this completeness, I really enjoyed reading this article from the
+beginning to the end. Lammich nicely combines precision of formal definitions
+with explanations about how to understand and read the formal text. (Given the
+support of the underlying formalization, for some of the more technical
+definitions, I could safely just glance over them without checking all details)
+
+Most of the text should become quite clear to a general audience with a formal
+background. However, there are certain primitives that might need a bit more
+explanation, in particular if one is not an Isabelle/HOL user or if one is not
+familiar with LLVM, cf. the detailed comments below.
+
+Overall, I recommend to accept this article after taking into account the
+following detailed remarks.
+
+
+---------------
+In the abstract one reads "implemented in C/C++", whereas the last line on page
+1 says GNU's C++ and Boost C++: so where is a pure C-implementation? Wouldn't it
+be more precise to just drop the C-language in the abstract and just speak of
+C++ implementations? 
+# done
+
+page 1, last line: Boost C++ Libraries -> Boost C++ libraries (lowercase l in
+library as in GNU's C++ std library)
+# when used as a name, it's written with capital L on the Boost webpages, so I did the same
+  
+page 2, first line: ITP 2023 paper -> ITP 2022 paper
+# done
+
+page 2: the formalization is available at www21.in.tum.de/ ... given that your
+current affiliation is Twente, why use an URL of your old employer? Any plans to
+submit the work to AFP for better visibility and archival?
+# TODO: refer hosting on github. Make page! Make xenodo artifact for this paper.
+
+page 2: (VCG). (Section 3).  -> use only one ., e.g., (VCG), cf. Section 3.
+# done
+
+page 3: Please add space around inequality signs in "x<4" "x<=4", etc.: "x < 4"
+"x <= 4". Also "xs1 @xs2" looks wrong: please put space left and right of @: 
+"xs1 @ xs2" 
+# Adjusted spacings throughout whole document
+  
+page 3: "The cardinality of the finite set" -> "The cardinality of a finite set"?
+#done
+
+page 4: 'x M == mu => ... neM
+   return_M x mu = ...
+Here, you use the letter mu both as type and as variable for memories: mu :: mu
+(In contrast, for access reports you use r :: rho)
+If possible, avoid this overloading, or at least mention it briefly.
+# The obvious name m is already used for monads. I added an explanation.
+  
+page 5-6: you use the type nat for several concepts, e.g., addresses of blocks,
+indices within blocks, ...
+(datatype addr = ... nat ... nat ...;   acc == ... nat ... nat ... )
+perhaps introduce some type-synonyms to disambiguate these concepts
+# I have introduced the bidx type for block indexes. The index within a block is never used as explicit type in the rest of the paper, so nothing changed here.
+  
+page 5, after typedef memory:
+Please explain the structure of addresses, too: briefly say what the two indices
+are.
+# Already done a few lines below. Have expanded the explanation a bit.
+
+page 7: "pointer arithmetic can be performed on that address": 
+Previously you said that no pointer arithmetic is supported. (end of Sect. 2.2:
+"Note that our LLVM semantics does not support ...") Therefore, this sentence
+sounds strange. Please clarify.
+# Same as C++, we support pointer arithmetic between pointers to the same block, but not between different blocks. 2.2 states not supported are: ptr->int and difference of pointers between *different* blocks.
+  
+page 7: instruction for "a" parallel function call
+# done
+
+page 8 and everywhere: please add vertical space before "Example 1/2/3/..."
+# I have not altered the default settings. Afaik, this is the intended spacing of the sn-jnl template.
+
+page 8: "The lifting uparrow phi holds iff the Boolean value phi is true."
+Then why is the then-branch of the if-then-else not just "true", but "Box"?
+# true would mean that the assertion can own arbitrary memory. I explain this by saying "...owning no memory".
+
+  
+page 9: by the frame amfis accessed -> add more space after italic amf
+# done
+
+page 11: list is a permutation ... mset xs' = mset xs
+For non-Isabelle users it is not clear what "mset" is. You did not mention this
+in the Isabelle intro, so please once explain that "mset .. = mset .." is
+exactly the permutation-condition in Isabelle, expressed via multiset equality.
+# added explanation
+  
+page 12: what is ll_ofs_ptr in aget and aset?
+# added: "where \is{ll_ofs_ptr} is the Isabelle-LLVM instruction for offsetting a pointer by an index."
+
+page 14: why did you use fold in ivl_card ls? isn't sum_list [|s| . s <- ls]
+a more concise and also more automation-friendly definition? 
+(from my experience, working with fold often complicates verification tasks)
+# the refinement framework has very good setup for fold. In particular to refine it to a loop for the implementation. Using sum-list (and map) would be more complicated to refine t an efficient imperative implementation.
+  
+page 15: more direct design, "e.g.," using ...
+# done
+
+page 16: Splitting an array into two halves ...: I propose to rename "halves"
+into "parts", since the size of each part is not one half (1/2), but can be
+arbitrary.
+# done
+  
+page 16: list_all2 and map2 might also need a short explanation to non-Isabelle
+users
+# added
+
+page 19: we prove the following Hoare-triple for our final implementation: 
+This looks really nice!
+# thank you
+
+page 20: we use "idx.introsort xs". I guess, a little bit more explanation would
+help non-Isabelle users: please explain that introsort has been defined within
+the (generic) locale, and because of the the interpretation command, you now
+obtain a sorting algorithm for a particular comparison operation with
+idx.introsort.
+
+
+page 21: Please move longish description of Fig. 3 into main text: Currently to
+read though the text one has to read until "sketched in Figure 3", then turn
+pages to read description of Fig. 3, then continue with next sentence after
+"sketched in Figure 3".
+# placed Fig3 on correct page
+
+page 23: Could you figure out the reason of why string-sorting is faster
+unverified? Is it because of the different representation of strings, cf.
+Footnote 7?
+# No, we have to leave that to future work. All benchmarked algorithms, verified or not, use the same string implementation.
+
+
+ 
+page 26: Before beginning with Section 6.1, I'd like to see a read a bit about
+the amount of efforts that went into the various parts. For instance, how much
+work (lines of Isabelle) went into the extension to go from sequential to
+parallel in the abstract frameworks? How many lines is the verification of
+sequential pdqsort, and how many lines did you have to add for the refinement to
+parallel-code, ...?
+# I have added some statistics in a new "Statistics" subsection
+
+
+page 26: When compiling your theories, I noticed that sepref takes quite some
+time at certain invocations. Can you say a few words about scalability of your
+approach?
+# I have added a short section on (improving) scalability to future work, citing our TACAS'23 paper (not yet accepted by date of manuscript submission) which reports on our experience of verifying a whole state-of-the-art SAT solver with Isabelle-LLVM. [Mathias Fleury, Peter Lammich: A More Pragmatic CDCL for IsaSAT and Targetting LLVM (Short Paper). CADE 2023: 207-219]
+
+
+
+
+page 26: is efficient"[32, Sec. 2] -> add blank between " and [32
+# DONE
+
+page 27ff: Several references are not correctly displayed, they contain "???".
+# fixed
+
+
+
+

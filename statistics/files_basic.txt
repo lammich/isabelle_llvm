@@ -1,0 +1,8 @@
+  /home/peter/devel/isabelle/isabelle_llvm_2023/thys/basic/LLVM_Basic_Main.thy
+  /home/peter/devel/isabelle/isabelle_llvm_2023/thys/basic/kernel/LLVM_Builder.ml
+  /home/peter/devel/isabelle/isabelle_llvm_2023/thys/basic/kernel/LLVM_Codegen.thy
+  /home/peter/devel/isabelle/isabelle_llvm_2023/thys/basic/kernel/LLVM_Shallow.thy
+  /home/peter/devel/isabelle/isabelle_llvm_2023/thys/basic/kernel/Simple_Memory.thy
+  /home/peter/devel/isabelle/isabelle_llvm_2023/thys/basic/kernel/par_wrapper.tmpl.ml
+  /home/peter/devel/isabelle/isabelle_llvm_2023/thys/basic/preproc/LLVM_Codegen_Preproc.thy
+  /home/peter/devel/isabelle/isabelle_llvm_2023/thys/basic/preproc/Monadify.thy

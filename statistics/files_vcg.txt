@@ -1,0 +1,4 @@
+  /home/peter/devel/isabelle/isabelle_llvm_2023/thys/vcg/LLVM_Shallow_RS.thy
+  /home/peter/devel/isabelle/isabelle_llvm_2023/thys/vcg/LLVM_Simple_Memory_RS.thy
+  /home/peter/devel/isabelle/isabelle_llvm_2023/thys/vcg/LLVM_VCG_Main.thy
+  /home/peter/devel/isabelle/isabelle_llvm_2023/thys/vcg/Sep_Generic_Wp.thy

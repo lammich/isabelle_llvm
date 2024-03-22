@@ -4,7 +4,7 @@
 BEGIN {
   # Change to configure what is included in plot
   type_display["isabelle::pparqsort"] = "red,verified"
-#   type_display["isabelle::parqsort"] = "red,verified-old"
+  type_display["isabelle::parqsort"] = "red,verified-old"
   type_display["boost::sample_sort"] = "black,sample sort"
   type_display["std::parsort"] = "blue,std::sort"
 
