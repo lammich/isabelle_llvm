@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><link rel="stylesheet" type="text/css" href="isabelle.css"/>
+<title>File ‹Cancellation/cancel.ML›</title>
+</head>
+
+
+<body>
+<div class="head">
+<h1>File ‹Cancellation/cancel.ML›</h1>
+</div>
+
+<pre class="source"><span class="comment1"><span>(*  Title:      HOL/Library/Cancellation/cancel.ML
+    Author:     Lawrence C Paulson, Cambridge University Computer Laboratory
+    Author:     Mathias Fleury, MPII
+
+This simproc allows handling of types with constructors (e.g., add_mset for
+multisets) and iteration of the addition (e.g., repeat_mset for multisets).
+
+Beware that this simproc should not compete with any more specialised especially:
+  - nat: the handling for Suc is more complicated than what can be done here
+  - int: some normalisation is done (after the cancelation) and linarith relies on these.
+
+Instead of "*", we have "iterate_add".
+
+
+To quote Provers/Arith/cancel_numerals.ML:
+
+    Cancel common coefficients in balanced expressions:
+
+         i + #m*u + j ~~ i' + #m'*u + j'  ==  #(m-m')*u + i + j ~~ i' + j'
+
+    where ~~ is an appropriate balancing operation (e.g. =, &lt;=, &lt;, -).
+
+    It works by (a) massaging both sides to bring the selected term to the front:
+
+         #m*u + (i + j) ~~ #m'*u + (i' + j')
+
+    (b) then using bal_add1 or bal_add2 to reach
+
+         #(m-m')*u + i + j ~~ i' + j'       (if m'&lt;=m)
+
+    or
+
+         i + j ~~ #(m'-m)*u + i' + j'       (otherwise)
+*)</span></span><span>
+
+</span><span class="keyword1"><span class="keyword"><span>signature</span></span></span><span> </span><span class="entity"><span>CANCEL</span></span><span> </span><span class="main"><span>=</span></span><span>
+</span><span class="keyword2"><span class="keyword"><span>sig</span></span></span><span>
+  </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> proc</span><span class="main"><span>:</span></span><span> </span><span class="entity"><span>Proof.context</span></span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>cterm</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>thm</span><span> </span><span>option</span><span>
+</span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span class="main"><span>;</span></span><span>
+
+</span><span class="keyword1"><span class="keyword"><span>functor</span></span></span><span> </span><span class="entity"><span>Cancel_Fun</span></span><span class="main"><span>(</span></span><span>Data</span><span class="main"><span>:</span></span><span> </span><span class="entity"><span>CANCEL_NUMERALS_DATA</span></span><span class="main"><span>)</span></span><span class="main"><span>:</span></span><span> </span><span class="entity"><span>CANCEL</span></span><span> </span><span class="main"><span>=</span></span><span>
+</span><span class="keyword2"><span class="keyword"><span>struct</span></span></span><span>
+
+</span><span class="keyword1"><span class="keyword"><span>structure</span></span></span><span> </span><span class="entity"><span>Cancel_Numerals_Fun</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>CancelNumeralsFun</span></span><span class="main"><span>(</span></span><span class="keyword3"><span class="keyword"><span>open</span></span></span><span> </span><span class="entity"><span>Data</span></span><span class="main"><span>)</span></span><span>
+</span><span class="keyword1"><span class="keyword"><span>exception</span></span></span><span> </span><span class="entity"><span>SORT_NOT_GENERAL_ENOUGH</span></span><span> </span><span class="keyword2"><span class="keyword"><span>of</span></span></span><span> </span><span>string</span><span> * </span><span>typ</span><span> * </span><span>term</span><span>
+</span><span class="comment1"><span>(*the simplification procedure*)</span></span><span>
+</span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>proc</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>ct</span></span><span> </span><span class="main"><span>=</span></span><span>
+  </span><span class="keyword2"><span class="keyword"><span>let</span></span></span><span>
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>Thm.term_of</span><span> </span><span class="entity"><span>ct</span></span><span>
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>t'</span></span><span class="main"><span>,</span></span><span> </span><span class="entity"><span>ctxt'</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>yield_singleton</span><span> </span><span class="main"><span>(</span></span><span>Variable.import_terms</span><span> </span><span>true</span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="entity"><span>ctxt</span></span><span>
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>pre_simplified_ct</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>Simplifier.full_rewrite</span></span><span> </span><span class="main"><span>(</span></span><span>clear_simpset</span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span>addsimps</span><span>
+      </span><span class="entity"><span>Named_Theorems.get</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="antiquoted"><span class="operator"><span><span class="hidden">\&lt;^</span><span class="control">named_theorems</span><span class="hidden">&gt;</span></span></span><span>‹cancelation_simproc_pre›</span></span><span> </span><span>addsimprocs</span><span>
+      </span><span class="main"><span>[</span></span><span class="antiquoted"><span class="entity"><span class="operator"><span><span class="hidden">\&lt;^</span><span class="control">simproc</span><span class="hidden">&gt;</span></span></span><span>‹</span><span>NO_MATCH</span><span>›</span></span></span><span class="main"><span>]</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>(</span></span><span>Thm.cterm_of</span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>t'</span></span><span class="main"><span>)</span></span><span class="main"><span>;</span></span><span>
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>t'</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>Thm.term_of</span><span> </span><span class="main"><span>(</span></span><span>Thm.rhs_of</span><span> </span><span class="entity"><span>pre_simplified_ct</span></span><span class="main"><span>)</span></span><span>
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>export</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>singleton</span><span> </span><span class="main"><span>(</span></span><span>Variable.export</span><span> </span><span class="entity"><span>ctxt'</span></span><span> </span><span class="entity"><span>ctxt</span></span><span class="main"><span>)</span></span><span>
+
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>t1</span></span><span class="main"><span>,</span></span><span class="main"><span>_</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>Data.dest_bal</span></span><span> </span><span class="entity"><span>t'</span></span><span>
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>sort_not_general_enough</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="main"><span>(</span></span><span class="main"><span>(</span></span><span>fastype_of</span><span> </span><span class="entity"><span>t1</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="antiquoted"><span class="operator"><span><span class="hidden">\&lt;^</span><span class="control">typ</span><span class="hidden">&gt;</span></span></span><span class="quoted"><span>‹</span><a class="entity_ref" href="../../../../../../../HOL/HOL/Nat.html#Nat.nat|type"><span>nat</span></a><span>›</span></span></span><span class="main"><span>)</span></span><span> </span><span class="keyword1"><span class="keyword"><span>orelse</span></span></span><span>
+        </span><span>Sorts.of_sort</span><span> </span><span class="main"><span>(</span></span><span>Sign.classes_of</span><span> </span><span class="main"><span>(</span></span><span>Proof_Context.theory_of</span><span> </span><span class="entity"><span>ctxt</span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span>
+         </span><span class="main"><span>(</span></span><span>fastype_of</span><span> </span><span class="entity"><span>t1</span></span><span class="main"><span>,</span></span><span> </span><span class="antiquoted"><span class="operator"><span><span class="hidden">\&lt;^</span><span class="control">sort</span><span class="hidden">&gt;</span></span></span><span class="quoted"><span>‹</span><a class="entity_ref" href="../../../../../../../HOL/HOL/Rings.html#Rings.comm_ring_1|class"><span>comm_ring_1</span></a><span>›</span></span></span><span class="main"><span>)</span></span><span>
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="main"><span>_</span></span><span> </span><span class="main"><span>=</span></span><span>
+       </span><span class="keyword2"><span class="keyword"><span>if</span></span></span><span> </span><span class="entity"><span>sort_not_general_enough</span></span><span>
+       </span><span class="keyword2"><span class="keyword"><span>then</span></span></span><span> </span><span class="keyword3"><span class="keyword"><span>raise</span></span></span><span> </span><span class="entity"><span>SORT_NOT_GENERAL_ENOUGH</span></span><span class="main"><span>(</span></span><span class="inner_quoted"><span>"type too precise, another simproc should do the job"</span></span><span class="main"><span>,</span></span><span>
+          </span><span>fastype_of</span><span> </span><span class="entity"><span>t1</span></span><span class="main"><span>,</span></span><span> </span><span class="entity"><span>t1</span></span><span class="main"><span>)</span></span><span>
+       </span><span class="keyword2"><span class="keyword"><span>else</span></span></span><span> </span><span class="main"><span>(</span></span><span class="main"><span>)</span></span><span>
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>canceled_thm</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>Cancel_Numerals_Fun.proc</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="main"><span>(</span></span><span>Thm.rhs_of</span><span> </span><span class="entity"><span>pre_simplified_ct</span></span><span class="main"><span>)</span></span><span>
+    </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>add_pre_simplification</span></span><span> </span><span class="entity"><span>thm</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="antiquoted"><span class="entity"><span class="antiquote"><span>@{</span></span><span class="operator"><span>thm</span></span><span> </span><span>Pure.transitive</span><span class="antiquote"><span>}</span></span></span></span><span> </span><span>OF</span><span> </span><span class="main"><span>[</span></span><span class="entity"><span>pre_simplified_ct</span></span><span class="main"><span>,</span></span><span> </span><span class="entity"><span>thm</span></span><span class="main"><span>]</span></span><span>
+    </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>add_post_simplification</span></span><span> </span><span class="entity"><span>thm</span></span><span> </span><span class="main"><span>=</span></span><span>
+      </span><span class="main"><span>(</span></span><span class="keyword2"><span class="keyword"><span>let</span></span></span><span> </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>post_simplified_ct</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>Simplifier.full_rewrite</span></span><span> </span><span class="main"><span>(</span></span><span>clear_simpset</span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span>addsimps</span><span>
+              </span><span class="entity"><span>Named_Theorems.get</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="antiquoted"><span class="operator"><span><span class="hidden">\&lt;^</span><span class="control">named_theorems</span><span class="hidden">&gt;</span></span></span><span>‹cancelation_simproc_post›</span></span><span> </span><span>addsimprocs</span><span>
+              </span><span class="main"><span>[</span></span><span class="antiquoted"><span class="entity"><span class="operator"><span><span class="hidden">\&lt;^</span><span class="control">simproc</span><span class="hidden">&gt;</span></span></span><span>‹</span><span>NO_MATCH</span><span>›</span></span></span><span class="main"><span>]</span></span><span class="main"><span>)</span></span><span>
+            </span><span class="main"><span>(</span></span><span>Thm.rhs_of</span><span> </span><span class="entity"><span>thm</span></span><span class="main"><span>)</span></span><span>
+        </span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span> </span><span class="antiquoted"><span class="entity"><span class="antiquote"><span>@{</span></span><span class="operator"><span>thm</span></span><span> </span><span>Pure.transitive</span><span class="antiquote"><span>}</span></span></span></span><span> </span><span>OF</span><span> </span><span class="main"><span>[</span></span><span class="entity"><span>thm</span></span><span class="main"><span>,</span></span><span> </span><span class="entity"><span>post_simplified_ct</span></span><span class="main"><span>]</span></span><span> </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span class="main"><span>)</span></span><span>
+  </span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span>
+    </span><span>Option.map</span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>export</span></span><span> </span><span>o</span><span> </span><span class="entity"><span>add_post_simplification</span></span><span> </span><span>o</span><span> </span><span class="entity"><span>add_pre_simplification</span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>canceled_thm</span></span><span>
+  </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+  </span><span class="comment1"><span>(* FIXME avoid handling of generic exceptions *)</span></span><span>
+  </span><span class="keyword3"><span class="keyword"><span>handle</span></span></span><span> </span><span>TERM</span><span> </span><span class="main"><span>_</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span>NONE</span><span>
+       </span><span class="main"><span>|</span></span><span> </span><span>TYPE</span><span> </span><span class="main"><span>_</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span>NONE</span><span>
+       </span><span class="main"><span>|</span></span><span> </span><span class="entity"><span>SORT_NOT_GENERAL_ENOUGH</span></span><span> </span><span class="main"><span>_</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span>NONE</span><span>
+
+</span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span class="main"><span>;</span></span><span>
+</span></pre>
+</body>
+
+</html>

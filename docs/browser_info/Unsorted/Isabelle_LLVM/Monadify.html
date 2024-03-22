@@ -1,0 +1,473 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><link rel="stylesheet" type="text/css" href="isabelle.css"/>
+<title>Theory Monadify</title>
+</head>
+
+
+<body>
+<div class="head">
+<h1>Theory Monadify</h1>
+</div>
+
+<pre class="source"><span class="comment1"><span>(* TODO: Move to lib/ *)</span></span><span>
+</span><span class="keyword1"><span class="command"><span>theory</span></span></span><span> </span><a href="Monadify.html"><span>Monadify</span></a><span>
+</span><span class="keyword2"><span class="keyword"><span>imports</span></span></span><span> </span><a href="../../HOL/HOL/Main.html"><span>Main</span></a><span> </span><span class="quoted"><span>"</span><a href="../../AFP/Automatic_Refinement/Refine_Util.html"><span>Automatic_Refinement.Refine_Util</span></a><span>"</span></span><span>
+</span><span class="keyword2"><span class="keyword"><span>begin</span></span></span><span>
+  </span><span class="comment1"><span>(* TODO: Move *)</span></span><span>
+  </span><span class="keyword1"><span class="command"><span>ML</span></span></span><span> </span><span class="quoted"><span>‹
+    </span><span class="comment1"><span>(* Simplified output of rough term structure, for debugging purposes *)</span></span><span>
+    </span><span class="keyword1"><span class="keyword"><span>structure</span></span></span><span> </span><span class="entity"><span>Simplified_Term_Struct</span></span><span> </span><span class="main"><span>:</span></span><span> </span><span class="keyword2"><span class="keyword"><span>sig</span></span></span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> tstruct</span><span class="main"><span>:</span></span><span> </span><span>term</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>string</span><span>
+    </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>struct</span></span></span><span>
+      </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>par</span></span><span> </span><span class="entity"><span>b</span></span><span> </span><span class="entity"><span>s</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>if</span></span></span><span> </span><span class="entity"><span>b</span></span><span> </span><span class="keyword2"><span class="keyword"><span>then</span></span></span><span> </span><span class="inner_quoted"><span>"("</span></span><span>^</span><span class="entity"><span>s</span></span><span>^</span><span class="inner_quoted"><span>")"</span></span><span> </span><span class="keyword2"><span class="keyword"><span>else</span></span></span><span> </span><span class="entity"><span>s</span></span><span>
+    
+      </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>psi_aux</span></span><span> </span><span class="entity"><span>p</span></span><span> </span><span class="entity"><span>env</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>let</span></span></span><span>
+        </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>r</span></span><span> </span><span class="main"><span>(</span></span><span>Const</span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>n</span></span><span class="main"><span>,</span></span><span class="main"><span>_</span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>Long_Name.base_name</span><span> </span><span class="entity"><span>n</span></span><span>
+          </span><span class="main"><span>|</span></span><span> </span><span class="entity"><span>r</span></span><span> </span><span class="main"><span>(</span></span><span>Var</span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>n</span></span><span class="main"><span>,</span></span><span class="main"><span>_</span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>Term.string_of_vname</span><span> </span><span class="entity"><span>n</span></span><span>
+          </span><span class="main"><span>|</span></span><span> </span><span class="entity"><span>r</span></span><span> </span><span class="main"><span>(</span></span><span>Free</span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>n</span></span><span class="main"><span>,</span></span><span class="main"><span>_</span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>n</span></span><span>
+          </span><span class="main"><span>|</span></span><span> </span><span class="entity"><span>r</span></span><span> </span><span class="main"><span>(</span></span><span>Bound</span><span> </span><span class="entity"><span>i</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>nth</span><span> </span><span class="entity"><span>env</span></span><span> </span><span class="entity"><span>i</span></span><span>
+          </span><span class="main"><span>|</span></span><span> </span><span class="entity"><span>r</span></span><span> </span><span class="main"><span>(</span></span><span>Abs</span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>x</span></span><span class="main"><span>,</span></span><span class="main"><span>_</span></span><span class="main"><span>,</span></span><span class="entity"><span>t</span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>par</span></span><span> </span><span class="entity"><span>p</span></span><span> </span><span class="main"><span>(</span></span><span class="keyword2"><span class="keyword"><span>let</span></span></span><span> </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>x</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>singleton</span><span> </span><span class="main"><span>(</span></span><span>Name.variant_list</span><span> </span><span class="entity"><span>env</span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>x</span></span><span> </span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span> </span><span class="inner_quoted"><span>"λ"</span></span><span>^</span><span class="entity"><span>x</span></span><span>^</span><span class="inner_quoted"><span>". "</span></span><span>^</span><span class="entity"><span>psi_aux</span></span><span> </span><span>false</span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>x</span></span><span>::</span><span class="entity"><span>env</span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span class="main"><span>)</span></span><span>
+          </span><span class="main"><span>|</span></span><span> </span><span class="entity"><span>r</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>t</span></span><span> </span><span class="keyword1"><span class="keyword"><span>as</span></span></span><span> </span><span class="main"><span>_</span></span><span>$</span><span class="main"><span>_</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>let</span></span></span><span>
+              </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>f</span></span><span class="main"><span>,</span></span><span class="entity"><span>args</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>strip_comb</span><span> </span><span class="entity"><span>t</span></span><span>
+              </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>f</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>psi_aux</span></span><span> </span><span>true</span><span> </span><span class="entity"><span>env</span></span><span> </span><span class="entity"><span>f</span></span><span>
+              </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>args</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>map</span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>psi_aux</span></span><span> </span><span>true</span><span> </span><span class="entity"><span>env</span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>args</span></span><span> </span><span>|&gt;</span><span> </span><span>space_implode</span><span> </span><span class="inner_quoted"><span>" "</span></span><span>
+              </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>s</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>f</span></span><span>^</span><span class="inner_quoted"><span>" "</span></span><span>^</span><span class="entity"><span>args</span></span><span>
+            </span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span> </span><span class="entity"><span>par</span></span><span> </span><span class="entity"><span>p</span></span><span> </span><span class="entity"><span>s</span></span><span> </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>    
+      </span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span>
+        </span><span class="entity"><span>r</span></span><span>
+      </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+      
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>tstruct</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>psi_aux</span></span><span> </span><span>false</span><span> </span><span class="main"><span>[</span></span><span class="main"><span>]</span></span><span>
+    </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+  ›</span></span><span>
+
+  </span><span class="keyword1"><span class="command"><span>lemma</span></span></span><span> </span><span class="entity_def" id="Monadify.eta_expand|fact"><span class="entity_def" id="Monadify.eta_expand|thm"><span>eta_expand</span></span></span><span class="main"><span>:</span></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><span class="free"><span>f</span></span><span> </span><span class="main"><span>≡</span></span><span> </span><span class="main"><span>λ</span></span><span class="bound"><span>x</span></span><span class="main"><span>.</span></span><span> </span><span class="free"><span>f</span></span><span> </span><span class="bound"><span>x</span></span><span>"</span></span></span><span> </span><span class="keyword1"><span class="command"><span>by</span></span></span><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../../HOL/HOL/ISABELLE_HOME/src/Provers/classical.ML.html#HOL.rule|method"><span class="operator"><span>rule</span></span></a><span> </span><span>reflexive</span><span class="main"><span>)</span></span><span>
+
+  </span><span class="comment1"><span>(* Tag for constants, optional *)</span></span><span>  
+  </span><span class="keyword1"><span class="command"><span class="entity_def" id="Monadify.M_CONST_def|fact"><span class="entity_def" id="Monadify.M_CONST_def|thm"><span class="entity_def" id="Monadify.M_CONST_def_raw|axiom"><span>definition</span></span></span></span></span></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><span class="free"><span class="entity_def" id="Monadify.M_CONST|const"><span>M_CONST</span></span></span><span> </span><span class="free"><span class="bound"><span class="entity"><span>c</span></span></span></span><span> </span><span class="main"><span>≡</span></span><span> </span><span class="free"><span class="bound"><span class="entity"><span>c</span></span></span></span><span>"</span></span></span><span>
+  
+      
+  </span><span class="keyword1"><span class="command"><span>ML</span></span></span><span> </span><span class="quoted"><span>‹
+    </span><span class="keyword1"><span class="keyword"><span>functor</span></span></span><span> </span><span class="entity"><span>Gen_Monadify</span></span><span> </span><span class="main"><span>(</span></span><span>
+      </span><span class="comment1"><span>(*
+        Assumes that the monad combinators have the form return$x and bind$m$f
+      *)</span></span><span>
+    
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> mk_return</span><span class="main"><span>:</span></span><span> </span><span>term</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>term</span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> mk_bind</span><span class="main"><span>:</span></span><span> </span><span>term</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>term</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>term</span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> dest_return</span><span class="main"><span>:</span></span><span> </span><span>term</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>term</span><span> </span><span>option</span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> dest_bind</span><span class="main"><span>:</span></span><span> </span><span>term</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span class="main"><span>(</span></span><span>term</span><span> * </span><span>term</span><span class="main"><span>)</span></span><span> </span><span>option</span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> dest_monadT</span><span class="main"><span>:</span></span><span> </span><span>typ</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>typ</span><span> </span><span>option</span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> strip_op</span><span class="main"><span>:</span></span><span> </span><span class="entity"><span>Proof.context</span></span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>term</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>term</span><span> * </span><span>term</span><span> </span><span>list</span><span>
+
+      </span><span class="comment1"><span>(* TODO: Probably can derive mk and dest functions from these theorems! *)</span></span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> bind_return_thm </span><span class="main"><span>:</span></span><span> </span><span>thm</span><span>  </span><span class="comment1"><span>(* bind m return = m *)</span></span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> return_bind_thm </span><span class="main"><span>:</span></span><span> </span><span>thm</span><span>  </span><span class="comment1"><span>(* bind (return x) f = f x  *)</span></span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> bind_bind_thm </span><span class="main"><span>:</span></span><span> </span><span>thm</span><span>    </span><span class="comment1"><span>(* bind (bind m f) g = bind m (λx. bind (f x) g) *)</span></span><span>
+          
+    </span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>struct</span></span></span><span>
+
+      
+    
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>monad_laws</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="main"><span>[</span></span><span class="entity"><span>bind_return_thm</span></span><span class="main"><span>,</span></span><span> </span><span class="entity"><span>return_bind_thm</span></span><span class="main"><span>,</span></span><span> </span><span class="entity"><span>bind_bind_thm</span></span><span class="main"><span>]</span></span><span>
+      
+      
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>is_return</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>is_some</span><span> </span><span>o</span><span> </span><span class="entity"><span>dest_return</span></span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>is_bind</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>is_some</span><span> </span><span>o</span><span> </span><span class="entity"><span>dest_bind</span></span><span>
+    
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>dest_monadT'</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>the</span><span> </span><span>o</span><span> </span><span class="entity"><span>dest_monadT</span></span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>is_monadT</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>is_some</span><span> </span><span>o</span><span> </span><span class="entity"><span>dest_monadT</span></span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>is_monadic</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>is_monadT</span></span><span> </span><span>o</span><span> </span><span>fastype_of</span><span>
+      
+      
+      </span><span class="keyword2"><span class="keyword"><span>local</span></span></span><span> </span><span class="keyword3"><span class="keyword"><span>open</span></span></span><span> </span><span>Conv</span><span> </span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span>
+
+        </span><span class="comment1"><span>(* TODO: Move, generally useful *)</span></span><span>
+        </span><span class="comment1"><span>(* Apply conversion to direct subterms, fail if conversion fails for a subterm *)</span></span><span>
+        </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>sub_conv'</span></span><span> </span><span class="entity"><span>conv</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>ct</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="main"><span>(</span></span><span class="keyword2"><span class="keyword"><span>case</span></span></span><span> </span><span>Thm.term_of</span><span> </span><span class="entity"><span>ct</span></span><span> </span><span class="keyword2"><span class="keyword"><span>of</span></span></span><span>
+          </span><span>Abs</span><span> </span><span class="main"><span>_</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span>abs_conv</span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>conv</span></span><span> </span><span>o</span><span> </span><span>snd</span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>ctxt</span></span><span>
+        </span><span class="main"><span>|</span></span><span> </span><span class="main"><span>_</span></span><span>$</span><span class="main"><span>_</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span>comb_conv</span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>conv</span></span><span> </span><span class="entity"><span>ctxt</span></span><span class="main"><span>)</span></span><span>  
+        </span><span class="main"><span>|</span></span><span> </span><span class="main"><span>_</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span>all_conv</span><span>
+        </span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>ct</span></span><span>
+
+      </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>          
+              
+      </span><span class="keyword2"><span class="keyword"><span>local</span></span></span><span> 
+        </span><span class="keyword3"><span class="keyword"><span>open</span></span></span><span> </span><span>Conv</span><span> 
+        
+        </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>ensure_eta_conv</span></span><span> </span><span class="entity"><span>ct</span></span><span> </span><span class="main"><span>=</span></span><span> 
+          </span><span class="main"><span>(</span></span><span class="keyword2"><span class="keyword"><span>case</span></span></span><span> </span><span>Thm.term_of</span><span> </span><span class="entity"><span>ct</span></span><span> </span><span class="keyword2"><span class="keyword"><span>of</span></span></span><span> 
+            </span><span>Abs</span><span> </span><span class="main"><span>_</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span>all_conv</span><span>
+          </span><span class="main"><span>|</span></span><span> </span><span class="main"><span>_</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span>rewr_conv</span><span> </span><span class="antiquoted"><span class="entity"><span class="antiquote"><span>@{</span></span><span class="operator"><span>thm</span></span><span> </span><a class="entity_ref" href="Monadify.html#Monadify.eta_expand|fact"><span>eta_expand</span></a><span class="antiquote"><span>}</span></span></span></span><span>
+          </span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>ct</span></span><span>
+          
+        </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>expand_return_thm</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="main"><span>=</span></span><span>
+          </span><span>Local_Defs.meta_rewrite_rule</span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>bind_return_thm</span></span><span>
+          </span><span>RS</span><span> </span><span class="antiquoted"><span class="entity"><span class="antiquote"><span>@{</span></span><span class="operator"><span>thm</span></span><span> </span><span>Pure.symmetric</span><span class="antiquote"><span>}</span></span></span></span><span>
+          
+      </span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span>  
+        
+        </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>eta_ret_conv</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>ct</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="main"><span>(</span></span><span class="keyword2"><span class="keyword"><span>let</span></span></span><span> 
+          </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>Thm.term_of</span><span> </span><span class="entity"><span>ct</span></span><span> 
+          </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>bnd_conv</span></span><span> </span><span class="main"><span>=</span></span><span> 
+            </span><span>arg_conv</span><span> </span><span class="entity"><span>ensure_eta_conv</span></span><span> 
+            </span><span>then_conv</span><span> </span><span>arg1_conv</span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>sub_conv'</span></span><span> </span><span class="entity"><span>eta_ret_conv</span></span><span> </span><span class="entity"><span>ctxt</span></span><span class="main"><span>)</span></span><span>
+            </span><span>then_conv</span><span> </span><span>arg_conv</span><span> </span><span class="main"><span>(</span></span><span>abs_conv</span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>eta_ret_conv</span></span><span> </span><span>o</span><span> </span><span>snd</span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>ctxt</span></span><span class="main"><span>)</span></span><span>
+            
+        </span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span>
+          </span><span class="keyword2"><span class="keyword"><span>if</span></span></span><span> </span><span class="entity"><span>is_monadic</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="keyword2"><span class="keyword"><span>then</span></span></span><span>
+            </span><span class="keyword2"><span class="keyword"><span>if</span></span></span><span> </span><span class="entity"><span>is_bind</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="keyword2"><span class="keyword"><span>then</span></span></span><span> </span><span class="entity"><span>bnd_conv</span></span><span>
+            </span><span class="keyword2"><span class="keyword"><span>else</span></span></span><span> </span><span class="keyword2"><span class="keyword"><span>if</span></span></span><span> </span><span class="entity"><span>is_return</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="keyword2"><span class="keyword"><span>then</span></span></span><span> </span><span>arg_conv</span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>eta_ret_conv</span></span><span> </span><span class="entity"><span>ctxt</span></span><span class="main"><span>)</span></span><span>
+            </span><span class="keyword2"><span class="keyword"><span>else</span></span></span><span> </span><span>rewr_conv</span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>expand_return_thm</span></span><span> </span><span class="entity"><span>ctxt</span></span><span class="main"><span>)</span></span><span> </span><span>then_conv</span><span> </span><span class="entity"><span>bnd_conv</span></span><span>
+          </span><span class="keyword2"><span class="keyword"><span>else</span></span></span><span>
+            </span><span class="entity"><span>sub_conv'</span></span><span> </span><span class="entity"><span>eta_ret_conv</span></span><span> </span><span class="entity"><span>ctxt</span></span><span>
+        </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>ct</span></span><span>
+        
+      </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>  
+      
+      
+      </span><span class="comment1"><span>(* Generate a bind, the second term is created by F x, where x is the bound variable *)</span></span><span>
+      </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>BIND</span></span><span> </span><span class="entity"><span>M</span></span><span> </span><span class="entity"><span>F</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>let</span></span></span><span>
+        </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>m</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>M</span></span><span> </span><span class="entity"><span>ctxt</span></span><span>
+        </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>T</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>fastype_of</span><span> </span><span class="entity"><span>m</span></span><span> </span><span>|&gt;</span><span> </span><span class="entity"><span>dest_monadT'</span></span><span>
+        </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>n</span></span><span class="main"><span>,</span></span><span class="entity"><span>ctxt</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>yield_singleton</span><span> </span><span>Variable.variant_fixes</span><span> </span><span class="inner_quoted"><span>"tmp"</span></span><span> </span><span class="entity"><span>ctxt</span></span><span>
+        </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>x</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>Free</span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>n</span></span><span class="main"><span>,</span></span><span class="entity"><span>T</span></span><span class="main"><span>)</span></span><span>
+        
+        </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>f</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>Term.lambda</span><span> </span><span class="entity"><span>x</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>F</span></span><span> </span><span class="entity"><span>x</span></span><span> </span><span class="entity"><span>ctxt</span></span><span class="main"><span>)</span></span><span>
+      </span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span> 
+        </span><span class="entity"><span>mk_bind</span></span><span> </span><span class="entity"><span>m</span></span><span> </span><span class="entity"><span>f</span></span><span>
+      </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+
+      </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>ABS_CNV</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>x</span></span><span class="main"><span>,</span></span><span class="entity"><span>T</span></span><span class="main"><span>,</span></span><span class="entity"><span>t</span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>cnv</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>let</span></span></span><span>
+        </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>n</span></span><span class="main"><span>,</span></span><span class="entity"><span>ctxt</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>yield_singleton</span><span> </span><span>Variable.variant_fixes</span><span> </span><span class="entity"><span>x</span></span><span> </span><span class="entity"><span>ctxt</span></span><span>
+        </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>subst_bound</span><span> </span><span class="main"><span>(</span></span><span>Free</span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>n</span></span><span class="main"><span>,</span></span><span class="entity"><span>T</span></span><span class="main"><span>)</span></span><span class="main"><span>,</span></span><span> </span><span class="entity"><span>t</span></span><span class="main"><span>)</span></span><span>
+        </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>cnv</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="entity"><span>ctxt</span></span><span>
+        </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>Term.absfree</span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>n</span></span><span class="main"><span>,</span></span><span class="entity"><span>T</span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>t</span></span><span>
+      </span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>  
+          
+      </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>mk_return'</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="main"><span>_</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>mk_return</span></span><span> </span><span class="entity"><span>t</span></span><span>
+      
+      </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>is_operand</span></span><span> </span><span class="main"><span>(</span></span><span>Free</span><span> </span><span class="main"><span>_</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>true</span><span>
+        </span><span class="main"><span>|</span></span><span> </span><span class="entity"><span>is_operand</span></span><span> </span><span class="main"><span>(</span></span><span>Var</span><span> </span><span class="main"><span>_</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>true</span><span>
+        </span><span class="main"><span>|</span></span><span> </span><span class="entity"><span>is_operand</span></span><span> </span><span class="main"><span>(</span></span><span>Bound</span><span> </span><span class="main"><span>_</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>true</span><span>
+        </span><span class="main"><span>|</span></span><span> </span><span class="entity"><span>is_operand</span></span><span> </span><span class="antiquoted"><span class="antiquote"><span>@{</span></span><span class="operator"><span>mpat</span></span><span> </span><span class="quoted"><span>‹</span><span class="keyword1"><span>TYPE</span></span><span> </span><span class="main"><span>(</span></span><span class="main"><span>_</span></span><span class="main"><span>)</span></span><span>›</span></span><span class="antiquote"><span>}</span></span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>true</span><span>
+        </span><span class="main"><span>|</span></span><span> </span><span class="entity"><span>is_operand</span></span><span> </span><span class="main"><span>_</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>false</span><span>
+
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>is_ho_operand</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>fastype_of</span><span> </span><span>#&gt;</span><span> </span><span>body_type</span><span> </span><span>#&gt;</span><span> </span><span class="entity"><span>is_monadT</span></span><span>
+             
+      </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>process_ho_operand</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>let</span></span></span><span>
+        </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>argTs</span></span><span class="main"><span>,</span></span><span class="entity"><span>T</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>fastype_of</span><span> </span><span class="entity"><span>t</span></span><span> </span><span>|&gt;</span><span> </span><span>strip_type</span><span>
+      </span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span>
+        </span><span class="entity"><span>is_monadT</span></span><span> </span><span class="entity"><span>T</span></span><span> </span><span class="keyword1"><span class="keyword"><span>andalso</span></span></span><span> </span><span>length</span><span> </span><span class="main"><span>(</span></span><span>strip_abs_vars</span><span> </span><span class="entity"><span>t</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>length</span><span> </span><span class="entity"><span>argTs</span></span><span>
+      </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>  
+      
+      
+      </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>eta_expandN</span></span><span> </span><span class="entity"><span>n</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>let</span></span></span><span>
+        </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>Ts</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>binder_types</span><span> </span><span class="main"><span>(</span></span><span>fastype_of</span><span> </span><span class="entity"><span>t</span></span><span class="main"><span>)</span></span><span> </span><span>|&gt;</span><span> </span><span>take</span><span> </span><span class="entity"><span>n</span></span><span>
+        </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>ex_names</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>Term.add_free_names</span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="main"><span>[</span></span><span class="main"><span>]</span></span><span>
+        </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>args</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="main"><span>(</span></span><span>Name.invent_list</span><span> </span><span class="entity"><span>ex_names</span></span><span> </span><span class="inner_quoted"><span>"x"</span></span><span> </span><span class="entity"><span>n</span></span><span> </span><span>~~</span><span> </span><span class="entity"><span>Ts</span></span><span class="main"><span>)</span></span><span> </span><span>|&gt;</span><span> </span><span>map</span><span> </span><span>Free</span><span>
+        </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>list_comb</span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>t</span></span><span class="main"><span>,</span></span><span> </span><span class="entity"><span>args</span></span><span class="main"><span>)</span></span><span>
+          </span><span>|&gt;</span><span> </span><span>fold</span><span> </span><span>lambda</span><span> </span><span class="entity"><span>args</span></span><span>
+        
+      </span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span>
+        </span><span class="entity"><span>t</span></span><span>
+      </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+           
+      
+      </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>eta_expand_monadT</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>let</span></span></span><span> 
+        
+        </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>countT</span></span><span> </span><span class="entity"><span>T</span></span><span> </span><span class="main"><span>=</span></span><span>
+          </span><span class="keyword2"><span class="keyword"><span>if</span></span></span><span> </span><span class="entity"><span>is_monadT</span></span><span> </span><span class="entity"><span>T</span></span><span> </span><span class="keyword2"><span class="keyword"><span>then</span></span></span><span> </span><span class="inner_numeral"><span>0</span></span><span>
+          </span><span class="keyword2"><span class="keyword"><span>else</span></span></span><span> </span><span class="keyword2"><span class="keyword"><span>case</span></span></span><span> </span><span>try</span><span> </span><span>dest_funT</span><span> </span><span class="entity"><span>T</span></span><span> </span><span class="keyword2"><span class="keyword"><span>of</span></span></span><span> 
+            </span><span>NONE</span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="inner_numeral"><span>0</span></span><span> 
+          </span><span class="main"><span>|</span></span><span> </span><span>SOME</span><span> </span><span class="main"><span>(</span></span><span class="main"><span>_</span></span><span class="main"><span>,</span></span><span class="entity"><span>Tb</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="inner_numeral"><span>1</span></span><span> </span><span>+</span><span> </span><span class="entity"><span>countT</span></span><span> </span><span class="entity"><span>Tb</span></span><span>
+
+        </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>n</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>countT</span></span><span> </span><span class="main"><span>(</span></span><span>fastype_of</span><span> </span><span class="entity"><span>t</span></span><span class="main"><span>)</span></span><span>        
+        
+      </span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span>
+        </span><span class="entity"><span>eta_expandN</span></span><span> </span><span class="entity"><span>n</span></span><span> </span><span class="entity"><span>t</span></span><span>
+      </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+       
+      </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>mk_operand</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="entity"><span>F</span></span><span> </span><span class="main"><span>=</span></span><span> 
+        </span><span class="keyword2"><span class="keyword"><span>if</span></span></span><span> </span><span class="entity"><span>is_operand</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="keyword2"><span class="keyword"><span>then</span></span></span><span> </span><span class="entity"><span>F</span></span><span> </span><span class="entity"><span>t</span></span><span> 
+        </span><span class="keyword2"><span class="keyword"><span>else</span></span></span><span> </span><span class="keyword2"><span class="keyword"><span>if</span></span></span><span> </span><span class="entity"><span>is_ho_operand</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="keyword2"><span class="keyword"><span>then</span></span></span><span> </span><span class="keyword1"><span class="keyword"><span>fn</span></span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="entity"><span>F</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>mk_monadify_all</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="entity"><span>ctxt</span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>ctxt</span></span><span>
+        </span><span class="keyword2"><span class="keyword"><span>else</span></span></span><span> </span><span class="entity"><span>BIND</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>mk_operation</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="entity"><span>mk_return'</span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>F</span></span><span>
+      </span><span class="keyword2"><span class="keyword"><span>and</span></span></span><span> </span><span class="entity"><span>mk_operation</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="entity"><span>F</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>let</span></span></span><span>
+            </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>f</span></span><span class="main"><span>,</span></span><span class="entity"><span>xs</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>strip_op</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>t</span></span><span>
+            </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>R</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="main"><span>[</span></span><span class="main"><span>]</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>F</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="main"><span>|</span></span><span> </span><span class="entity"><span>R</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>x</span></span><span>::</span><span class="entity"><span>xs</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>mk_operand</span></span><span> </span><span class="entity"><span>x</span></span><span> </span><span class="main"><span>(</span></span><span class="keyword1"><span class="keyword"><span>fn</span></span></span><span> </span><span class="entity"><span>x</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="entity"><span>R</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>t</span></span><span>$</span><span class="entity"><span>x</span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>xs</span></span><span class="main"><span>)</span></span><span>
+          </span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span>
+            </span><span class="entity"><span>R</span></span><span> </span><span class="entity"><span>f</span></span><span> </span><span class="entity"><span>xs</span></span><span> </span><span class="entity"><span>ctxt</span></span><span>
+          </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+      </span><span class="keyword2"><span class="keyword"><span>and</span></span></span><span> </span><span class="entity"><span>mk_monadify</span></span><span> </span><span class="main"><span>(</span></span><span>Abs</span><span> </span><span class="entity"><span>xTt</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>ABS_CNV</span></span><span> </span><span class="entity"><span>xTt</span></span><span> </span><span class="entity"><span>mk_monadify</span></span><span>
+        </span><span class="main"><span>|</span></span><span> </span><span class="entity"><span>mk_monadify</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>case</span></span></span><span> </span><span class="entity"><span>dest_return</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="keyword2"><span class="keyword"><span>of</span></span></span><span>
+            </span><span>SOME</span><span> </span><span class="entity"><span>x</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="entity"><span>mk_operation</span></span><span> </span><span class="entity"><span>x</span></span><span> </span><span class="entity"><span>mk_return'</span></span><span>
+          </span><span class="main"><span>|</span></span><span> </span><span>NONE</span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="entity"><span>mk_operation</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="main"><span>(</span></span><span class="keyword1"><span class="keyword"><span>fn</span></span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span>K</span><span> </span><span class="entity"><span>t</span></span><span class="main"><span>)</span></span><span>
+      </span><span class="keyword2"><span class="keyword"><span>and</span></span></span><span> </span><span class="entity"><span>mk_monadify_all</span></span><span> </span><span class="main"><span>(</span></span><span>Abs</span><span> </span><span class="entity"><span>xTt</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>ABS_CNV</span></span><span> </span><span class="entity"><span>xTt</span></span><span> </span><span class="entity"><span>mk_monadify_all</span></span><span>
+        </span><span class="main"><span>|</span></span><span> </span><span class="entity"><span>mk_monadify_all</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="main"><span>=</span></span><span> 
+            </span><span class="keyword2"><span class="keyword"><span>if</span></span></span><span> </span><span class="entity"><span>is_monadT</span></span><span> </span><span class="main"><span>(</span></span><span>body_type</span><span> </span><span class="main"><span>(</span></span><span>fastype_of</span><span> </span><span class="entity"><span>t</span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span> </span><span class="keyword2"><span class="keyword"><span>then</span></span></span><span> </span><span class="entity"><span>eta_expand_monadT</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span>|&gt;</span><span> </span><span class="entity"><span>mk_monadify</span></span><span>
+            </span><span class="keyword2"><span class="keyword"><span>else</span></span></span><span> </span><span class="keyword1"><span class="keyword"><span>fn</span></span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="main"><span>=&gt;</span></span><span>
+              </span><span class="entity"><span>strip_op</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span>|&gt;</span><span> </span><span>apsnd</span><span> </span><span class="main"><span>(</span></span><span>map</span><span> </span><span class="main"><span>(</span></span><span class="keyword1"><span class="keyword"><span>fn</span></span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="entity"><span>mk_monadify_all</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="entity"><span>ctxt</span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span> </span><span>|&gt;</span><span> </span><span>list_comb</span><span>
+            
+      
+      </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>monadify</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>mk_monadify</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="main"><span>(</span></span><span>Variable.declare_term</span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span>|&gt;</span><span> </span><span>Variable.set_body</span><span> </span><span>false</span><span class="main"><span>)</span></span><span>
+          
+      </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>monadify_conv</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>ct</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>let</span></span></span><span>
+          </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="main"><span>_</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>is_monadT</span></span><span> </span><span class="main"><span>(</span></span><span>Thm.typ_of_cterm</span><span> </span><span class="entity"><span>ct</span></span><span> </span><span>|&gt;</span><span> </span><span>body_type</span><span class="main"><span>)</span></span><span> 
+            </span><span class="keyword1"><span class="keyword"><span>orelse</span></span></span><span> </span><span class="keyword3"><span class="keyword"><span>raise</span></span></span><span> </span><span>TYPE</span><span class="main"><span>(</span></span><span class="inner_quoted"><span>"No monad type"</span></span><span class="main"><span>,</span></span><span class="main"><span>[</span></span><span>Thm.typ_of_cterm</span><span> </span><span class="entity"><span>ct</span></span><span class="main"><span>]</span></span><span class="main"><span>,</span></span><span class="main"><span>[</span></span><span>Thm.term_of</span><span> </span><span class="entity"><span>ct</span></span><span class="main"><span>]</span></span><span class="main"><span>)</span></span><span>
+          
+          </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>tac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>let</span></span></span><span>
+            </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>put_simpset</span><span> </span><span class="entity"><span>HOL_basic_ss</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span>addsimps</span><span> </span><span class="main"><span>(</span></span><span class="antiquoted"><span class="entity"><span class="antiquote"><span>@{</span></span><span class="operator"><span>thms</span></span><span> </span><a class="entity_ref" href="Monadify.html#Monadify.M_CONST_def|fact"><span>M_CONST_def</span></a><span class="antiquote"><span>}</span></span></span></span><span> </span><span>@</span><span> </span><span class="entity"><span>monad_laws</span></span><span class="main"><span>)</span></span><span>
+          </span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span>
+            </span><span>ALLGOALS</span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>simp_tac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span class="main"><span>)</span></span><span>
+          </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+
+        </span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span> 
+          </span><span class="comment1"><span>(* TODO: f_tac_conv will choke on beta-redexes! *)</span></span><span>
+          </span><span>Thm.beta_conversion</span><span> </span><span>true</span><span> </span><span>then_conv</span><span> </span><span class="entity"><span>Refine_Util.f_tac_conv</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>monadify</span></span><span> </span><span class="entity"><span>ctxt</span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>tac</span></span><span> </span><span>then_conv</span><span> </span><span class="entity"><span>eta_ret_conv</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> 
+        </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span> </span><span class="entity"><span>ct</span></span><span>
+        
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>monadify_all_conv</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>Conv.top_sweep_conv</span><span> </span><span class="entity"><span>monadify_conv</span></span><span>
+        
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>monadify_all_tac</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>CONVERSION</span><span> </span><span>o</span><span> </span><span class="entity"><span>monadify_all_conv</span></span><span>
+        
+    </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+  ›</span></span><span>
+
+  
+  </span><span class="keyword1"><span class="command"><span>ML</span></span></span><span> </span><span class="quoted"><span>‹
+  
+    </span><span class="keyword1"><span class="keyword"><span>functor</span></span></span><span> </span><span class="entity"><span>Gen_Monadify_Cong_Basis</span></span><span> </span><span class="main"><span>(</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>struct</span></span></span><span>
+      </span><span class="keyword1"><span class="keyword"><span>structure</span></span></span><span> </span><span class="entity"><span>Consts</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>Generic_Data</span><span> </span><span class="main"><span>(</span></span><span>
+        </span><span class="keyword1"><span class="keyword"><span>type</span></span></span><span> </span><span class="entity"><span>T</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="main"><span>(</span></span><span>bool</span><span> * </span><span>term</span><span class="main"><span>)</span></span><span> </span><span>Item_Net.T</span><span>
+        </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>empty</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>Item_Net.init</span><span> </span><span class="main"><span>(</span></span><span class="keyword1"><span class="keyword"><span>fn</span></span></span><span> </span><span class="main"><span>(</span></span><span class="main"><span>(</span></span><span class="main"><span>_</span></span><span class="main"><span>,</span></span><span class="entity"><span>t1</span></span><span class="main"><span>)</span></span><span class="main"><span>,</span></span><span> </span><span class="main"><span>(</span></span><span class="main"><span>_</span></span><span class="main"><span>,</span></span><span class="entity"><span>t2</span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="entity"><span>t1</span></span><span> </span><span>aconv</span><span> </span><span class="entity"><span>t2</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>(</span></span><span>single</span><span> </span><span>o</span><span> </span><span>snd</span><span class="main"><span>)</span></span><span>
+        </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>merge</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>Item_Net.merge</span><span>
+      </span><span class="main"><span>)</span></span><span>    
+  
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>add_const_decl</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>Consts.map</span><span> </span><span>o</span><span> </span><span>Item_Net.update</span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>remove_const_decl</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>Consts.map</span><span> </span><span>o</span><span> </span><span>Item_Net.remove</span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>get_const_decls</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>Context.Proof</span><span> </span><span>#&gt;</span><span> </span><span>Consts.get</span><span> </span><span>#&gt;</span><span> </span><span>Item_Net.content</span><span>
+      
+      </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>prepare_const_decl</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>let</span></span></span><span>
+        </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>singleton</span><span> </span><span class="main"><span>(</span></span><span>Variable.export_terms</span><span> </span><span class="main"><span>(</span></span><span>Proof_Context.augment</span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="entity"><span>ctxt</span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>ctxt</span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>t</span></span><span>
+        
+        </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="main"><span>_</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>is_Var</span><span> </span><span class="main"><span>(</span></span><span>head_of</span><span> </span><span class="entity"><span>t</span></span><span class="main"><span>)</span></span><span> </span><span class="keyword1"><span class="keyword"><span>andalso</span></span></span><span> 
+          </span><span class="main"><span>(</span></span><span>Pretty.block</span><span> </span><span class="main"><span>[</span></span><span>
+            </span><span>Pretty.str</span><span> </span><span class="inner_quoted"><span>"Head of const is variable: "</span></span><span class="main"><span>,</span></span><span> 
+            </span><span>Syntax.pretty_term</span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>t</span></span><span>
+           </span><span class="main"><span>]</span></span><span class="main"><span>)</span></span><span> </span><span>|&gt;</span><span> </span><span>Pretty.string_of</span><span> </span><span>|&gt;</span><span> </span><span>error</span><span>
+        
+      </span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span>
+        </span><span class="entity"><span>t</span></span><span>
+      </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+      
+      </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>prepare_add_const_decl</span></span><span> </span><span class="entity"><span>wrap</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="entity"><span>context</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>add_const_decl</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>wrap</span></span><span class="main"><span>,</span></span><span class="entity"><span>prepare_const_decl</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="main"><span>(</span></span><span>Context.proof_of</span><span> </span><span class="entity"><span>context</span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>context</span></span><span>
+      </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>prepare_remove_const_decl</span></span><span> </span><span class="entity"><span>wrap</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="entity"><span>context</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>remove_const_decl</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>wrap</span></span><span class="main"><span>,</span></span><span class="entity"><span>prepare_const_decl</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="main"><span>(</span></span><span>Context.proof_of</span><span> </span><span class="entity"><span>context</span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>context</span></span><span>
+      
+      </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>mk_M_CONST</span></span><span> </span><span class="entity"><span>c</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="antiquoted"><span class="entity"><span class="entity"><span class="entity"><span class="entity"><span class="entity"><span class="antiquote"><span>@{</span></span><span class="operator"><span>mk_term</span></span><span> </span><span class="quoted"><span>"</span><a class="entity_ref" href="Monadify.html#Monadify.M_CONST|const"><span>M_CONST</span></a><span> </span><span class="var"><span>?c</span></span><span>"</span></span><span class="antiquote"><span>}</span></span></span></span></span></span></span></span><span>
+      
+      </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>is_const</span></span><span> </span><span class="main"><span>_</span></span><span> </span><span class="antiquoted"><span class="antiquote"><span>@{</span></span><span class="operator"><span>mpat</span></span><span> </span><span class="quoted"><span>"</span><a class="entity_ref" href="Monadify.html#Monadify.M_CONST|const"><span>M_CONST</span></a><span> </span><span class="main"><span>_</span></span><span>"</span></span><span class="antiquote"><span>}</span></span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>SOME</span><span> </span><span>false</span><span>
+      </span><span class="main"><span>|</span></span><span> </span><span class="entity"><span>is_const</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>case</span></span></span><span> </span><span>Item_Net.retrieve_matching</span><span> </span><span class="main"><span>(</span></span><span>Consts.get</span><span> </span><span class="main"><span>(</span></span><span>Context.Proof</span><span> </span><span class="entity"><span>ctxt</span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="keyword2"><span class="keyword"><span>of</span></span></span><span>
+          </span><span class="main"><span>[</span></span><span class="main"><span>]</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span>NONE</span><span>
+        </span><span class="main"><span>|</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>wr</span></span><span class="main"><span>,</span></span><span class="main"><span>_</span></span><span class="main"><span>)</span></span><span>::</span><span class="main"><span>_</span></span><span>  </span><span class="main"><span>=&gt;</span></span><span> </span><span>SOME</span><span> </span><span class="entity"><span>wr</span></span><span>
+            
+      </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>strip_op</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>let</span></span></span><span>
+        </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>stripc</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>t</span></span><span> </span><span class="keyword1"><span class="keyword"><span>as</span></span></span><span> </span><span class="entity"><span>f</span></span><span>$</span><span class="entity"><span>x</span></span><span class="main"><span>,</span></span><span> </span><span class="entity"><span>xs</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="main"><span>(</span></span><span class="keyword2"><span class="keyword"><span>case</span></span></span><span> </span><span class="entity"><span>is_const</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>t</span></span><span> </span><span class="keyword2"><span class="keyword"><span>of</span></span></span><span>
+              </span><span>NONE</span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="entity"><span>stripc</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>f</span></span><span class="main"><span>,</span></span><span class="entity"><span>x</span></span><span>::</span><span class="entity"><span>xs</span></span><span class="main"><span>)</span></span><span>
+            </span><span class="main"><span>|</span></span><span> </span><span>SOME</span><span> </span><span>false</span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>t</span></span><span class="main"><span>,</span></span><span class="entity"><span>xs</span></span><span class="main"><span>)</span></span><span>
+            </span><span class="main"><span>|</span></span><span> </span><span>SOME</span><span> </span><span>true</span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>mk_M_CONST</span></span><span> </span><span class="entity"><span>t</span></span><span class="main"><span>,</span></span><span class="entity"><span>xs</span></span><span class="main"><span>)</span></span><span>
+            </span><span class="main"><span>)</span></span><span>
+          </span><span class="main"><span>|</span></span><span> </span><span class="entity"><span>stripc</span></span><span> </span><span class="entity"><span>tt</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>tt</span></span><span>
+      </span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span> </span><span class="entity"><span>stripc</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>t</span></span><span class="main"><span>,</span></span><span class="main"><span>[</span></span><span class="main"><span>]</span></span><span class="main"><span>)</span></span><span> </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+  
+    </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+  
+    </span><span class="keyword1"><span class="keyword"><span>functor</span></span></span><span> </span><span class="entity"><span>Gen_Monadify_Cong</span></span><span> </span><span class="main"><span>(</span></span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> mk_return</span><span class="main"><span>:</span></span><span> </span><span>term</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>term</span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> mk_bind</span><span class="main"><span>:</span></span><span> </span><span>term</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>term</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>term</span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> dest_return</span><span class="main"><span>:</span></span><span> </span><span>term</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>term</span><span> </span><span>option</span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> dest_bind</span><span class="main"><span>:</span></span><span> </span><span>term</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span class="main"><span>(</span></span><span>term</span><span> * </span><span>term</span><span class="main"><span>)</span></span><span> </span><span>option</span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> dest_monadT</span><span class="main"><span>:</span></span><span> </span><span>typ</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>typ</span><span> </span><span>option</span><span>
+      
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> bind_return_thm </span><span class="main"><span>:</span></span><span> </span><span>thm</span><span>  </span><span class="comment1"><span>(* bind m return = m *)</span></span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> return_bind_thm </span><span class="main"><span>:</span></span><span> </span><span>thm</span><span>  </span><span class="comment1"><span>(* bind (return x) f = f x  *)</span></span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> bind_bind_thm </span><span class="main"><span>:</span></span><span> </span><span>thm</span><span>    </span><span class="comment1"><span>(* bind (bind m f) g = bind m (λx. bind (f x) g) *)</span></span><span>
+      
+    </span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>struct</span></span></span><span>
+
+      </span><span class="keyword1"><span class="keyword"><span>structure</span></span></span><span> </span><span class="entity"><span>BT</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>Gen_Monadify_Cong_Basis</span></span><span class="main"><span>(</span></span><span class="main"><span>)</span></span><span>
+      </span><span class="keyword3"><span class="keyword"><span>open</span></span></span><span> </span><span class="entity"><span>BT</span></span><span>
+
+      </span><span class="keyword1"><span class="keyword"><span>structure</span></span></span><span> </span><span class="entity"><span>T</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>Gen_Monadify</span></span><span> </span><span class="main"><span>(</span></span><span>
+        </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>mk_return</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>mk_return</span></span><span>
+        </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>mk_bind</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>mk_bind</span></span><span>
+        </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>dest_return</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>dest_return</span></span><span>
+        </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>dest_bind</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>dest_bind</span></span><span>
+        </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>dest_monadT</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>dest_monadT</span></span><span>
+        </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>strip_op</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>strip_op</span></span><span>
+        </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>bind_return_thm</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>bind_return_thm</span></span><span>
+        </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>return_bind_thm</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>return_bind_thm</span></span><span>
+        </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>bind_bind_thm</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>bind_bind_thm</span></span><span>
+      </span><span class="main"><span>)</span></span><span>
+      </span><span class="keyword3"><span class="keyword"><span>open</span></span></span><span> </span><span class="entity"><span>T</span></span><span>
+  
+    </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+  ›</span></span><span>
+  
+  
+  </span><span class="comment1"><span>(*
+  ML ‹
+    functor Gen_Monadify_Cong (
+      val mk_return: term -&gt; term
+      val mk_bind: term -&gt; term -&gt; term
+      val dest_return: term -&gt; term option
+      val dest_bind: term -&gt; (term * term) option
+      val dest_monadT: typ -&gt; typ option
+      
+      val bind_return_thm : thm  (* bind m return = m *)
+      val return_bind_thm : thm  (* bind (return x) f = f x  *)
+      val bind_bind_thm : thm    (* bind (bind m f) g = bind m (λx. bind (f x) g) *)
+    
+    ) = struct
+          
+      structure Consts = Generic_Data (
+        type T = term Item_Net.T
+        val empty = Item_Net.init (op aconv) single
+        val merge = Item_Net.merge
+        val extend = I
+      )    
+  
+      val add_const_decl = Consts.map o Item_Net.update
+      val remove_const_decl = Consts.map o Item_Net.remove
+      val get_const_decls = Context.Proof #&gt; Consts.get #&gt; Item_Net.content
+      
+      fun prepare_const_decl t ctxt = let
+        val t = singleton (Variable.export_terms (Proof_Context.augment t ctxt) ctxt) t
+        
+        val _ = is_Var (head_of t) andalso 
+          (Pretty.block [
+            Pretty.str "Head of const is variable: ", 
+            Syntax.pretty_term ctxt t
+           ]) |&gt; Pretty.string_of |&gt; error
+        
+      in
+        t
+      end
+      
+      fun prepare_add_const_decl t context = add_const_decl (prepare_const_decl t (Context.proof_of context)) context
+      
+      
+      fun is_const ctxt t = 
+        Item_Net.retrieve_matching (Consts.get (Context.Proof ctxt)) t 
+        |&gt; exists (K true)
+            
+      fun strip_op ctxt t = let
+        fun stripc (t as f$x, xs) = if is_const ctxt t then (t,xs) else stripc (f,x::xs) 
+          | stripc tt = tt
+      in stripc (t,[]) end
+
+      structure T = Gen_Monadify (
+        val mk_return = mk_return
+        val mk_bind = mk_bind
+        val dest_return = dest_return
+        val dest_bind = dest_bind
+        val dest_monadT = dest_monadT
+        val strip_op = strip_op
+        val bind_return_thm = bind_return_thm
+        val return_bind_thm = return_bind_thm
+        val bind_bind_thm = bind_bind_thm
+      )
+      open T
+  
+    end
+  ›
+  *)</span></span><span>
+  
+  </span><span class="comment1"><span>(*
+  (* Test Monad *)
+  
+  datatype 'a M = return 'a
+  definition "bind ≡ λreturn x ⇒ λf. f x"
+  
+  lemma monad_laws: 
+    "bind m return = m"
+    "bind (return x) f = f x"
+    "bind (bind m (λx. f x)) g = bind m (λx. bind (f x) g)"
+    unfolding bind_def by (auto split: M.split)
+  
+  ML ‹
+  
+    structure Monadify = Gen_Monadify_Cong (
+    
+      fun mk_return x = @{mk_term "return ?x"}
+      fun mk_bind m f = @{mk_term "bind ?m ?f"}
+    
+      fun dest_return @{mpat "return ?x"} = SOME x | dest_return _ = NONE
+      fun dest_monadT (Type (@{type_name M},[T])) = SOME T | dest_monadT _ = NONE
+      
+      val monad_laws = @{thms monad_laws}
+    )
+  ›
+    
+  
+  ML_val ‹
+    val t1 = @{term "let (x,y) = p in (return (x+y+y))"} |&gt; Simplified_Term_Struct.tstruct
+    val t2 = @{term "case p of (x,y) ⇒ (return (x+y+y))"} |&gt; Simplified_Term_Struct.tstruct
+  › 
+  
+  
+  ML_val ‹
+    val ctxt = @{context}
+    val ts = [
+      @{term "case p of (x,y) ⇒ return (x+y+y)"},
+      @{term "let (x,y) = p in return (x+y+y)"}
+    ]
+    
+    val ts = map (Monadify.monadify ctxt #&gt; Simplified_Term_Struct.tstruct) ts
+  ›  
+  
+  lemma "P (let (x,y) = p in return (x+y+y))"
+    apply (tactic ‹CONVERSION (HOLogic.Trueprop_conv (Conv.arg_conv (Monadify.monadify_conv @{context}))) 1›)
+    oops
+  
+  
+  
+  context
+    fixes a :: "'a list"
+   begin
+  
+  ML_val ‹
+    val ctxt = @{context}
+    val t = @{term "a @ b"}
+    val ctxt' = Variable.auto_fixes t ctxt
+    
+    
+    val t = singleton (Variable.export_terms ctxt' ctxt) t
+    
+    
+  ›
+  end
+  
+  ML_val ‹
+    let
+      open Monadify
+      val ctxt = @{context}
+      
+      val ctxt = add_const_decl (prepare_const_decl ctxt @{term "hd f"}) ctxt
+      
+      val t = @{cterm ‹return (hd ([a,b,c]) (g x y))›}
+      val t = monadify_conv ctxt t
+    
+    in 
+      t
+    end  
+  
+  ›
+  *)</span></span><span>
+</span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+</span></pre>
+</body>
+
+</html>

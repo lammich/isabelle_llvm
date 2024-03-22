@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><link rel="stylesheet" type="text/css" href="isabelle.css"/>
+<title>File ‹multiset_simprocs.ML›</title>
+</head>
+
+
+<body>
+<div class="head">
+<h1>File ‹multiset_simprocs.ML›</h1>
+</div>
+
+<pre class="source"><span class="comment1"><span>(* Author: Mathias Fleury, MPII
+
+
+Simprocs for multisets, based on Larry Paulson's simprocs for
+natural numbers and numerals.
+*)</span></span><span>
+
+</span><span class="keyword1"><span class="keyword"><span>signature</span></span></span><span> </span><span class="entity"><span>MULTISET_SIMPROCS</span></span><span> </span><span class="main"><span>=</span></span><span>
+</span><span class="keyword2"><span class="keyword"><span>sig</span></span></span><span>
+  </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> subset_cancel_msets</span><span class="main"><span>:</span></span><span> </span><span class="entity"><span>Proof.context</span></span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>cterm</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>thm</span><span> </span><span>option</span><span>
+  </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> subseteq_cancel_msets</span><span class="main"><span>:</span></span><span> </span><span class="entity"><span>Proof.context</span></span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>cterm</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>thm</span><span> </span><span>option</span><span>
+</span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span class="main"><span>;</span></span><span>
+
+</span><span class="keyword1"><span class="keyword"><span>structure</span></span></span><span> </span><span class="entity"><span>Multiset_Simprocs</span></span><span> </span><span class="main"><span>:</span></span><span> </span><span class="entity"><span>MULTISET_SIMPROCS</span></span><span> </span><span class="main"><span>=</span></span><span>
+</span><span class="keyword2"><span class="keyword"><span>struct</span></span></span><span>
+
+</span><span class="keyword1"><span class="keyword"><span>structure</span></span></span><span> </span><span class="entity"><span>Subset_Cancel_Multiset</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>Cancel_Fun</span></span><span>
+ </span><span class="main"><span>(</span></span><span class="keyword3"><span class="keyword"><span>open</span></span></span><span> </span><span>Cancel_Data</span><span>
+  </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>mk_bal</span></span><span>   </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>HOLogic.mk_binrel</span></span><span> </span><span class="antiquoted"><span class="operator"><span><span class="hidden">\&lt;^</span><span class="control">const_name</span><span class="hidden">&gt;</span></span></span><span>‹</span><a class="entity_ref" href="../../../../HOL-Library.Multiset.html#Multiset.subset_mset|const"><span>subset_mset</span></a><span>›</span></span><span>
+  </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>dest_bal</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>HOLogic.dest_bin</span></span><span> </span><span class="antiquoted"><span class="operator"><span><span class="hidden">\&lt;^</span><span class="control">const_name</span><span class="hidden">&gt;</span></span></span><span>‹</span><a class="entity_ref" href="../../../../HOL-Library.Multiset.html#Multiset.subset_mset|const"><span>subset_mset</span></a><span>›</span></span><span> </span><span>dummyT</span><span>
+  </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>bal_add1</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="antiquoted"><span class="entity"><span class="antiquote"><span>@{</span></span><span class="operator"><span>thm</span></span><span> </span><a class="entity_ref" href="../../../../HOL-Library.Multiset.html#Multiset.mset_subset_add_iff1|fact"><span>mset_subset_add_iff1</span></a><span class="main"><span>[</span></span><span class="operator"><span>unfolded</span></span><span> </span><a class="entity_ref" href="../../../../HOL-Library.Multiset.html#Multiset.repeat_mset_iterate_add|fact"><span>repeat_mset_iterate_add</span></a><span class="main"><span>]</span></span><span class="antiquote"><span>}</span></span></span></span><span> </span><span>RS</span><span> </span><span class="entity"><span>trans</span></span><span>
+  </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>bal_add2</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="antiquoted"><span class="entity"><span class="antiquote"><span>@{</span></span><span class="operator"><span>thm</span></span><span> </span><a class="entity_ref" href="../../../../HOL-Library.Multiset.html#Multiset.mset_subset_add_iff2|fact"><span>mset_subset_add_iff2</span></a><span class="main"><span>[</span></span><span class="operator"><span>unfolded</span></span><span> </span><a class="entity_ref" href="../../../../HOL-Library.Multiset.html#Multiset.repeat_mset_iterate_add|fact"><span>repeat_mset_iterate_add</span></a><span class="main"><span>]</span></span><span class="antiquote"><span>}</span></span></span></span><span> </span><span>RS</span><span> </span><span class="entity"><span>trans</span></span><span>
+</span><span class="main"><span>)</span></span><span class="main"><span>;</span></span><span>
+
+</span><span class="keyword1"><span class="keyword"><span>structure</span></span></span><span> </span><span class="entity"><span>Subseteq_Cancel_Multiset</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>Cancel_Fun</span></span><span>
+ </span><span class="main"><span>(</span></span><span class="keyword3"><span class="keyword"><span>open</span></span></span><span> </span><span>Cancel_Data</span><span>
+  </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>mk_bal</span></span><span>   </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>HOLogic.mk_binrel</span></span><span> </span><span class="antiquoted"><span class="operator"><span><span class="hidden">\&lt;^</span><span class="control">const_name</span><span class="hidden">&gt;</span></span></span><span>‹</span><a class="entity_ref" href="../../../../HOL-Library.Multiset.html#Multiset.subseteq_mset|const"><span>subseteq_mset</span></a><span>›</span></span><span>
+  </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>dest_bal</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>HOLogic.dest_bin</span></span><span> </span><span class="antiquoted"><span class="operator"><span><span class="hidden">\&lt;^</span><span class="control">const_name</span><span class="hidden">&gt;</span></span></span><span>‹</span><a class="entity_ref" href="../../../../HOL-Library.Multiset.html#Multiset.subseteq_mset|const"><span>subseteq_mset</span></a><span>›</span></span><span> </span><span>dummyT</span><span>
+  </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>bal_add1</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="antiquoted"><span class="entity"><span class="antiquote"><span>@{</span></span><span class="operator"><span>thm</span></span><span> </span><a class="entity_ref" href="../../../../HOL-Library.Multiset.html#Multiset.mset_subseteq_add_iff1|fact"><span>mset_subseteq_add_iff1</span></a><span class="main"><span>[</span></span><span class="operator"><span>unfolded</span></span><span> </span><a class="entity_ref" href="../../../../HOL-Library.Multiset.html#Multiset.repeat_mset_iterate_add|fact"><span>repeat_mset_iterate_add</span></a><span class="main"><span>]</span></span><span class="antiquote"><span>}</span></span></span></span><span> </span><span>RS</span><span> </span><span class="entity"><span>trans</span></span><span>
+  </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>bal_add2</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="antiquoted"><span class="entity"><span class="antiquote"><span>@{</span></span><span class="operator"><span>thm</span></span><span> </span><a class="entity_ref" href="../../../../HOL-Library.Multiset.html#Multiset.mset_subseteq_add_iff2|fact"><span>mset_subseteq_add_iff2</span></a><span class="main"><span>[</span></span><span class="operator"><span>unfolded</span></span><span> </span><a class="entity_ref" href="../../../../HOL-Library.Multiset.html#Multiset.repeat_mset_iterate_add|fact"><span>repeat_mset_iterate_add</span></a><span class="main"><span>]</span></span><span class="antiquote"><span>}</span></span></span></span><span> </span><span>RS</span><span> </span><span class="entity"><span>trans</span></span><span>
+</span><span class="main"><span>)</span></span><span class="main"><span>;</span></span><span>
+
+</span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>subset_cancel_msets</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>Subset_Cancel_Multiset.proc</span></span><span class="main"><span>;</span></span><span>
+</span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>subseteq_cancel_msets</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>Subseteq_Cancel_Multiset.proc</span></span><span class="main"><span>;</span></span><span>
+
+</span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+</span></pre>
+</body>
+
+</html>

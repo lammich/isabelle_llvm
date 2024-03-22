@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><link rel="stylesheet" type="text/css" href="isabelle.css"/>
+<title>Theory Word_Lib.Word_16</title>
+</head>
+
+
+<body>
+<div class="head">
+<h1>Theory Word_Lib.Word_16</h1>
+</div>
+
+<pre class="source"><span class="comment1"><span>(*
+ * Copyright 2020, Data61, CSIRO (ABN 41 687 119 230)
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ *)</span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>section</span></span></span><span> </span><span class="quoted"><span class="plain_text"><span>"Words of Length 16"</span></span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>theory</span></span></span><span> </span><a href="Word_Lib.Word_16.html"><span>Word_16</span></a><span>
+</span><span class="keyword2"><span class="keyword"><span>imports</span></span></span><span>
+  </span><a href="Word_Lib.More_Word.html"><span>More_Word</span></a><span>
+  </span><a href="Word_Lib.Signed_Words.html"><span>Signed_Words</span></a><span>
+</span><span class="keyword2"><span class="keyword"><span>begin</span></span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>lemma</span></span></span><span> </span><span class="entity_def" id="Word_16.len16|fact"><span class="entity_def" id="Word_16.len16|thm"><span>len16</span></span></span><span class="main"><span>:</span></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><a class="entity_ref" href="../../AFP/Refine_Monadic/HOL-Library.Type_Length.html#Type_Length.len0_class.len_of|const"><span>len_of</span></a><span> </span><span class="main"><span>(</span></span><span class="free"><span>x</span></span><span> </span><span class="main"><span>::</span></span><span> </span><span class="numeral"><span>16</span></span><span> </span><span>itself</span><span class="main"><span>)</span></span><span> </span><span class="main"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.eq|const"><span>=</span></a></span><span> </span><span class="numeral"><span>16</span></span><span>"</span></span></span><span> </span><span class="keyword1"><span class="command"><span>by</span></span></span><span> </span><span class="operator"><span>simp</span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>context</span></span></span><span>
+  </span><span class="keyword2"><span class="keyword"><span>includes</span></span></span><span> </span><a class="entity_ref" href="../../HOL/HOL/Bit_Operations.html#Bit_Operations.bit_operations_syntax|bundle"><span>bit_operations_syntax</span></a><span>
+</span><span class="keyword2"><span class="keyword"><span>begin</span></span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>lemma</span></span></span><span> </span><span class="entity_def" id="Word_16.word16_and_max_simp|fact"><span class="entity_def" id="Word_16.word16_and_max_simp|thm"><span>word16_and_max_simp</span></span></span><span class="main"><span>:</span></span><span>
+  </span><span class="quoted"><span class="quoted"><span>‹</span><span class="free"><span>x</span></span><span> </span><span class="keyword1"><a class="entity_ref" href="../../HOL/HOL/Bit_Operations.html#Bit_Operations.semiring_bit_operations_class.and|const"><span>AND</span></a></span><span> </span><span class="numeral"><span>0xFFFF</span></span><span> </span><span class="main"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.eq|const"><span>=</span></a></span><span> </span><span class="free"><span>x</span></span><span>›</span></span></span><span> </span><span class="keyword2"><span class="keyword"><span>for</span></span></span><span> </span><span class="free"><span>x</span></span><span> </span><span class="main"><span>::</span></span><span> </span><span class="quoted"><span class="quoted"><span>‹</span><span class="numeral"><span>16</span></span><span> </span><a class="entity_ref" href="../../AFP/Refine_Monadic/HOL-Library.Word.html#Word.word|type"><span>word</span></a><span>›</span></span></span><span>
+  </span><span class="keyword1"><span class="command"><span>using</span></span></span><span> </span><a class="entity_ref" href="Word_Lib.More_Word.html#More_Word.word_and_full_mask_simp|fact"><span>word_and_full_mask_simp</span></a><span> </span><span class="main"><span>[</span></span><span class="operator"><span>of</span></span><span> </span><span class="quoted"><span class="free"><span>x</span></span></span><span class="main"><span>]</span></span><span>
+  </span><span class="keyword1"><span class="command"><span>by</span></span></span><span> </span><span class="main"><span>(</span></span><span class="operator"><span>simp</span></span><span> </span><span class="quasi_keyword"><span>add</span></span><span class="main"><span class="main"><span>:</span></span></span><span> </span><a class="entity_ref" href="../../HOL/HOL/Num.html#Num.numeral_eq_Suc|fact"><span>numeral_eq_Suc</span></a><span> </span><a class="entity_ref" href="../../HOL/HOL/Bit_Operations.html#Bit_Operations.semiring_bit_operations_class.mask_Suc_exp|fact"><span>mask_Suc_exp</span></a><span class="main"><span>)</span></span><span>
+
+</span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+
+</span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+</span></pre>
+</body>
+
+</html>

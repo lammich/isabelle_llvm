@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><link rel="stylesheet" type="text/css" href="isabelle.css"/>
+<title>File ‹Revert_Abbrev.ML›</title>
+</head>
+
+
+<body>
+<div class="head">
+<h1>File ‹Revert_Abbrev.ML›</h1>
+</div>
+
+<pre class="source"><span class="comment1"><span>(*
+  Revert abbreviations.
+ TODO: This is only a hack, a clean solution would somehow dock to the
+   locale mechanism, and thus automatically consider new interpretations and
+   extensions of the locale
+*)</span></span><span>
+
+</span><span class="keyword1"><span class="keyword"><span>signature</span></span></span><span> </span><span class="entity"><span>REVERT_ABBREV</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>sig</span></span></span><span>
+  </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> revert_abbrev_matching</span><span class="main"><span>:</span></span><span> </span><span class="main"><span>(</span></span><span>string</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>bool</span><span class="main"><span>)</span></span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>theory</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>theory</span><span>
+  </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> revert_abbrev</span><span class="main"><span>:</span></span><span> </span><span>string</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>theory</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>theory</span><span>
+</span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+
+</span><span class="keyword1"><span class="keyword"><span>structure</span></span></span><span> </span><span class="entity"><span>Revert_Abbrev</span></span><span> </span><span class="main"><span>:</span></span><span class="entity"><span>REVERT_ABBREV</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>struct</span></span></span><span>
+  </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>match_string'</span></span><span> </span><span class="entity"><span>pat</span></span><span> </span><span class="entity"><span>str</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>match_string</span><span> </span><span class="main"><span>(</span></span><span class="inner_quoted"><span>"^"</span></span><span>^</span><span class="entity"><span>pat</span></span><span>^</span><span class="inner_quoted"><span>"$"</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>(</span></span><span class="inner_quoted"><span>"^"</span></span><span>^</span><span class="entity"><span>str</span></span><span>^</span><span class="inner_quoted"><span>"$"</span></span><span class="main"><span>)</span></span><span>
+
+  </span><span class="comment1"><span>(* Revert all abbreviations whose name matches the given matcher *)</span></span><span>
+  </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>revert_abbrev_matching</span></span><span> </span><span class="entity"><span>match_fun</span></span><span> </span><span class="entity"><span>thy</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>let</span></span></span><span>
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>Proof_Context.init_global</span><span> </span><span class="entity"><span>thy</span></span><span class="main"><span>;</span></span><span>
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="main"><span>{</span></span><span class="entity"><span>const_space</span></span><span class="main"><span>,</span></span><span> </span><span class="entity"><span>constants</span></span><span class="main"><span>,</span></span><span> </span><span class="main"><span>...</span></span><span class="main"><span>}</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>Sign.consts_of</span><span> </span><span class="entity"><span>thy</span></span><span> </span><span>|&gt;</span><span> </span><span>Consts.dest</span><span class="main"><span>;</span></span><span>
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>names</span></span><span> </span><span class="main"><span>=</span></span><span>
+    </span><span>Name_Space.extern_entries</span><span> </span><span>true</span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>const_space</span></span><span> </span><span class="entity"><span>constants</span></span><span>
+    </span><span>|&gt;</span><span> </span><span>map_filter</span><span> </span><span class="main"><span>(</span></span><span class="keyword1"><span class="keyword"><span>fn</span></span></span><span> 
+        </span><span class="main"><span>(</span></span><span class="main"><span>(</span></span><span class="entity"><span>name</span></span><span class="main"><span>,</span></span><span> </span><span class="main"><span>_</span></span><span class="main"><span>)</span></span><span class="main"><span>,</span></span><span> </span><span class="main"><span>(</span></span><span class="main"><span>_</span></span><span class="main"><span>,</span></span><span> </span><span>SOME</span><span> </span><span class="main"><span>_</span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="keyword2"><span class="keyword"><span>if</span></span></span><span> </span><span class="entity"><span>match_fun</span></span><span> </span><span class="entity"><span>name</span></span><span> </span><span class="keyword2"><span class="keyword"><span>then</span></span></span><span> </span><span>SOME</span><span> </span><span class="entity"><span>name</span></span><span> </span><span class="keyword2"><span class="keyword"><span>else</span></span></span><span> </span><span>NONE</span><span>
+      </span><span class="main"><span>|</span></span><span> </span><span class="main"><span>_</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span>NONE</span><span class="main"><span>)</span></span><span>
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="main"><span>_</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>if</span></span></span><span> </span><span>null</span><span> </span><span class="entity"><span>names</span></span><span> </span><span class="keyword2"><span class="keyword"><span>then</span></span></span><span> 
+      </span><span>warning</span><span> </span><span class="main"><span>(</span></span><span class="inner_quoted"><span>"revert_abbrevs: No matching constants"</span></span><span class="main"><span>)</span></span><span> 
+    </span><span class="keyword2"><span class="keyword"><span>else</span></span></span><span> </span><span class="main"><span>(</span></span><span class="main"><span>)</span></span><span class="main"><span>;</span></span><span>
+  </span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span> </span><span>fold</span><span> </span><span class="main"><span>(</span></span><span>Sign.revert_abbrev</span><span> </span><span class="inner_quoted"><span>""</span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>names</span></span><span> </span><span class="entity"><span>thy</span></span><span> </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+
+  </span><span class="comment1"><span>(* Revert abbreviations matching anchored glob-pattern *)</span></span><span>
+  </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>revert_abbrev</span></span><span> </span><span class="entity"><span>pat</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>revert_abbrev_matching</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>match_string'</span></span><span> </span><span class="entity"><span>pat</span></span><span class="main"><span>)</span></span><span>
+</span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+</span></pre>
+</body>
+
+</html>

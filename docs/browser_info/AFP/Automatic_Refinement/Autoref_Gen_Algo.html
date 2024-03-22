@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><link rel="stylesheet" type="text/css" href="isabelle.css"/>
+<title>Theory Autoref_Gen_Algo</title>
+</head>
+
+
+<body>
+<div class="head">
+<h1>Theory Autoref_Gen_Algo</h1>
+</div>
+
+<pre class="source"><span class="keyword1"><span class="command"><span>section</span></span></span><span> </span><span class="quoted"><span class="plain_text"><span>‹Infrastructure for Generic Algorithms›</span></span></span><span>
+</span><span class="keyword1"><span class="command"><span>theory</span></span></span><span> </span><a href="Autoref_Gen_Algo.html"><span>Autoref_Gen_Algo</span></a><span>
+</span><span class="keyword2"><span class="keyword"><span>imports</span></span></span><span> </span><a href="Autoref_Translate.html"><span>Autoref_Translate</span></a><span>
+</span><span class="keyword2"><span class="keyword"><span>begin</span></span></span><span>
+
+</span><span class="comment1"><span>(* TODO/FIXME: The priority ordering is not yet suited for generic
+  algorithms! If a refinement rule is generic, the homogenity and relator
+  measures make no sense, as they are applied to schematic variables.
+  However, currently generic algorithms seem to have lower priority than
+  specific ones, so we can probably live with this problem for a while.
+*)</span></span><span>
+
+
+</span><span class="keyword1"><span class="command"><span class="entity_def" id="Autoref_Gen_Algo.GEN_ALGO_tag_def|fact"><span class="entity_def" id="Autoref_Gen_Algo.GEN_ALGO_tag_def|thm"><span class="entity_def" id="Autoref_Gen_Algo.GEN_ALGO_tag_def_raw|axiom"><span>definition</span></span></span></span></span></span><span> </span><span class="main"><span>[</span></span><span class="operator"><span>simp</span></span><span class="main"><span>,</span></span><span> </span><a class="entity_ref" href="Autoref_Tagging.html#Autoref_Tagging.autoref_tag_defs|attribute"><span class="operator"><span>autoref_tag_defs</span></span></a><span class="main"><span>]</span></span><span class="main"><span>:</span></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><span class="free"><span class="entity_def" id="Autoref_Gen_Algo.GEN_ALGO_tag|const"><span>GEN_ALGO_tag</span></span></span><span> </span><span class="free"><span class="bound"><span class="entity"><span>P</span></span></span></span><span> </span><span class="main"><span>==</span></span><span> </span><span class="free"><span class="bound"><span class="entity"><span>P</span></span></span></span><span>"</span></span></span><span>
+</span><span class="keyword1"><span class="command"><span>lemma</span></span></span><span> </span><span class="entity_def" id="Autoref_Gen_Algo.GEN_ALGO_tagI|fact"><span class="entity_def" id="Autoref_Gen_Algo.GEN_ALGO_tagI|thm"><span>GEN_ALGO_tagI</span></span></span><span class="main"><span>:</span></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><span class="free"><span>P</span></span><span> </span><span class="main"><span>==&gt;</span></span><span> </span><a class="entity_ref" href="Autoref_Gen_Algo.html#Autoref_Gen_Algo.GEN_ALGO_tag|const"><span>GEN_ALGO_tag</span></a><span> </span><span class="free"><span>P</span></span><span>"</span></span></span><span> </span><span class="keyword1"><span class="command"><span>by</span></span></span><span> </span><span class="operator"><span>simp</span></span><span>
+</span><span class="keyword1"><span class="command"><span>abbreviation</span></span></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><span class="free"><span class="entity_def" id="Autoref_Gen_Algo.SIDE_GEN_ALGO|const"><span>SIDE_GEN_ALGO</span></span></span><span> </span><span class="free"><span class="bound"><span class="entity"><span>P</span></span></span></span><span> </span><span class="main"><span>==</span></span><span> </span><a class="entity_ref" href="Autoref_Fix_Rel.html#Autoref_Fix_Rel.PREFER_tag|const"><span>PREFER_tag</span></a><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="Autoref_Gen_Algo.html#Autoref_Gen_Algo.GEN_ALGO_tag|const"><span>GEN_ALGO_tag</span></a><span> </span><span class="free"><span class="bound"><span class="entity"><span>P</span></span></span></span><span class="main"><span>)</span></span><span>"</span></span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>ML</span></span></span><span> </span><span class="quoted"><span>‹
+  </span><span class="keyword1"><span class="keyword"><span>structure</span></span></span><span> </span><span class="entity"><span>Autoref_Gen_Algo</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>struct</span></span></span><span> 
+
+    </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>transform_ga_rule</span></span><span> </span><span class="entity"><span>context</span></span><span> </span><span class="entity"><span>rl</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>let</span></span></span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>Context.proof_of</span><span> </span><span class="entity"><span>context</span></span><span>
+
+      </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>warn</span></span><span> </span><span class="entity"><span>msg</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>Pretty.block</span><span> </span><span class="main"><span>[</span></span><span>
+        </span><span>Pretty.str</span><span> </span><span class="entity"><span>msg</span></span><span class="main"><span>,</span></span><span> 
+        </span><span>Pretty.brk</span><span> </span><span class="inner_numeral"><span>1</span></span><span class="main"><span>,</span></span><span>
+        </span><span>Pretty.str</span><span> </span><span class="inner_quoted"><span>"("</span></span><span class="main"><span>,</span></span><span>
+        </span><span>Thm.pretty_thm</span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>rl</span></span><span class="main"><span>,</span></span><span>
+        </span><span>Pretty.str</span><span> </span><span class="inner_quoted"><span>")"</span></span><span>
+        </span><span class="main"><span>]</span></span><span>
+      </span><span>|&gt;</span><span> </span><span>Pretty.string_of</span><span> </span><span>|&gt;</span><span> </span><span>warning</span><span>
+   
+      </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>is_side_prem</span></span><span> </span><span class="antiquoted"><span class="antiquote"><span>@{</span></span><span class="operator"><span>mpat</span></span><span> </span><span class="quoted"><span>"</span><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.Trueprop|const"><span>Trueprop</span></a><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="Autoref_Fix_Rel.html#Autoref_Fix_Rel.PREFER_tag|const"><span>PREFER_tag</span></a><span> </span><span class="main"><span>_</span></span><span class="main"><span>)</span></span><span>"</span></span><span class="antiquote"><span>}</span></span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>true</span><span>
+        </span><span class="main"><span>|</span></span><span> </span><span class="entity"><span>is_side_prem</span></span><span> </span><span class="antiquoted"><span class="antiquote"><span>@{</span></span><span class="operator"><span>mpat</span></span><span> </span><span class="quoted"><span>"</span><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.Trueprop|const"><span>Trueprop</span></a><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="Autoref_Fix_Rel.html#Autoref_Fix_Rel.DEFER_tag|const"><span>DEFER_tag</span></a><span> </span><span class="main"><span>_</span></span><span class="main"><span>)</span></span><span>"</span></span><span class="antiquote"><span>}</span></span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>true</span><span>
+        </span><span class="main"><span>|</span></span><span> </span><span class="entity"><span>is_side_prem</span></span><span> </span><span class="main"><span>_</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>false</span><span>
+    </span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span>
+      </span><span class="keyword2"><span class="keyword"><span>if</span></span></span><span> </span><span>exists</span><span> </span><span class="entity"><span>is_side_prem</span></span><span> </span><span class="main"><span>(</span></span><span>Thm.prems_of</span><span> </span><span class="entity"><span>rl</span></span><span class="main"><span>)</span></span><span> </span><span class="keyword2"><span class="keyword"><span>then</span></span></span><span>
+        </span><span class="entity"><span>warn</span></span><span> </span><span class="main"><span>(</span></span><span class="inner_quoted"><span>"autoref_ga_rules: SIDE condition premise not allowed here"</span></span><span class="main"><span>)</span></span><span>
+      </span><span class="keyword2"><span class="keyword"><span>else</span></span></span><span> </span><span class="main"><span>(</span></span><span class="main"><span>)</span></span><span>
+      </span><span class="main"><span>;</span></span><span>
+      </span><span class="keyword2"><span class="keyword"><span>case</span></span></span><span> </span><span>Thm.concl_of</span><span> </span><span class="entity"><span>rl</span></span><span> </span><span class="keyword2"><span class="keyword"><span>of</span></span></span><span>
+        </span><span class="antiquoted"><span class="antiquote"><span>@{</span></span><span class="operator"><span>mpat</span></span><span> </span><span class="quoted"><span>"</span><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.Trueprop|const"><span>Trueprop</span></a><span> </span><span class="main"><span>(</span></span><span class="main"><span>(</span></span><span class="main"><span>_</span></span><span class="main"><span>,</span></span><span class="main"><span>_</span></span><span class="main"><span>)</span></span><span class="main"><a class="entity_ref" href="../../HOL/HOL/Set.html#Set.member|const"><span>∈</span></a></span><span class="main"><span>_</span></span><span class="main"><span>)</span></span><span>"</span></span><span class="antiquote"><span>}</span></span></span><span> </span><span class="main"><span>=&gt;</span></span><span> 
+          </span><span class="entity"><span>warn</span></span><span> </span><span class="main"><span>(</span></span><span class="inner_quoted"><span>"autoref_ga_rules: Refinement condition conclusion. Did you"</span></span><span>
+            </span><span>^</span><span class="inner_quoted"><span>" mean an autoref_rule?"</span></span><span class="main"><span>)</span></span><span>  
+      </span><span class="main"><span>|</span></span><span> </span><span class="main"><span>_</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="main"><span>(</span></span><span class="main"><span>)</span></span><span>
+      </span><span class="main"><span>;</span></span><span>
+      </span><span class="main"><span>[</span></span><span class="entity"><span>rl</span></span><span class="main"><span>]</span></span><span>
+    </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+
+    </span><span class="keyword1"><span class="keyword"><span>structure</span></span></span><span> </span><span class="entity"><span>ga_side_thms</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>Named_Sorted_Thms</span></span><span> </span><span class="main"><span>(</span></span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>name</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="antiquoted"><span class="entity"><span class="antiquote"><span>@{</span></span><span class="operator"><span>binding</span></span><span> </span><span class="entity_def" id="Autoref_Gen_Algo.autoref_ga_rules|attribute"><span class="entity_def" id="Autoref_Gen_Algo.autoref_ga_rules|fact"><span>autoref_ga_rules</span></span></span><span class="antiquote"><span>}</span></span></span></span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>description</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="inner_quoted"><span>"Additional rules for generic algorithm side conditions"</span></span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>sort</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>K</span><span> </span><span>I</span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>transform</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>transform_ga_rule</span></span><span>
+    </span><span class="main"><span>)</span></span><span>
+
+    </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>side_ga_tac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>resolve_tac</span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>ga_side_thms.get</span></span><span> </span><span class="entity"><span>ctxt</span></span><span class="main"><span>)</span></span><span>
+
+    </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>side_ga_op_tac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="main"><span>=</span></span><span> 
+      </span><span>SOLVED'</span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>Autoref_Tacticals.REPEAT_ON_SUBGOAL</span></span><span> 
+        </span><span class="main"><span>(</span></span><span class="entity"><span>Autoref_Translate.trans_step_tac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span>
+
+
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>setup</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>ga_side_thms.setup</span></span><span>
+
+    </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>decl_setup</span></span><span> </span><span class="entity"><span>phi</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>I</span><span>
+    </span><span>#&gt;</span><span> </span><span class="entity"><span>Tagged_Solver.declare_solver</span></span><span> </span><span class="antiquoted"><span class="entity"><span class="antiquote"><span>@{</span></span><span class="operator"><span>thms</span></span><span> </span><a class="entity_ref" href="Autoref_Gen_Algo.html#Autoref_Gen_Algo.GEN_ALGO_tagI|fact"><span>GEN_ALGO_tagI</span></a><span class="antiquote"><span>}</span></span></span></span><span> </span><span class="antiquoted"><span class="entity"><span class="antiquote"><span>@{</span></span><span class="operator"><span>binding</span></span><span> GEN_ALGO</span><span class="antiquote"><span>}</span></span></span></span><span> 
+        </span><span class="inner_quoted"><span>"Autoref: Generic algorithm side condition solver"</span></span><span> 
+        </span><span class="main"><span>(</span></span><span> </span><span class="entity"><span>side_ga_tac</span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>phi</span></span><span>
+    </span><span>#&gt;</span><span> </span><span class="entity"><span>Autoref_Phases.declare_solver</span></span><span> </span><span class="antiquoted"><span class="entity"><span class="antiquote"><span>@{</span></span><span class="operator"><span>thms</span></span><span> </span><a class="entity_ref" href="Autoref_Fix_Rel.html#Autoref_Fix_Rel.GEN_OP_tagI|fact"><span>GEN_OP_tagI</span></a><span class="antiquote"><span>}</span></span></span></span><span> </span><span class="antiquoted"><span class="entity"><span class="antiquote"><span>@{</span></span><span class="operator"><span>binding</span></span><span> GEN_OP</span><span class="antiquote"><span>}</span></span></span></span><span> 
+        </span><span class="inner_quoted"><span>"Autoref: Generic algorithm operation instantiation"</span></span><span> 
+        </span><span class="main"><span>(</span></span><span> </span><span class="entity"><span>side_ga_op_tac</span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>phi</span></span><span>
+  </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+›</span></span><span>  
+
+</span><span class="keyword1"><span class="command"><span>setup</span></span></span><span> </span><span class="entity"><span>Autoref_Gen_Algo.setup</span></span><span>
+</span><span class="keyword1"><span class="command"><span>declaration</span></span></span><span> </span><span class="entity"><span>Autoref_Gen_Algo.decl_setup</span></span><span>
+
+</span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+</span></pre>
+</body>
+
+</html>

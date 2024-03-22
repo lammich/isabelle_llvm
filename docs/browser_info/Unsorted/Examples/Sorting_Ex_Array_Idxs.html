@@ -1,0 +1,610 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><link rel="stylesheet" type="text/css" href="isabelle.css"/>
+<title>Theory Sorting_Ex_Array_Idxs</title>
+</head>
+
+
+<body>
+<div class="head">
+<h1>Theory Sorting_Ex_Array_Idxs</h1>
+</div>
+
+<pre class="source"><span class="keyword1"><span class="command"><span>theory</span></span></span><span> </span><a href="Sorting_Ex_Array_Idxs.html"><span>Sorting_Ex_Array_Idxs</span></a><span>
+</span><span class="keyword2"><span class="keyword"><span>imports</span></span></span><span> </span><a href="Sorting_Introsort.html"><span>Sorting_Introsort</span></a><span>
+</span><span class="keyword2"><span class="keyword"><span>begin</span></span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>subsection</span></span></span><span> </span><span class="quoted"><span class="plain_text"><span>‹Compare Indexes into Value Array›</span></span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>term</span></span></span><span> </span><span class="quoted"><a class="entity_ref" href="../Isabelle_LLVM/Array_of_Array_List.html#Array_of_Array_List.nao_assn|const"><span>nao_assn</span></a></span><span>
+</span><span class="keyword1"><span class="command"><span>term</span></span></span><span> </span><span class="quoted"><a class="entity_ref" href="../Isabelle_LLVM/LLVM_DS_NArray.html#LLVM_DS_NArray.narray_assn|const"><span>narray_assn</span></a></span><span>
+
+</span><span class="keyword1"><span class="command"><span>lemma</span></span></span><span> </span><span class="entity_def" id="Sorting_Ex_Array_Idxs.narray_assn_alt|fact"><span class="entity_def" id="Sorting_Ex_Array_Idxs.narray_assn_alt|thm"><span>narray_assn_alt</span></span></span><span class="main"><span>:</span></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><a class="entity_ref" href="../Isabelle_LLVM/LLVM_DS_NArray.html#LLVM_DS_NArray.narray_assn|const"><span>narray_assn</span></a><span> 
+  </span><span class="main"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.eq|const"><span>=</span></a></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/LLVM_Shallow_RS.html#LLVM_Shallow_RS.mk_assn|const"><span>mk_assn</span></a><span> </span><span class="main"><span>(</span></span><span class="main"><span>λ</span></span><span class="bound"><span>xs</span></span><span> </span><span class="bound"><span>p</span></span><span class="main"><span>.</span></span><span> </span><span class="keyword1"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.If|const"><span>if</span></a></span><span> </span><span class="bound"><span>xs</span></span><span class="main"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.eq|const"><span>=</span></a></span><span class="main"><a class="entity_ref" href="../../HOL/HOL/List.html#List.list.Nil|const"><span>[]</span></a></span><span> </span><span class="keyword1"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.If|const"><span>then</span></a></span><span> </span><span class="main"><a class="entity_ref" href="../Isabelle_LLVM/Sep_Algebra_Add.html#Sep_Algebra_Add.pred_lift|const"><span>↑</span></a></span><span class="main"><span>(</span></span><span class="bound"><span>p</span></span><span class="main"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.eq|const"><span>=</span></a></span><a class="entity_ref" href="../Isabelle_LLVM/LLVM_Shallow.html#LLVM_Shallow.null|const"><span>null</span></a><span class="main"><span>)</span></span><span> </span><span class="keyword1"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.If|const"><span>else</span></a></span><span> </span><span class="main"><a class="entity_ref" href="../Isabelle_LLVM/LLVM_Shallow_RS.html#LLVM_Shallow_RS.dr_assn_prefix|const"><span>↿</span></a></span><a class="entity_ref" href="../Isabelle_LLVM/LLVM_DS_Array.html#LLVM_DS_Array.array_assn|const"><span>LLVM_DS_Array.array_assn</span></a><span> </span><span class="bound"><span>xs</span></span><span> </span><span class="bound"><span>p</span></span><span class="main"><span>)</span></span><span>"</span></span></span><span>
+  </span><span class="keyword1"><span class="command"><span>by</span></span></span><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../../HOL/HOL/ISABELLE_HOME/src/Provers/clasimp.ML.html#HOL.auto|method"><span class="operator"><span>auto</span></span></a><span> </span><span class="quasi_keyword"><span>simp</span></span><span class="main"><span class="main"><span>:</span></span></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/LLVM_DS_NArray.html#LLVM_DS_NArray.narray_assn_def|fact"><span>narray_assn_def</span></a><span> </span><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.fun_eq_iff|fact"><span>fun_eq_iff</span></a><span> </span><span class="quasi_keyword"><span>split</span></span><span class="main"><span class="main"><span>:</span></span></span><span> </span><a class="entity_ref" href="../../HOL/HOL/List.html#List.list.splits|fact"><span>list.splits</span></a><span class="main"><span>)</span></span><span>
+
+</span><span class="keyword1"><span class="command"><span class="entity_def" id="Sorting_Ex_Array_Idxs.woarray_slice_diff_assn_def|fact"><span class="entity_def" id="Sorting_Ex_Array_Idxs.woarray_slice_diff_assn_def|thm"><span class="entity_def" id="Sorting_Ex_Array_Idxs.woarray_slice_diff_assn_def_raw|axiom"><span>definition</span></span></span></span></span></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><span class="free"><span class="entity_def" id="Sorting_Ex_Array_Idxs.woarray_slice_diff_assn|const"><span>woarray_slice_diff_assn</span></span></span><span> </span><span class="free"><span class="bound"><span class="entity"><span>n</span></span></span></span><span> </span><span class="free"><span class="bound"><span class="entity"><span>p</span></span></span></span><span> </span><span class="main"><span>≡</span></span><span> </span><span class="keyword1"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.If|const"><span>if</span></a></span><span> </span><span class="free"><span class="bound"><span class="entity"><span>n</span></span></span></span><span class="main"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.eq|const"><span>=</span></a></span><span class="main"><a class="entity_ref" href="../../HOL/HOL/Groups.html#Groups.zero_class.zero|const"><span>0</span></a></span><span> </span><span class="keyword1"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.If|const"><span>then</span></a></span><span> </span><span class="main"><a class="entity_ref" href="../Isabelle_LLVM/Sep_Algebra_Add.html#Sep_Algebra_Add.pred_lift|const"><span>↑</span></a></span><span class="main"><span>(</span></span><span class="free"><span class="bound"><span class="entity"><span>p</span></span></span></span><span class="main"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.eq|const"><span>=</span></a></span><a class="entity_ref" href="../Isabelle_LLVM/LLVM_Shallow.html#LLVM_Shallow.null|const"><span>null</span></a><span class="main"><span>)</span></span><span> </span><span class="keyword1"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.If|const"><span>else</span></a></span><span> </span><span class="main"><a class="entity_ref" href="../Isabelle_LLVM/LLVM_Shallow_RS.html#LLVM_Shallow_RS.dr_assn_prefix|const"><span>↿</span></a></span><a class="entity_ref" href="../Isabelle_LLVM/LLVM_DS_NArray.html#LLVM_DS_NArray.array_base_assn|const"><span>array_base_assn</span></a><span> </span><span class="free"><span class="bound"><span class="entity"><span>n</span></span></span></span><span> </span><span class="free"><span class="bound"><span class="entity"><span>p</span></span></span></span><span>"</span></span></span><span>  
+  
+
+</span><span class="keyword1"><span class="command"><span>find_theorems</span></span></span><span> </span><span class="quoted"><a class="entity_ref" href="../Isabelle_LLVM/LLVM_Simple_Memory_RS.html#LLVM_Simple_Memory_RS.addr_algebra_class.abase|const"><span>abase</span></a></span><span>
+
+</span><span class="keyword1"><span class="command"><span>context</span></span></span><span> </span><span class="keyword2"><span class="keyword"><span>begin</span></span></span><span>
+  </span><span class="keyword1"><span class="command"><span class="entity_def" id="offset_460..474">interpretation</span></span></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/LLVM_Shallow_RS.html#LLVM_Shallow_RS.llvm_prim_mem_setup|locale"><span>llvm_prim_mem_setup</span></a><span> </span><span class="keyword1"><span class="command"><span>.</span></span></span><span>
+  </span><span class="comment1"><span>(* TODO: Move *)</span></span><span>
+  </span><span class="keyword1"><span class="command"><span>lemma</span></span></span><span> </span><span class="entity_def" id="Sorting_Ex_Array_Idxs.ll_malloc_tag_null|fact"><span class="entity_def" id="Sorting_Ex_Array_Idxs.ll_malloc_tag_null|thm"><span>ll_malloc_tag_null</span></span></span><span class="main"><span>[</span></span><a class="entity_ref" href="../Isabelle_LLVM/Sep_Algebra_Add.html#Sep_Algebra_Add.sep_algebra_simps|attribute"><span class="operator"><span>sep_algebra_simps</span></span></a><span class="main"><span>]</span></span><span class="main"><span>:</span></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><a class="entity_ref" href="../Isabelle_LLVM/LLVM_Shallow_RS.html#LLVM_Shallow_RS.llvm_prim_mem_setup.ll_malloc_tag|const"><span>ll_malloc_tag</span></a><span> </span><span class="free"><span>n</span></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/LLVM_Shallow.html#LLVM_Shallow.null|const"><span>null</span></a><span> </span><span class="main"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.eq|const"><span>=</span></a></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Separation_Algebra.Separation_Algebra.html#Separation_Algebra.sep_algebra_class.sep_false|const"><span>sep_false</span></a><span>"</span></span></span><span>
+    </span><span class="keyword1"><span class="command"><span>unfolding</span></span></span><span> </span><a class="entity_ref" href="Sorting_Ex_Array_Idxs.html#offset_460..474"><span>ll_malloc_tag_def</span></a><span> </span><a class="entity_ref" href="../Isabelle_LLVM/LLVM_Shallow.html#LLVM_Shallow.null_def|fact"><span>null_def</span></a><span> </span><a class="entity_ref" href="../Isabelle_LLVM/LLVM_Simple_Memory_RS.html#LLVM_Simple_Memory_RS.llvm_blockp_def|fact"><span>llvm_blockp_def</span></a><span>
+    </span><span class="keyword1"><span class="command"><span>by</span></span></span><span> </span><span class="operator"><span>simp</span></span><span>
+
+
+  </span><span class="comment1"><span>(* TODO: Move *)</span></span><span>
+  </span><span class="keyword1"><span class="command"><span>lemma</span></span></span><span> </span><span class="entity_def" id="Sorting_Ex_Array_Idxs.array_base_assn_simps|fact"><span class="entity_def" id="Sorting_Ex_Array_Idxs.array_base_assn_simps(3)|thm"><span class="entity_def" id="Sorting_Ex_Array_Idxs.array_base_assn_simps(2)|thm"><span class="entity_def" id="Sorting_Ex_Array_Idxs.array_base_assn_simps(1)|thm"><span>array_base_assn_simps</span></span></span></span></span><span class="main"><span>[</span></span><a class="entity_ref" href="../Isabelle_LLVM/Sep_Algebra_Add.html#Sep_Algebra_Add.sep_algebra_simps|attribute"><span class="operator"><span>sep_algebra_simps</span></span></a><span class="main"><span>]</span></span><span class="main"><span>:</span></span><span>
+    </span><span class="quoted"><span class="quoted"><span>"</span><span class="main"><a class="entity_ref" href="../Isabelle_LLVM/LLVM_Shallow_RS.html#LLVM_Shallow_RS.dr_assn_prefix|const"><span>↿</span></a></span><a class="entity_ref" href="../Isabelle_LLVM/LLVM_DS_NArray.html#LLVM_DS_NArray.array_base_assn|const"><span>array_base_assn</span></a><span> </span><span class="main"><a class="entity_ref" href="../../HOL/HOL/Groups.html#Groups.zero_class.zero|const"><span>0</span></a></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/LLVM_Shallow.html#LLVM_Shallow.null|const"><span>null</span></a><span> </span><span class="main"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.eq|const"><span>=</span></a></span><span> </span><span class="main"><a class="entity_ref" href="../Isabelle_LLVM/Separation_Algebra.Separation_Algebra.html#Separation_Algebra.sep_algebra_class.sep_empty|const"><span>□</span></a></span><span>"</span></span></span><span>
+    </span><span class="quoted"><span class="quoted"><span>"</span><span class="main"><a class="entity_ref" href="../Isabelle_LLVM/LLVM_Shallow_RS.html#LLVM_Shallow_RS.dr_assn_prefix|const"><span>↿</span></a></span><a class="entity_ref" href="../Isabelle_LLVM/LLVM_DS_NArray.html#LLVM_DS_NArray.array_base_assn|const"><span>array_base_assn</span></a><span> </span><span class="main"><a class="entity_ref" href="../../HOL/HOL/Groups.html#Groups.zero_class.zero|const"><span>0</span></a></span><span> </span><span class="free"><span>p</span></span><span> </span><span class="main"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.eq|const"><span>=</span></a></span><span> </span><span class="main"><a class="entity_ref" href="../Isabelle_LLVM/Sep_Algebra_Add.html#Sep_Algebra_Add.pred_lift|const"><span>↑</span></a></span><span class="main"><span>(</span></span><span class="free"><span>p</span></span><span class="main"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.eq|const"><span>=</span></a></span><a class="entity_ref" href="../Isabelle_LLVM/LLVM_Shallow.html#LLVM_Shallow.null|const"><span>null</span></a><span class="main"><span>)</span></span><span>"</span></span></span><span>
+    </span><span class="quoted"><span class="quoted"><span>"</span><span class="main"><a class="entity_ref" href="../Isabelle_LLVM/LLVM_Shallow_RS.html#LLVM_Shallow_RS.dr_assn_prefix|const"><span>↿</span></a></span><a class="entity_ref" href="../Isabelle_LLVM/LLVM_DS_NArray.html#LLVM_DS_NArray.array_base_assn|const"><span>array_base_assn</span></a><span> </span><span class="free"><span>n</span></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/LLVM_Shallow.html#LLVM_Shallow.null|const"><span>null</span></a><span> </span><span class="main"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.eq|const"><span>=</span></a></span><span> </span><span class="main"><a class="entity_ref" href="../Isabelle_LLVM/Sep_Algebra_Add.html#Sep_Algebra_Add.pred_lift|const"><span>↑</span></a></span><span class="main"><span>(</span></span><span class="free"><span>n</span></span><span class="main"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.eq|const"><span>=</span></a></span><span class="main"><a class="entity_ref" href="../../HOL/HOL/Groups.html#Groups.zero_class.zero|const"><span>0</span></a></span><span class="main"><span>)</span></span><span>"</span></span></span><span>
+    </span><span class="keyword1"><span class="command"><span>unfolding</span></span></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/LLVM_DS_NArray.html#LLVM_DS_NArray.array_base_assn_def|fact"><span>array_base_assn_def</span></a><span>
+    </span><span class="keyword1"><span class="command"><span>by</span></span></span><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../../HOL/HOL/ISABELLE_HOME/src/Provers/clasimp.ML.html#HOL.auto|method"><span class="operator"><span>auto</span></span></a><span> </span><span class="quasi_keyword"><span>simp</span></span><span class="main"><span class="main"><span>:</span></span></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Sep_Algebra_Add.html#Sep_Algebra_Add.sep_algebra_simps|fact"><span class="dynamic"><span class="dynamic"><span>sep_algebra_simps</span></span></span></a><span class="main"><span>)</span></span><span> 
+
+</span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>  
+  
+
+</span><span class="keyword1"><span class="command"><span>lemma</span></span></span><span> </span><span class="entity_def" id="Sorting_Ex_Array_Idxs.wo_array_assn_to_slice|fact"><span class="entity_def" id="Sorting_Ex_Array_Idxs.wo_array_assn_to_slice|thm"><span>wo_array_assn_to_slice</span></span></span><span class="main"><span>:</span></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><a class="entity_ref" href="../Isabelle_LLVM/Proto_IICF_EOArray.html#Proto_IICF_EOArray.woarray_assn|const"><span>woarray_assn</span></a><span> </span><span class="free"><span>A</span></span><span> </span><span class="free"><span>xs</span></span><span> </span><span class="free"><span>p</span></span><span> </span><span class="main"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.eq|const"><span>=</span></a></span><span> 
+  </span><span class="main"><span>(</span></span><a class="entity_ref" href="../Isabelle_LLVM/Proto_IICF_EOArray.html#Proto_IICF_EOArray.woarray_slice_assn|const"><span>woarray_slice_assn</span></a><span> </span><span class="free"><span>A</span></span><span> </span><span class="free"><span>xs</span></span><span> </span><span class="free"><span>p</span></span><span> </span><span class="main"><a class="entity_ref" href="../Isabelle_LLVM/Separation_Algebra.Separation_Algebra.html#Separation_Algebra.sep_algebra_class.sep_conj|const"><span>**</span></a></span><span> </span><a class="entity_ref" href="Sorting_Ex_Array_Idxs.html#Sorting_Ex_Array_Idxs.woarray_slice_diff_assn|const"><span>woarray_slice_diff_assn</span></a><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../../HOL/HOL/List.html#List.length|const"><span>length</span></a><span> </span><span class="free"><span>xs</span></span><span class="main"><span>)</span></span><span> </span><span class="free"><span>p</span></span><span class="main"><span>)</span></span><span>"</span></span></span><span>  
+  </span><span class="keyword1"><span class="command"><span>unfolding</span></span></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Proto_IICF_EOArray.html#Proto_IICF_EOArray.woarray_assn_conv|fact"><span>woarray_assn_conv</span></a><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Proto_IICF_EOArray.html#Proto_IICF_EOArray.eoarray_assn_def|fact"><span>eoarray_assn_def</span></a><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Proto_EOArray.html#Proto_EOArray.nao_assn_def|fact"><span>Proto_EOArray.nao_assn_def</span></a><span>
+     </span><a class="entity_ref" href="../Isabelle_LLVM/LLVM_DS_NArray.html#LLVM_DS_NArray.array_assn_split|fact"><span>array_assn_split</span></a><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Rules.html#Sepref_Rules.hr_comp_def|fact"><span>hr_comp_def</span></a><span>
+  </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>apply</span></span></span></span></span><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../../HOL/HOL/ISABELLE_HOME/src/Provers/clasimp.ML.html#HOL.clarsimp|method"><span class="operator"><span>clarsimp</span></span></a><span> </span><span class="quasi_keyword"><span>simp</span></span><span> </span><span class="quasi_keyword"><span>add</span></span><span class="main"><span class="main"><span>:</span></span></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Sep_Algebra_Add.html#Sep_Algebra_Add.sep_algebra_simps|fact"><span class="dynamic"><span class="dynamic"><span>sep_algebra_simps</span></span></span></a><span> </span><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.fun_eq_iff|fact"><span>fun_eq_iff</span></a><span class="main"><span>)</span></span><span>
+  </span><span class="keyword1"><span class="command"><span>unfolding</span></span></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Proto_IICF_EOArray.html#Proto_IICF_EOArray.woarray_slice_assn_conv|fact"><span>woarray_slice_assn_conv</span></a><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Proto_IICF_EOArray.html#Proto_IICF_EOArray.eoarray_slice_assn_def|fact"><span>eoarray_slice_assn_def</span></a><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Proto_EOArray.html#Proto_EOArray.sao_assn_def|fact"><span>sao_assn_def</span></a><span> </span><a class="entity_ref" href="Sorting_Ex_Array_Idxs.html#Sorting_Ex_Array_Idxs.woarray_slice_diff_assn_def|fact"><span>woarray_slice_diff_assn_def</span></a><span> 
+  </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>apply</span></span></span></span></span><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../../HOL/HOL/ISABELLE_HOME/src/Tools/induct.ML.html#HOL.cases|method"><span class="operator"><span>cases</span></span></a><span> </span><span class="quoted"><span class="quoted"><span>"</span><span class="free"><span>xs</span></span><span class="main"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.eq|const"><span>=</span></a></span><span class="main"><a class="entity_ref" href="../../HOL/HOL/List.html#List.list.Nil|const"><span>[]</span></a></span><span>"</span></span></span><span class="main"><span class="keyword3"><span>;</span></span></span><span> </span><a class="entity_ref" href="../../HOL/HOL/ISABELLE_HOME/src/Tools/induct.ML.html#HOL.cases|method"><span class="operator"><span>cases</span></span></a><span> </span><span class="quoted"><span class="quoted"><span>"</span><span class="free"><span>p</span></span><span class="main"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.eq|const"><span>=</span></a></span><a class="entity_ref" href="../Isabelle_LLVM/LLVM_Shallow.html#LLVM_Shallow.null|const"><span>null</span></a><span>"</span></span></span><span class="main"><span class="keyword3"><span>;</span></span></span><span> </span><span class="operator"><span>simp</span></span><span class="main"><span>)</span></span><span>
+  </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>subgoal</span></span></span></span></span><span> </span><span class="keyword1"><span class="command"><span>by</span></span></span><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../../HOL/HOL/ISABELLE_HOME/src/Provers/clasimp.ML.html#HOL.auto|method"><span class="operator"><span>auto</span></span></a><span> </span><span class="quasi_keyword"><span>simp</span></span><span class="main"><span class="main"><span>:</span></span></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Sep_Algebra_Add.html#Sep_Algebra_Add.sep_algebra_simps|fact"><span class="dynamic"><span class="dynamic"><span>sep_algebra_simps</span></span></span></a><span class="main"><span>)</span></span><span>
+  </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>subgoal</span></span></span></span></span><span> </span><span class="keyword1"><span class="command"><span>by</span></span></span><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../../HOL/HOL/ISABELLE_HOME/src/Provers/clasimp.ML.html#HOL.clarsimp|method"><span class="operator"><span>clarsimp</span></span></a><span> </span><span class="quasi_keyword"><span>simp</span></span><span class="main"><span class="main"><span>:</span></span></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Sep_Algebra_Add.html#Sep_Algebra_Add.sep_algebra_simps|fact"><span class="dynamic"><span class="dynamic"><span>sep_algebra_simps</span></span></span></a><span class="main"><span>)</span></span><span>
+  </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>subgoal</span></span></span></span></span><span> </span><span class="keyword1"><span class="command"><span>by</span></span></span><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../../HOL/HOL/ISABELLE_HOME/src/Provers/clasimp.ML.html#HOL.clarsimp|method"><span class="operator"><span>clarsimp</span></span></a><span> </span><span class="quasi_keyword"><span>simp</span></span><span class="main"><span class="main"><span>:</span></span></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Sep_Algebra_Add.html#Sep_Algebra_Add.sep_algebra_simps|fact"><span class="dynamic"><span class="dynamic"><span>sep_algebra_simps</span></span></span></a><span class="main"><span>)</span></span><span>
+  </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>apply</span></span></span></span></span><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../../HOL/HOL/ISABELLE_HOME/src/Provers/clasimp.ML.html#HOL.clarsimp|method"><span class="operator"><span>clarsimp</span></span></a><span> </span><span class="quasi_keyword"><span>simp</span></span><span class="main"><span class="main"><span>:</span></span></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Sep_Algebra_Add.html#Sep_Algebra_Add.sep_algebra_simps|fact"><span class="dynamic"><span class="dynamic"><span>sep_algebra_simps</span></span></span></a><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Sep_Algebra_Add.html#Sep_Algebra_Add.sep_conj_c|fact"><span>sep_conj_c</span></a><span class="main"><span>)</span></span><span>
+  </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>apply</span></span></span></span></span><span> </span><a class="entity_ref" href="../../HOL/HOL/ISABELLE_HOME/src/Provers/classical.ML.html#HOL.safe|method"><span class="operator"><span>safe</span></span></a><span>
+  </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>subgoal</span></span></span></span></span><span> </span><span class="keyword2"><span class="keyword"><span>for</span></span></span><span> s xs'
+    </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>apply</span></span></span></span></span><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../../HOL/HOL/ISABELLE_HOME/src/Tools/induct.ML.html#HOL.cases|method"><span class="operator"><span>cases</span></span></a><span> </span><span class="quoted"><span class="quoted"><span>"</span><a class="entity_ref" href="../../HOL/HOL/List.html#List.length|const"><span>length</span></a><span> </span><span class="free"><span>xs</span></span><span> </span><span class="main"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.eq|const"><span>=</span></a></span><span> </span><a class="entity_ref" href="../../HOL/HOL/List.html#List.length|const"><span>length</span></a><span> </span><span class="skolem"><span>xs'</span></span><span>"</span></span></span><span class="main"><span class="keyword3"><span>;</span></span></span><span> </span><span class="operator"><span>simp</span></span><span class="main"><span>)</span></span><span>
+    </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>apply</span></span></span></span></span><span> </span><a class="entity_ref" href="../../HOL/HOL/ISABELLE_HOME/src/Provers/clasimp.ML.html#HOL.auto|method"><span class="operator"><span>auto</span></span></a><span>
+    </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>done</span></span></span></span></span><span>
+  </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>subgoal</span></span></span></span></span><span> </span><span class="keyword2"><span class="keyword"><span>for</span></span></span><span> s xs'
+    </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>apply</span></span></span></span></span><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../../HOL/HOL/ISABELLE_HOME/src/Tools/induct.ML.html#HOL.cases|method"><span class="operator"><span>cases</span></span></a><span> </span><span class="quoted"><span class="quoted"><span>"</span><a class="entity_ref" href="../../HOL/HOL/List.html#List.length|const"><span>length</span></a><span> </span><span class="free"><span>xs</span></span><span> </span><span class="main"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.eq|const"><span>=</span></a></span><span> </span><a class="entity_ref" href="../../HOL/HOL/List.html#List.length|const"><span>length</span></a><span> </span><span class="skolem"><span>xs'</span></span><span>"</span></span></span><span class="main"><span class="keyword3"><span>;</span></span></span><span> </span><a class="entity_ref" href="../../HOL/HOL/ISABELLE_HOME/src/Tools/induct.ML.html#HOL.cases|method"><span class="operator"><span>cases</span></span></a><span> </span><span class="quoted"><span class="quoted"><span>"</span><span class="skolem"><span>xs'</span></span><span class="main"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.not_equal|const"><span>≠</span></a></span><span class="main"><a class="entity_ref" href="../../HOL/HOL/List.html#List.list.Nil|const"><span>[]</span></a></span><span>"</span></span></span><span class="main"><span class="keyword3"><span>;</span></span></span><span> </span><span class="operator"><span>simp</span></span><span class="main"><span>)</span></span><span>
+    </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>apply</span></span></span></span></span><span> </span><a class="entity_ref" href="../../HOL/HOL/ISABELLE_HOME/src/Provers/clasimp.ML.html#HOL.auto|method"><span class="operator"><span>auto</span></span></a><span>
+    </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>done</span></span></span></span></span><span>
+  </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>done</span></span></span></span></span><span>      
+
+</span><span class="keyword1"><span class="command"><span>lemma</span></span></span><span> </span><span class="entity_def" id="Sorting_Ex_Array_Idxs.pure_part_invalid_assn|fact"><span class="entity_def" id="Sorting_Ex_Array_Idxs.pure_part_invalid_assn|thm"><span>pure_part_invalid_assn</span></span></span><span class="main"><span>:</span></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><a class="entity_ref" href="../Isabelle_LLVM/Sep_Algebra_Add.html#Sep_Algebra_Add.pure_part|const"><span>pure_part</span></a><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Basic.html#Sepref_Basic.invalid_assn|const"><span>invalid_assn</span></a><span> </span><span class="free"><span>A</span></span><span> </span><span class="free"><span>x</span></span><span> </span><span class="free"><span>xi</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>⟹</span></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Basic.html#Sepref_Basic.invalid_assn|const"><span>invalid_assn</span></a><span> </span><span class="free"><span>A</span></span><span> </span><span class="free"><span>x</span></span><span> </span><span class="free"><span>xi</span></span><span> </span><span class="main"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.eq|const"><span>=</span></a></span><span> </span><span class="main"><a class="entity_ref" href="../Isabelle_LLVM/Separation_Algebra.Separation_Algebra.html#Separation_Algebra.sep_algebra_class.sep_empty|const"><span>□</span></a></span><span>"</span></span></span><span>
+  </span><span class="keyword1"><span class="command"><span>unfolding</span></span></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Basic.html#Sepref_Basic.invalid_assn_def|fact"><span>invalid_assn_def</span></a><span> </span><span class="keyword1"><span class="command"><span>by</span></span></span><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../../HOL/HOL/ISABELLE_HOME/src/Provers/clasimp.ML.html#HOL.auto|method"><span class="operator"><span>auto</span></span></a><span> </span><span class="quasi_keyword"><span>simp</span></span><span class="main"><span class="main"><span>:</span></span></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Sep_Algebra_Add.html#Sep_Algebra_Add.sep_algebra_simps|fact"><span class="dynamic"><span class="dynamic"><span>sep_algebra_simps</span></span></span></a><span class="main"><span>)</span></span><span>
+
+
+</span><span class="keyword1"><span class="command"><span>lemma</span></span></span><span> </span><span class="entity_def" id="Sorting_Ex_Array_Idxs.wo_array_sort_adapt|fact"><span class="entity_def" id="Sorting_Ex_Array_Idxs.wo_array_sort_adapt|thm"><span>wo_array_sort_adapt</span></span></span><span class="main"><span>:</span></span><span> 
+  </span><span class="keyword2"><span class="keyword"><span>assumes</span></span></span><span> </span><span class="entity_def" id="offset_1991..1993">LP</span><span class="main"><span>:</span></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><span class="main"><span>⋀</span></span><span class="bound"><span>p</span></span><span> </span><span class="bound"><span>xs</span></span><span> </span><span class="bound"><span>l</span></span><span> </span><span class="bound"><span>h</span></span><span class="main"><span>.</span></span><span> </span><span class="free"><span>s</span></span><span> </span><span class="bound"><span>p</span></span><span> </span><span class="bound"><span>xs</span></span><span> </span><span class="bound"><span>l</span></span><span> </span><span class="bound"><span>h</span></span><span> </span><span class="keyword1"><a class="entity_ref" href="../../AFP/Refine_Monadic/Refine_Leof.html#Refine_Leof.le_or_fail|const"><span>≤<span class="hidden">⇩</span><sub>n</sub></span></a></span><span> </span><a class="entity_ref" href="../../AFP/Refine_Monadic/Refine_Basic.html#Refine_Basic.SPEC|const"><span>SPEC</span></a><span> </span><span class="main"><span>(</span></span><span class="main"><span>λ</span></span><span class="bound"><span>xs'</span></span><span class="main"><span>.</span></span><span> </span><a class="entity_ref" href="../../HOL/HOL/List.html#List.length|const"><span>length</span></a><span> </span><span class="bound"><span>xs'</span></span><span class="main"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.eq|const"><span>=</span></a></span><a class="entity_ref" href="../../HOL/HOL/List.html#List.length|const"><span>length</span></a><span> </span><span class="bound"><span>xs</span></span><span class="main"><span>)</span></span><span>"</span></span></span><span>
+  </span><span class="keyword2"><span class="keyword"><span>assumes</span></span></span><span> </span><span class="entity_def" id="offset_2067..2068">A</span><span class="main"><span>:</span></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><span class="main"><span>(</span></span><span class="free"><span>si</span></span><span class="main"><span>,</span></span><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Misc.html#Sepref_Misc.uncurry3|const"><span>uncurry3</span></a><span> </span><span class="free"><span>s</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><a class="entity_ref" href="../../HOL/HOL/Set.html#Set.member|const"><span>∈</span></a></span><span> </span><span class="main"><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Rules.html#Sepref_Rules.hfrefptnd|const"><span>[</span></a></span><span class="main"><span>λ</span></span><span class="main"><span class="bound"><span>_</span></span></span><span class="main"><span>.</span></span><span> </span><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.True|const"><span>True</span></a><span class="keyword1"><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Rules.html#Sepref_Rules.hfrefptnd|const"><span>]<span class="hidden">⇩</span><sub>c</sub></span></a></span><span> </span><span class="free"><span>A</span></span><span class="keyword1"><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Rules.html#Sepref_Rules.hfkeep|const"><span><span class="hidden">⇧</span><sup>k</sup></span></a></span><span> </span><span class="keyword1"><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Rules.html#Sepref_Rules.hfprod|const"><span>*<span class="hidden">⇩</span><sub>a</sub></span></a></span><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../Isabelle_LLVM/Proto_IICF_EOArray.html#Proto_IICF_EOArray.woarray_slice_assn|const"><span>woarray_slice_assn</span></a><span> </span><span class="free"><span>elem_assn</span></span><span class="main"><span>)</span></span><span class="keyword1"><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Rules.html#Sepref_Rules.hfdrop|const"><span><span class="hidden">⇧</span><sup>d</sup></span></a></span><span> </span><span class="keyword1"><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Rules.html#Sepref_Rules.hfprod|const"><span>*<span class="hidden">⇩</span><sub>a</sub></span></a></span><span> </span><a class="entity_ref" href="Sorting_Setup.html#Sorting_Setup.size_assn|const"><span>size_assn</span></a><span class="keyword1"><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Rules.html#Sepref_Rules.hfkeep|const"><span><span class="hidden">⇧</span><sup>k</sup></span></a></span><span> </span><span class="keyword1"><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Rules.html#Sepref_Rules.hfprod|const"><span>*<span class="hidden">⇩</span><sub>a</sub></span></a></span><span> </span><a class="entity_ref" href="Sorting_Setup.html#Sorting_Setup.size_assn|const"><span>size_assn</span></a><span class="keyword1"><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Rules.html#Sepref_Rules.hfkeep|const"><span><span class="hidden">⇧</span><sup>k</sup></span></a></span><span> </span><span class="main"><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Rules.html#Sepref_Rules.hfrefptnd|const"><span>→</span></a></span><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../Isabelle_LLVM/Proto_IICF_EOArray.html#Proto_IICF_EOArray.woarray_slice_assn|const"><span>woarray_slice_assn</span></a><span> </span><span class="free"><span>elem_assn</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Rules.html#Sepref_Rules.hfrefptnd|const"><span>[</span></a></span><span class="main"><span>λ</span></span><span class="main"><span>(</span></span><span class="main"><span>(</span></span><span class="main"><span>(</span></span><span class="main"><span class="bound"><span>_</span></span></span><span class="main"><span>,</span></span><span> </span><span class="bound"><span>ai</span></span><span class="main"><span>)</span></span><span class="main"><span>,</span></span><span> </span><span class="main"><span class="bound"><span>_</span></span></span><span class="main"><span>)</span></span><span class="main"><span>,</span></span><span> </span><span class="main"><span class="bound"><span>_</span></span></span><span class="main"><span>)</span></span><span> </span><span class="bound"><span>r</span></span><span class="main"><span>.</span></span><span> </span><span class="bound"><span>r</span></span><span> </span><span class="main"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.eq|const"><span>=</span></a></span><span> </span><span class="bound"><span>ai</span></span><span class="keyword1"><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Rules.html#Sepref_Rules.hfrefptnd|const"><span>]<span class="hidden">⇩</span><sub>c</sub></span></a></span><span>"</span></span></span><span>
+  </span><span class="keyword2"><span class="keyword"><span>shows</span></span></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><span class="main"><span>(</span></span><span class="free"><span>si</span></span><span class="main"><span>,</span></span><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Misc.html#Sepref_Misc.uncurry3|const"><span>uncurry3</span></a><span> </span><span class="free"><span>s</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><a class="entity_ref" href="../../HOL/HOL/Set.html#Set.member|const"><span>∈</span></a></span><span> </span><span class="main"><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Rules.html#Sepref_Rules.hfrefptnd|const"><span>[</span></a></span><span class="main"><span>λ</span></span><span class="main"><span class="bound"><span>_</span></span></span><span class="main"><span>.</span></span><span> </span><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.True|const"><span>True</span></a><span class="keyword1"><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Rules.html#Sepref_Rules.hfrefptnd|const"><span>]<span class="hidden">⇩</span><sub>c</sub></span></a></span><span> </span><span class="free"><span>A</span></span><span class="keyword1"><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Rules.html#Sepref_Rules.hfkeep|const"><span><span class="hidden">⇧</span><sup>k</sup></span></a></span><span> </span><span class="keyword1"><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Rules.html#Sepref_Rules.hfprod|const"><span>*<span class="hidden">⇩</span><sub>a</sub></span></a></span><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../Isabelle_LLVM/Proto_IICF_EOArray.html#Proto_IICF_EOArray.woarray_assn|const"><span>woarray_assn</span></a><span> </span><span class="free"><span>elem_assn</span></span><span class="main"><span>)</span></span><span class="keyword1"><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Rules.html#Sepref_Rules.hfdrop|const"><span><span class="hidden">⇧</span><sup>d</sup></span></a></span><span> </span><span class="keyword1"><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Rules.html#Sepref_Rules.hfprod|const"><span>*<span class="hidden">⇩</span><sub>a</sub></span></a></span><span> </span><a class="entity_ref" href="Sorting_Setup.html#Sorting_Setup.size_assn|const"><span>size_assn</span></a><span class="keyword1"><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Rules.html#Sepref_Rules.hfkeep|const"><span><span class="hidden">⇧</span><sup>k</sup></span></a></span><span> </span><span class="keyword1"><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Rules.html#Sepref_Rules.hfprod|const"><span>*<span class="hidden">⇩</span><sub>a</sub></span></a></span><span> </span><a class="entity_ref" href="Sorting_Setup.html#Sorting_Setup.size_assn|const"><span>size_assn</span></a><span class="keyword1"><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Rules.html#Sepref_Rules.hfkeep|const"><span><span class="hidden">⇧</span><sup>k</sup></span></a></span><span> </span><span class="main"><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Rules.html#Sepref_Rules.hfrefptnd|const"><span>→</span></a></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Proto_IICF_EOArray.html#Proto_IICF_EOArray.woarray_assn|const"><span>woarray_assn</span></a><span> </span><span class="free"><span>elem_assn</span></span><span> </span><span class="main"><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Rules.html#Sepref_Rules.hfrefptnd|const"><span>[</span></a></span><span class="main"><span>λ</span></span><span class="main"><span>(</span></span><span class="main"><span>(</span></span><span class="main"><span>(</span></span><span class="main"><span class="bound"><span>_</span></span></span><span class="main"><span>,</span></span><span> </span><span class="bound"><span>ai</span></span><span class="main"><span>)</span></span><span class="main"><span>,</span></span><span> </span><span class="main"><span class="bound"><span>_</span></span></span><span class="main"><span>)</span></span><span class="main"><span>,</span></span><span> </span><span class="main"><span class="bound"><span>_</span></span></span><span class="main"><span>)</span></span><span> </span><span class="bound"><span>r</span></span><span class="main"><span>.</span></span><span> </span><span class="bound"><span>r</span></span><span> </span><span class="main"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.eq|const"><span>=</span></a></span><span> </span><span class="bound"><span>ai</span></span><span class="keyword1"><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Rules.html#Sepref_Rules.hfrefptnd|const"><span>]<span class="hidden">⇩</span><sub>c</sub></span></a></span><span>"</span></span></span><span>
+</span><span class="keyword1"><span class="command"><span>proof</span></span></span><span> </span><span class="operator"><span>-</span></span><span>
+  </span><span class="keyword1"><span class="command"><span>{</span></span></span><span>
+    </span><span class="keyword3"><span class="command"><span>fix</span></span></span><span> </span><span class="skolem"><span>p</span></span><span> </span><span class="skolem"><span>xs</span></span><span> </span><span class="skolem"><span>l</span></span><span> </span><span class="skolem"><span>h</span></span><span> </span><span class="skolem"><span>xs'</span></span><span>
+    </span><span class="keyword3"><span class="command"><span>assume</span></span></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><a class="entity_ref" href="../../AFP/Refine_Monadic/Refine_Basic.html#Refine_Basic.nofail|const"><span>nofail</span></a><span> </span><span class="main"><span>(</span></span><span class="free"><span>s</span></span><span> </span><span class="skolem"><span>p</span></span><span> </span><span class="skolem"><span>xs</span></span><span> </span><span class="skolem"><span>l</span></span><span> </span><span class="skolem"><span>h</span></span><span class="main"><span>)</span></span><span>"</span></span></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><a class="entity_ref" href="../../AFP/Refine_Monadic/Refine_Basic.html#Refine_Basic.RETURN|const"><span>RETURN</span></a><span> </span><span class="skolem"><span>xs'</span></span><span> </span><span class="main"><a class="entity_ref" href="../../HOL/HOL/Orderings.html#Orderings.ord_class.less_eq|const"><span>≤</span></a></span><span> </span><span class="free"><span>s</span></span><span> </span><span class="skolem"><span>p</span></span><span> </span><span class="skolem"><span>xs</span></span><span> </span><span class="skolem"><span>l</span></span><span> </span><span class="skolem"><span>h</span></span><span>"</span></span></span><span>
+    </span><span class="keyword1"><span class="command"><span>hence</span></span></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><a class="entity_ref" href="../../HOL/HOL/List.html#List.length|const"><span>length</span></a><span> </span><span class="skolem"><span>xs'</span></span><span> </span><span class="main"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.eq|const"><span>=</span></a></span><span> </span><a class="entity_ref" href="../../HOL/HOL/List.html#List.length|const"><span>length</span></a><span> </span><span class="skolem"><span>xs</span></span><span>"</span></span></span><span>
+      </span><span class="keyword1"><span class="command"><span>using</span></span></span><span> </span><a class="entity_ref" href="Sorting_Ex_Array_Idxs.html#offset_1991..1993"><span>LP</span></a><span> </span><span class="keyword1"><span class="command"><span>by</span></span></span><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../../HOL/HOL/ISABELLE_HOME/src/Provers/clasimp.ML.html#HOL.auto|method"><span class="operator"><span>auto</span></span></a><span> </span><span class="quasi_keyword"><span>simp</span></span><span class="main"><span class="main"><span>:</span></span></span><span> </span><a class="entity_ref" href="../../AFP/Refine_Monadic/Refine_Leof.html#Refine_Leof.pw_leof_iff|fact"><span>pw_leof_iff</span></a><span> </span><a class="entity_ref" href="../../AFP/Refine_Monadic/Refine_Basic.html#Refine_Basic.pw_le_iff|fact"><span>pw_le_iff</span></a><span class="main"><span>)</span></span><span>
+  
+  </span><span class="keyword1"><span class="command"><span class="entity_def" id="offset_2593..2594">}</span></span></span><span> </span><span class="keyword1"><span class="command"><span>note</span></span></span><span> </span><span class="main"><span>[</span></span><span class="operator"><span>simp</span></span><span class="main"><span>]</span></span><span> </span><span class="main"><span>=</span></span><span> </span><a class="entity_ref" href="Sorting_Ex_Array_Idxs.html#offset_2593..2594"><span>this</span></a><span>
+
+  </span><span class="keyword3"><span class="command"><span>show</span></span></span><span> </span><span class="var"><span class="quoted"><span class="var"><span>?thesis</span></span></span></span><span>
+    </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>apply</span></span></span></span></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Tool.html#Sepref_Tool.sepref_to_hoare|method"><span class="operator"><span>sepref_to_hoare</span></span></a><span>
+    </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>subgoal</span></span></span></span></span><span> </span><span class="keyword2"><span class="keyword"><span>for</span></span></span><span> h hi l li xs xsi p pi
+      </span><span class="keyword1"><span class="command"><span>unfolding</span></span></span><span> </span><a class="entity_ref" href="Sorting_Ex_Array_Idxs.html#Sorting_Ex_Array_Idxs.wo_array_assn_to_slice|fact"><span>wo_array_assn_to_slice</span></a><span>
+      </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>apply</span></span></span></span></span><span> </span><a class="entity_ref" href="../../HOL/HOL/ISABELLE_HOME/src/Provers/clasimp.ML.html#HOL.clarsimp|method"><span class="operator"><span>clarsimp</span></span></a><span>
+      </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>supply</span></span></span></span></span><span> </span><span class="entity_def" id="offset_2767..2768">R</span><span> </span><span class="main"><span>=</span></span><span> </span><a class="entity_ref" href="Sorting_Ex_Array_Idxs.html#offset_2067..2068"><span>A</span></a><span class="main"><span>[</span></span><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Rules.html#Sepref_Rules.to_hnr|attribute"><span class="operator"><span>to_hnr</span></span></a><span class="main"><span>,</span></span><span> </span><span class="operator"><span>simplified</span></span><span class="main"><span>,</span></span><span> </span><span class="operator"><span>THEN</span></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Basic.html#Sepref_Basic.hn_refineD|fact"><span>hn_refineD</span></a><span class="main"><span>,</span></span><span> </span><span class="operator"><span>unfolded</span></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Basic.html#Sepref_Basic.hn_ctxt_def|fact"><span>hn_ctxt_def</span></a><span class="main"><span>]</span></span><span>
+      </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>supply</span></span></span></span></span><span> </span><span class="main"><span>[</span></span><a class="entity_ref" href="../Isabelle_LLVM/Basic_VCG.html#Basic_VCG.vcg_rules|attribute"><span class="operator"><span>vcg_rules</span></span></a><span class="main"><span>]</span></span><span> </span><span class="main"><span>=</span></span><span> </span><a class="entity_ref" href="Sorting_Ex_Array_Idxs.html#offset_2767..2768"><span>R</span></a><span>
+      </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>supply</span></span></span></span></span><span> </span><span class="main"><span>[</span></span><span class="operator"><span>simp</span></span><span class="main"><span>]</span></span><span> </span><span class="main"><span>=</span></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Basic.html#Sepref_Basic.pure_def|fact"><span>pure_def</span></a><span>
+      </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>apply</span></span></span></span></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Basic_VCG.html#Basic_VCG.vcg|method"><span class="operator"><span>vcg</span></span></a><span>
+      </span><span class="comment1"><span>(* TODO: Hack! Handle the hn-invalid cleanly *)</span></span><span>
+      </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>apply</span></span></span></span></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Basic_VCG.html#Basic_VCG.vcg_try_solve|method"><span class="operator"><span>vcg_try_solve</span></span></a><span>
+      </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>apply</span></span></span></span></span><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../../HOL/HOL/ISABELLE_HOME/src/Provers/clasimp.ML.html#HOL.auto|method"><span class="operator"><span>auto</span></span></a><span> </span><span class="quasi_keyword"><span>dest</span></span><span class="main"><span class="main"><span>!</span></span></span><span class="main"><span class="main"><span>:</span></span></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Sep_Algebra_Add.html#Sep_Algebra_Add.pure_part_split_conj|fact"><span>pure_part_split_conj</span></a><span> </span><span class="quasi_keyword"><span>simp</span></span><span class="main"><span class="main"><span>:</span></span></span><span> </span><a class="entity_ref" href="Sorting_Ex_Array_Idxs.html#Sorting_Ex_Array_Idxs.pure_part_invalid_assn|fact"><span>pure_part_invalid_assn</span></a><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Sep_Algebra_Add.html#Sep_Algebra_Add.sep_algebra_simps|fact"><span class="dynamic"><span class="dynamic"><span>sep_algebra_simps</span></span></span></a><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Frame_Infer.html#Frame_Infer.FRI_END_def|fact"><span>FRI_END_def</span></a><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Frame_Infer.html#Frame_Infer.FRAME_INFER_def|fact"><span>FRAME_INFER_def</span></a><span class="main"><span>)</span></span><span>
+      </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>done</span></span></span></span></span><span>
+    </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>done</span></span></span></span></span><span>
+  
+</span><span class="keyword1"><span class="command"><span>qed</span></span></span><span>      
+    
+  
+</span><span class="keyword1"><span class="command"><span>lemma</span></span></span><span> </span><span class="entity_def" id="Sorting_Ex_Array_Idxs.woarray_iterator|fact"><span class="entity_def" id="Sorting_Ex_Array_Idxs.woarray_iterator|thm"><span>woarray_iterator</span></span></span><span class="main"><span>:</span></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><a class="entity_ref" href="Sorting_Setup.html#Sorting_Setup.random_access_iterator|const"><span>random_access_iterator</span></a><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../Isabelle_LLVM/Proto_IICF_EOArray.html#Proto_IICF_EOArray.woarray_assn|const"><span>woarray_assn</span></a><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Sepref_HOL_Bindings.html#Sepref_HOL_Bindings.snat_assn|const"><span>snat_assn</span></a><span class="main"><span>)</span></span><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../Isabelle_LLVM/Proto_IICF_EOArray.html#Proto_IICF_EOArray.eoarray_assn|const"><span>eoarray_assn</span></a><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Sepref_HOL_Bindings.html#Sepref_HOL_Bindings.snat_assn|const"><span>snat_assn</span></a><span class="main"><span>)</span></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Sepref_HOL_Bindings.html#Sepref_HOL_Bindings.snat_assn|const"><span>snat_assn</span></a><span> 
+  </span><a class="entity_ref" href="../Isabelle_LLVM/MMonad.html#MMonad.Mreturn|const"><span>Mreturn</span></a><span> </span><a class="entity_ref" href="../Isabelle_LLVM/MMonad.html#MMonad.Mreturn|const"><span>Mreturn</span></a><span>
+  </span><a class="entity_ref" href="../Isabelle_LLVM/Proto_IICF_EOArray.html#Proto_IICF_EOArray.eo_extract_impl|const"><span>eo_extract_impl</span></a><span>
+  </span><a class="entity_ref" href="../Isabelle_LLVM/LLVM_DS_Array.html#LLVM_DS_Array.array_upd|const"><span>array_upd</span></a><span>"</span></span></span><span>  
+  </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>apply</span></span></span></span></span><span> </span><span class="operator"><span>unfold_locales</span></span><span>
+  </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>apply</span></span></span></span></span><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../../HOL/HOL/ISABELLE_HOME/src/Provers/classical.ML.html#HOL.rule|method"><span class="operator"><span>rule</span></span></a><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Proto_IICF_EOArray.html#Proto_IICF_EOArray.eo_hnr_dep|fact"><span>eo_hnr_dep</span></a><span class="main"><span>)</span></span><span class="main"><span class="keyword3"><span>+</span></span></span><span>
+  </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>done</span></span></span></span></span><span>
+  
+
+
+
+</span><span class="keyword1"><span class="command"><span>lemma</span></span></span><span> </span><span class="entity_def" id="Sorting_Ex_Array_Idxs.list_assn_oelem_assn_map_Some|fact"><span class="entity_def" id="Sorting_Ex_Array_Idxs.list_assn_oelem_assn_map_Some|thm"><span>list_assn_oelem_assn_map_Some</span></span></span><span class="main"><span>:</span></span><span> 
+  </span><span class="quoted"><span class="quoted"><span>"</span><span class="main"><a class="entity_ref" href="../Isabelle_LLVM/LLVM_Shallow_RS.html#LLVM_Shallow_RS.dr_assn_prefix|const"><span>↿</span></a></span><span class="main"><span>(</span></span><a class="entity_ref" href="../Isabelle_LLVM/Proto_EOArray.html#Proto_EOArray.list_assn|const"><span>list_assn</span></a><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../Isabelle_LLVM/Proto_EOArray.html#Proto_EOArray.oelem_assn|const"><span>oelem_assn</span></a><span> </span><span class="free"><span>A</span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../../HOL/HOL/List.html#List.list.map|const"><span>map</span></a><span> </span><a class="entity_ref" href="../../HOL/HOL/Option.html#Option.option.Some|const"><span>Some</span></a><span> </span><span class="free"><span>xs</span></span><span class="main"><span>)</span></span><span> </span><span class="free"><span>xsi</span></span><span> 
+  </span><span class="main"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.eq|const"><span>=</span></a></span><span> </span><span class="main"><a class="entity_ref" href="../Isabelle_LLVM/LLVM_Shallow_RS.html#LLVM_Shallow_RS.dr_assn_prefix|const"><span>↿</span></a></span><span class="main"><span>(</span></span><a class="entity_ref" href="../Isabelle_LLVM/Proto_EOArray.html#Proto_EOArray.list_assn|const"><span>list_assn</span></a><span> </span><span class="free"><span>A</span></span><span class="main"><span>)</span></span><span> </span><span class="free"><span>xs</span></span><span> </span><span class="free"><span>xsi</span></span><span>"</span></span></span><span>
+  </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>apply</span></span></span></span></span><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../../HOL/HOL/ISABELLE_HOME/src/Tools/induct.ML.html#HOL.cases|method"><span class="operator"><span>cases</span></span></a><span> </span><span class="quoted"><span class="quoted"><span>"</span><a class="entity_ref" href="../../HOL/HOL/List.html#List.length|const"><span>length</span></a><span> </span><span class="free"><span>xs</span></span><span> </span><span class="main"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.eq|const"><span>=</span></a></span><span> </span><a class="entity_ref" href="../../HOL/HOL/List.html#List.length|const"><span>length</span></a><span> </span><span class="free"><span>xsi</span></span><span>"</span></span></span><span class="main"><span class="keyword3"><span>;</span></span></span><span> </span><span class="operator"><span>simp</span></span><span class="main"><span class="keyword3"><span>?</span></span></span><span class="main"><span>)</span></span><span>
+  </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>apply</span></span></span></span></span><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../../HOL/HOL/ISABELLE_HOME/src/Tools/induction.ML.html#HOL.induction|method"><span class="operator"><span>induction</span></span></a><span> </span><span class="quoted"><span class="free"><span>xs</span></span></span><span> </span><span class="quoted"><span class="free"><span>xsi</span></span></span><span> </span><span class="quasi_keyword"><span>rule</span></span><span class="main"><span class="main"><span>:</span></span></span><span> </span><a class="entity_ref" href="../../HOL/HOL/List.html#List.list_induct2|fact"><span>list_induct2</span></a><span class="main"><span>)</span></span><span>
+  </span><span class="keyword1"><span class="command"><span>by</span></span></span><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../../HOL/HOL/ISABELLE_HOME/src/Provers/clasimp.ML.html#HOL.auto|method"><span class="operator"><span>auto</span></span></a><span class="main"><span>)</span></span><span>
+  
+
+</span><span class="keyword1"><span class="command"><span>lemma</span></span></span><span> </span><span class="entity_def" id="Sorting_Ex_Array_Idxs.nao_to_wo_assn|fact"><span class="entity_def" id="Sorting_Ex_Array_Idxs.nao_to_wo_assn|thm"><span>nao_to_wo_assn</span></span></span><span class="main"><span>:</span></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><span class="main"><a class="entity_ref" href="../Isabelle_LLVM/LLVM_Shallow_RS.html#LLVM_Shallow_RS.dr_assn_prefix|const"><span>↿</span></a></span><span class="main"><span>(</span></span><a class="entity_ref" href="../Isabelle_LLVM/Array_of_Array_List.html#Array_of_Array_List.nao_assn|const"><span>nao_assn</span></a><span> </span><span class="free"><span>A</span></span><span> </span><a class="entity_ref" href="../../HOL/HOL/Map.html#Map.empty|const"><span>Map.empty</span></a><span class="main"><span>)</span></span><span> </span><span class="main"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.eq|const"><span>=</span></a></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Proto_IICF_EOArray.html#Proto_IICF_EOArray.woarray_assn|const"><span>woarray_assn</span></a><span> </span><span class="main"><span>(</span></span><span class="main"><a class="entity_ref" href="../Isabelle_LLVM/LLVM_Shallow_RS.html#LLVM_Shallow_RS.dr_assn_prefix|const"><span>↿</span></a></span><span class="free"><span>A</span></span><span class="main"><span>)</span></span><span>"</span></span></span><span>
+  </span><span class="keyword1"><span class="command"><span>unfolding</span></span></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Proto_IICF_EOArray.html#Proto_IICF_EOArray.woarray_assn_conv|fact"><span>woarray_assn_conv</span></a><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Proto_IICF_EOArray.html#Proto_IICF_EOArray.eoarray_assn_def|fact"><span>eoarray_assn_def</span></a><span> 
+  </span><span class="keyword1"><span class="command"><span>unfolding</span></span></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Array_of_Array_List.html#Array_of_Array_List.nao_assn_def|fact"><span>nao_assn_def</span></a><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Proto_EOArray.html#Proto_EOArray.nao_assn_def|fact"><span>Proto_EOArray.nao_assn_def</span></a><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Rules.html#Sepref_Rules.hr_comp_def|fact"><span>hr_comp_def</span></a><span>
+  </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>apply</span></span></span></span></span><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../../HOL/HOL/ISABELLE_HOME/src/Provers/clasimp.ML.html#HOL.auto|method"><span class="operator"><span>auto</span></span></a><span> </span><span class="quasi_keyword"><span>simp</span></span><span class="main"><span class="main"><span>:</span></span></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Sep_Algebra_Add.html#Sep_Algebra_Add.sep_algebra_simps|fact"><span class="dynamic"><span class="dynamic"><span>sep_algebra_simps</span></span></span></a><span> </span><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.fun_eq_iff|fact"><span>fun_eq_iff</span></a><span> </span><a class="entity_ref" href="Sorting_Ex_Array_Idxs.html#Sorting_Ex_Array_Idxs.list_assn_oelem_assn_map_Some|fact"><span>list_assn_oelem_assn_map_Some</span></a><span class="main"><span>)</span></span><span>
+  </span><span class="keyword1"><span class="command"><span>unfolding</span></span></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Proto_EOArray.html#Proto_EOArray.list_assn_def|fact"><span>list_assn_def</span></a><span>
+  </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>apply</span></span></span></span></span><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../../HOL/HOL/ISABELLE_HOME/src/Provers/clasimp.ML.html#HOL.auto|method"><span class="operator"><span>auto</span></span></a><span> </span><span class="quasi_keyword"><span>simp</span></span><span class="main"><span class="main"><span>:</span></span></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Sep_Algebra_Add.html#Sep_Algebra_Add.sep_algebra_simps|fact"><span class="dynamic"><span class="dynamic"><span>sep_algebra_simps</span></span></span></a><span> </span><span class="quasi_keyword"><span>dest</span></span><span class="main"><span class="main"><span>:</span></span></span><span> </span><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.sym|fact"><span>sym</span></a><span class="main"><span>)</span></span><span>
+  </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>done</span></span></span></span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>lemma</span></span></span><span> </span><span class="entity_def" id="Sorting_Ex_Array_Idxs.wo_to_nao_assn|fact"><span class="entity_def" id="Sorting_Ex_Array_Idxs.wo_to_nao_assn|thm"><span>wo_to_nao_assn</span></span></span><span class="main"><span>:</span></span><span> 
+  </span><span class="quoted"><span class="quoted"><span>"</span><a class="entity_ref" href="../Isabelle_LLVM/Proto_IICF_EOArray.html#Proto_IICF_EOArray.woarray_assn|const"><span>woarray_assn</span></a><span> </span><span class="free"><span>A</span></span><span> </span><span class="main"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.eq|const"><span>=</span></a></span><span> </span><span class="main"><a class="entity_ref" href="../Isabelle_LLVM/LLVM_Shallow_RS.html#LLVM_Shallow_RS.dr_assn_prefix|const"><span>↿</span></a></span><span class="main"><span>(</span></span><a class="entity_ref" href="../Isabelle_LLVM/Array_of_Array_List.html#Array_of_Array_List.nao_assn|const"><span>nao_assn</span></a><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../Isabelle_LLVM/LLVM_Shallow_RS.html#LLVM_Shallow_RS.mk_assn|const"><span>mk_assn</span></a><span> </span><span class="free"><span>A</span></span><span class="main"><span>)</span></span><span> </span><a class="entity_ref" href="../../HOL/HOL/Map.html#Map.empty|const"><span>Map.empty</span></a><span class="main"><span>)</span></span><span>"</span></span></span><span>
+  </span><span class="keyword1"><span class="command"><span>unfolding</span></span></span><span> </span><a class="entity_ref" href="Sorting_Ex_Array_Idxs.html#Sorting_Ex_Array_Idxs.nao_to_wo_assn|fact"><span>nao_to_wo_assn</span></a><span> </span><a class="entity_ref" href="../Isabelle_LLVM/LLVM_Shallow_RS.html#LLVM_Shallow_RS.sel_mk_assn|fact"><span>sel_mk_assn</span></a><span>
+  </span><span class="keyword1"><span class="command"><span>..</span></span></span><span>
+    
+  
+</span><span class="keyword1"><span class="command"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.axioms|fact"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.intro|fact"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp_def|fact"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.axioms|thm"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.intro|thm"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp_def|thm"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp_def|axiom"><span>locale</span></span></span></span></span></span></span></span></span></span><span> </span><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp|locale"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp|const"><span>idxs_comp</span></span></span><span> </span><span class="main"><span>=</span></span><span> INNER</span><span class="main"><span>:</span></span><span> </span><a class="entity_ref" href="Sorting_Setup.html#Sorting_Setup.sort_impl_context|locale"><span>sort_impl_context</span></a><span> </span><span class="quoted"><span class="free"><span>inner_less_eq</span></span></span><span> </span><span class="quoted"><span class="free"><span>inner_less</span></span></span><span> </span><span class="quoted"><span class="free"><span>inner_less_impl</span></span></span><span> </span><span class="quoted"><span class="free"><span>A</span></span></span><span>
+  </span><span class="keyword2"><span class="keyword"><span>for</span></span></span><span> </span><span class="free"><span>inner_less_eq</span></span><span> </span><span class="free"><span>inner_less</span></span><span> </span><span class="main"><span>::</span></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><span class="tfree"><span>'a</span></span><span> </span><span class="main"><span>⇒</span></span><span> </span><span class="tfree"><span>'a</span></span><span> </span><span class="main"><span>⇒</span></span><span> </span><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.bool|type"><span>bool</span></a><span>"</span></span></span><span>
+  </span><span class="keyword2"><span class="keyword"><span>and</span></span></span><span> </span><span class="free"><span>inner_less_impl</span></span><span> </span><span class="main"><span>::</span></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><span class="tfree"><span>'ai</span></span><span class="main"><span>::</span></span><a class="entity_ref" href="../Isabelle_LLVM/LLVM_Shallow.html#LLVM_Shallow.llvm_rep|class"><span>llvm_rep</span></a><span> </span><span class="main"><span>⇒</span></span><span> </span><span class="tfree"><span>'ai</span></span><span> </span><span class="main"><span>⇒</span></span><span> </span><span class="main"><span>1</span></span><span> </span><a class="entity_ref" href="../../AFP/Refine_Monadic/HOL-Library.Word.html#Word.word|type"><span>word</span></a><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Simple_Memory.html#Simple_Memory.llM|type"><span>llM</span></a><span>"</span></span></span><span>
+  </span><span class="keyword2"><span class="keyword"><span>and</span></span></span><span> </span><span class="free"><span>A</span></span><span> </span><span class="main"><span>::</span></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><span class="tfree"><span>'a</span></span><span> </span><span class="main"><span>⇒</span></span><span> </span><span class="tfree"><span>'ai</span></span><span> </span><span class="main"><span>⇒</span></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Basic.html#Sepref_Basic.assn|type"><span>assn</span></a><span>"</span></span></span><span>
+</span><span class="keyword2"><span class="keyword"><span>begin</span></span></span><span>
+
+  </span><span class="keyword1"><span class="command"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.idx_cdom_def|fact"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.idx_cdom_def|thm"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.idx_cdom_def_raw|axiom"><span class="entity_def" id="offset_4308..4318">definition</span></span></span></span></span></span><span> </span><span class="entity"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.idx_cdom|const"><span class="entity_def" id="offset_4319..4327">idx_cdom</span></span></span><span> </span><span class="main"><span>::</span></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><span class="tfree"><span>'a</span></span><span> </span><a class="entity_ref" href="../../HOL/HOL/List.html#List.list|type"><span>list</span></a><span> </span><span class="main"><span>⇒</span></span><span> </span><a class="entity_ref" href="../../HOL/HOL/Nat.html#Nat.nat|type"><span>nat</span></a><span> </span><a class="entity_ref" href="../../HOL/HOL/Set.html#Set.set|type"><span>set</span></a><span>"</span></span></span><span> </span><span class="keyword2"><span class="keyword"><span>where</span></span></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><span class="free"><span>idx_cdom</span></span><span> </span><span class="free"><span class="bound"><span class="entity"><span>vs</span></span></span></span><span> </span><span class="main"><span>≡</span></span><span> </span><span class="main"><a class="entity_ref" href="../../HOL/HOL/Set_Interval.html#Set_Interval.ord_class.atLeastLessThan|const"><span>{</span></a></span><span class="main"><a class="entity_ref" href="../../HOL/HOL/Groups.html#Groups.zero_class.zero|const"><span>0</span></a></span><span class="main"><a class="entity_ref" href="../../HOL/HOL/Set_Interval.html#Set_Interval.ord_class.atLeastLessThan|const"><span>..&lt;</span></a></span><a class="entity_ref" href="../../HOL/HOL/List.html#List.length|const"><span>length</span></a><span> </span><span class="free"><span class="bound"><span class="entity"><span>vs</span></span></span></span><span class="main"><a class="entity_ref" href="../../HOL/HOL/Set_Interval.html#Set_Interval.ord_class.atLeastLessThan|const"><span>}</span></a></span><span>"</span></span></span><span>
+
+  </span><span class="keyword1"><span class="command"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.idx_less_def|fact"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.idx_less_def|thm"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.idx_less_def_raw|axiom"><span class="entity_def" id="offset_4392..4402">definition</span></span></span></span></span></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><span class="free"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.idx_less.cong|fact"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.idx_less.cong|thm"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.idx_less|const"><span class="entity_def" id="offset_4404..4412">idx_less</span></span></span></span></span><span> </span><span class="free"><span class="bound"><span class="entity"><span>vs</span></span></span></span><span> </span><span class="free"><span class="bound"><span class="entity"><span>i</span></span></span></span><span> </span><span class="free"><span class="bound"><span class="entity"><span>j</span></span></span></span><span> </span><span class="main"><span>≡</span></span><span> </span><span class="main"><span>(</span></span><span class="free"><span>inner_less</span></span><span> </span><span class="main"><span>(</span></span><span class="free"><span class="bound"><span class="entity"><span>vs</span></span></span></span><span class="main"><a class="entity_ref" href="../../HOL/HOL/List.html#List.nth|const"><span>!</span></a></span><span class="free"><span class="bound"><span class="entity"><span>i</span></span></span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>(</span></span><span class="free"><span class="bound"><span class="entity"><span>vs</span></span></span></span><span class="main"><a class="entity_ref" href="../../HOL/HOL/List.html#List.nth|const"><span>!</span></a></span><span class="free"><span class="bound"><span class="entity"><span>j</span></span></span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span>"</span></span></span><span>
+
+  </span><span class="keyword1"><span class="command"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.idx_pcmp_def|fact"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.idx_pcmp_def|thm"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.idx_pcmp_def_raw|axiom"><span class="entity_def" id="offset_4453..4463">definition</span></span></span></span></span></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><span class="free"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.idx_pcmp.cong|fact"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.idx_pcmp.cong|thm"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.idx_pcmp|const"><span class="entity_def" id="offset_4465..4473">idx_pcmp</span></span></span></span></span><span> </span><span class="free"><span class="bound"><span class="entity"><span>vs</span></span></span></span><span> </span><span class="free"><span class="bound"><span class="entity"><span>i</span></span></span></span><span> </span><span class="free"><span class="bound"><span class="entity"><span>j</span></span></span></span><span> </span><span class="main"><span>≡</span></span><span> 
+    </span><span class="keyword1"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.If|const"><span>if</span></a></span><span> </span><span class="free"><span class="bound"><span class="entity"><span>i</span></span></span></span><span class="main"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.eq|const"><span>=</span></a></span><span class="free"><span class="bound"><span class="entity"><span>j</span></span></span></span><span> </span><span class="keyword1"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.If|const"><span>then</span></a></span><span> </span><a class="entity_ref" href="../../AFP/Refine_Monadic/Refine_Basic.html#Refine_Basic.RETURN|const"><span>RETURN</span></a><span> </span><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.False|const"><span>False</span></a><span> 
+    </span><span class="keyword1"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.If|const"><span>else</span></a></span><span> </span><span>INNER.mop_cmp_idxs</span><span> </span><span class="free"><span class="bound"><span class="entity"><span>vs</span></span></span></span><span> </span><span class="free"><span class="bound"><span class="entity"><span>i</span></span></span></span><span> </span><span class="free"><span class="bound"><span class="entity"><span>j</span></span></span></span><span>"</span></span></span><span>
+      
+  </span><span class="keyword1"><span class="command"><span>lemma</span></span></span><span> </span><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.snat_assn_eq_refine|fact"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.snat_assn_eq_refine|thm"><span>snat_assn_eq_refine</span></span></span><span class="main"><span>:</span></span><span> 
+    </span><span class="quoted"><span class="quoted"><span>"</span><span class="main"><span>⟦</span></span><span class="keyword1"><a class="entity_ref" href="../Isabelle_LLVM/LLVM_Shallow_RS.html#LLVM_Shallow_RS.dr_assn_pure_asm_prefix|const"><span>♭<span class="hidden">⇩</span><sub>p</sub></span></a></span><a class="entity_ref" href="../Isabelle_LLVM/LLVM_DS_Arith.html#LLVM_DS_Arith.snat.assn|const"><span>snat.assn</span></a><span> </span><span class="free"><span>ba</span></span><span> </span><span class="free"><span>bia</span></span><span class="main"><span>;</span></span><span> </span><span class="keyword1"><a class="entity_ref" href="../Isabelle_LLVM/LLVM_Shallow_RS.html#LLVM_Shallow_RS.dr_assn_pure_asm_prefix|const"><span>♭<span class="hidden">⇩</span><sub>p</sub></span></a></span><a class="entity_ref" href="../Isabelle_LLVM/LLVM_DS_Arith.html#LLVM_DS_Arith.snat.assn|const"><span>snat.assn</span></a><span> </span><span class="free"><span>b</span></span><span> </span><span class="free"><span>bi</span></span><span class="main"><span>⟧</span></span><span> </span><span class="main"><span>⟹</span></span><span> </span><span class="free"><span>bia</span></span><span> </span><span class="main"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.eq|const"><span>=</span></a></span><span> </span><span class="free"><span>bi</span></span><span> </span><span class="main"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.iff|const"><span>⟷</span></a></span><span> </span><span class="free"><span>ba</span></span><span class="main"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.eq|const"><span>=</span></a></span><span class="free"><span>b</span></span><span>"</span></span></span><span>
+    </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>apply</span></span></span></span></span><span> </span><span class="main"><span>(</span></span><span class="operator"><span>simp</span></span><span> </span><span class="quasi_keyword"><span>add</span></span><span class="main"><span class="main"><span>:</span></span></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/LLVM_DS_Arith.html#LLVM_DS_Arith.snat.assn_def|fact"><span>snat.assn_def</span></a><span class="main"><span>)</span></span><span>
+    </span><span class="keyword1"><span class="command"><span>by</span></span></span><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../../HOL/HOL/ISABELLE_HOME/src/HOL/Tools/Metis/metis_tactic.ML.html#Metis.metis|method"><span class="operator"><span>metis</span></span></a><span> </span><a class="entity_ref" href="../Isabelle_LLVM/LLVM_DS_Arith.html#LLVM_DS_Arith.snat_eq_unat_aux2|fact"><span>snat_eq_unat_aux2</span></a><span> </span><a class="entity_ref" href="../../AFP/Refine_Monadic/HOL-Library.Word.html#Word.semiring_char_0_class.unsigned_word_eqI|fact"><span>unsigned_word_eqI</span></a><span class="main"><span>)</span></span><span>
+    
+  </span><span class="keyword1"><span class="command"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.idx_pcmp.mcomb|fact"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.idx_pcmp.arity|fact"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.idx_pcmp.itype|fact"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.idx_pcmp.pat|fact"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.idx_pcmp.mcomb|thm"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.idx_pcmp.arity|thm"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.idx_pcmp.itype|thm"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.idx_pcmp.pat|thm"><span>sepref_register</span></span></span></span></span></span></span></span></span></span></span><span> </span><span class="quoted"><a class="entity_ref" href="Sorting_Ex_Array_Idxs.html#offset_4465..4473"><span>idx_pcmp</span></a></span><span>  
+  </span><span class="keyword1"><span class="command"><span>sepref_def</span></span></span><span> </span><span class="entity"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.idx_pcmp_impl.cong|fact"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.idx_pcmp_impl.cong|thm"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.idx_pcmp_impl|const"><span class="entity_def" id="offset_4786..4799">idx_pcmp_impl</span></span></span></span></span><span> </span><span class="keyword2"><span class="keyword"><span>is</span></span></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Misc.html#Sepref_Misc.uncurry2|const"><span>uncurry2</span></a><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Id_Op.html#Sepref_Id_Op.PR_CONST|const"><span>PR_CONST</span></a><span> </span><a class="entity_ref" href="Sorting_Ex_Array_Idxs.html#offset_4465..4473"><span>idx_pcmp</span></a><span class="main"><span>)</span></span><span>"</span></span></span><span> 
+    </span><span class="main"><span>::</span></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><span class="main"><span>(</span></span><a class="entity_ref" href="../Isabelle_LLVM/Proto_IICF_EOArray.html#Proto_IICF_EOArray.woarray_slice_assn|const"><span>woarray_slice_assn</span></a><span> </span><span class="free"><span>A</span></span><span class="main"><span>)</span></span><span class="keyword1"><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Rules.html#Sepref_Rules.hfkeep|const"><span><span class="hidden">⇧</span><sup>k</sup></span></a></span><span> </span><span class="keyword1"><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Rules.html#Sepref_Rules.hfprod|const"><span>*<span class="hidden">⇩</span><sub>a</sub></span></a></span><span> </span><a class="entity_ref" href="Sorting_Setup.html#Sorting_Setup.size_assn|const"><span>size_assn</span></a><span class="keyword1"><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Rules.html#Sepref_Rules.hfkeep|const"><span><span class="hidden">⇧</span><sup>k</sup></span></a></span><span> </span><span class="keyword1"><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Rules.html#Sepref_Rules.hfprod|const"><span>*<span class="hidden">⇩</span><sub>a</sub></span></a></span><span> </span><a class="entity_ref" href="Sorting_Setup.html#Sorting_Setup.size_assn|const"><span>size_assn</span></a><span class="keyword1"><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Rules.html#Sepref_Rules.hfkeep|const"><span><span class="hidden">⇧</span><sup>k</sup></span></a></span><span> </span><span class="keyword1"><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Rules.html#Sepref_Rules.hfrefttnd|const"><span>→<span class="hidden">⇩</span><sub>a</sub></span></a></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Sepref_HOL_Bindings.html#Sepref_HOL_Bindings.bool1_assn|const"><span>bool1_assn</span></a><span>"</span></span></span><span>
+    </span><span class="keyword1"><span class="command"><span>unfolding</span></span></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Id_Op.html#Sepref_Id_Op.PR_CONST_def|fact"><span>PR_CONST_def</span></a><span>
+    </span><span class="keyword1"><span class="command"><span>unfolding</span></span></span><span> </span><a class="entity_ref" href="Sorting_Ex_Array_Idxs.html#offset_4453..4463"><span>idx_pcmp_def</span></a><span> 
+    </span><span class="keyword1"><span class="command"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.idx_pcmp_impl.refine|fact"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.idx_pcmp_impl_def|fact"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.idx_pcmp_impl.refine_raw|fact"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.idx_pcmp_impl.refine|thm"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.idx_pcmp_impl_def|thm"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.idx_pcmp_impl.refine_raw|thm"><span class="entity_def" id="Sorting_Ex_Array_Idxs.idxs_comp.idx_pcmp_impl_def_raw|axiom"><span class="entity_def" id="offset_4975..4977">by</span></span></span></span></span></span></span></span></span></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Tool.html#Sepref_Tool.sepref|method"><span class="operator"><span>sepref</span></span></a><span>
+    
+    
+  </span><span class="keyword1"><span class="command"><span>interpretation</span></span></span><span> </span><a class="entity_ref" href="Sorting_Setup.html#Sorting_Setup.weak_ordering_on_lt|locale"><span>weak_ordering_on_lt</span></a><span> </span><span class="quoted"><span class="quoted"><span>"</span><a class="entity_ref" href="Sorting_Ex_Array_Idxs.html#offset_4319..4327"><span>idx_cdom</span></a><span> </span><span class="free"><span>vs</span></span><span>"</span></span></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><a class="entity_ref" href="Sorting_Ex_Array_Idxs.html#offset_4404..4412"><span>idx_less</span></a><span> </span><span class="free"><span>vs</span></span><span>"</span></span></span><span> 
+    </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>apply</span></span></span></span></span><span> </span><span class="operator"><span>unfold_locales</span></span><span>
+    </span><span class="keyword1"><span class="command"><span>unfolding</span></span></span><span> </span><a class="entity_ref" href="Sorting_Ex_Array_Idxs.html#offset_4392..4402"><span>idx_less_def</span></a><span>
+    </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>apply</span></span></span></span></span><span> </span><span class="main"><span>(</span></span><span class="operator"><span>erule</span></span><span> </span><span>INNER.asym</span><span class="main"><span>)</span></span><span>
+    </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>apply</span></span></span></span></span><span> </span><span class="main"><span>(</span></span><span class="operator"><span>erule</span></span><span> </span><span>INNER.itrans</span><span class="main"><span>)</span></span><span>
+    </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>done</span></span></span></span></span><span>
+    
+  
+  </span><span class="keyword1"><span class="command"><span>interpretation</span></span></span><span> </span><a class="entity_ref" href="Sorting_Setup.html#Sorting_Setup.parameterized_weak_ordering|locale"><span>parameterized_weak_ordering</span></a><span> </span><span class="quoted"><a class="entity_ref" href="Sorting_Ex_Array_Idxs.html#offset_4319..4327"><span>idx_cdom</span></a></span><span> </span><span class="quoted"><a class="entity_ref" href="Sorting_Ex_Array_Idxs.html#offset_4404..4412"><span>idx_less</span></a></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Id_Op.html#Sepref_Id_Op.PR_CONST|const"><span>PR_CONST</span></a><span> </span><a class="entity_ref" href="Sorting_Ex_Array_Idxs.html#offset_4465..4473"><span>idx_pcmp</span></a><span>"</span></span></span><span>
+    </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>apply</span></span></span></span></span><span> </span><span class="operator"><span>unfold_locales</span></span><span>
+    </span><span class="keyword1"><span class="command"><span>unfolding</span></span></span><span> </span><a class="entity_ref" href="Sorting_Ex_Array_Idxs.html#offset_4453..4463"><span>idx_pcmp_def</span></a><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Id_Op.html#Sepref_Id_Op.PR_CONST_def|fact"><span>PR_CONST_def</span></a><span>
+    </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>apply</span></span></span></span></span><span> </span><a class="entity_ref" href="../../AFP/Refine_Monadic/Refine_Basic.html#Refine_Basic.refine_vcg|method"><span class="operator"><span>refine_vcg</span></span></a><span>
+    </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>apply</span></span></span></span></span><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../../HOL/HOL/ISABELLE_HOME/src/Provers/clasimp.ML.html#HOL.auto|method"><span class="operator"><span>auto</span></span></a><span> </span><span class="quasi_keyword"><span>simp</span></span><span class="main"><span class="main"><span>:</span></span></span><span> </span><a class="entity_ref" href="Sorting_Ex_Array_Idxs.html#offset_4392..4402"><span>idx_less_def</span></a><span> </span><a class="entity_ref" href="Sorting_Ex_Array_Idxs.html#offset_4308..4318"><span>idx_cdom_def</span></a><span class="main"><span>)</span></span><span>
+    </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>done</span></span></span></span></span><span>
+
+  </span><span class="keyword1"><span class="command"><span class="entity_def" id="offset_5420..5429">sublocale</span></span></span><span> </span><a class="entity_ref" href="Sorting_Setup.html#Sorting_Setup.parameterized_sort_impl_context|locale"><span>parameterized_sort_impl_context</span></a><span> 
+    </span><span class="quoted"><span class="quoted"><span>"</span><a class="entity_ref" href="../Isabelle_LLVM/Proto_IICF_EOArray.html#Proto_IICF_EOArray.woarray_assn|const"><span>woarray_assn</span></a><span> </span><a class="entity_ref" href="Sorting_Setup.html#Sorting_Setup.size_assn|const"><span>size_assn</span></a><span>"</span></span></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><a class="entity_ref" href="../Isabelle_LLVM/Proto_IICF_EOArray.html#Proto_IICF_EOArray.eoarray_assn|const"><span>eoarray_assn</span></a><span> </span><a class="entity_ref" href="Sorting_Setup.html#Sorting_Setup.size_assn|const"><span>size_assn</span></a><span>"</span></span></span><span> </span><span class="quoted"><a class="entity_ref" href="Sorting_Setup.html#Sorting_Setup.size_assn|const"><span>size_assn</span></a></span><span> 
+    </span><span class="quoted"><a class="entity_ref" href="../Isabelle_LLVM/MMonad.html#MMonad.Mreturn|const"><span>Mreturn</span></a></span><span> </span><span class="quoted"><a class="entity_ref" href="../Isabelle_LLVM/MMonad.html#MMonad.Mreturn|const"><span>Mreturn</span></a></span><span>
+    </span><span class="quoted"><a class="entity_ref" href="../Isabelle_LLVM/Proto_IICF_EOArray.html#Proto_IICF_EOArray.eo_extract_impl|const"><span>eo_extract_impl</span></a></span><span>
+    </span><span class="quoted"><a class="entity_ref" href="../Isabelle_LLVM/LLVM_DS_Array.html#LLVM_DS_Array.array_upd|const"><span>array_upd</span></a></span><span>
+    </span><span class="quoted"><a class="entity_ref" href="Sorting_Ex_Array_Idxs.html#offset_4319..4327"><span>idx_cdom</span></a></span><span> </span><span class="quoted"><a class="entity_ref" href="Sorting_Ex_Array_Idxs.html#offset_4404..4412"><span>idx_less</span></a></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Id_Op.html#Sepref_Id_Op.PR_CONST|const"><span>PR_CONST</span></a><span> </span><a class="entity_ref" href="Sorting_Ex_Array_Idxs.html#offset_4465..4473"><span>idx_pcmp</span></a><span>"</span></span></span><span> </span><span class="quoted"><a class="entity_ref" href="Sorting_Ex_Array_Idxs.html#offset_4786..4799"><span>idx_pcmp_impl</span></a></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><a class="entity_ref" href="../Isabelle_LLVM/Proto_IICF_EOArray.html#Proto_IICF_EOArray.woarray_slice_assn|const"><span>woarray_slice_assn</span></a><span> </span><span class="free"><span>A</span></span><span>"</span></span></span><span>
+    </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>apply</span></span></span></span></span><span> </span><span class="operator"><span>unfold_locales</span></span><span>
+    </span><span class="keyword1"><span class="command"><span class="improper"><span class="command"><span>apply</span></span></span></span></span><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../../HOL/HOL/ISABELLE_HOME/src/Provers/classical.ML.html#HOL.rule|method"><span class="operator"><span>rule</span></span></a><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Proto_IICF_EOArray.html#Proto_IICF_EOArray.eo_hnr_dep|fact"><span>eo_hnr_dep</span></a><span class="main"><span>)</span></span><span class="main"><span class="keyword3"><span>+</span></span></span><span>
+    </span><span class="keyword1"><span class="command"><span>unfolding</span></span></span><span> </span><a class="entity_ref" href="../Isabelle_LLVM/Sepref_Translate.html#Sepref_Translate.GEN_ALGO_def|fact"><span>GEN_ALGO_def</span></a><span> </span><a class="entity_ref" href="Sorting_Setup.html#Sorting_Setup.refines_param_relp_def|fact"><span>refines_param_relp_def</span></a><span> </span><span class="comment1"><span>(* TODO: thm gen_refines_param_relpI *)</span></span><span>
+    </span><span class="keyword1"><span class="command"><span>by</span></span></span><span> </span><span class="main"><span>(</span></span><a class="entity_ref" href="../../HOL/HOL/ISABELLE_HOME/src/Provers/classical.ML.html#HOL.rule|method"><span class="operator"><span>rule</span></span></a><span> </span><a class="entity_ref" href="Sorting_Ex_Array_Idxs.html#offset_4975..4977"><span>idx_pcmp_impl.refine</span></a><span class="main"><span>)</span></span><span>
+    
+  </span><span class="keyword1"><span class="command"><span>term</span></span></span><span> </span><span class="quoted"><a class="entity_ref" href="Sorting_Ex_Array_Idxs.html#offset_5420..5429"><span>introsort_param_impl</span></a></span><span>  
+  
+  </span><span class="keyword1"><span class="command"><span>find_theorems</span></span></span><span> </span><span class="quoted"><a class="entity_ref" href="Sorting_Ex_Array_Idxs.html#offset_5420..5429"><span>introsort_param_impl</span></a></span><span>
+  
+  
+  </span><span class="keyword1"><span class="command"><span>term</span></span></span><span> </span><span class="quoted"><a class="entity_ref" href="Sorting_Ex_Array_Idxs.html#offset_5420..5429"><span>arr_assn</span></a></span><span>
+  
+  </span><span class="keyword1"><span class="command"><span>thm</span></span></span><span> </span><a class="entity_ref" href="Sorting_Ex_Array_Idxs.html#offset_5420..5429"><span>introsort_param_impl_correct</span></a><span> </span><a class="entity_ref" href="Sorting_Ex_Array_Idxs.html#Sorting_Ex_Array_Idxs.wo_array_sort_adapt|fact"><span>wo_array_sort_adapt</span></a><span>
+  
+    
+</span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+
+
+
+
+
+
+</span><span class="comment1"><span>(*
+definition idx_less :: "'a::linorder list ⇒ nat ⇒ nat ⇒ bool" where "idx_less vs i j ≡ vs!i &lt; vs!j"
+definition idx_cdom :: "'a::linorder list ⇒ nat set" where "idx_cdom vs ≡ {0..&lt;length vs}"
+
+definition "idx_pcmp vs i j ≡ do {
+  ASSERT (i&lt;length vs ∧ j&lt;length vs);
+  RETURN (vs!i &lt; vs!j)
+}"
+
+sepref_def idx_pcmp_impl is "uncurry2 idx_pcmp" :: 
+  "(al_assn snat_assn)<span class="hidden">⇧</span><sup>k</sup> *<span class="hidden">⇩</span><sub>a</sub> size_assn<span class="hidden">⇧</span><sup>k</sup> *<span class="hidden">⇩</span><sub>a</sub> size_assn<span class="hidden">⇧</span><sup>k</sup> →<span class="hidden">⇩</span><sub>a</sub> bool1_assn"
+  unfolding idx_pcmp_def
+  by sepref
+  
+
+interpretation IDXO: weak_ordering_on_lt "idx_cdom vs" "idx_less vs"
+  apply unfold_locales
+  unfolding idx_less_def by auto
+
+interpretation IDXO: parameterized_weak_ordering idx_cdom idx_less idx_pcmp
+  apply unfold_locales
+  unfolding idx_pcmp_def
+  apply refine_vcg
+  apply (auto simp: idx_less_def idx_cdom_def)
+  done
+
+  
+  
+    
+global_interpretation IDXO: parameterized_sort_impl_context 
+  "woarray_assn snat_assn" "eoarray_assn snat_assn" snat_assn 
+  return return
+  eo_extract_impl
+  array_upd
+  idx_cdom idx_less idx_pcmp idx_pcmp_impl "al_assn snat_assn"
+  defines 
+          IDXO_is_guarded_insert_impl = IDXO.is_guarded_param_insert_impl
+      and IDXO_is_unguarded_insert_impl = IDXO.is_unguarded_param_insert_impl
+      and IDXO_unguarded_insertion_sort_impl = IDXO.unguarded_insertion_sort_param_impl
+      and IDXO_guarded_insertion_sort_impl = IDXO.guarded_insertion_sort_param_impl
+      and IDXO_final_insertion_sort_impl = IDXO.final_insertion_sort_param_impl
+      (*and IDXO_mop_lchild_impl  = IDXO.mop_lchild_impl 
+      and IDXO_mop_rchild_impl  = IDXO.mop_rchild_impl 
+      and IDXO_has_rchild_impl  = IDXO.has_rchild_impl 
+      and IDXO_has_lchild_impl  = IDXO.has_lchild_impl *)
+      
+      and IDXO_pcmpo_idxs_impl  = IDXO.pcmpo_idxs_impl
+      and IDXO_pcmpo_v_idx_impl  = IDXO.pcmpo_v_idx_impl
+      and IDXO_pcmpo_idx_v_impl  = IDXO.pcmpo_idx_v_impl
+      and IDXO_pcmp_idxs_impl  = IDXO.pcmp_idxs_impl
+      
+      and IDXO_mop_geth_impl    = IDXO.mop_geth_impl  
+      and IDXO_mop_seth_impl    = IDXO.mop_seth_impl  
+      and IDXO_sift_down_impl   = IDXO.sift_down_impl
+      and IDXO_heapify_btu_impl = IDXO.heapify_btu_impl
+      and IDXO_heapsort_impl    = IDXO.heapsort_param_impl
+      and IDXO_qsp_next_l_impl       = IDXO.qsp_next_l_impl
+      and IDXO_qsp_next_h_impl       = IDXO.qsp_next_h_impl
+      and IDXO_qs_partition_impl     = IDXO.qs_partition_impl
+(*      and IDXO_qs_partitionXXX_impl     = IDXO.qs_partitionXXX_impl *)
+      and IDXO_partition_pivot_impl  = IDXO.partition_pivot_impl 
+      and IDXO_introsort_aux_impl = IDXO.introsort_aux_param_impl
+      and IDXO_introsort_impl        = IDXO.introsort_param_impl
+      and IDXO_move_median_to_first_impl = IDXO.move_median_to_first_param_impl
+  
+  apply unfold_locales
+  apply (rule eo_hnr_dep)+
+  unfolding GEN_ALGO_def refines_param_relp_def (* TODO: thm gen_refines_param_relpI *)
+  by (rule idx_pcmp_impl.refine)
+  
+
+(* TODO: This seems to be a quirk in llvm monadify and inline! FIXME! *)  
+lemmas [abs_def,llvm_inline] = array_upd_def eo_extract_impl_def
+  
+(*llvm_deps "IDXO_heapsort_impl :: 32 word ptr ⇒ _" *)
+
+  
+  
+  
+  
+locale pure_eo_adapter =
+  fixes elem_assn :: "'a ⇒ 'ai::llvm_rep ⇒ assn"  
+    and wo_assn :: "'a list ⇒ 'oi::llvm_rep ⇒ assn"
+    and wo_get_impl :: "'oi ⇒ 'size::len2 word ⇒ 'ai llM"
+    and wo_set_impl :: "'oi ⇒ 'size::len2 word ⇒ 'ai ⇒ 'oi llM"
+  assumes pure[safe_constraint_rules]: "is_pure elem_assn" 
+      and get_hnr: "(uncurry wo_get_impl,uncurry mop_list_get) ∈ wo_assn<span class="hidden">⇧</span><sup>k</sup> *<span class="hidden">⇩</span><sub>a</sub> snat_assn<span class="hidden">⇧</span><sup>k</sup> →<span class="hidden">⇩</span><sub>a</sub> elem_assn"
+      and set_hnr: "(uncurry2 wo_set_impl,uncurry2 mop_list_set) 
+        ∈ [λ_.True]<span class="hidden">⇩</span><sub>c</sub> wo_assn<span class="hidden">⇧</span><sup>d</sup> *<span class="hidden">⇩</span><sub>a</sub> snat_assn<span class="hidden">⇧</span><sup>k</sup> *<span class="hidden">⇩</span><sub>a</sub> elem_assn<span class="hidden">⇧</span><sup>k</sup> → wo_assn [λ((ai,_),_) r. r=ai]<span class="hidden">⇩</span><sub>c</sub>"
+begin      
+  
+  lemmas [sepref_fr_rules] = get_hnr set_hnr
+
+
+  definition "only_some_rel ≡ {(a, Some a) | a. True} ∪ {(x, None) | x. True}"
+
+  definition "eo_assn ≡ hr_comp wo_assn (⟨only_some_rel⟩list_rel)"
+  
+  definition "eo_extract1 p i ≡ doN { r ← mop_list_get p i; RETURN (r,p) }"
+  sepref_definition eo_extract_impl is "uncurry eo_extract1" 
+    :: "wo_assn<span class="hidden">⇧</span><sup>d</sup> *<span class="hidden">⇩</span><sub>a</sub> (snat_assn' TYPE('size))<span class="hidden">⇧</span><sup>k</sup> →<span class="hidden">⇩</span><sub>a</sub> elem_assn ×<span class="hidden">⇩</span><sub>a</sub> wo_assn"
+    unfolding eo_extract1_def
+    by sepref
+     
+  lemma mop_eo_extract_aux: "mop_eo_extract p i = doN { r ← mop_list_get p i; ASSERT (r≠None ∧ i&lt;length p); RETURN (the r, p[i:=None]) }"  
+    by (auto simp: pw_eq_iff refine_pw_simps)
+
+  lemma assign_none_only_some_list_rel:
+    assumes SR[param]: "(a, a') ∈ ⟨only_some_rel⟩list_rel" and L: "i &lt; length a'"
+      shows "(a, a'[i := None]) ∈ ⟨only_some_rel⟩list_rel"
+  proof -
+    have "(a[i := a!i], a'[i := None]) ∈ ⟨only_some_rel⟩list_rel"
+      apply (parametricity)
+      by (auto simp: only_some_rel_def)
+    also from L list_rel_imp_same_length[OF SR] have "a[i := a!i] = a" by auto
+    finally show ?thesis .  
+  qed     
+        
+    
+  lemma eo_extract1_refine: "(eo_extract1, mop_eo_extract) ∈ ⟨only_some_rel⟩list_rel → nat_rel → ⟨Id ×<span class="hidden">⇩</span><sub>r</sub> ⟨only_some_rel⟩list_rel⟩nres_rel"
+    unfolding eo_extract1_def mop_eo_extract_aux
+    supply R = mop_list_get.fref[THEN frefD, OF TrueI prod_relI, unfolded uncurry_apply, THEN nres_relD]
+    apply (refine_rcg R)
+    apply assumption
+    apply (clarsimp simp: assign_none_only_some_list_rel)
+    by (auto simp: only_some_rel_def)
+
+  lemma eo_list_set_refine: "(mop_list_set, mop_eo_set) ∈ ⟨only_some_rel⟩list_rel → Id → Id → ⟨⟨only_some_rel⟩list_rel⟩nres_rel"
+    unfolding mop_list_set_alt mop_eo_set_alt 
+    apply refine_rcg
+    apply (simp add: list_rel_imp_same_length)
+    apply simp
+    apply parametricity
+    apply (auto simp: only_some_rel_def)
+    done
+  
+  
+  lemma set_hnr': "(uncurry2 wo_set_impl,uncurry2 mop_list_set) ∈ wo_assn<span class="hidden">⇧</span><sup>d</sup> *<span class="hidden">⇩</span><sub>a</sub> snat_assn<span class="hidden">⇧</span><sup>k</sup> *<span class="hidden">⇩</span><sub>a</sub> elem_assn<span class="hidden">⇧</span><sup>k</sup> →<span class="hidden">⇩</span><sub>a</sub> wo_assn"
+    apply (rule hfref_cons[OF set_hnr])
+    apply (auto simp: entails_lift_extract_simps sep_algebra_simps)
+    done
+  
+    
+    
+  context
+    notes [fcomp_norm_unfold] = eo_assn_def[symmetric]
+  begin  
+    lemmas eo_extract_refine_aux = eo_extract_impl.refine[FCOMP eo_extract1_refine]  
+
+    lemma eo_extract_refine: "(uncurry eo_extract_impl, uncurry mop_eo_extract) 
+      ∈ [λ_. True]<span class="hidden">⇩</span><sub>c</sub> eo_assn<span class="hidden">⇧</span><sup>d</sup> *<span class="hidden">⇩</span><sub>a</sub> snat_assn<span class="hidden">⇧</span><sup>k</sup> → (elem_assn ×<span class="hidden">⇩</span><sub>a</sub> eo_assn) [λ(ai,_) (_,r). r=ai]<span class="hidden">⇩</span><sub>c</sub>"
+      unfolding 
+      
+      
+      oops
+      apply (sepref_to_hnr)
+      apply (rule hn_refine_nofailI)
+      unfolding cnc_assn_prod_conv
+      apply (rule hnr_ceq_assnI)  
+      subgoal 
+        supply R = eo_extract_refine_aux[to_hnr, unfolded APP_def]
+        apply (rule hn_refine_cons[OF _ R])
+        apply (auto simp: sep_algebra_simps entails_lift_extract_simps hn_ctxt_def pure_def invalid_assn_def)
+        done
+      subgoal
+        unfolding eo_extract_impl_def mop_eo_extract_def hn_ctxt_def eo_assn_def hr_comp_def
+        supply R = get_hnr[to_hnr, THEN hn_refineD, unfolded APP_def hn_ctxt_def]
+        thm R
+        supply [vcg_rules] = R
+        supply [simp] = refine_pw_simps list_rel_imp_same_length
+        apply (vcg)
+        done
+      done
+    
+      
+    lemmas eo_set_refine_aux = set_hnr'[FCOMP eo_list_set_refine]  
+    
+    lemma pure_part_cnc_imp_eq: "pure_part (cnc_assn (λx. x = cc) wo_assn a c) ⟹ c=cc"
+      by (auto simp: pure_part_def cnc_assn_def pred_lift_extract_simps)
+    
+    (* TODO: Move *)  
+    lemma pure_entails_empty: "is_pure A ⟹ A a c ⊢ □"  
+      by (auto simp: is_pure_def sep_algebra_simps entails_lift_extract_simps)
+    
+      
+    lemma eo_set_refine: "(uncurry2 wo_set_impl, uncurry2 mop_eo_set) ∈ eo_assn<span class="hidden">⇧</span><sup>d</sup> *<span class="hidden">⇩</span><sub>a</sub> snat_assn<span class="hidden">⇧</span><sup>k</sup> *<span class="hidden">⇩</span><sub>a</sub> elem_assn<span class="hidden">⇧</span><sup>d</sup> →<span class="hidden">⇩</span><sub>a</sub><span class="hidden">⇩</span><sub>d</sub> (λ_ ((ai, _), _). cnc_assn (λx. x = ai) eo_assn)"
+      apply (sepref_to_hnr)
+      apply (rule hn_refine_nofailI)
+      apply (rule hnr_ceq_assnI)  
+      subgoal
+        supply R = eo_set_refine_aux[to_hnr, unfolded APP_def]
+        apply (rule hn_refine_cons[OF _ R])
+        apply (auto simp: sep_algebra_simps entails_lift_extract_simps hn_ctxt_def pure_def invalid_assn_def pure_entails_empty[OF pure])
+        done
+      subgoal  
+        unfolding hn_ctxt_def eo_assn_def hr_comp_def
+        supply R = set_hnr[to_hnr, THEN hn_refineD, unfolded APP_def hn_ctxt_def]
+        supply [vcg_rules] = R
+        supply [simp] = refine_pw_simps list_rel_imp_same_length pure_part_cnc_imp_eq
+        apply (vcg')
+        done
+      done 
+      
+  end
+  thm mop_eo_extract_def
+
+  
+  find_theorems mop_eo_set mop_list_set
+  
+  thm mop_eo_set_alt
+  
+  lemma id_Some_only_some_rel: "(id, Some) ∈ Id → only_some_rel"
+    by (auto simp: only_some_rel_def)
+  
+  lemma map_some_only_some_rel_iff: "(xs, map Some ys) ∈ ⟨only_some_rel⟩list_rel ⟷ xs=ys"  
+    apply (rule iffI)
+    subgoal
+      apply (induction xs "map Some ys" arbitrary: ys rule: list_rel_induct)
+      apply (auto simp: only_some_rel_def)
+      done
+    subgoal
+      apply (rewrite in "(⌑,_)" list.map_id[symmetric])
+      apply (parametricity add: id_Some_only_some_rel)
+      by simp
+    done      
+  
+    
+  lemma wo_assn_conv: "wo_assn xs ys = eo_assn (map Some xs) ys"
+    unfolding eo_assn_def hr_comp_def
+    by (auto simp: pred_lift_extract_simps sep_algebra_simps fun_eq_iff map_some_only_some_rel_iff)
+  
+  lemma to_eo_conv_refine: "(return, mop_to_eo_conv) ∈ wo_assn<span class="hidden">⇧</span><sup>d</sup> →<span class="hidden">⇩</span><sub>a</sub><span class="hidden">⇩</span><sub>d</sub> (λ_ ai. cnc_assn (λx. x = ai) eo_assn)"
+    unfolding mop_to_eo_conv_def cnc_assn_def 
+    apply sepref_to_hoare
+    apply (rewrite wo_assn_conv)
+    apply vcg
+    done
+  
+  lemma "None ∉ set xs ⟷ (∃ys. xs = map Some ys)"  
+    using None_not_in_set_conv by auto
+    
+  lemma to_wo_conv_refine: "(return, mop_to_wo_conv) ∈ eo_assn<span class="hidden">⇧</span><sup>d</sup> →<span class="hidden">⇩</span><sub>a</sub><span class="hidden">⇩</span><sub>d</sub> (λ_ ai. cnc_assn (λx. x = ai) wo_assn)"  
+    unfolding mop_to_wo_conv_def cnc_assn_def eo_assn_def hr_comp_def
+    apply sepref_to_hoare
+    apply (auto simp add: refine_pw_simps map_some_only_some_rel_iff elim!: None_not_in_set_conv)
+    by vcg
+      
+  lemma random_access_iterator: "random_access_iterator wo_assn eo_assn elem_assn 
+    return return
+    eo_extract_impl
+    wo_set_impl"  
+    apply unfold_locales
+    using to_eo_conv_refine to_wo_conv_refine eo_extract_refine eo_set_refine
+    apply blast+
+    done
+    
+  sublocale random_access_iterator wo_assn eo_assn elem_assn 
+    return return
+    eo_extract_impl
+    wo_set_impl
+    by (rule random_access_iterator)        
+  
+    
+  find_theorems "?a = UNPROTECT ?a"
+    
+end
+
+  
+
+(*global_interpretation IDXO: random_access_iterator 
+  "woarray_assn snat_assn" "eoarray_assn snat_assn" snat_assn 
+  return return
+  eo_extract_impl
+  array_upd
+  defines IDXO_swap_eo_impl = IDXO.swap_eo_impl
+  apply unfold_locales
+  apply (rule eo_hnr_dep)+
+  done
+*)  
+  
+print_named_simpset llvm_inline  
+  
+  
+
+
+
+  
+lemma al_pure_eo: "is_pure A ⟹ pure_eo_adapter A (al_assn A) arl_nth arl_upd"
+  apply unfold_locales
+  apply assumption
+  apply (rule al_nth_hnr_mop; simp)
+  subgoal
+    apply (sepref_to_hnr)
+    apply (rule hn_refine_nofailI)
+    apply (rule hnr_ceq_assnI)  
+    subgoal
+      supply R = al_upd_hnr_mop[to_hnr, unfolded APP_def, of A]
+      apply (rule hn_refine_cons[OF _ R])
+      apply (auto simp: hn_ctxt_def pure_def invalid_assn_def sep_algebra_simps entails_lift_extract_simps)
+      done
+    subgoal
+      unfolding hn_ctxt_def al_assn_def hr_comp_def pure_def in_snat_rel_conv_assn
+      apply (erule is_pureE)
+      apply (simp add: refine_pw_simps)
+      supply [simp] = list_rel_imp_same_length
+      by vcg
+    done  
+  done
+  
+
+global_interpretation 
+  ALO: pure_eo_adapter snat_assn "al_assn snat_assn" arl_nth arl_upd  
+  defines ALO_eo_extract_impl = ALO.eo_extract_impl
+  apply (rule al_pure_eo)
+  by simp
+
+  
+global_interpretation ALO: parameterized_sort_impl_context 
+  "al_assn snat_assn" "ALO.eo_assn" snat_assn 
+  return return
+  ALO_eo_extract_impl
+  arl_upd
+  idx_cdom idx_less idx_pcmp idx_pcmp_impl "al_assn snat_assn"
+  defines 
+          ALO_is_guarded_insert_impl = ALO.is_guarded_param_insert_impl
+      and ALO_is_unguarded_insert_impl = ALO.is_unguarded_param_insert_impl
+      and ALO_unguarded_insertion_sort_impl = ALO.unguarded_insertion_sort_param_impl
+      and ALO_guarded_insertion_sort_impl = ALO.guarded_insertion_sort_param_impl
+      and ALO_final_insertion_sort_impl = ALO.final_insertion_sort_param_impl
+      (*and ALO_mop_lchild_impl  = ALO.mop_lchild_impl 
+      and ALO_mop_rchild_impl  = ALO.mop_rchild_impl 
+      and ALO_has_rchild_impl  = ALO.has_rchild_impl 
+      and ALO_has_lchild_impl  = ALO.has_lchild_impl *)
+      
+      and ALO_pcmpo_idxs_impl  = ALO.pcmpo_idxs_impl
+      and ALO_pcmpo_v_idx_impl  = ALO.pcmpo_v_idx_impl
+      and ALO_pcmpo_idx_v_impl  = ALO.pcmpo_idx_v_impl
+      and ALO_pcmp_idxs_impl  = ALO.pcmp_idxs_impl
+      
+      and ALO_mop_geth_impl    = ALO.mop_geth_impl  
+      and ALO_mop_seth_impl    = ALO.mop_seth_impl  
+      and ALO_sift_down_impl   = ALO.sift_down_impl
+      and ALO_heapify_btu_impl = ALO.heapify_btu_impl
+      and ALO_heapsort_impl    = ALO.heapsort_param_impl
+      and ALO_qsp_next_l_impl       = ALO.qsp_next_l_impl
+      and ALO_qsp_next_h_impl       = ALO.qsp_next_h_impl
+      and ALO_qs_partition_impl     = ALO.qs_partition_impl
+(*      and ALO_qs_partitionXXX_impl     = ALO.qs_partitionXXX_impl *)
+      and ALO_partition_pivot_impl  = ALO.partition_pivot_impl 
+      and ALO_introsort_aux_impl = ALO.introsort_aux_param_impl
+      and ALO_introsort_impl        = ALO.introsort_param_impl
+      and ALO_move_median_to_first_impl = ALO.move_median_to_first_param_impl
+  
+  apply unfold_locales
+  unfolding GEN_ALGO_def refines_param_relp_def (* TODO: thm gen_refines_param_relpI *)
+  apply (rule idx_pcmp_impl.refine)
+  done
+
+
+lemmas [llvm_inline] = ALO.eo_extract_impl_def[THEN meta_fun_cong, THEN meta_fun_cong]  
+  
+print_named_simpset llvm_inline
+
+find_in_thms ALO_partition_pivot_impl in llvm_code
+
+
+(*oops llvm_deps "ALO_heapsort_impl :: (32 word,64) array_list ⇒ (64 word,64) array_list ⇒ _"*)
+
+(*export_llvm "ALO_heapsort_impl :: (32 word,64) array_list ⇒ (64 word,64) array_list ⇒ _"*)
+
+export_llvm 
+  "ALO_heapsort_impl :: (32 word,64) array_list ⇒ (64 word,64) array_list ⇒ _"
+  "ALO_introsort_impl :: (32 word,64) array_list ⇒ (64 word,64) array_list ⇒ _"
+
+
+
+
+
+export_llvm
+  "ALO_heapsort_impl :: (32 word,64) array_list ⇒ (64 word,64) array_list ⇒ _"
+  "ALO_introsort_impl :: (32 word,64) array_list ⇒ (64 word,64) array_list ⇒ _"
+  "IDXO_heapsort_impl :: (32 word,64) array_list ⇒ _" is "uint64_t* heapsort_idxs(array_list_32_64, uint64_t*, int64_t, int64_t)"
+  "IDXO_introsort_impl :: (32 word,64) array_list ⇒ _" is "uint64_t* introsort_idxs(array_list_32_64, uint64_t*, int64_t, int64_t)"
+  defines ‹
+    typedef struct {int64_t size; struct {int64_t capacity; int32_t *data;};} array_list_32_64;
+    typedef struct {int64_t size; struct {int64_t capacity; int64_t *data;};} array_list_64_64;
+    
+    ›
+  file "../code/introsort_param.ll"
+
+  
+  thm ALO.introsort_param_impl_correct
+*)</span></span><span>  
+  
+</span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+</span></pre>
+</body>
+
+</html>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><link rel="stylesheet" type="text/css" href="isabelle.css"/>
+<title>Theory Word_Lib.Bitwise_Signed</title>
+</head>
+
+
+<body>
+<div class="head">
+<h1>Theory Word_Lib.Bitwise_Signed</h1>
+</div>
+
+<pre class="source"><span class="comment1"><span>(*
+ * Copyright 2020, Data61, CSIRO (ABN 41 687 119 230)
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ *)</span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>section</span></span></span><span> </span><span class="quoted"><span class="plain_text"><span>"Bitwise tactic for Signed Words"</span></span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>theory</span></span></span><span> </span><a href="Word_Lib.Bitwise_Signed.html"><span>Bitwise_Signed</span></a><span>
+</span><span class="keyword2"><span class="keyword"><span>imports</span></span></span><span>
+  </span><span class="quoted"><span>"</span><a href="../../AFP/Refine_Monadic/HOL-Library.Word.html"><span>HOL-Library.Word</span></a><span>"</span></span><span>
+  </span><a href="Word_Lib.Bitwise.html"><span>Bitwise</span></a><span>
+  </span><a href="Word_Lib.Signed_Words.html"><span>Signed_Words</span></a><span>
+</span><span class="keyword2"><span class="keyword"><span>begin</span></span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>ML</span></span></span><span> </span><span class="quoted"><span>‹</span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>bw_tac_signed</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>let</span></span></span><span>
+  </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>ss</span></span><span class="main"><span>,</span></span><span> </span><span class="entity"><span>sss</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>Word_Bitwise_Tac.expand_word_eq_sss</span></span><span>
+  </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>sss</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>nth_map</span><span> </span><span class="inner_numeral"><span>2</span></span><span> </span><span class="main"><span>(</span></span><span class="keyword1"><span class="keyword"><span>fn</span></span></span><span> </span><span class="entity"><span>ss</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span>put_simpset</span><span> </span><span class="entity"><span>ss</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span>addsimps</span><span> </span><span class="antiquoted"><span class="entity"><span class="antiquote"><span>@{</span></span><span class="operator"><span>thms</span></span><span> </span><a class="entity_ref" href="Word_Lib.Signed_Words.html#Signed_Words.len_signed|fact"><span>len_signed</span></a><span class="antiquote"><span>}</span></span></span></span><span> </span><span>|&gt;</span><span> </span><span>simpset_of</span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>sss</span></span><span>
+</span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span>
+    </span><span>foldr1</span><span> </span><span class="main"><span>(</span></span><span class="keyword1"><span class="keyword"><span>op</span></span></span><span> </span><span>THEN_ALL_NEW</span><span class="main"><span>)</span></span><span>
+      </span><span class="main"><span>(</span></span><span class="main"><span>(</span></span><span>CHANGED</span><span> </span><span>o</span><span> </span><span class="entity"><span>safe_full_simp_tac</span></span><span> </span><span class="main"><span>(</span></span><span>put_simpset</span><span> </span><span class="entity"><span>ss</span></span><span> </span><span class="entity"><span>ctxt</span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span> </span><span>::</span><span>
+        </span><span>map</span><span> </span><span class="main"><span>(</span></span><span class="keyword1"><span class="keyword"><span>fn</span></span></span><span> </span><span class="entity"><span>ss</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="entity"><span>safe_full_simp_tac</span></span><span> </span><span class="main"><span>(</span></span><span>put_simpset</span><span> </span><span class="entity"><span>ss</span></span><span> </span><span class="entity"><span>ctxt</span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>sss</span></span><span class="main"><span>)</span></span><span>
+  </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span class="main"><span>;</span></span><span>
+›</span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>method_setup</span></span></span><span> </span><span class="entity_def" id="Bitwise_Signed.word_bitwise_signed|method"><span>word_bitwise_signed</span></span><span> </span><span class="main"><span>=</span></span><span>
+  </span><span class="quoted"><span>‹</span><span>Scan.succeed</span><span> </span><span class="main"><span>(</span></span><span class="keyword1"><span class="keyword"><span>fn</span></span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="entity"><span>Method.SIMPLE_METHOD</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>bw_tac_signed</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="inner_numeral"><span>1</span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span>›</span></span><span>
+  </span><span class="quoted"><span>"decomposer for word equalities and inequalities into bit propositions on concrete word lengths"</span></span><span>
+
+</span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+</span></pre>
+</body>
+
+</html>

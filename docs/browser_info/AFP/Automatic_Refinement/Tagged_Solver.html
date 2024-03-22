@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><link rel="stylesheet" type="text/css" href="isabelle.css"/>
+<title>Theory Tagged_Solver</title>
+</head>
+
+
+<body>
+<div class="head">
+<h1>Theory Tagged_Solver</h1>
+</div>
+
+<pre class="source"><span class="keyword1"><span class="command"><span>theory</span></span></span><span> </span><a href="Tagged_Solver.html"><span>Tagged_Solver</span></a><span>
+</span><span class="keyword2"><span class="keyword"><span>imports</span></span></span><span> </span><a href="Refine_Util.html"><span>Refine_Util</span></a><span>
+</span><span class="keyword2"><span class="keyword"><span>begin</span></span></span><span>
+
+</span><span class="comment1"><span>(* TODO/FIXME:
+  A solver is some named entity, and it should be possible to
+  reference it by its short/long name like a constant or a theorem!
+*)</span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>ML</span></span></span><span> </span><span class="quoted"><span>‹
+  </span><span class="keyword1"><span class="keyword"><span>signature</span></span></span><span> </span><span class="entity"><span>TAGGED_SOLVER</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>sig</span></span></span><span>
+    </span><span class="keyword1"><span class="keyword"><span>type</span></span></span><span> </span><span class="entity"><span>solver</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>thm</span><span> </span><span>list</span><span> * </span><span>string</span><span> * </span><span>string</span><span> * </span><span class="main"><span>(</span></span><span class="entity"><span>Proof.context</span></span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span class="entity"><span>tactic'</span></span><span class="main"><span>)</span></span><span>
+    
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> get_solvers</span><span class="main"><span>:</span></span><span> </span><span class="entity"><span>Proof.context</span></span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span class="entity"><span>solver</span></span><span> </span><span>list</span><span>
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> declare_solver</span><span class="main"><span>:</span></span><span> </span><span>thm</span><span> </span><span>list</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>binding</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>string</span><span> 
+      </span><span class="main"><span>-&gt;</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>Proof.context</span></span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span class="entity"><span>tactic'</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>morphism</span><span> 
+      </span><span class="main"><span>-&gt;</span></span><span> </span><span>Context.generic</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>Context.generic</span><span>
+
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> lookup_solver</span><span class="main"><span>:</span></span><span> </span><span>string</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>Context.generic</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span class="entity"><span>solver</span></span><span> </span><span>option</span><span>
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> add_triggers</span><span class="main"><span>:</span></span><span> </span><span>string</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>thm</span><span> </span><span>list</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>morphism</span><span> </span><span class="main"><span>-&gt;</span></span><span>
+      </span><span>Context.generic</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>Context.generic</span><span>
+
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> delete_solver</span><span class="main"><span>:</span></span><span> </span><span>string</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>morphism</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>Context.generic</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>Context.generic</span><span>
+
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> tac_of_solver</span><span class="main"><span>:</span></span><span> </span><span class="entity"><span>Proof.context</span></span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span class="entity"><span>solver</span></span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span class="entity"><span>tactic'</span></span><span>
+
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> get_potential_solvers</span><span class="main"><span>:</span></span><span> </span><span class="entity"><span>Proof.context</span></span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>int</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>thm</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span class="entity"><span>solver</span></span><span> </span><span>list</span><span>
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> get_potential_tacs</span><span class="main"><span>:</span></span><span> </span><span class="entity"><span>Proof.context</span></span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>int</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>thm</span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span class="entity"><span>tactic'</span></span><span> </span><span>list</span><span>
+
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> solve_greedy_step_tac</span><span class="main"><span>:</span></span><span> </span><span class="entity"><span>Proof.context</span></span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span class="entity"><span>tactic'</span></span><span>
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> solve_greedy_tac</span><span class="main"><span>:</span></span><span> </span><span class="entity"><span>Proof.context</span></span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span class="entity"><span>tactic'</span></span><span>
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> solve_greedy_keep_tac</span><span class="main"><span>:</span></span><span> </span><span class="entity"><span>Proof.context</span></span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span class="entity"><span>tactic'</span></span><span>
+
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> solve_full_step_tac</span><span class="main"><span>:</span></span><span> </span><span class="entity"><span>Proof.context</span></span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span class="entity"><span>tactic'</span></span><span>
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> solve_full_tac</span><span class="main"><span>:</span></span><span> </span><span class="entity"><span>Proof.context</span></span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span class="entity"><span>tactic'</span></span><span>
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> solve_full_keep_tac</span><span class="main"><span>:</span></span><span> </span><span class="entity"><span>Proof.context</span></span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span class="entity"><span>tactic'</span></span><span>
+
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> cfg_keep</span><span class="main"><span>:</span></span><span> </span><span>bool</span><span> </span><span>Config.T</span><span>
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> cfg_trace</span><span class="main"><span>:</span></span><span> </span><span>bool</span><span> </span><span>Config.T</span><span>
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> cfg_full</span><span class="main"><span>:</span></span><span> </span><span>bool</span><span> </span><span>Config.T</span><span>
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> cfg_step</span><span class="main"><span>:</span></span><span> </span><span>bool</span><span> </span><span>Config.T</span><span>
+
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> solve_tac</span><span class="main"><span>:</span></span><span> </span><span class="entity"><span>Proof.context</span></span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span class="entity"><span>tactic'</span></span><span>
+
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> pretty_solvers</span><span class="main"><span>:</span></span><span> </span><span class="entity"><span>Proof.context</span></span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span>Pretty.T</span><span>
+  </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+
+  </span><span class="keyword1"><span class="keyword"><span>structure</span></span></span><span> </span><span class="entity"><span>Tagged_Solver</span></span><span> </span><span class="main"><span>:</span></span><span> </span><span class="entity"><span>TAGGED_SOLVER</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>struct</span></span></span><span>
+    </span><span class="keyword1"><span class="keyword"><span>type</span></span></span><span> </span><span class="entity"><span>solver</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>thm</span><span> </span><span>list</span><span> * </span><span>string</span><span> * </span><span>string</span><span> * </span><span class="main"><span>(</span></span><span class="entity"><span>Proof.context</span></span><span> </span><span class="main"><span>-&gt;</span></span><span> </span><span class="entity"><span>tactic'</span></span><span class="main"><span>)</span></span><span>
+
+    </span><span class="keyword1"><span class="keyword"><span>structure</span></span></span><span> </span><span class="entity"><span>solvers</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>Generic_Data</span><span> </span><span class="main"><span>(</span></span><span>
+      </span><span class="keyword1"><span class="keyword"><span>type</span></span></span><span> </span><span class="entity"><span>T</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>solver</span></span><span> </span><span>Item_Net.T</span><span> * </span><span class="entity"><span>solver</span></span><span> </span><span>Symtab.table</span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>empty</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="main"><span>(</span></span><span>Item_Net.init</span><span> 
+        </span><span class="main"><span>(</span></span><span class="main"><span>(</span></span><span class="keyword1"><span class="keyword"><span>op</span></span></span><span> </span><span class="main"><span>=</span></span><span class="main"><span>)</span></span><span> </span><span>o</span><span> </span><span>apply2</span><span> </span><span class="main"><span>#</span></span><span class="inner_numeral"><span>2</span></span><span class="main"><span>)</span></span><span> 
+        </span><span class="main"><span>(</span></span><span class="keyword1"><span class="keyword"><span>fn</span></span></span><span> </span><span class="entity"><span>p</span></span><span class="main"><span>:</span></span><span class="entity"><span>solver</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="main"><span>#</span></span><span class="inner_numeral"><span>1</span></span><span> </span><span class="entity"><span>p</span></span><span> </span><span>|&gt;</span><span> </span><span>map</span><span> </span><span>Thm.concl_of</span><span class="main"><span>)</span></span><span>
+      </span><span class="main"><span>,</span></span><span>
+        </span><span>Symtab.empty</span><span>
+      </span><span class="main"><span>)</span></span><span>
+  
+      </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>merge</span></span><span> </span><span class="main"><span>(</span></span><span class="main"><span>(</span></span><span class="entity"><span>n1</span></span><span class="main"><span>,</span></span><span class="entity"><span>t1</span></span><span class="main"><span>)</span></span><span class="main"><span>,</span></span><span class="main"><span>(</span></span><span class="entity"><span>n2</span></span><span class="main"><span>,</span></span><span class="entity"><span>t2</span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span> 
+        </span><span class="main"><span>=</span></span><span> </span><span class="main"><span>(</span></span><span>Item_Net.merge</span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>n1</span></span><span class="main"><span>,</span></span><span class="entity"><span>n2</span></span><span class="main"><span>)</span></span><span class="main"><span>,</span></span><span> </span><span>Symtab.merge</span><span> </span><span class="main"><span>(</span></span><span class="main"><span>(</span></span><span class="keyword1"><span class="keyword"><span>op</span></span></span><span> </span><span class="main"><span>=</span></span><span class="main"><span>)</span></span><span> </span><span>o</span><span> </span><span>apply2</span><span> </span><span class="main"><span>#</span></span><span class="inner_numeral"><span>2</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>t1</span></span><span class="main"><span>,</span></span><span class="entity"><span>t2</span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span>
+    </span><span class="main"><span>)</span></span><span>
+
+    </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>get_solvers</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>solvers.get</span><span> </span><span class="main"><span>(</span></span><span>Context.Proof</span><span> </span><span class="entity"><span>ctxt</span></span><span class="main"><span>)</span></span><span> 
+      </span><span>|&gt;</span><span> </span><span class="main"><span>#</span></span><span class="inner_numeral"><span>2</span></span><span> </span><span>|&gt;</span><span> </span><span>Symtab.dest</span><span> </span><span>|&gt;</span><span> </span><span>map</span><span> </span><span class="main"><span>#</span></span><span class="inner_numeral"><span>2</span></span><span>
+
+    </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>lookup_solver</span></span><span> </span><span class="entity"><span>n</span></span><span> </span><span class="entity"><span>context</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>let</span></span></span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>tab</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>solvers.get</span><span> </span><span class="entity"><span>context</span></span><span> </span><span>|&gt;</span><span> </span><span class="main"><span>#</span></span><span class="inner_numeral"><span>2</span></span><span>
+    </span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span>
+      </span><span>Symtab.lookup</span><span> </span><span class="entity"><span>tab</span></span><span> </span><span class="entity"><span>n</span></span><span>
+    </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+
+    </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>add_triggers</span></span><span> </span><span class="entity"><span>n</span></span><span> </span><span class="entity"><span>thms</span></span><span> </span><span class="entity"><span>phi</span></span><span> </span><span class="entity"><span>context</span></span><span> </span><span class="main"><span>=</span></span><span> 
+      </span><span class="keyword2"><span class="keyword"><span>case</span></span></span><span> </span><span class="entity"><span>lookup_solver</span></span><span> </span><span class="entity"><span>n</span></span><span> </span><span class="entity"><span>context</span></span><span> </span><span class="keyword2"><span class="keyword"><span>of</span></span></span><span>
+        </span><span>NONE</span><span> </span><span class="main"><span>=&gt;</span></span><span> 
+          </span><span>error</span><span> </span><span class="main"><span>(</span></span><span class="inner_quoted"><span>"Undefined solver: "</span></span><span> </span><span>^</span><span> </span><span class="entity"><span>n</span></span><span class="main"><span>)</span></span><span>
+      </span><span class="main"><span>|</span></span><span> </span><span>SOME</span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>trigs</span></span><span class="main"><span>,</span></span><span class="entity"><span>n</span></span><span class="main"><span>,</span></span><span class="entity"><span>desc</span></span><span class="main"><span>,</span></span><span class="entity"><span>tac</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="keyword2"><span class="keyword"><span>let</span></span></span><span>
+          </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>thms</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>map</span><span> </span><span class="main"><span>(</span></span><span>Morphism.thm</span><span> </span><span class="entity"><span>phi</span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>thms</span></span><span>
+          </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>trigs</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>thms</span></span><span> </span><span>@</span><span> </span><span class="entity"><span>trigs</span></span><span>
+          </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>solver</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>trigs</span></span><span class="main"><span>,</span></span><span class="entity"><span>n</span></span><span class="main"><span>,</span></span><span class="entity"><span>desc</span></span><span class="main"><span>,</span></span><span class="entity"><span>tac</span></span><span class="main"><span>)</span></span><span>
+        </span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span> 
+          </span><span>solvers.map</span><span> </span><span class="main"><span>(</span></span><span>Item_Net.update</span><span> </span><span class="entity"><span>solver</span></span><span> </span><span class="entity"><span>##</span></span><span> </span><span>Symtab.update</span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>n</span></span><span class="main"><span>,</span></span><span> </span><span class="entity"><span>solver</span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span> 
+            </span><span class="entity"><span>context</span></span><span>
+        </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+
+    </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>declare_solver</span></span><span> </span><span class="entity"><span>thms</span></span><span> </span><span class="entity"><span>n</span></span><span> </span><span class="entity"><span>desc</span></span><span> </span><span class="entity"><span>tac</span></span><span> </span><span class="entity"><span>phi</span></span><span> </span><span class="entity"><span>context</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>let</span></span></span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>thms</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>map</span><span> </span><span class="main"><span>(</span></span><span>Morphism.thm</span><span> </span><span class="entity"><span>phi</span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>thms</span></span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>n</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>Morphism.binding</span><span> </span><span class="entity"><span>phi</span></span><span> </span><span class="entity"><span>n</span></span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>n</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>Context.cases</span><span> </span><span>Sign.full_name</span><span> </span><span>Proof_Context.full_name</span><span> </span><span class="entity"><span>context</span></span><span> </span><span class="entity"><span>n</span></span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="main"><span>_</span></span><span> </span><span class="main"><span>=</span></span><span> 
+        </span><span class="keyword2"><span class="keyword"><span>if</span></span></span><span> </span><span>Symtab.defined</span><span> </span><span class="main"><span>(</span></span><span>solvers.get</span><span> </span><span class="entity"><span>context</span></span><span> </span><span>|&gt;</span><span> </span><span class="main"><span>#</span></span><span class="inner_numeral"><span>2</span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>n</span></span><span> </span><span class="keyword2"><span class="keyword"><span>then</span></span></span><span>
+          </span><span>error</span><span> </span><span class="main"><span>(</span></span><span class="inner_quoted"><span>"Duplicate solver "</span></span><span> </span><span>^</span><span> </span><span class="entity"><span>n</span></span><span class="main"><span>)</span></span><span>
+        </span><span class="keyword2"><span class="keyword"><span>else</span></span></span><span> </span><span class="main"><span>(</span></span><span class="main"><span>)</span></span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>solver</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>thms</span></span><span class="main"><span>,</span></span><span class="entity"><span>n</span></span><span class="main"><span>,</span></span><span class="entity"><span>desc</span></span><span class="main"><span>,</span></span><span class="entity"><span>tac</span></span><span class="main"><span>)</span></span><span>
+    </span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span>
+      </span><span>solvers.map</span><span> </span><span class="main"><span>(</span></span><span>Item_Net.update</span><span> </span><span class="entity"><span>solver</span></span><span> </span><span class="entity"><span>##</span></span><span> </span><span>Symtab.update</span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>n</span></span><span class="main"><span>,</span></span><span class="entity"><span>solver</span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>context</span></span><span>
+    </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+
+    </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>delete_solver</span></span><span> </span><span class="entity"><span>n</span></span><span> </span><span class="main"><span>_</span></span><span> </span><span class="entity"><span>context</span></span><span> </span><span class="main"><span>=</span></span><span> 
+      </span><span class="keyword2"><span class="keyword"><span>case</span></span></span><span> </span><span class="entity"><span>lookup_solver</span></span><span> </span><span class="entity"><span>n</span></span><span> </span><span class="entity"><span>context</span></span><span> </span><span class="keyword2"><span class="keyword"><span>of</span></span></span><span>
+        </span><span>NONE</span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span>error</span><span> </span><span class="main"><span>(</span></span><span class="inner_quoted"><span>"Undefined solver: "</span></span><span> </span><span>^</span><span> </span><span class="entity"><span>n</span></span><span class="main"><span>)</span></span><span>
+      </span><span class="main"><span>|</span></span><span> </span><span>SOME</span><span> </span><span class="entity"><span>solver</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> 
+          </span><span>solvers.map</span><span> </span><span class="main"><span>(</span></span><span>Item_Net.remove</span><span> </span><span class="entity"><span>solver</span></span><span> </span><span class="entity"><span>##</span></span><span> </span><span>Symtab.delete</span><span> </span><span class="main"><span>(</span></span><span class="main"><span>#</span></span><span class="inner_numeral"><span>2</span></span><span> </span><span class="entity"><span>solver</span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span>
+            </span><span class="entity"><span>context</span></span><span>
+
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>cfg_keep</span></span><span> </span><span class="main"><span>=</span></span><span> 
+      </span><span class="entity"><span>Attrib.setup_config_bool</span></span><span> </span><span class="antiquoted"><span class="entity"><span class="antiquote"><span>@{</span></span><span class="operator"><span>binding</span></span><span> </span><span class="entity_def" id="Tagged_Solver.tagged_solver_keep|attribute"><span>tagged_solver_keep</span></span><span class="antiquote"><span>}</span></span></span></span><span> </span><span class="main"><span>(</span></span><span>K</span><span> </span><span>false</span><span class="main"><span>)</span></span><span>
+
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>cfg_trace</span></span><span> </span><span class="main"><span>=</span></span><span> 
+      </span><span class="entity"><span>Attrib.setup_config_bool</span></span><span> </span><span class="antiquoted"><span class="entity"><span class="antiquote"><span>@{</span></span><span class="operator"><span>binding</span></span><span> </span><span class="entity_def" id="Tagged_Solver.tagged_solver_trace|attribute"><span>tagged_solver_trace</span></span><span class="antiquote"><span>}</span></span></span></span><span> </span><span class="main"><span>(</span></span><span>K</span><span> </span><span>false</span><span class="main"><span>)</span></span><span>
+
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>cfg_step</span></span><span> </span><span class="main"><span>=</span></span><span> 
+      </span><span class="entity"><span>Attrib.setup_config_bool</span></span><span> </span><span class="antiquoted"><span class="entity"><span class="antiquote"><span>@{</span></span><span class="operator"><span>binding</span></span><span> </span><span class="entity_def" id="Tagged_Solver.tagged_solver_step|attribute"><span>tagged_solver_step</span></span><span class="antiquote"><span>}</span></span></span></span><span> </span><span class="main"><span>(</span></span><span>K</span><span> </span><span>false</span><span class="main"><span>)</span></span><span>
+
+    </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>cfg_full</span></span><span> </span><span class="main"><span>=</span></span><span> 
+      </span><span class="entity"><span>Attrib.setup_config_bool</span></span><span> </span><span class="antiquoted"><span class="entity"><span class="antiquote"><span>@{</span></span><span class="operator"><span>binding</span></span><span> </span><span class="entity_def" id="Tagged_Solver.tagged_solver_full|attribute"><span>tagged_solver_full</span></span><span class="antiquote"><span>}</span></span></span></span><span> </span><span class="main"><span>(</span></span><span>K</span><span> </span><span>false</span><span class="main"><span>)</span></span><span>
+
+
+
+    </span><span class="comment1"><span>(* Get potential solvers. Overapproximation caused by net *)</span></span><span>
+    </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>get_potential_solvers</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>i</span></span><span> </span><span class="entity"><span>st</span></span><span> </span><span class="main"><span>=</span></span><span> 
+      </span><span class="keyword2"><span class="keyword"><span>let</span></span></span><span>
+        </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>concl</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>Logic.concl_of_goal</span><span> </span><span class="main"><span>(</span></span><span>Thm.prop_of</span><span> </span><span class="entity"><span>st</span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>i</span></span><span>
+        </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>net</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>solvers.get</span><span> </span><span class="main"><span>(</span></span><span>Context.Proof</span><span> </span><span class="entity"><span>ctxt</span></span><span class="main"><span>)</span></span><span> </span><span>|&gt;</span><span> </span><span class="main"><span>#</span></span><span class="inner_numeral"><span>1</span></span><span>
+        </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>solvers</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>Item_Net.retrieve</span><span> </span><span class="entity"><span>net</span></span><span> </span><span class="entity"><span>concl</span></span><span>
+      </span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span> </span><span class="entity"><span>solvers</span></span><span> </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+
+    </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>notrace_tac_of_solver</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>thms</span></span><span class="main"><span>,</span></span><span class="main"><span>_</span></span><span class="main"><span>,</span></span><span class="main"><span>_</span></span><span class="main"><span>,</span></span><span class="entity"><span>tac</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=</span></span><span> 
+      </span><span>match_tac</span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>thms</span></span><span> </span><span>THEN'</span><span> </span><span class="entity"><span>tac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span>
+
+    </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>trace_tac_of_solver</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>thms</span></span><span class="main"><span>,</span></span><span class="entity"><span>name</span></span><span class="main"><span>,</span></span><span class="main"><span>_</span></span><span class="main"><span>,</span></span><span class="entity"><span>tac</span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>i</span></span><span> </span><span class="entity"><span>st</span></span><span> </span><span class="main"><span>=</span></span><span> 
+      </span><span class="keyword2"><span class="keyword"><span>let</span></span></span><span>
+        </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="main"><span>_</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>tracing</span><span> </span><span class="main"><span>(</span></span><span class="inner_quoted"><span>"Trying solver "</span></span><span> </span><span>^</span><span> </span><span class="entity"><span>name</span></span><span class="main"><span>)</span></span><span>
+        </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>r</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>match_tac</span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>thms</span></span><span> </span><span class="entity"><span>i</span></span><span> </span><span class="entity"><span>st</span></span><span>
+      </span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span>
+        </span><span class="keyword2"><span class="keyword"><span>case</span></span></span><span> </span><span>Seq.pull</span><span> </span><span class="entity"><span>r</span></span><span> </span><span class="keyword2"><span class="keyword"><span>of</span></span></span><span> 
+          </span><span>NONE</span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="main"><span>(</span></span><span>tracing</span><span> </span><span class="inner_quoted"><span>"  No trigger"</span></span><span class="main"><span>;</span></span><span> </span><span>Seq.empty</span><span class="main"><span>)</span></span><span>
+        </span><span class="main"><span>|</span></span><span> </span><span>SOME</span><span> </span><span class="main"><span>_</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="keyword2"><span class="keyword"><span>let</span></span></span><span> 
+            </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>r</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>Seq.maps</span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>tac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>i</span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>r</span></span><span>
+          </span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span>
+            </span><span class="keyword2"><span class="keyword"><span>case</span></span></span><span> </span><span>Seq.pull</span><span> </span><span class="entity"><span>r</span></span><span> </span><span class="keyword2"><span class="keyword"><span>of</span></span></span><span> 
+              </span><span>NONE</span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="main"><span>(</span></span><span>tracing</span><span> </span><span class="main"><span>(</span></span><span class="inner_quoted"><span>"  No solution ("</span></span><span> </span><span>^</span><span> </span><span class="entity"><span>name</span></span><span> </span><span>^</span><span> </span><span class="inner_quoted"><span>")"</span></span><span class="main"><span>)</span></span><span class="main"><span>;</span></span><span> </span><span>Seq.empty</span><span class="main"><span>)</span></span><span>
+            </span><span class="main"><span>|</span></span><span> </span><span>SOME</span><span> </span><span class="main"><span>_</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="main"><span>(</span></span><span>tracing</span><span> </span><span class="main"><span>(</span></span><span class="inner_quoted"><span>"  OK ("</span></span><span> </span><span>^</span><span> </span><span class="entity"><span>name</span></span><span> </span><span>^</span><span> </span><span class="inner_quoted"><span>")"</span></span><span class="main"><span>)</span></span><span class="main"><span>;</span></span><span> </span><span class="entity"><span>r</span></span><span class="main"><span>)</span></span><span>
+          </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+      </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+
+    </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>tac_of_solver</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="main"><span>=</span></span><span> 
+      </span><span class="keyword2"><span class="keyword"><span>if</span></span></span><span> </span><span>Config.get</span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>cfg_trace</span></span><span> </span><span class="keyword2"><span class="keyword"><span>then</span></span></span><span>
+        </span><span class="entity"><span>trace_tac_of_solver</span></span><span> </span><span class="entity"><span>ctxt</span></span><span>
+      </span><span class="keyword2"><span class="keyword"><span>else</span></span></span><span>
+        </span><span class="entity"><span>notrace_tac_of_solver</span></span><span> </span><span class="entity"><span>ctxt</span></span><span>
+    
+    </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>get_potential_tacs</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>i</span></span><span> </span><span class="entity"><span>st</span></span><span> </span><span class="main"><span>=</span></span><span> 
+      </span><span class="keyword2"><span class="keyword"><span>if</span></span></span><span> </span><span class="entity"><span>i</span></span><span> </span><span>&lt;=</span><span> </span><span>Thm.nprems_of</span><span> </span><span class="entity"><span>st</span></span><span> </span><span class="keyword2"><span class="keyword"><span>then</span></span></span><span>
+        </span><span>eq_assume_tac</span><span> </span><span>::</span><span> </span><span class="main"><span>(</span></span><span>
+          </span><span class="entity"><span>get_potential_solvers</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>i</span></span><span> </span><span class="entity"><span>st</span></span><span>
+          </span><span>|&gt;</span><span> </span><span>map</span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>tac_of_solver</span></span><span> </span><span class="entity"><span>ctxt</span></span><span class="main"><span>)</span></span><span>
+        </span><span class="main"><span>)</span></span><span>
+      </span><span class="keyword2"><span class="keyword"><span>else</span></span></span><span> </span><span class="main"><span>[</span></span><span class="main"><span>]</span></span><span>
+
+    </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>solve_greedy_step_tac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>i</span></span><span> </span><span class="entity"><span>st</span></span><span> </span><span class="main"><span>=</span></span><span> 
+      </span><span class="main"><span>(</span></span><span>FIRST'</span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>get_potential_tacs</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>i</span></span><span> </span><span class="entity"><span>st</span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>i</span></span><span> </span><span class="entity"><span>st</span></span><span>
+
+    </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>solve_full_step_tac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>i</span></span><span> </span><span class="entity"><span>st</span></span><span> </span><span class="main"><span>=</span></span><span> 
+      </span><span class="main"><span>(</span></span><span class="entity"><span>APPEND_LIST'</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>get_potential_tacs</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>i</span></span><span> </span><span class="entity"><span>st</span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>i</span></span><span> </span><span class="entity"><span>st</span></span><span class="main"><span>)</span></span><span>
+
+    </span><span class="comment1"><span>(* Try to solve, take first matching tactic, but allow backtracking over
+       its results *)</span></span><span>
+    </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>solve_greedy_tac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>i</span></span><span> </span><span class="entity"><span>st</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>let</span></span></span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>tacs</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>get_potential_tacs</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>i</span></span><span> </span><span class="entity"><span>st</span></span><span>
+    </span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span>
+      </span><span class="main"><span>(</span></span><span>FIRST'</span><span> </span><span class="entity"><span>tacs</span></span><span> </span><span class="entity"><span>THEN_ALL_NEW_FWD</span></span><span> </span><span class="entity"><span>solve_greedy_tac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>i</span></span><span> </span><span class="entity"><span>st</span></span><span>
+    </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+
+    </span><span class="comment1"><span>(* Try to solve. Allow backtracking over matching tactics. *)</span></span><span>
+    </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>solve_full_tac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>i</span></span><span> </span><span class="entity"><span>st</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>let</span></span></span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>tacs</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>get_potential_tacs</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>i</span></span><span> </span><span class="entity"><span>st</span></span><span>
+    </span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span>
+      </span><span class="main"><span>(</span></span><span class="entity"><span>APPEND_LIST'</span></span><span> </span><span class="entity"><span>tacs</span></span><span> </span><span class="entity"><span>THEN_ALL_NEW_FWD</span></span><span> </span><span class="entity"><span>solve_full_tac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>i</span></span><span> </span><span class="entity"><span>st</span></span><span>
+    </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+
+    </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>solve_greedy_keep_tac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>i</span></span><span> </span><span class="entity"><span>st</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>let</span></span></span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>tacs</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>get_potential_tacs</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>i</span></span><span> </span><span class="entity"><span>st</span></span><span>
+    </span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span>
+      </span><span class="main"><span>(</span></span><span>FIRST'</span><span> </span><span class="entity"><span>tacs</span></span><span> </span><span class="entity"><span>THEN_ALL_NEW_FWD</span></span><span> </span><span class="main"><span>(</span></span><span>TRY</span><span> </span><span>o</span><span> </span><span class="entity"><span>solve_greedy_keep_tac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>i</span></span><span> </span><span class="entity"><span>st</span></span><span>
+    </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+
+    </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>solve_full_keep_tac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>i</span></span><span> </span><span class="entity"><span>st</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>let</span></span></span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>tacs</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>get_potential_tacs</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>i</span></span><span> </span><span class="entity"><span>st</span></span><span>
+    </span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span>
+      </span><span class="main"><span>(</span></span><span class="entity"><span>APPEND_LIST'</span></span><span> </span><span class="entity"><span>tacs</span></span><span> </span><span class="entity"><span>THEN_ALL_NEW_FWD</span></span><span> </span><span class="main"><span>(</span></span><span>TRY</span><span> </span><span>o</span><span> </span><span class="entity"><span>solve_full_keep_tac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>i</span></span><span> </span><span class="entity"><span>st</span></span><span>
+    </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+
+    </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>solve_tac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="main"><span>=</span></span><span> 
+      </span><span class="keyword2"><span class="keyword"><span>case</span></span></span><span> </span><span class="main"><span>(</span></span><span>Config.get</span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>cfg_keep</span></span><span class="main"><span>,</span></span><span> </span><span>Config.get</span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>cfg_step</span></span><span class="main"><span>,</span></span><span> 
+            </span><span>Config.get</span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>cfg_full</span></span><span class="main"><span>)</span></span><span> </span><span class="keyword2"><span class="keyword"><span>of</span></span></span><span>
+        </span><span class="main"><span>(</span></span><span class="main"><span>_</span></span><span class="main"><span>,</span></span><span>true</span><span class="main"><span>,</span></span><span>false</span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="entity"><span>solve_greedy_step_tac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span>
+      </span><span class="main"><span>|</span></span><span> </span><span class="main"><span>(</span></span><span class="main"><span>_</span></span><span class="main"><span>,</span></span><span>true</span><span class="main"><span>,</span></span><span>true</span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="entity"><span>solve_full_step_tac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span>
+      </span><span class="main"><span>|</span></span><span> </span><span class="main"><span>(</span></span><span>true</span><span class="main"><span>,</span></span><span>false</span><span class="main"><span>,</span></span><span>false</span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="entity"><span>solve_greedy_keep_tac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span>
+      </span><span class="main"><span>|</span></span><span> </span><span class="main"><span>(</span></span><span>false</span><span class="main"><span>,</span></span><span>false</span><span class="main"><span>,</span></span><span>false</span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="entity"><span>solve_greedy_tac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span>
+      </span><span class="main"><span>|</span></span><span> </span><span class="main"><span>(</span></span><span>true</span><span class="main"><span>,</span></span><span>false</span><span class="main"><span>,</span></span><span>true</span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="entity"><span>solve_full_keep_tac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span>
+      </span><span class="main"><span>|</span></span><span> </span><span class="main"><span>(</span></span><span>false</span><span class="main"><span>,</span></span><span>false</span><span class="main"><span>,</span></span><span>true</span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="entity"><span>solve_full_tac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span>
+
+
+    </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>pretty_solvers</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="keyword2"><span class="keyword"><span>let</span></span></span><span>
+      </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>pretty_solver</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>ts</span></span><span class="main"><span>,</span></span><span class="entity"><span>name</span></span><span class="main"><span>,</span></span><span class="entity"><span>desc</span></span><span class="main"><span>,</span></span><span class="main"><span>_</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>Pretty.block</span><span> </span><span class="main"><span>(</span></span><span>
+        </span><span>Pretty.str</span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>name</span></span><span> </span><span>^</span><span> </span><span class="inner_quoted"><span>": "</span></span><span> </span><span>^</span><span> </span><span class="entity"><span>desc</span></span><span class="main"><span>)</span></span><span> </span><span>::</span><span> </span><span>Pretty.fbrk</span><span> 
+        </span><span>::</span><span> </span><span>Pretty.str</span><span> </span><span class="main"><span>(</span></span><span class="inner_quoted"><span>"Triggers: "</span></span><span class="main"><span>)</span></span><span>
+        </span><span>::</span><span> </span><span>Pretty.commas</span><span> </span><span class="main"><span>(</span></span><span>map</span><span> </span><span class="main"><span>(</span></span><span>Thm.pretty_thm</span><span> </span><span class="entity"><span>ctxt</span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>ts</span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span>
+
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>solvers</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>get_solvers</span></span><span> </span><span class="entity"><span>ctxt</span></span><span>
+    </span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span>
+      </span><span>Pretty.big_list</span><span> </span><span class="inner_quoted"><span>"Solvers:"</span></span><span> </span><span class="main"><span>(</span></span><span>map</span><span> </span><span class="entity"><span>pretty_solver</span></span><span> </span><span class="entity"><span>solvers</span></span><span class="main"><span>)</span></span><span>
+    </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+  </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+›</span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>method_setup</span></span></span><span> </span><span class="entity_def" id="Tagged_Solver.tagged_solver|method"><span>tagged_solver</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="quoted"><span>‹</span><span class="keyword2"><span class="keyword"><span>let</span></span></span><span>
+  </span><span class="keyword3"><span class="keyword"><span>open</span></span></span><span> </span><span>Refine_Util</span><span>
+  </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>flags</span></span><span> </span><span class="main"><span>=</span></span><span> 
+        </span><span class="entity"><span>parse_bool_config</span></span><span> </span><span class="inner_quoted"><span>"keep"</span></span><span> </span><span class="entity"><span>Tagged_Solver.cfg_keep</span></span><span>
+    </span><span>||</span><span>  </span><span class="entity"><span>parse_bool_config</span></span><span> </span><span class="inner_quoted"><span>"trace"</span></span><span> </span><span class="entity"><span>Tagged_Solver.cfg_trace</span></span><span>
+    </span><span>||</span><span>  </span><span class="entity"><span>parse_bool_config</span></span><span> </span><span class="inner_quoted"><span>"full"</span></span><span> </span><span class="entity"><span>Tagged_Solver.cfg_full</span></span><span>
+    </span><span>||</span><span>  </span><span class="entity"><span>parse_bool_config</span></span><span> </span><span class="inner_quoted"><span>"step"</span></span><span> </span><span class="entity"><span>Tagged_Solver.cfg_step</span></span><span>
+
+</span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span>
+  </span><span class="entity"><span>parse_paren_lists</span></span><span> </span><span class="entity"><span>flags</span></span><span> </span><span>&gt;&gt;</span><span> </span><span class="main"><span>(</span></span><span class="keyword1"><span class="keyword"><span>fn</span></span></span><span> </span><span class="main"><span>_</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="keyword1"><span class="keyword"><span>fn</span></span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> 
+    </span><span class="entity"><span>SIMPLE_METHOD'</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>Tagged_Solver.solve_tac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span class="main"><span>)</span></span><span>
+  </span><span class="main"><span>)</span></span><span>
+</span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+›</span></span><span> </span><span class="quoted"><span>"Select tactic to solve goal by pattern"</span></span><span>
+
+
+</span><span class="keyword1"><span class="command"><span>term</span></span></span><span> </span><span class="quoted"><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.True|const"><span>True</span></a></span><span>
+</span><span class="comment1"><span>(* Localization Test *)</span></span><span>
+</span><span class="comment1"><span>(*
+locale foo = 
+  fixes A b
+  assumes A: "A x = True"
+begin
+  definition "B == A"
+
+  lemma AI: "A x" unfolding A ..
+  lemma A_trig: "A x ==&gt; A x" .
+  lemma BI: "A x ==&gt; B x" unfolding B_def .
+  lemma B_trig: "B x ==&gt; B x" .
+  
+  declaration {* fn phi =&gt;
+    Tagged_Solver.declare_solver @{thms A_trig} 
+      @{binding "A_solver"} "description" 
+      (K (rtac (Morphism.thm phi @{thm AI}))) phi
+    *}
+
+  ML_val {*
+    Tagged_Solver.pretty_solvers @{context} |&gt; Pretty.writeln
+    *}
+
+  (* FIXME: Does not work because of improper naming!
+  declaration {*
+    Tagged_Solver.add_triggers "local.A_solver" @{thms A_trig}
+    *}
+  *)
+
+  declaration {* fn phi =&gt;
+    Tagged_Solver.declare_solver @{thms B_trig} 
+      @{binding "B_solver"} "description" 
+      (K (rtac (Morphism.thm phi @{thm BI}))) phi
+    *}
+
+  ML_val {*
+    Tagged_Solver.pretty_solvers @{context} |&gt; Pretty.writeln
+    *}
+
+end
+
+definition "TAG x == True"
+interpretation tag: foo TAG 1
+  apply unfold_locales
+  unfolding TAG_def by simp
+
+ML_val {*
+  Tagged_Solver.pretty_solvers @{context} |&gt; Pretty.writeln
+  *}
+
+definition "TAG' x == True"
+interpretation tag': foo TAG' 2
+  apply unfold_locales
+  unfolding TAG'_def by simp
+
+interpretation tag2: foo TAG 3
+  by unfold_locales
+
+ML_val {*
+  Tagged_Solver.pretty_solvers @{context} |&gt; Pretty.writeln
+  *}
+
+
+lemma "tag.B undefined"
+  by (tagged_solver (keep))
+
+declaration {* Tagged_Solver.delete_solver "Tagged_Solver.tag.B_solver" *}
+
+ML_val {*
+  Tagged_Solver.pretty_solvers @{context} |&gt; Pretty.writeln
+  *}
+*)</span></span><span>
+
+</span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+
+</span></pre>
+</body>
+
+</html>

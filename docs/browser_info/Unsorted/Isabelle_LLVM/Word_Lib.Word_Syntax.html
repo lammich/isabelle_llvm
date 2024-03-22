@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><link rel="stylesheet" type="text/css" href="isabelle.css"/>
+<title>Theory Word_Lib.Word_Syntax</title>
+</head>
+
+
+<body>
+<div class="head">
+<h1>Theory Word_Lib.Word_Syntax</h1>
+</div>
+
+<pre class="source"><span class="comment1"><span>(*
+ * Copyright 2020, Data61, CSIRO (ABN 41 687 119 230)
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ *)</span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>section</span></span></span><span> </span><span class="quoted"><span class="plain_text"><span>"Additional Syntax for Word Bit Operations"</span></span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>theory</span></span></span><span> </span><a href="Word_Lib.Word_Syntax.html"><span>Word_Syntax</span></a><span>
+</span><span class="keyword2"><span class="keyword"><span>imports</span></span></span><span>
+  </span><span class="quoted"><span>"</span><a href="../../AFP/Refine_Monadic/HOL-Library.Word.html"><span>HOL-Library.Word</span></a><span>"</span></span><span>
+</span><span class="keyword2"><span class="keyword"><span>begin</span></span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>text</span></span></span><span> </span><span class="quoted"><span class="plain_text"><span>‹Additional bit and type syntax that forces word types.›</span></span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>context</span></span></span><span>
+  </span><span class="keyword2"><span class="keyword"><span>includes</span></span></span><span> </span><a class="entity_ref" href="../../HOL/HOL/Bit_Operations.html#Bit_Operations.bit_operations_syntax|bundle"><span>bit_operations_syntax</span></a><span>
+</span><span class="keyword2"><span class="keyword"><span>begin</span></span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>abbreviation</span></span></span><span>
+  </span><span class="entity"><span class="entity_def" id="Word_Syntax.wordNOT|const"><span>wordNOT</span></span></span><span>  </span><span class="main"><span>::</span></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><span class="tfree"><span>'a</span></span><span class="main"><span>::</span></span><a class="entity_ref" href="../../AFP/Refine_Monadic/HOL-Library.Type_Length.html#Type_Length.len|class"><span>len</span></a><span> </span><a class="entity_ref" href="../../AFP/Refine_Monadic/HOL-Library.Word.html#Word.word|type"><span>word</span></a><span> </span><span class="main"><span>⇒</span></span><span> </span><span class="tfree"><span>'a</span></span><span> </span><a class="entity_ref" href="../../AFP/Refine_Monadic/HOL-Library.Word.html#Word.word|type"><span>word</span></a><span>"</span></span></span><span>      </span><span class="main"><span>(</span></span><span class="quoted"><span>"</span><span class="keyword1"><span>~~</span></span><span> _"</span></span><span> </span><span class="main"><span>[</span></span><span>70</span><span class="main"><span>]</span></span><span> 71</span><span class="main"><span>)</span></span><span>
+</span><span class="keyword2"><span class="keyword"><span>where</span></span></span><span>
+  </span><span class="quoted"><span class="quoted"><span>"</span><span class="main"><span class="free"><span>~~</span></span></span><span> </span><span class="free"><span class="bound"><span class="entity"><span>x</span></span></span></span><span> </span><span class="main"><span>==</span></span><span> </span><span class="keyword1"><a class="entity_ref" href="../../HOL/HOL/Bit_Operations.html#Bit_Operations.ring_bit_operations_class.not|const"><span>NOT</span></a></span><span> </span><span class="free"><span class="bound"><span class="entity"><span>x</span></span></span></span><span>"</span></span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>abbreviation</span></span></span><span>
+  </span><span class="entity"><span class="entity_def" id="Word_Syntax.wordAND|const"><span>wordAND</span></span></span><span>  </span><span class="main"><span>::</span></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><span class="tfree"><span>'a</span></span><span class="main"><span>::</span></span><a class="entity_ref" href="../../AFP/Refine_Monadic/HOL-Library.Type_Length.html#Type_Length.len|class"><span>len</span></a><span> </span><a class="entity_ref" href="../../AFP/Refine_Monadic/HOL-Library.Word.html#Word.word|type"><span>word</span></a><span> </span><span class="main"><span>⇒</span></span><span> </span><span class="tfree"><span>'a</span></span><span> </span><a class="entity_ref" href="../../AFP/Refine_Monadic/HOL-Library.Word.html#Word.word|type"><span>word</span></a><span> </span><span class="main"><span>⇒</span></span><span> </span><span class="tfree"><span>'a</span></span><span> </span><a class="entity_ref" href="../../AFP/Refine_Monadic/HOL-Library.Word.html#Word.word|type"><span>word</span></a><span>"</span></span></span><span> </span><span class="main"><span>(</span></span><span class="keyword2"><span class="keyword"><span>infixr</span></span></span><span> </span><span class="quoted"><span>"</span><span class="keyword1"><span>&amp;&amp;</span></span><span>"</span></span><span> 64</span><span class="main"><span>)</span></span><span>
+</span><span class="keyword2"><span class="keyword"><span>where</span></span></span><span>
+  </span><span class="quoted"><span class="quoted"><span>"</span><span class="free"><span class="bound"><span class="entity"><span>a</span></span></span></span><span> </span><span class="main"><span class="free"><span>&amp;&amp;</span></span></span><span> </span><span class="free"><span class="bound"><span class="entity"><span>b</span></span></span></span><span> </span><span class="main"><span>==</span></span><span> </span><span class="free"><span class="bound"><span class="entity"><span>a</span></span></span></span><span> </span><span class="keyword1"><a class="entity_ref" href="../../HOL/HOL/Bit_Operations.html#Bit_Operations.semiring_bit_operations_class.and|const"><span>AND</span></a></span><span> </span><span class="free"><span class="bound"><span class="entity"><span>b</span></span></span></span><span>"</span></span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>abbreviation</span></span></span><span>
+  </span><span class="entity"><span class="entity_def" id="Word_Syntax.wordOR|const"><span>wordOR</span></span></span><span>   </span><span class="main"><span>::</span></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><span class="tfree"><span>'a</span></span><span class="main"><span>::</span></span><a class="entity_ref" href="../../AFP/Refine_Monadic/HOL-Library.Type_Length.html#Type_Length.len|class"><span>len</span></a><span> </span><a class="entity_ref" href="../../AFP/Refine_Monadic/HOL-Library.Word.html#Word.word|type"><span>word</span></a><span> </span><span class="main"><span>⇒</span></span><span> </span><span class="tfree"><span>'a</span></span><span> </span><a class="entity_ref" href="../../AFP/Refine_Monadic/HOL-Library.Word.html#Word.word|type"><span>word</span></a><span> </span><span class="main"><span>⇒</span></span><span> </span><span class="tfree"><span>'a</span></span><span> </span><a class="entity_ref" href="../../AFP/Refine_Monadic/HOL-Library.Word.html#Word.word|type"><span>word</span></a><span>"</span></span></span><span> </span><span class="main"><span>(</span></span><span class="keyword2"><span class="keyword"><span>infixr</span></span></span><span> </span><span class="quoted"><span>"</span><span class="keyword1"><span>||</span></span><span>"</span></span><span>  59</span><span class="main"><span>)</span></span><span>
+</span><span class="keyword2"><span class="keyword"><span>where</span></span></span><span>
+  </span><span class="quoted"><span class="quoted"><span>"</span><span class="free"><span class="bound"><span class="entity"><span>a</span></span></span></span><span> </span><span class="main"><span class="free"><span>||</span></span></span><span> </span><span class="free"><span class="bound"><span class="entity"><span>b</span></span></span></span><span> </span><span class="main"><span>==</span></span><span> </span><span class="free"><span class="bound"><span class="entity"><span>a</span></span></span></span><span> </span><span class="keyword1"><a class="entity_ref" href="../../HOL/HOL/Bit_Operations.html#Bit_Operations.semiring_bit_operations_class.or|const"><span>OR</span></a></span><span> </span><span class="free"><span class="bound"><span class="entity"><span>b</span></span></span></span><span>"</span></span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>abbreviation</span></span></span><span>
+  </span><span class="entity"><span class="entity_def" id="Word_Syntax.wordXOR|const"><span>wordXOR</span></span></span><span>  </span><span class="main"><span>::</span></span><span> </span><span class="quoted"><span class="quoted"><span>"</span><span class="tfree"><span>'a</span></span><span class="main"><span>::</span></span><a class="entity_ref" href="../../AFP/Refine_Monadic/HOL-Library.Type_Length.html#Type_Length.len|class"><span>len</span></a><span> </span><a class="entity_ref" href="../../AFP/Refine_Monadic/HOL-Library.Word.html#Word.word|type"><span>word</span></a><span> </span><span class="main"><span>⇒</span></span><span> </span><span class="tfree"><span>'a</span></span><span> </span><a class="entity_ref" href="../../AFP/Refine_Monadic/HOL-Library.Word.html#Word.word|type"><span>word</span></a><span> </span><span class="main"><span>⇒</span></span><span> </span><span class="tfree"><span>'a</span></span><span> </span><a class="entity_ref" href="../../AFP/Refine_Monadic/HOL-Library.Word.html#Word.word|type"><span>word</span></a><span>"</span></span></span><span> </span><span class="main"><span>(</span></span><span class="keyword2"><span class="keyword"><span>infixr</span></span></span><span> </span><span class="quoted"><span>"</span><span class="keyword1"><span>xor</span></span><span>"</span></span><span> 59</span><span class="main"><span>)</span></span><span>
+</span><span class="keyword2"><span class="keyword"><span>where</span></span></span><span>
+  </span><span class="quoted"><span class="quoted"><span>"</span><span class="free"><span class="bound"><span class="entity"><span>a</span></span></span></span><span> </span><span class="keyword1"><span class="free"><span>xor</span></span></span><span> </span><span class="free"><span class="bound"><span class="entity"><span>b</span></span></span></span><span> </span><span class="main"><span>==</span></span><span> </span><span class="free"><span class="bound"><span class="entity"><span>a</span></span></span></span><span> </span><span class="keyword1"><a class="entity_ref" href="../../HOL/HOL/Bit_Operations.html#Bit_Operations.semiring_bit_operations_class.xor|const"><span>XOR</span></a></span><span> </span><span class="free"><span class="bound"><span class="entity"><span>b</span></span></span></span><span>"</span></span></span><span>
+
+</span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+
+</span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+</span></pre>
+</body>
+
+</html>

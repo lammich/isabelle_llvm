@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><link rel="stylesheet" type="text/css" href="isabelle.css"/>
+<title>Theory Separation_Algebra.Sep_Tactics</title>
+</head>
+
+
+<body>
+<div class="head">
+<h1>Theory Separation_Algebra.Sep_Tactics</h1>
+</div>
+
+<pre class="source"><span class="comment1"><span>(* Authors: Gerwin Klein and Rafal Kolanski, 2012
+   Maintainers: Gerwin Klein &lt;kleing at cse.unsw.edu.au&gt;
+                Rafal Kolanski &lt;rafal.kolanski at nicta.com.au&gt;
+*)</span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>section</span></span></span><span> </span><span class="quoted"><span class="plain_text"><span>"Separation Logic Tactics"</span></span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>theory</span></span></span><span> </span><a href="Separation_Algebra.Sep_Tactics.html"><span>Sep_Tactics</span></a><span>
+</span><span class="keyword2"><span class="keyword"><span>imports</span></span></span><span> </span><a href="Separation_Algebra.Separation_Algebra.html"><span>Separation_Algebra</span></a><span>
+</span><span class="keyword2"><span class="keyword"><span>begin</span></span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>ML_file</span></span></span><span> </span><span class="quoted"><a href="AFP/Separation_Algebra/sep_tactics.ML.html"><span>‹sep_tactics.ML›</span></a></span><span>
+
+</span><span class="keyword1"><span class="command"><span>text</span></span></span><span> </span><span class="quoted"><span class="plain_text"><span>‹A number of proof methods to assist with reasoning about separation logic.›</span></span></span><span>
+
+
+</span><span class="keyword1"><span class="command"><span>section</span></span></span><span> </span><span class="quoted"><span class="plain_text"><span>‹Selection (move-to-front) tactics›</span></span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>method_setup</span></span></span><span> </span><span class="entity_def" id="Sep_Tactics.sep_select|method"><span>sep_select</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="quoted"><span>‹
+  </span><span>Scan.lift</span><span> </span><span>Parse.int</span><span> </span><span>&gt;&gt;</span><span> </span><span class="main"><span>(</span></span><span class="keyword1"><span class="keyword"><span>fn</span></span></span><span> </span><span class="entity"><span>n</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="keyword1"><span class="keyword"><span>fn</span></span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="entity"><span>SIMPLE_METHOD'</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>sep_select_tac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>n</span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span>
+›</span></span><span> </span><span class="quoted"><span>"Select nth separation conjunct in conclusion"</span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>method_setup</span></span></span><span> </span><span class="entity_def" id="Sep_Tactics.sep_select_asm|method"><span>sep_select_asm</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="quoted"><span>‹
+  </span><span>Scan.lift</span><span> </span><span>Parse.int</span><span> </span><span>&gt;&gt;</span><span> </span><span class="main"><span>(</span></span><span class="keyword1"><span class="keyword"><span>fn</span></span></span><span> </span><span class="entity"><span>n</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="keyword1"><span class="keyword"><span>fn</span></span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="entity"><span>SIMPLE_METHOD'</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>sep_select_asm_tac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>n</span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span>
+›</span></span><span> </span><span class="quoted"><span>"Select nth separation conjunct in assumptions"</span></span><span>
+
+
+</span><span class="keyword1"><span class="command"><span>section</span></span></span><span> </span><span class="quoted"><span class="plain_text"><span>‹Substitution›</span></span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>method_setup</span></span></span><span> </span><span class="quoted"><span>"</span><span class="entity_def" id="Sep_Tactics.sep_subst|method"><span>sep_subst</span></span><span>"</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="quoted"><span>‹
+  </span><span>Scan.lift</span><span> </span><span class="main"><span>(</span></span><span>Args.mode</span><span> </span><span class="inner_quoted"><span>"asm"</span></span><span> </span><span>--</span><span> </span><span>Scan.optional</span><span> </span><span class="main"><span>(</span></span><span>Args.parens</span><span> </span><span class="main"><span>(</span></span><span>Scan.repeat</span><span> </span><span>Parse.nat</span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>[</span></span><span class="inner_numeral"><span>0</span></span><span class="main"><span>]</span></span><span class="main"><span>)</span></span><span> </span><span>--</span><span>
+    </span><span class="entity"><span>Attrib.thms</span></span><span> </span><span>&gt;&gt;</span><span> </span><span class="main"><span>(</span></span><span class="keyword1"><span class="keyword"><span>fn</span></span></span><span> </span><span class="main"><span>(</span></span><span class="main"><span>(</span></span><span class="entity"><span>asm</span></span><span class="main"><span>,</span></span><span> </span><span class="entity"><span>occs</span></span><span class="main"><span>)</span></span><span class="main"><span>,</span></span><span> </span><span class="entity"><span>thms</span></span><span class="main"><span>)</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="keyword1"><span class="keyword"><span>fn</span></span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="main"><span>=&gt;</span></span><span>
+      </span><span class="entity"><span>SIMPLE_METHOD'</span></span><span> </span><span class="main"><span>(</span></span><span class="main"><span>(</span></span><span class="keyword2"><span class="keyword"><span>if</span></span></span><span> </span><span class="entity"><span>asm</span></span><span> </span><span class="keyword2"><span class="keyword"><span>then</span></span></span><span> </span><span class="entity"><span>sep_subst_asm_tac</span></span><span> </span><span class="keyword2"><span class="keyword"><span>else</span></span></span><span> </span><span class="entity"><span>sep_subst_tac</span></span><span class="main"><span>)</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>occs</span></span><span> </span><span class="entity"><span>thms</span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span>
+›</span></span><span>
+</span><span class="quoted"><span>"single-step substitution after solving one separation logic assumption"</span></span><span>
+
+
+</span><span class="keyword1"><span class="command"><span>section</span></span></span><span> </span><span class="quoted"><span class="plain_text"><span>‹Forward Reasoning›</span></span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>method_setup</span></span></span><span> </span><span class="quoted"><span>"</span><span class="entity_def" id="Sep_Tactics.sep_drule|method"><span>sep_drule</span></span><span>"</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="quoted"><span>‹
+  </span><span class="entity"><span>Attrib.thms</span></span><span> </span><span>&gt;&gt;</span><span> </span><span class="main"><span>(</span></span><span class="keyword1"><span class="keyword"><span>fn</span></span></span><span> </span><span class="entity"><span>thms</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="keyword1"><span class="keyword"><span>fn</span></span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="entity"><span>SIMPLE_METHOD'</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>sep_dtac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>thms</span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span>
+›</span></span><span> </span><span class="quoted"><span>"drule after separating conjunction reordering"</span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>method_setup</span></span></span><span> </span><span class="quoted"><span>"</span><span class="entity_def" id="Sep_Tactics.sep_frule|method"><span>sep_frule</span></span><span>"</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="quoted"><span>‹
+  </span><span class="entity"><span>Attrib.thms</span></span><span> </span><span>&gt;&gt;</span><span> </span><span class="main"><span>(</span></span><span class="keyword1"><span class="keyword"><span>fn</span></span></span><span> </span><span class="entity"><span>thms</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="keyword1"><span class="keyword"><span>fn</span></span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="entity"><span>SIMPLE_METHOD'</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>sep_ftac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>thms</span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span>
+›</span></span><span> </span><span class="quoted"><span>"frule after separating conjunction reordering"</span></span><span>
+
+
+</span><span class="keyword1"><span class="command"><span>section</span></span></span><span> </span><span class="quoted"><span class="plain_text"><span>‹Backward Reasoning›</span></span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>method_setup</span></span></span><span> </span><span class="quoted"><span>"</span><span class="entity_def" id="Sep_Tactics.sep_rule|method"><span>sep_rule</span></span><span>"</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="quoted"><span>‹
+  </span><span class="entity"><span>Attrib.thms</span></span><span> </span><span>&gt;&gt;</span><span> </span><span class="main"><span>(</span></span><span class="keyword1"><span class="keyword"><span>fn</span></span></span><span> </span><span class="entity"><span>thms</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="keyword1"><span class="keyword"><span>fn</span></span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="entity"><span>SIMPLE_METHOD'</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>sep_rtac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>thms</span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span>
+›</span></span><span> </span><span class="quoted"><span>"applies rule after separating conjunction reordering"</span></span><span>
+
+
+</span><span class="keyword1"><span class="command"><span>section</span></span></span><span> </span><span class="quoted"><span class="plain_text"><span>‹Cancellation of Common Conjuncts via Elimination Rules›</span></span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>named_theorems</span></span></span><span> </span><span class="entity_def" id="Sep_Tactics.sep_cancel|attribute"><span class="entity_def" id="Sep_Tactics.sep_cancel|fact"><span>sep_cancel</span></span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>text</span></span></span><span> </span><span class="quoted"><span class="plain_text"><span>‹
+  The basic </span><span class="antiquoted"><span class="raw_text"><span class="operator"><span>‹</span></span><span>sep_cancel_tac›</span></span></span><span> is minimal. It only eliminates
+  erule-derivable conjuncts between an assumption and the conclusion.
+
+  To have a more useful tactic, we augment it with more logic, to proceed as
+  follows:
+  \begin{itemize}
+  \item try discharge the goal first using </span><span class="antiquoted"><span class="raw_text"><span class="operator"><span>‹</span></span><span>tac›</span></span></span><span>
+  \item if that fails, invoke </span><span class="antiquoted"><span class="raw_text"><span class="operator"><span>‹</span></span><span>sep_cancel_tac›</span></span></span><span>
+  \item if </span><span class="antiquoted"><span class="raw_text"><span class="operator"><span>‹</span></span><span>sep_cancel_tac›</span></span></span><span> succeeds
+    \begin{itemize}
+    \item try to finish off with tac (but ok if that fails)
+    \item try to finish off with </span><span class="antiquoted"><span class="antiquote"><span>@{</span></span><span class="operator"><span>term</span></span><span> </span><span class="quoted"><a class="entity_ref" href="Separation_Algebra.Separation_Algebra.html#Separation_Algebra.sep_algebra_class.sep_true|const"><span>sep_true</span></a></span><span class="antiquote"><span>}</span></span></span><span> (but ok if that fails)
+    \end{itemize}
+  \end{itemize}
+›</span></span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>ML</span></span></span><span> </span><span class="quoted"><span>‹
+  </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>sep_cancel_smart_tac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>tac</span></span><span> </span><span class="main"><span>=</span></span><span>
+    </span><span class="keyword2"><span class="keyword"><span>let</span></span></span><span> </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>TRY'</span></span><span> </span><span class="entity"><span>tac</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>tac</span></span><span> </span><span>ORELSE'</span><span> </span><span class="main"><span>(</span></span><span>K</span><span> </span><span>all_tac</span><span class="main"><span>)</span></span><span>
+    </span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span>
+      </span><span class="entity"><span>tac</span></span><span>
+      </span><span>ORELSE'</span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>sep_cancel_tac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>tac</span></span><span>
+               </span><span>THEN'</span><span> </span><span class="entity"><span>TRY'</span></span><span> </span><span class="entity"><span>tac</span></span><span>
+               </span><span>THEN'</span><span> </span><span class="entity"><span>TRY'</span></span><span> </span><span class="main"><span>(</span></span><span>resolve_tac</span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="antiquoted"><span class="entity"><span class="antiquote"><span>@{</span></span><span class="operator"><span>thms</span></span><span> </span><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.TrueI|fact"><span>TrueI</span></a><span class="antiquote"><span>}</span></span></span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span>
+      </span><span>ORELSE'</span><span> </span><span class="main"><span>(</span></span><span>eresolve_tac</span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="antiquoted"><span class="entity"><span class="antiquote"><span>@{</span></span><span class="operator"><span>thms</span></span><span> </span><a class="entity_ref" href="Separation_Algebra.Separation_Algebra.html#Separation_Algebra.sep_algebra_class.sep_conj_sep_emptyE|fact"><span>sep_conj_sep_emptyE</span></a><span class="antiquote"><span>}</span></span></span></span><span>
+               </span><span>THEN'</span><span> </span><span class="entity"><span>sep_cancel_tac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>tac</span></span><span>
+               </span><span>THEN'</span><span> </span><span class="entity"><span>TRY'</span></span><span> </span><span class="entity"><span>tac</span></span><span>
+               </span><span>THEN'</span><span> </span><span class="entity"><span>TRY'</span></span><span> </span><span class="main"><span>(</span></span><span>resolve_tac</span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="antiquoted"><span class="entity"><span class="antiquote"><span>@{</span></span><span class="operator"><span>thms</span></span><span> </span><a class="entity_ref" href="../../HOL/HOL/HOL.html#HOL.TrueI|fact"><span>TrueI</span></a><span class="antiquote"><span>}</span></span></span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span>
+    </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span class="main"><span>;</span></span><span>
+
+  </span><span class="keyword1"><span class="keyword"><span>fun</span></span></span><span> </span><span class="entity"><span>sep_cancel_smart_tac_rules</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>etacs</span></span><span> </span><span class="main"><span>=</span></span><span>
+      </span><span class="entity"><span>sep_cancel_smart_tac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="main"><span>(</span></span><span>FIRST'</span><span> </span><span class="main"><span>(</span></span><span class="main"><span>[</span></span><span>assume_tac</span><span> </span><span class="entity"><span>ctxt</span></span><span class="main"><span>]</span></span><span> </span><span>@</span><span> </span><span class="entity"><span>etacs</span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span class="main"><span>;</span></span><span>
+
+  </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>sep_cancel_syntax</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>Method.sections</span></span><span> </span><span class="main"><span>[</span></span><span>
+    </span><span>Args.add</span><span> </span><span>--</span><span> </span><span>Args.colon</span><span> </span><span>&gt;&gt;</span><span>
+      </span><span>K</span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>Method.modifier</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>Named_Theorems.add</span></span><span> </span><span class="antiquoted"><span class="antiquote"><span>@{</span></span><span class="operator"><span>named_theorems</span></span><span> sep_cancel</span><span class="antiquote"><span>}</span></span></span><span class="main"><span>)</span></span><span> </span><span class="antiquoted"><span class="operator"><span class="entity"><span>⌂</span></span></span></span><span class="main"><span>)</span></span><span class="main"><span>]</span></span><span class="main"><span>;</span></span><span>
+›</span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>method_setup</span></span></span><span> </span><span class="entity_def" id="Sep_Tactics.sep_cancel|method"><span>sep_cancel</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="quoted"><span>‹
+  </span><span class="entity"><span>sep_cancel_syntax</span></span><span> </span><span>&gt;&gt;</span><span> </span><span class="main"><span>(</span></span><span class="keyword1"><span class="keyword"><span>fn</span></span></span><span> </span><span class="main"><span>_</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="keyword1"><span class="keyword"><span>fn</span></span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="main"><span>=&gt;</span></span><span>
+    </span><span class="keyword2"><span class="keyword"><span>let</span></span></span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>etacs</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>map</span><span> </span><span class="main"><span>(</span></span><span>eresolve_tac</span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span>o</span><span> </span><span>single</span><span class="main"><span>)</span></span><span>
+        </span><span class="main"><span>(</span></span><span>rev</span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>Named_Theorems.get</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="antiquoted"><span class="antiquote"><span>@{</span></span><span class="operator"><span>named_theorems</span></span><span> sep_cancel</span><span class="antiquote"><span>}</span></span></span><span class="main"><span>)</span></span><span class="main"><span>)</span></span><span class="main"><span>;</span></span><span>
+    </span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span>
+      </span><span class="entity"><span>SIMPLE_METHOD'</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>sep_cancel_smart_tac_rules</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>etacs</span></span><span class="main"><span>)</span></span><span>
+    </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span class="main"><span>)</span></span><span>
+›</span></span><span> </span><span class="quoted"><span>"Separating conjunction conjunct cancellation"</span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>text</span></span></span><span> </span><span class="quoted"><span class="plain_text"><span>‹
+  As above, but use blast with a depth limit to figure out where cancellation
+  can be done.›</span></span></span><span>
+
+</span><span class="keyword1"><span class="command"><span>method_setup</span></span></span><span> </span><span class="entity_def" id="Sep_Tactics.sep_cancel_blast|method"><span>sep_cancel_blast</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="quoted"><span>‹
+  </span><span class="entity"><span>sep_cancel_syntax</span></span><span> </span><span>&gt;&gt;</span><span> </span><span class="main"><span>(</span></span><span class="keyword1"><span class="keyword"><span>fn</span></span></span><span> </span><span class="main"><span>_</span></span><span> </span><span class="main"><span>=&gt;</span></span><span> </span><span class="keyword1"><span class="keyword"><span>fn</span></span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="main"><span>=&gt;</span></span><span>
+    </span><span class="keyword2"><span class="keyword"><span>let</span></span></span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>rules</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span>rev</span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>Named_Theorems.get</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="antiquoted"><span class="antiquote"><span>@{</span></span><span class="operator"><span>named_theorems</span></span><span> sep_cancel</span><span class="antiquote"><span>}</span></span></span><span class="main"><span>)</span></span><span class="main"><span>;</span></span><span>
+      </span><span class="keyword1"><span class="keyword"><span>val</span></span></span><span> </span><span class="entity"><span>tac</span></span><span> </span><span class="main"><span>=</span></span><span> </span><span class="entity"><span>Blast.depth_tac</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>addIs</span></span><span> </span><span class="entity"><span>rules</span></span><span class="main"><span>)</span></span><span> </span><span class="inner_numeral"><span>10</span></span><span class="main"><span>;</span></span><span>
+    </span><span class="keyword2"><span class="keyword"><span>in</span></span></span><span>
+      </span><span class="entity"><span>SIMPLE_METHOD'</span></span><span> </span><span class="main"><span>(</span></span><span class="entity"><span>sep_cancel_smart_tac</span></span><span> </span><span class="entity"><span>ctxt</span></span><span> </span><span class="entity"><span>tac</span></span><span class="main"><span>)</span></span><span>
+    </span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span class="main"><span>)</span></span><span>
+›</span></span><span> </span><span class="quoted"><span>"Separating conjunction conjunct cancellation using blast"</span></span><span>
+
+</span><span class="keyword2"><span class="keyword"><span>end</span></span></span><span>
+</span></pre>
+</body>
+
+</html>
