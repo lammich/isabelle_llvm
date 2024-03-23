@@ -42,5 +42,24 @@ stest: stest.cpp introsort_instr.ll Makefile
 input.bin: file_generator Makefile
 	./file_generator input.bin 125000000
 
-run: do_benchmark input.bin all_benchmarks.sh
-	./all_benchmarks.sh
+log/sortbench-latest.log: do_benchmark input.bin distr_benchmarks.sh
+	./distr_benchmarks.sh
+
+log/sortbench-speedup-latest.log: do_benchmark input.bin speedup_benchmarks.sh
+	./speedup_benchmarks.sh
+
+log/sortbench-smallarrays-latest.log: do_benchmark input.bin ./smallarrays_benchmarks.sh
+	./smallarrays_benchmarks.sh
+
+log/sortbench-latest.pdf: log/sortbench-latest.log
+	./eval_benchmark.sh
+
+log/sortbench-speedup-latest.pdf: log/sortbench-speedup-latest.log
+	./eval_speedup.sh
+
+log/sortbench-smallarrays-latest.pdf: log/sortbench-smallarrays-latest.log
+	./eval_smallarrays.sh
+
+run: log/sortbench-latest.log log/sortbench-speedup-latest.log log/sortbench-smallarrays-latest.log
+
+report: log/sortbench-latest.pdf log/sortbench-speedup-latest.pdf log/sortbench-smallarrays-latest.pdf

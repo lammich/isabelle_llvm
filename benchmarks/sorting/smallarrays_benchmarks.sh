@@ -16,8 +16,8 @@ export S_SIZES="1000 2783 7743 21544 59948 166810 464159 1291550 3593814 1000000
 export INT_DATA="random"
 export STR_DATA="random"
 
-export INT_ALGOS="isabelle::pparqsort std::parsort boost::sample_sort"
-export STR_ALGOS="isabelle::pparqsort std::parsort boost::sample_sort"
+export INT_ALGOS="isabelle::pparqsort isabelle::parqsort std::parsort boost::sample_sort"
+export STR_ALGOS="isabelle::pparqsort isabelle::parqsort std::parsort boost::sample_sort"
 
 # export INT_ALGOS="isabelle::pparqsort naive::parqsort_vs_pp"
 # export STR_ALGOS="isabelle::pparqsort naive::parqsort_vs_pp"
@@ -33,8 +33,13 @@ export STR_ALGOS="isabelle::pparqsort std::parsort boost::sample_sort"
 
 ########################## END CONFIG SECTION ##################
 
+LOGDATE="$(date -Iseconds)"
+export LOGFILE="log/sortbench-smallarrays-$LOGDATE.log"
 
-export LOGFILE="log/sortbench-smallarrays-$(date -Iseconds).log"
+rm -f "log/sortbench-smallarrays-latest.log"
+ln -s "sortbench-smallarrays-$LOGDATE.log" "log/sortbench-smallarrays-latest.log"
+
+
 
 echo "Writing log to $LOGFILE"
 

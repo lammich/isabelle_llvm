@@ -1,0 +1,50 @@
+\documentclass[a4]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage{color}
+
+\usepackage{pgfplots}
+\usepgfplotslibrary{groupplots}
+
+\begin{document}
+
+  \newcommand{\plottim}[3]{
+  \begin{tikzpicture}
+    \begin{axis}[
+      ymajorgrids,
+      title={\large #1},
+      title style={at={(0.12,.75)}},
+      ybar=0pt,
+      width=\textwidth,
+      height=.249\textheight,
+      bar width=2.5pt,
+      xtick=data,
+      symbolic x coords={rev-sorted-end-10,rev-sorted-end-1,sorted-end-.1,almost-sorted-50,random-boolean,organ-pipe,sorted-end-10,equal,rev-sorted-middle-.1,rev-sorted,sorted-middle-1,rev-sorted-middle-10,random,almost-sorted-.1,sorted,rev-sorted-middle-1,sorted-middle-.1,almost-sorted-10,almost-sorted-1,sorted-middle-10,rev-sorted-end-.1,sorted-end-1,random-dup-10,}
+      ,
+      xlabel near ticks, x tick label style={rotate=45,anchor=east,font=\tiny},
+      ytick distance={200},
+      legend style = {
+%         legend pos= north east,
+        at = {(.87,.97)},
+        cells={anchor=west},
+        font=\tiny
+      },
+    ]
+
+      \input{#2}
+
+      \addplot[black, thin, sharp plot,update limits=false]
+	coordinates {([normalized]-10,1) ([normalized]100,1)};
+% 	node[above] at (axis cs:1950,4.3e7) {Houses};
+    \end{axis}
+  \end{tikzpicture}
+  }
+
+
+  \plottim{uint64}{d_uint64.tex}
+
+  \clearpage
+
+  \plottim{llstring}{d_llstring.tex}
+
+\end{document}

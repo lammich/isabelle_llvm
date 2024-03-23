@@ -1,0 +1,66 @@
+\documentclass[a4]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage{color}
+
+\usepackage{pgfplots}
+\usepgfplotslibrary{groupplots}
+
+\begin{document}
+
+  \begin{tikzpicture}
+    \begin{axis}[
+      xlabel near ticks,
+      legend style = {
+        at = {(.97,.4)},
+        cells={anchor=west},
+        font=\footnotesize
+      },
+      ymajorgrids,
+      xmin=1, ymin=1,
+      title={\large uint64},
+      title style={at={(0.25,.75)}},
+      width=.9\textwidth,
+    ]
+      \input{d_uint64}
+
+      \draw[black, thin, sharp plot]
+      (axis cs:\pgfkeysvalueof{/pgfplots/xmin},\pgfkeysvalueof{/pgfplots/xmin}) --
+      (axis cs:\pgfkeysvalueof{/pgfplots/xmax},\pgfkeysvalueof{/pgfplots/xmax});
+
+%       \legend{}
+
+%       \addplot[black, thin, sharp plot, update limits=false] {\x};
+    \end{axis}
+  \end{tikzpicture}
+
+  \clearpage
+
+  \begin{tikzpicture}
+    \begin{axis}[
+      xlabel near ticks,
+      legend style = {
+        at = {(.97,.4)},
+        cells={anchor=west},
+        font=\footnotesize
+      },
+      ymajorgrids,
+      xmin=1, ymin=1,
+      title={\large String},
+      title style={at={(0.25,.75)}},
+      width=.9\textwidth,
+    ]
+      \input{d_llstring}
+
+      \draw[black, thin, sharp plot]
+      (axis cs:\pgfkeysvalueof{/pgfplots/xmin},\pgfkeysvalueof{/pgfplots/xmin}) --
+      (axis cs:\pgfkeysvalueof{/pgfplots/xmax},\pgfkeysvalueof{/pgfplots/xmax});
+
+%       \legend{}
+
+%       \addplot[black, thin, sharp plot, update limits=false] {\x};
+    \end{axis}
+  \end{tikzpicture}
+
+
+\end{document}

@@ -1,0 +1,50 @@
+\documentclass[a4]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage{color}
+
+\usepackage{pgfplots}
+\usepgfplotslibrary{groupplots}
+
+\begin{document}
+
+  \begin{tikzpicture}
+    \begin{loglogaxis}[
+      xlabel near ticks,
+      legend style = {
+        at = {(.97,.4)},
+        cells={anchor=west},
+        font=\footnotesize
+      },
+      ymajorgrids,
+%       xmin=10^4,xmax=10^8,
+      title={\large uint64},
+      title style={at={(0.25,.75)}},
+      width=.9\textwidth,
+    ]
+      \input{d_uint64.tex}
+    \end{loglogaxis}
+  \end{tikzpicture}
+
+  \clearpage
+
+  \begin{tikzpicture}
+    \begin{loglogaxis}[
+      xlabel near ticks,
+      legend style = {
+        at = {(.97,.4)},
+        cells={anchor=west},
+        font=\footnotesize
+      },
+      ymajorgrids,
+%       xmin=10^3,xmax=10^7,
+      title={\large llstring},
+      title style={at={(0.25,.75)}},
+      width=.9\textwidth,
+%       height=.3\textheight
+    ]
+      \input{d_llstring.tex}
+    \end{loglogaxis}
+  \end{tikzpicture}
+
+\end{document}

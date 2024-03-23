@@ -4,6 +4,7 @@
 
 ########################## BEGIN CONFIG SECTION ##################
 
+
 mtype=$1
 if [[ $mtype == "server" ]]; then
   function tmask() {
@@ -20,7 +21,16 @@ elif [[ $mtype == "laptop" ]]; then
   TNUM=12
 else
   echo "Unknown machine config: $mtype"
-  exit 1
+
+  TNUM=$(cat /proc/cpuinfo | grep '^processor' | wc -l)
+
+  echo "Guessing processor allocation: $TNUM cores's at Ids: 0..<$TNUM"
+  echo "Guess may be wrong depending on you machine!"
+
+  function tmask() {
+    printf "0x%x" $((2**$1 - 1 ))
+  }
+
 fi
 
 # Defaults
@@ -38,14 +48,15 @@ export INT_DATA="random"
 
 export STR_DATA="random"
 
-# export INT_ALGOS="isabelle::parqsort isabelle::pparqsort std::parsort boost::sample_sort"
-# export STR_ALGOS="isabelle::parqsort isabelle::pparqsort std::parsort boost::sample_sort"
-
-export INT_ALGOS="isabelle::pparqsort naive::parqsort_vs_pp"
-export STR_ALGOS="isabelle::pparqsort naive::parqsort_vs_pp"
+export INT_ALGOS="isabelle::parqsort isabelle::pparqsort std::parsort boost::sample_sort"
+export STR_ALGOS="isabelle::parqsort isabelle::pparqsort std::parsort boost::sample_sort"
 
 
 # CUSTOM Ad-HOC Overrides
+
+# export INT_ALGOS="isabelle::pparqsort naive::parqsort_vs_pp"
+# export STR_ALGOS="isabelle::pparqsort naive::parqsort_vs_pp"
+
 
 # export INT_DATA="random organ-pipe"
 # export STR_DATA=""
@@ -56,7 +67,11 @@ export STR_ALGOS="isabelle::pparqsort naive::parqsort_vs_pp"
 ########################## END CONFIG SECTION ##################
 
 
-export LOGFILE="log/sortbench-speedup-$(date -Iseconds).log"
+export LOGDATE="$(date -Iseconds)"
+
+export LOGFILE="log/sortbench-speedup-$LOGDATE.log"
+rm -f "log/sortbench-speedup-latest.log"
+ln -s "sortbench-speedup-$LOGDATE.log" "log/sortbench-speedup-latest.log"
 
 echo "Writing log to $LOGFILE"
 
@@ -104,5 +119,23 @@ done
 # #   run_pdq_str_isa $i
 # #   run_pdq_str_std $i
 # done
+
+
+# if $CR_REPORT; then
+#   rm -rf generate
+#   mkdir -p generate
+#
+#   ./__eval_speedup.awk uint64 < "$LOGFILE" > generate/d_uint64.tex
+#   ./__eval_speedup.awk llstring < "$LOGFILE" > generate/d_llstring.tex
+#
+#   cp speedup_report.tex generate/
+#
+#   cd generate
+#   pdflatex speedup_report
+#   cp speedup_report.pdf "../log/speedup_report-$LOGDATE.pdf"
+#   cd ..
+#
+# fi
+#
 
 
