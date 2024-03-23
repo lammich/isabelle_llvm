@@ -111,7 +111,12 @@ The main features are:
   This will run the binary search, KMP, and parallel sorting benchmarks.
   Warning: We have only tested this on a Linux x86_64 platform so far. 
   We do not (yet) know how LLVM will digest our code on other platforms.
-    
+
+  To render the benchmark results as pdf file, type (still in sorting directory):
+
+    make report
+
+
 ## Re-Checking the Proofs
   To re-check the proofs, run
 
