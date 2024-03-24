@@ -12,34 +12,34 @@ compile_gcc=g++ -std=c++20 -Wall -Wno-unused-function -flto -pthread -ltbb -O4 -
 sexplore: sexplore.cpp
 	$(compile) ./sexplore.cpp -o sexplore
 
-file_generator: file_generator.cpp Makefile
+file_generator: file_generator.cpp
 	$(compile) ./file_generator.cpp -o file_generator
 
-do_benchmark: do_benchmark.cpp $(gcode)/introsort.ll $(libs) Makefile
+do_benchmark: do_benchmark.cpp $(gcode)/introsort.ll $(libs)
 	$(compile) ./do_benchmark.cpp $(gcode)/introsort.ll -o do_benchmark
 
-do_benchmark_gcc: do_benchmark.cpp  Makefile
+do_benchmark_gcc: do_benchmark.cpp
 	$(compile_gcc) -DNO_LLVM do_benchmark.cpp -o do_benchmark_gcc
 
-benchmark_numbers: benchmark_numbers.cpp $(gcode)/introsort.ll $(libs) Makefile
+benchmark_numbers: benchmark_numbers.cpp $(gcode)/introsort.ll $(libs)
 	$(compile) ./benchmark_numbers.cpp $(gcode)/introsort.ll -o benchmark_numbers
 
-benchmark_numbersXXX: benchmark_numbers.cpp $(gcode)/introsortXXXOO.ll $(libs) Makefile
+benchmark_numbersXXX: benchmark_numbers.cpp $(gcode)/introsortXXXOO.ll $(libs)
 	$(compile) ./benchmark_numbers.cpp $(gcode)/introsortXXXOO.ll -o benchmark_numbersXXX
 
-benchmark_numbersUGI: benchmark_numbers.cpp $(gcode)/introsortUGI.ll $(libs) Makefile
+benchmark_numbersUGI: benchmark_numbers.cpp $(gcode)/introsortUGI.ll $(libs)
 	$(compile) ./benchmark_numbers.cpp $(gcode)/introsortUGI.ll -o benchmark_numbersUGI
 
-benchmark_strings: benchmark_strings.cpp $(gcode)/introsort.ll $(libs) Makefile
+benchmark_strings: benchmark_strings.cpp $(gcode)/introsort.ll $(libs)
 	$(compile) ./benchmark_strings.cpp $(gcode)/introsort.ll -o benchmark_strings
 
-stest: stest.cpp introsort_instr.ll Makefile
+stest: stest.cpp introsort_instr.ll
 #	$(compile) stest.cpp introsort_instr.ll -o stest
 	$(compile) stest.cpp $(gcode)/heapsort.ll -o stest
 
 .PHONY: run
 
-input.bin: file_generator Makefile
+input.bin: file_generator
 	./file_generator input.bin 125000000
 
 log/sortbench-latest.log: do_benchmark input.bin distr_benchmarks.sh

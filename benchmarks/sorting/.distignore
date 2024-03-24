@@ -2,3 +2,4 @@ BlockQuicksort
 log/*
 input.bin
 .kdev4
+generate
