@@ -112,6 +112,7 @@ The main features are:
     make run
 
   This will run the binary search, KMP, and parallel sorting benchmarks.
+  In order to run the Imperative HOL benchmarks for bs and KMP, an MLton compiler is required.
   Warning: We have only tested this on a Linux x86_64 platform so far. 
   We do not (yet) know how LLVM will digest our code on other platforms.
 
@@ -119,12 +120,14 @@ The main features are:
 
     make report
 
+  This requires pdflatex with the pgfplots package.
+
 
 ## Re-Checking the Proofs
   To re-check the proofs, run
 
       cd thys 
-      isabelle build -D.
+      isabelle build -b -D.
 
   Here, <code>isabelle</code> must refer to <code>/your/path/to/Isabelle2022/bin/isabelle</code> from your Isabelle installation.
   This will invoke Isabelle to check all proofs and re-generate the exported code.
