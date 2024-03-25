@@ -34,7 +34,7 @@ The main features are:
   Warning: the .thy files in the download are best viewed with the [Isabelle/HOL](https://isabelle.in.tum.de) IDE.
 
 ### Git Repository
-  The project is hosted on github [github.com/lammich/isabelle_llvm/tree/2022](https://github.com/lammich/isabelle_llvm/tree/2022)
+  The project is hosted on github [github.com/lammich/isabelle_llvm/tree/2023](https://github.com/lammich/isabelle_llvm/tree/2023)
 
 ### Starting Points for Browsing
   Here are some default starting points for browsing the theories
@@ -82,8 +82,11 @@ The main features are:
 
   [Binary Search](browser_info/Unsorted/Examples/Bin_Search.html)
   
-  For the ISA-SAT verified SAT solver, see its own [homepage](https://m-fleury.github.io/isasat/isasat.html)
-  
+  ISA-SAT verified SAT solver: [homepage](https://m-fleury.github.io/isasat/isasat.html)
+
+  lrat-isa UNSAT certificate checker: [homepage](https://github.com/lammich/lrat_isa)
+
+
 #### Isabelle-LLVM
   [IICF (Isabelle-LLVM + Refinement Framework + Collection Framework)](browser_info/Unsorted/Isabelle_LLVM/IICF.html)
 
@@ -96,7 +99,7 @@ The main features are:
   * To re-check the proofs: Working installation of [Isabelle/HOL](https://isabelle.in.tum.de) 
     with the [Archive of Formal Proofs](https://www.isa-afp.org) installed 
     as as described on [https://www.isa-afp.org/using.shtml](https://www.isa-afp.org/using.shtml). 
-    We require version = Isabelle-2022, which, at the time of writing, is the current version.
+    We require version = Isabelle-2023, which, at the time of writing, is the current version.
   * To run the regression tests: [Valgrind](https://www.valgrind.org/) version >= 3.0.0
 
 ## Compiling and running benchmarks
@@ -112,7 +115,7 @@ The main features are:
   Warning: We have only tested this on a Linux x86_64 platform so far. 
   We do not (yet) know how LLVM will digest our code on other platforms.
 
-  To render the benchmark results as pdf file, type (still in sorting directory):
+  To render the sorting benchmark results as pdf file, type (still in sorting directory):
 
     make report
 

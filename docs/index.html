@@ -182,7 +182,7 @@
 <p>You can <a href="browser_info/Unsorted/Isabelle_LLVM/">browse the theories</a> or <a href="dist.tgz">download</a> the files. (The download link won’t work if you are browsing this from inside the downloaded archive!)</p>
 <p>Warning: the .thy files in the download are best viewed with the <a href="https://isabelle.in.tum.de">Isabelle/HOL</a> IDE.</p>
 <h3 id="git-repository">Git Repository</h3>
-<p>The project is hosted on github <a href="https://github.com/lammich/isabelle_llvm/tree/2022">github.com/lammich/isabelle_llvm/tree/2022</a></p>
+<p>The project is hosted on github <a href="https://github.com/lammich/isabelle_llvm/tree/2023">github.com/lammich/isabelle_llvm/tree/2023</a></p>
 <h3 id="starting-points-for-browsing">Starting Points for Browsing</h3>
 <p>Here are some default starting points for browsing the theories</p>
 <h4 id="parallel-paper">Parallel Paper</h4>
@@ -204,7 +204,8 @@
 <p><a href="browser_info/Unsorted/Examples/Sorting_PDQ.html">PDQ Sort</a></p>
 <p><a href="browser_info/Unsorted/Examples/KMP.html">Knuth Morris Pratt String Search</a></p>
 <p><a href="browser_info/Unsorted/Examples/Bin_Search.html">Binary Search</a></p>
-<p>For the ISA-SAT verified SAT solver, see its own <a href="https://m-fleury.github.io/isasat/isasat.html">homepage</a></p>
+<p>ISA-SAT verified SAT solver: <a href="https://m-fleury.github.io/isasat/isasat.html">homepage</a></p>
+<p>lrat-isa UNSAT certificate checker: <a href="https://github.com/lammich/lrat_isa">homepage</a></p>
 <h4 id="isabelle-llvm">Isabelle-LLVM</h4>
 <p><a href="browser_info/Unsorted/Isabelle_LLVM/IICF.html">IICF (Isabelle-LLVM + Refinement Framework + Collection Framework)</a></p>
 <p><a href="browser_info/Unsorted/Isabelle_LLVM/LLVM_Shallow.html">Shallow Embedding of LLVM Semantics</a></p>
@@ -212,7 +213,7 @@
 <ul>
 <li>To compile the LLVM code: Working installation of <a href="http://releases.llvm.org/">LLVM</a> version &gt;= 10.0.0.</li>
 <li>To compile the functional code: An <a href="http://mlton.org/">MLton</a> compiler version &gt;= 20100608.</li>
-<li>To re-check the proofs: Working installation of <a href="https://isabelle.in.tum.de">Isabelle/HOL</a> with the <a href="https://www.isa-afp.org">Archive of Formal Proofs</a> installed as as described on <a href="https://www.isa-afp.org/using.shtml">https://www.isa-afp.org/using.shtml</a>. We require version = Isabelle-2022, which, at the time of writing, is the current version.</li>
+<li>To re-check the proofs: Working installation of <a href="https://isabelle.in.tum.de">Isabelle/HOL</a> with the <a href="https://www.isa-afp.org">Archive of Formal Proofs</a> installed as as described on <a href="https://www.isa-afp.org/using.shtml">https://www.isa-afp.org/using.shtml</a>. We require version = Isabelle-2023, which, at the time of writing, is the current version.</li>
 <li>To run the regression tests: <a href="https://www.valgrind.org/">Valgrind</a> version &gt;= 3.0.0</li>
 </ul>
 <h2 id="compiling-and-running-benchmarks">Compiling and running benchmarks</h2>
@@ -223,7 +224,7 @@
 cd sorting
 make run</code></pre>
 <p>This will run the binary search, KMP, and parallel sorting benchmarks. Warning: We have only tested this on a Linux x86_64 platform so far. We do not (yet) know how LLVM will digest our code on other platforms.</p>
-<p>To render the benchmark results as pdf file, type (still in sorting directory):</p>
+<p>To render the sorting benchmark results as pdf file, type (still in sorting directory):</p>
 <pre><code>make report</code></pre>
 <h2 id="re-checking-the-proofs">Re-Checking the Proofs</h2>
 <p>To re-check the proofs, run</p>
