@@ -194,7 +194,10 @@ contains updated and more extensive benchmarks.
 %   \item the first verified implementation of a parallel sorting algorithm.
 % \end{itemize}
 
-The formalization is available at \href{https://www21.in.tum.de/~lammich/isabelle_llvm_par/}{www21.in.tum.de/$\sim$lammich/isabelle\_llvm\_par}.
+Isabelle LLVM is hosted at \href{https://lammich.github.io/isabelle_llvm/index.html}{lammich.github.io/isabelle\_llvm}.
+The version described in this paper has been archived~\cite{Isabelle_LLVM_artefact}.
+%
+% The formalization is available at \href{https://www21.in.tum.de/~lammich/isabelle_llvm_par/}{www21.in.tum.de/$\sim$lammich/isabelle\_llvm\_par}.
 
 
 \subsection{Overview}\label{sec:intro_overview}
@@ -1439,8 +1442,7 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
 
     interpretation idx: pcmp lt_idx lt_idx$_\dagger$ arr$_A$ idx$_A$   \<proof>
   \end{lstlisting}
-  This yields sorting algorithms for sorting indexes, taking an extra parameter for the array to index into.
-  For our sampling application, we use \is{idx.introsort xs}.
+  This instantiates the generic sorting algorithms defined in the \is{pcmp} locale to use \is{lt_idx xs} as comparison function, taking \is{xs} as an extra parameter. To sort our list \is{$is$} of sample indexes into \is{xs}, we use the instantiation of the introsort algorithm: \is{idx.introsort xs $is$}.
 
   \subsection{Parallel Partitioning}\label{sec:ppar}
   While our parallel quicksort scheme parallelizes the sorting, partitioning is still a bottleneck:
@@ -2517,7 +2519,7 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
     several bottom-up refinement steps would be necessary, ultimately arriving at something similarly abstract
     as our initial abstract algorithm.
 
-    \subsection{Statistics}
+    \subsection{Development Effort}
     The Isabelle Refinement Framework for LLVM consists of roughly 45k lines of theory text and Isabelle-ML code (referred to as kLOC from now on). The sorting algorithms comprise another 14kLOC.
 
     Integrating the initial version of the parallel semantics into the framework, and verifying the parallel sorting algorithm with sequential partitioning, as reported in our ITP 2022 paper~\cite{La22}, took us roughly 6 months\footnote{As we do not have precise work time logs, we report calendar months during which we worked almost full-time on the project.}. During this time, we abandoned an initial formalization for the Imperative/HOL back end, as the achievable performance was unsatisfactory. We also abandoned a naive formalization of the parallel operator for the LLVM back end, to finally arrive at what is described in our ITP 2022 paper. Effectively, we added about 6kLOC to the framework and adapted most of the remaining code. The parallel sorting algorithm adds another kLOC.
@@ -2641,7 +2643,7 @@ We also use underscores to indicate the parameter positions, e.g., \is${_..<_}$ 
       LLVM programs~\cite{HaLa21-toplas,HaLa21}. This could be combined with our parallel extension, to verify the
       complexity (e.g. work and span) of parallel algorithms.
 
-      An important aspect is the scalability of our tools. The current implementation scales to small software, like the verified IsaSAT-solver~\cite{FlLa23}, which actually uses our sequential sorting algorithms. However, for projects of this size, the times needed by Sepref and the LLVM code exporter easily get into the order of dozens of minutes, and some manual performance tweaks are required (cf.~\cite{FlLa23}[Sec.~5]).
+      An important aspect is the scalability of our tools. The current implementation scales to small software systems, like the verified IsaSAT-solver~\cite{FlLa23}, which actually uses our sequential sorting algorithms. However, for projects of this size, the times needed by Sepref and the LLVM code exporter easily get into the order of dozens of minutes, and some manual performance tweaks are required (cf.~\cite{FlLa23}[Sec.~5]).
       Further improvement of the scalability is left to future work.
 
       Another direction for future work is to further optimize our verified sorting algorithm.
