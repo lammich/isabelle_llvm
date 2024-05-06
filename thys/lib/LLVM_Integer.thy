@@ -226,8 +226,8 @@ lemma bin_to_bl_div2p_shift: "\<lbrakk>n\<ge>0; n<2^w; k\<le>w\<rbrakk> \<Longri
   apply clarsimp
   apply auto
    apply (auto simp: butlast_rest_bin nth_Cons nth_append nth_bin_to_bl split: nat.splits if_splits)
-  subgoal apply (auto simp: bit_int_def algebra_simps div_div_p2_eq_div_p2s) 
-    by (metis Nat.add_diff_assoc2 Suc_leI add.commute bits_div_0 div_div_p2_eq_div_p2s(1) div_pos_pos_trivial dvd_0_right)
+  subgoal apply (clarsimp simp: bit_int_def algebra_simps div_div_p2_eq_div_p2s ) 
+    by (smt (verit, ccfv_SIG) Suc_leI even_zero le_add_diff power_increasing zdiv_eq_0_iff)
   subgoal 
     by (simp add: add.commute bit_int_def div_exp_eq)
   subgoal 

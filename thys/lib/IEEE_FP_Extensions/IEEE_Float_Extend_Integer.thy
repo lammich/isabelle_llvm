@@ -154,14 +154,14 @@ subsection \<open>Floating Point to Integer Conversion\<close>
       apply (clarsimp simp: apsnd_def map_prod_def drop_bit_eq_div word_split_def split: prod.split)
       apply (simp add: unat_ucast LEN1' mod_mod_power unat_div algebra_simps power_mod_div)
       done
-      
+
     lemma sign_FoW: "sign (FoW a) = unat a div 2 ^ (LENGTH('e) + LENGTH('f))"  
       unfolding FoW_def float_of_word_def
       apply simp
       apply transfer'
       apply (clarsimp simp: apsnd_def map_prod_def drop_bit_eq_div word_split_def split: prod.split)
       apply (simp add: unat_ucast LEN LEN1' mod_mod_power unat_div algebra_simps power_mod_div)
-      by (metis LEN1 LEN1' bits_div_by_1 div_exp_mod_exp_eq numeral_2_eq_2 power_one_right unat_word_ariths(6) unsigned_1)
+      by (metis LEN1 LEN1' div_by_1 div_exp_mod_exp_eq numeral_2_eq_2 power_one_right unat_word_ariths(6) unsigned_1)
       
     lemmas FoW_components = fraction_FoW exponent_FoW sign_FoW
             

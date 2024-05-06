@@ -14,14 +14,17 @@ begin
   lemma ndomIff: "i\<notin>dom m \<longleftrightarrow> m i = None" by auto
   
   lemma nat_minus1_less_if_neZ[simp]: "a - Suc 0 < a \<longleftrightarrow> a\<noteq>0" by auto  
+  ML_val\<open>try\<close>
 
-  
+
+
+  (*@PETER: Audit please*)
   ML \<open>
-    fun trace_exn msg e x = e x
-      handle exn => (
+    fun trace_exn msg e x = \<^try>\<open>e x catch exn => (
         if not (Exn.is_interrupt exn) then msg () |> tracing else ();
         Exn.reraise exn
-      )
+      )\<close>  
+       
   \<close>
   
   
