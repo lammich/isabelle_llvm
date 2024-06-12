@@ -1,4 +1,4 @@
-theory Scratch
+theory Float_Setup
 imports "Isabelle_LLVM.IICF"
 begin
 
