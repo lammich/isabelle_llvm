@@ -226,7 +226,7 @@ lemma qs_partition_correct:
   subgoal
     by (metis slice_eq_mset_eq_length swap_length) 
   subgoal apply (clarsimp simp: swap_def)
-    by (metis (full_types) More_List.swap_def atLeastSucLessThan_greaterThanLessThan greaterThanLessThan_iff less_le_trans swap_nth2) 
+    by (metis (full_types) LLVM_More_List.swap_def atLeastSucLessThan_greaterThanLessThan greaterThanLessThan_iff less_le_trans swap_nth2)
   subgoal
     by (metis (mono_tags) greaterThanLessThan_iff leD le_less_trans less_le_trans nat_le_linear not_less_eq_eq slice_eq_mset_eq_length swap_indep swap_nth1) 
   subgoal 

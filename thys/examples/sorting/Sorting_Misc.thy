@@ -166,10 +166,10 @@ lemma slice_swap: "\<lbrakk>i\<in>{l..<h}; j\<in>{l..<h}; h\<le>length xs\<rbrak
   by (auto simp: drop_update_swap)
   
 lemma take_swap_outside[simp]: "l\<le>i \<Longrightarrow> l\<le>j \<Longrightarrow> take l (swap xs i j) = take l xs"  
-  by (simp add: More_List.swap_def)
+  by (simp add: LLVM_More_List.swap_def)
 
 lemma drop_swap_outside[simp]: "i<h \<Longrightarrow> j<h \<Longrightarrow> drop h (swap xs i j) = drop h xs"  
-  by (simp add: More_List.swap_def)
+  by (simp add: LLVM_More_List.swap_def)
 
     
 lemma slice_append:

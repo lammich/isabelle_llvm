@@ -1,6 +1,6 @@
 section \<open>Additions to Separation Algebra Library\<close>
 theory Sep_Algebra_Add
-imports "Separation_Algebra.Sep_Tactics"
+imports "Separation_Algebra.Sep_Tactics" "HOL-Library.Product_Plus"
 begin
 
 no_notation pred_K ("\<langle>_\<rangle>")
@@ -129,8 +129,8 @@ end
 instantiation prod :: (stronger_sep_algebra, stronger_sep_algebra) stronger_sep_algebra
 begin
   definition "a##b \<longleftrightarrow> fst a ## fst b \<and> snd a ## snd b"
-  definition "a+b = (fst a + fst b, snd a + snd b)"  
-  definition "0 = (0,0)"
+  (*definition "a+b = (fst a + fst b, snd a + snd b)"  
+  definition "0 = (0,0)"*)
   
   instance
     apply standard
@@ -143,7 +143,8 @@ end
 lemma sep_disj_prod_lower[sep_algebra_simps]: "(a,b) ## (c,d) \<longleftrightarrow> a##c \<and> b##d"
   by (simp add: sep_disj_prod_def)
   
-lemma plus_prod_lower[sep_algebra_simps]: "(a,b) + (c,d) = (a+c,b+d)"
+(* In default simpset as add_Pair (by HOL_Library.Product_Plus): *)  
+lemma plus_prod_lower: "(a,b) + (c,d) = (a+c,b+d)"
   by (simp add: plus_prod_def)
 
 instance prod :: (unique_zero_sep_algebra,unique_zero_sep_algebra) unique_zero_sep_algebra

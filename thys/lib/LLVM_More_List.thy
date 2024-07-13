@@ -1,4 +1,4 @@
-theory More_List
+theory LLVM_More_List
 imports Main "HOL-Library.Multiset"
 begin
 
