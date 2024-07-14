@@ -596,6 +596,19 @@ val semidom_nat =
     semiring_1_no_zero_divisors_semidom = semiring_1_no_zero_divisors_nat}
   : nat semidom;
 
+type 'a divide_trivial =
+  {one_divide_trivial : 'a one, zero_divide_trivial : 'a zero,
+    divide_divide_trivial : 'a divide};
+val one_divide_trivial = #one_divide_trivial : 'a divide_trivial -> 'a one;
+val zero_divide_trivial = #zero_divide_trivial : 'a divide_trivial -> 'a zero;
+val divide_divide_trivial = #divide_divide_trivial :
+  'a divide_trivial -> 'a divide;
+
+val divide_trivial_nat =
+  {one_divide_trivial = one_nat, zero_divide_trivial = zero_nat,
+    divide_divide_trivial = divide_nat}
+  : nat divide_trivial;
+
 type 'a semiring_no_zero_divisors_cancel =
   {semiring_no_zero_divisors_semiring_no_zero_divisors_cancel :
      'a semiring_no_zero_divisors};
@@ -604,11 +617,12 @@ val semiring_no_zero_divisors_semiring_no_zero_divisors_cancel =
   'a semiring_no_zero_divisors_cancel -> 'a semiring_no_zero_divisors;
 
 type 'a semidom_divide =
-  {divide_semidom_divide : 'a divide, semidom_semidom_divide : 'a semidom,
+  {divide_trivial_semidom_divide : 'a divide_trivial,
+    semidom_semidom_divide : 'a semidom,
     semiring_no_zero_divisors_cancel_semidom_divide :
       'a semiring_no_zero_divisors_cancel};
-val divide_semidom_divide = #divide_semidom_divide :
-  'a semidom_divide -> 'a divide;
+val divide_trivial_semidom_divide = #divide_trivial_semidom_divide :
+  'a semidom_divide -> 'a divide_trivial;
 val semidom_semidom_divide = #semidom_semidom_divide :
   'a semidom_divide -> 'a semidom;
 val semiring_no_zero_divisors_cancel_semidom_divide =
@@ -621,15 +635,11 @@ val semiring_no_zero_divisors_cancel_nat =
   : nat semiring_no_zero_divisors_cancel;
 
 val semidom_divide_nat =
-  {divide_semidom_divide = divide_nat, semidom_semidom_divide = semidom_nat,
+  {divide_trivial_semidom_divide = divide_trivial_nat,
+    semidom_semidom_divide = semidom_nat,
     semiring_no_zero_divisors_cancel_semidom_divide =
       semiring_no_zero_divisors_cancel_nat}
   : nat semidom_divide;
-
-type 'a algebraic_semidom =
-  {semidom_divide_algebraic_semidom : 'a semidom_divide};
-val semidom_divide_algebraic_semidom = #semidom_divide_algebraic_semidom :
-  'a algebraic_semidom -> 'a semidom_divide;
 
 type 'a semiring_modulo =
   {comm_semiring_1_cancel_semiring_modulo : 'a comm_semiring_1_cancel,
@@ -640,26 +650,47 @@ val comm_semiring_1_cancel_semiring_modulo =
 val modulo_semiring_modulo = #modulo_semiring_modulo :
   'a semiring_modulo -> 'a modulo;
 
+type 'a semiring_modulo_trivial =
+  {divide_trivial_semiring_modulo_trivial : 'a divide_trivial,
+    semiring_modulo_semiring_modulo_trivial : 'a semiring_modulo};
+val divide_trivial_semiring_modulo_trivial =
+  #divide_trivial_semiring_modulo_trivial :
+  'a semiring_modulo_trivial -> 'a divide_trivial;
+val semiring_modulo_semiring_modulo_trivial =
+  #semiring_modulo_semiring_modulo_trivial :
+  'a semiring_modulo_trivial -> 'a semiring_modulo;
+
+type 'a algebraic_semidom =
+  {semidom_divide_algebraic_semidom : 'a semidom_divide};
+val semidom_divide_algebraic_semidom = #semidom_divide_algebraic_semidom :
+  'a algebraic_semidom -> 'a semidom_divide;
+
 type 'a semidom_modulo =
   {algebraic_semidom_semidom_modulo : 'a algebraic_semidom,
-    semiring_modulo_semidom_modulo : 'a semiring_modulo};
+    semiring_modulo_trivial_semidom_modulo : 'a semiring_modulo_trivial};
 val algebraic_semidom_semidom_modulo = #algebraic_semidom_semidom_modulo :
   'a semidom_modulo -> 'a algebraic_semidom;
-val semiring_modulo_semidom_modulo = #semiring_modulo_semidom_modulo :
-  'a semidom_modulo -> 'a semiring_modulo;
-
-val algebraic_semidom_nat =
-  {semidom_divide_algebraic_semidom = semidom_divide_nat} :
-  nat algebraic_semidom;
+val semiring_modulo_trivial_semidom_modulo =
+  #semiring_modulo_trivial_semidom_modulo :
+  'a semidom_modulo -> 'a semiring_modulo_trivial;
 
 val semiring_modulo_nat =
   {comm_semiring_1_cancel_semiring_modulo = comm_semiring_1_cancel_nat,
     modulo_semiring_modulo = modulo_nat}
   : nat semiring_modulo;
 
+val semiring_modulo_trivial_nat =
+  {divide_trivial_semiring_modulo_trivial = divide_trivial_nat,
+    semiring_modulo_semiring_modulo_trivial = semiring_modulo_nat}
+  : nat semiring_modulo_trivial;
+
+val algebraic_semidom_nat =
+  {semidom_divide_algebraic_semidom = semidom_divide_nat} :
+  nat algebraic_semidom;
+
 val semidom_modulo_nat =
   {algebraic_semidom_semidom_modulo = algebraic_semidom_nat,
-    semiring_modulo_semidom_modulo = semiring_modulo_nat}
+    semiring_modulo_trivial_semidom_modulo = semiring_modulo_trivial_nat}
   : nat semidom_modulo;
 
 datatype rat = Frct of (int * int);
@@ -710,13 +741,10 @@ fun normalize p =
 
 fun plus_rat p q =
   Frct let
-         val a = quotient_of p;
-         val (aa, c) = a;
-         val b = quotient_of q;
-         val (ba, d) = b;
+         val (a, c) = quotient_of p;
+         val (b, d) = quotient_of q;
        in
-         normalize
-           (plus_int (times_inta aa d) (times_inta ba c), times_inta c d)
+         normalize (plus_int (times_inta a d) (times_inta b c), times_inta c d)
        end;
 
 fun plus_reala (Ratreal x) (Ratreal y) = Ratreal (plus_rat x y);
@@ -736,12 +764,10 @@ val numeral_real =
   real numeral;
 
 fun times_rat p q = Frct let
-                           val a = quotient_of p;
-                           val (aa, c) = a;
-                           val b = quotient_of q;
-                           val (ba, d) = b;
+                           val (a, c) = quotient_of p;
+                           val (b, d) = quotient_of q;
                          in
-                           normalize (times_inta aa ba, times_inta c d)
+                           normalize (times_inta a b, times_inta c d)
                          end;
 
 fun times_reala (Ratreal x) (Ratreal y) = Ratreal (times_rat x y);
@@ -819,15 +845,24 @@ fun one_worda A_ = Word one_inta;
 
 fun one_word A_ = {one = one_worda A_} : 'a word one;
 
-fun modulo_int k l =
-  Int_of_integer (modulo_integer (integer_of_int k) (integer_of_int l));
-
 fun power A_ a n =
   (if equal_nata n zero_nata then one (one_power A_)
     else times (times_power A_) a (power A_ a (minus_nata n one_nata)));
 
-fun take_bit_int n k =
-  modulo_int k (power power_int (Int_of_integer (2 : IntInf.int)) n);
+val one_integera : IntInf.int = (1 : IntInf.int);
+
+val times_integer = {times = (fn a => fn b => IntInf.* (a, b))} :
+  IntInf.int times;
+
+val one_integer = {one = one_integera} : IntInf.int one;
+
+val power_integer = {one_power = one_integer, times_power = times_integer} :
+  IntInf.int power;
+
+fun take_bit_integer n k =
+  modulo_integer k (power power_integer (2 : IntInf.int) n);
+
+fun take_bit_int n (Int_of_integer k) = Int_of_integer (take_bit_integer n k);
 
 fun of_inta A_ k = Word (take_bit_int (len_of (len0_len A_) Type) k);
 
@@ -976,24 +1011,36 @@ fun cast B_ A_ w =
   Word (take_bit_int (len_of (len0_len A_) Type) (the_int B_ w));
 
 fun uminus_rat p = Frct let
-                          val a = quotient_of p;
-                          val (aa, b) = a;
+                          val (a, b) = quotient_of p;
                         in
-                          (uminus_int aa, b)
+                          (uminus_int a, b)
                         end;
 
 fun uminus_real (Ratreal x) = Ratreal (uminus_rat x);
 
 fun divide_rat p q = Frct let
-                            val a = quotient_of p;
-                            val (aa, c) = a;
-                            val b = quotient_of q;
-                            val (ba, d) = b;
+                            val (a, c) = quotient_of p;
+                            val (b, d) = quotient_of q;
                           in
-                            normalize (times_inta aa d, times_inta c ba)
+                            normalize (times_inta a d, times_inta c b)
                           end;
 
 fun divide_real (Ratreal x) (Ratreal y) = Ratreal (divide_rat x y);
+
+fun map_prod f g (a, b) = (f a, g b);
+
+fun divmod_nat m n =
+  let
+    val k = integer_of_nat m;
+    val l = integer_of_nat n;
+  in
+    map_prod nat_of_integer nat_of_integer
+      (if ((k : IntInf.int) = (0 : IntInf.int))
+        then ((0 : IntInf.int), (0 : IntInf.int))
+        else (if ((l : IntInf.int) = (0 : IntInf.int))
+               then ((0 : IntInf.int), k)
+               else IntInf.divMod (IntInf.abs k, IntInf.abs l)))
+  end;
 
 fun numeral A_ (Bit1 n) =
   let
@@ -1010,21 +1057,6 @@ fun numeral A_ (Bit1 n) =
       plus ((plus_semigroup_add o semigroup_add_numeral) A_) m m
     end
   | numeral A_ One = one (one_numeral A_);
-
-fun map_prod f g (a, b) = (f a, g b);
-
-fun divmod_nat m n =
-  let
-    val k = integer_of_nat m;
-    val l = integer_of_nat n;
-  in
-    map_prod nat_of_integer nat_of_integer
-      (if ((k : IntInf.int) = (0 : IntInf.int))
-        then ((0 : IntInf.int), (0 : IntInf.int))
-        else (if ((l : IntInf.int) = (0 : IntInf.int))
-               then ((0 : IntInf.int), k)
-               else IntInf.divMod (IntInf.abs k, IntInf.abs l)))
-  end;
 
 fun of_nata A_ n =
   (if equal_nata n zero_nata
@@ -1089,10 +1121,9 @@ fun valof A_ B_ (Abs_float xa) =
   end;
 
 fun fraction A_ B_ (Abs_float xa) = let
-                                      val (_, a) = xa;
-                                      val (_, aa) = a;
+                                      val (_, (_, a)) = xa;
                                     in
-                                      the_nat B_ aa
+                                      the_nat B_ a
                                     end;
 
 fun exponent A_ B_ (Abs_float xa) = let
@@ -1119,13 +1150,10 @@ fun minus_int k l =
 
 fun minus_rat p q =
   Frct let
-         val a = quotient_of p;
-         val (aa, c) = a;
-         val b = quotient_of q;
-         val (ba, d) = b;
+         val (a, c) = quotient_of p;
+         val (b, d) = quotient_of q;
        in
-         normalize
-           (minus_int (times_inta aa d) (times_inta ba c), times_inta c d)
+         normalize (minus_int (times_inta a d) (times_inta b c), times_inta c d)
        end;
 
 fun minus_real (Ratreal x) (Ratreal y) = Ratreal (minus_rat x y);
@@ -1245,7 +1273,11 @@ val sNaN64 : (num1 bit0 bit1 bit1, num1 bit1 bit0 bit1 bit0 bit0) float =
 
 fun dvd (A1_, A2_) a b =
   eq A1_
-    (modulo ((modulo_semiring_modulo o semiring_modulo_semidom_modulo) A2_) b a)
+    (modulo
+      ((modulo_semiring_modulo o semiring_modulo_semiring_modulo_trivial o
+         semiring_modulo_trivial_semidom_modulo)
+        A2_)
+      b a)
     (zero ((zero_mult_zero o mult_zero_semiring_0 o semiring_0_semiring_1 o
              semiring_1_comm_semiring_1 o
              comm_semiring_1_comm_semiring_1_cancel o
@@ -1312,12 +1344,10 @@ fun prev_floata A_ B_ f =
     else prev_float A_ B_ f);
 
 fun less_rat p q = let
-                     val a = quotient_of p;
-                     val (aa, c) = a;
-                     val b = quotient_of q;
-                     val (ba, d) = b;
+                     val (a, c) = quotient_of p;
+                     val (b, d) = quotient_of q;
                    in
-                     less_int (times_inta aa d) (times_inta c ba)
+                     less_int (times_inta a d) (times_inta c b)
                    end;
 
 fun less_real (Ratreal x) (Ratreal y) = less_rat x y;
@@ -1329,12 +1359,10 @@ fun lbound A_ B_ r f =
 fun less_eq_int k l = IntInf.<= (integer_of_int k, integer_of_int l);
 
 fun less_eq_rat p q = let
-                        val a = quotient_of p;
-                        val (aa, c) = a;
-                        val b = quotient_of q;
-                        val (ba, d) = b;
+                        val (a, c) = quotient_of p;
+                        val (b, d) = quotient_of q;
                       in
-                        less_eq_int (times_inta aa d) (times_inta c ba)
+                        less_eq_int (times_inta a d) (times_inta c b)
                       end;
 
 fun less_eq_real (Ratreal x) (Ratreal y) = less_eq_rat x y;
