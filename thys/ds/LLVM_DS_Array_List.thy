@@ -64,15 +64,25 @@ begin
   definition arl_new :: "'a::llvm_rep itself \<Rightarrow> 'l::len2 itself \<Rightarrow> ('a,'l) array_list llM"
   where [llvm_inline]: "arl_new TYPE('a::llvm_rep) TYPE('l::len2) \<equiv> arl_new_raw"
 
+
+  definition arl_new_sz_raw :: "'l::len2 word \<Rightarrow> ('a::llvm_rep,'l::len2) array_list llM"
+  where [llvm_code,llvm_inline]: "arl_new_sz_raw c \<equiv> doM {
+    a \<leftarrow> narray_new TYPE('a) c;
+    Mreturn (signed_nat 0,c,a)
+  }"
+    
+  definition arl_new_sz :: "'a::llvm_rep itself \<Rightarrow> 'l::len2 word \<Rightarrow> ('a,'l) array_list llM"
+  where [llvm_inline]: "arl_new_sz TYPE('a::llvm_rep) c \<equiv> arl_new_sz_raw c"
   
-  definition arl_new_sz_raw :: "'l::len2 word \<Rightarrow> ('a::llvm_rep,'l) array_list llM"
-  where [llvm_code,llvm_inline]: "arl_new_sz_raw n \<equiv> doM {
+    
+  definition arl_new_repl_init_raw :: "'l::len2 word \<Rightarrow> ('a::llvm_rep,'l) array_list llM"
+  where [llvm_code,llvm_inline]: "arl_new_repl_init_raw n \<equiv> doM {
     a \<leftarrow> narray_new TYPE('a) n;
     Mreturn (n,n,a)
   }"
 
-  definition arl_new_sz :: "'a::llvm_rep itself \<Rightarrow> 'l::len2 word \<Rightarrow> ('a,'l) array_list llM" 
-    where [llvm_inline]: "arl_new_sz TYPE('a) n \<equiv> arl_new_sz_raw n"
+  definition arl_new_repl_init :: "'a::llvm_rep itself \<Rightarrow> 'l::len2 word \<Rightarrow> ('a,'l) array_list llM" 
+    where [llvm_inline]: "arl_new_repl_init TYPE('a) n \<equiv> arl_new_repl_init_raw n"
 
   definition arl_new_repl :: "'l::len2 word \<Rightarrow> 'a::llvm_rep \<Rightarrow> ('a,'l) array_list llM" 
     where [llvm_inline]: "arl_new_repl n x \<equiv> doM {
@@ -151,7 +161,8 @@ begin
   
   export_llvm (debug) (no_header)
     "arl_new_raw :: (64 word,64) array_list llM" is "arl_new"
-    "arl_new_sz_raw :: 64 word \<Rightarrow> (64 word,64) array_list llM"
+    "arl_new_sz_raw :: 64 word \<Rightarrow> (64 word,64) array_list llM" is "arl_new_sz"
+    "arl_new_repl_init_raw :: 64 word \<Rightarrow> (64 word,64) array_list llM"
     "arl_clear :: (64 word,64) array_list \<Rightarrow> (64 word,64) array_list llM"
     "arl_free :: (64 word,64) array_list \<Rightarrow> unit llM" is "arl_free"
     "arl_nth :: (64 word,64) array_list \<Rightarrow> 64 word \<Rightarrow> 64 word llM" is "arl_nth"
@@ -230,7 +241,6 @@ begin
     unfolding arl_new_def arl_new_raw_def arl_initial_size_def arl_assn_def arl_assn'_def
     apply (vcg_monadify)
     by vcg'
-  
       
   lemma arl_new_rule[vcg_rules]: 
     "llvm_htriple (\<up>(LENGTH('c)>4)) (arl_new TYPE('a::llvm_rep) TYPE('c::len2)) (\<lambda>ali. \<upharpoonleft>arl_assn [] ali)"
@@ -238,12 +248,32 @@ begin
     apply (vcg_monadify)
     by vcg'
 
+  lemma arl_new_sz_raw_rule[vcg_rules]: 
+    "llvm_htriple 
+      (\<upharpoonleft>snat.assn c ci ** \<up>(LENGTH('c)>4)) 
+      (arl_new_sz_raw (ci::'c word)) 
+      (\<lambda>ali. \<upharpoonleft>arl_assn [] (ali::(_,'c::len2)array_list))"
+    unfolding arl_new_sz_raw_def arl_initial_size_def arl_assn_def arl_assn'_def
+    apply (vcg_monadify)
+    by vcg'
+      
   lemma arl_new_sz_rule[vcg_rules]: 
     "llvm_htriple 
+      (\<upharpoonleft>snat.assn c (ci::'c::len2 word) ** \<up>(LENGTH('c)>4)) 
+      (arl_new_sz TYPE('a::llvm_rep) ci) 
+      (\<lambda>ali. \<upharpoonleft>arl_assn [] (ali::('a,'c)array_list))"
+    unfolding arl_new_sz_def 
+    apply (vcg_monadify)
+    by vcg'
+    
+    
+    
+  lemma arl_new_repl_init_rule[vcg_rules]: 
+    "llvm_htriple 
       (\<upharpoonleft>snat.assn n ni ** \<up>(LENGTH('c::len2)>4)) 
-      (arl_new_sz TYPE('a::llvm_rep) (ni::'c word)) 
+      (arl_new_repl_init TYPE('a::llvm_rep) (ni::'c word)) 
       (\<lambda>ali. \<upharpoonleft>arl_assn (replicate n init) ali)"
-    unfolding arl_new_sz_def arl_new_sz_raw_def arl_initial_size_def arl_assn_def arl_assn'_def
+    unfolding arl_new_repl_init_def arl_new_repl_init_raw_def arl_initial_size_def arl_assn_def arl_assn'_def
     apply (vcg_monadify)
     by vcg'
 

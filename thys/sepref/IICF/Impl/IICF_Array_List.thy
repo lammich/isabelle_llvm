@@ -37,6 +37,10 @@ lemma rdomp_al_dest':
 text \<open>This functions deletes all elements of a resizable array, without resizing it.\<close>
 sepref_decl_op emptied_list: "\<lambda>_::'a list. []::'a list" :: "\<langle>A\<rangle>list_rel \<rightarrow> \<langle>A\<rangle>list_rel" .
 
+
+sepref_decl_op al_empty_sz: "\<lambda>_::nat. []::'a list" :: "nat_rel \<rightarrow> \<langle>A\<rangle>list_rel" .
+
+
 sepref_decl_op al_custom_replicate: op_list_replicate :: "nat_rel \<rightarrow> A \<rightarrow> \<langle>A\<rangle>list_rel" .
 
 lemma al_fold_custom_replicate:
@@ -80,7 +84,14 @@ begin
       \<in> [\<lambda>_. 4 < L]\<^sub>a unit_assn\<^sup>k \<rightarrow> AA"
     by m_ref  
   sepref_decl_impl (no_register) al_empty: al_empty_hnr_aux .
-       
+
+  lemma al_empty_sz_hnr_aux: 
+    "(arl_new_sz_raw::_ \<Rightarrow> (_,'l::len2)array_list llM, RETURN o op_al_empty_sz) 
+      \<in> [\<lambda>_. 4 < L]\<^sub>a (snat_assn' TYPE('l))\<^sup>k \<rightarrow> AA"
+    by m_ref  
+  sepref_decl_impl al_empty_sz: al_empty_sz_hnr_aux .
+  
+         
   lemma al_replicate_hnr_aux:
     "(uncurry arl_new_repl, uncurry (RETURN oo op_al_custom_replicate)) 
     \<in> [\<lambda>_. 4 < L]\<^sub>a (snat_assn' TYPE('l))\<^sup>k *\<^sub>a id_assn\<^sup>k \<rightarrow> AA"
@@ -157,6 +168,11 @@ end
     by auto
   
 
+  lemma al_fold_custom_empty_sz:
+    "[] = op_al_empty_sz C"
+    "op_list_empty = op_al_empty_sz C"
+    "mop_list_empty = RETURN (op_al_empty_sz C)"
+    by auto
 
 
 subsection \<open>Ad-Hoc Regression Tests\<close>
@@ -164,7 +180,7 @@ subsection \<open>Ad-Hoc Regression Tests\<close>
 experiment
 begin
 
-  sepref_definition example [llvm_code] is "\<lambda>n. do {
+  sepref_definition example1 [llvm_code] is "\<lambda>n. do {
     let l = op_list_empty; 
     l \<leftarrow> mop_list_append l 42;
     l \<leftarrow> mop_emptied_list l;
@@ -176,21 +192,36 @@ begin
     let l = l[2:=l!3];
     l \<leftarrow> mop_list_set l 3 x;
     let (_,l) = op_list_pop_last l;
-    
+        
+    RETURN l
+  }" :: "(snat_assn' TYPE(32))\<^sup>k \<rightarrow>\<^sub>a al_assn' TYPE(32) (snat_assn' TYPE(32))"
+    apply (annot_snat_const "TYPE(32)")
+    apply (rewrite al_fold_custom_empty[where 'l=32])
+    by sepref
+
+  sepref_definition example2 [llvm_code] is "\<lambda>n. do {
     l2 \<leftarrow> mop_list_replicate 100 False;
     l2 \<leftarrow> mop_list_append l2 True;
     l2 \<leftarrow> mop_list_append l2 True;
     l2 \<leftarrow> mop_list_append l2 False;
     l2 \<leftarrow> mop_list_set l2 3 True;
-    
-    RETURN l
-  }" :: "(snat_assn' TYPE(32))\<^sup>k \<rightarrow>\<^sub>a al_assn' TYPE(32) (snat_assn' TYPE(32))"
+    RETURN l2
+  }" :: "(snat_assn' TYPE(32))\<^sup>k \<rightarrow>\<^sub>a al_assn' TYPE(32) (bool1_assn)"
     apply (annot_snat_const "TYPE(32)")
-    apply (rewrite al_fold_custom_empty[where 'l=32])
     apply (rewrite al_fold_custom_replicate)
     by sepref
     
-  export_llvm example
+    
+  sepref_definition example3 [llvm_code] is "\<lambda>n. do {
+    l3 \<leftarrow> mop_al_empty_sz 2;
+    l3 \<leftarrow> mop_list_append l3 42;
+    l3 \<leftarrow> mop_list_append l3 43;
+    RETURN l3
+  }" :: "(snat_assn' TYPE(32))\<^sup>k \<rightarrow>\<^sub>a al_assn' TYPE(32) (snat_assn' TYPE(32))"
+    apply (annot_snat_const "TYPE(32)")
+    by sepref
+        
+  export_llvm example1 example2 example3
 
 
 end
