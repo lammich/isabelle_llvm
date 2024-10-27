@@ -309,14 +309,14 @@ begin
   (* Warning: This lemma is carefully set up to be applicable as an unfold rule,
     for more than one level of uncurrying*)
   lemma hnr_uncurry_unfold: "
-    (\<forall>x xi. P x \<longrightarrow> 
+    (\<forall>x xi. P x xi \<longrightarrow> 
       hn_refine 
         (hn_ctxt (to_hnr_prod A B) x xi ** \<Gamma>) 
         (fi xi) 
         (hn_ctxt (to_hnr_prod A' B') x xi ** \<Gamma>') 
         (R x) (CP xi)
         (f x))
-\<longleftrightarrow> (\<forall>b bi a ai. P (a,b) \<longrightarrow>
+\<longleftrightarrow> (\<forall>b bi a ai. P (a,b) (ai,bi) \<longrightarrow>
       hn_refine 
         (hn_ctxt A a ai ** hn_ctxt B b bi ** \<Gamma>) 
         (fi (ai,bi)) 
