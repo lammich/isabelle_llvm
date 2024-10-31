@@ -147,7 +147,7 @@ begin
     lemma some_nan_conv[simp]: "some_nan = the_nan some_nan"
       unfolding the_nan_def by simp
         
-    lemma is_nanE[elim!]: assumes "is_nan x" obtains xx where "x = the_nan xx"
+    lemma is_nanE[elim]: assumes "is_nan x" obtains xx where "x = the_nan xx"
       using assms unfolding the_nan_def by metis
 
   
