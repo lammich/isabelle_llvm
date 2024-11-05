@@ -57,7 +57,7 @@ $(BIN)/test_avx512f: test_avx512f.c double_lib.c ../gencode/test_avx512f.h ../ge
 	$(CC) -lm -march=x86-64 -mavx512f -ffp-contract=off test_avx512f.c ../gencode/test_avx512f.ll -o $(BIN)/test_avx512f
 
 test_avx512f: $(BIN)/test_avx512f
-	sde -- $(BIN)/test_avx512f
+	sde -spr -- $(BIN)/test_avx512f
 # 	$(VG) $(BIN)/test_avx512f
 
 
@@ -65,7 +65,7 @@ $(BIN)/test_float_ops: test_float_ops.cpp ../gencode/test_avx512f_ops.h ../genco
 	$(CPP) -lm -march=x86-64 -mavx512f -ffp-model=strict test_float_ops.cpp ../gencode/test_avx512f_ops.ll -o $(BIN)/test_float_ops
 
 test_float_ops: $(BIN)/test_float_ops
-	sde -- $(BIN)/test_float_ops regr <../floating_point/fixed_tests.txt
+	sde -spr -- $(BIN)/test_float_ops regr <../floating_point/fixed_tests.txt
 # 	$(VG) $(BIN)/test_float_ops
 
 $(BIN)/sorting: sorting.cpp ../gencode/sorting.h ../gencode/sorting.ll

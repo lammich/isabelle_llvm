@@ -1,64 +1,7 @@
 theory Scratch
-imports "Isabelle_LLVM.IICF"
+imports "../basic/LLVM_Basic_Main"
 begin
 
-typ double
-term Rep_double
-  definition "dfloat_rel = br float_of_double (\<lambda>x. True)"
-
-  abbreviation "dfloat_assn \<equiv> pure dfloat_rel"
-
-
-  definition nanize_float where "nanize_float x \<equiv> if is_nan x then SPEC is_nan else RETURN x"
-  lemma nanize_double_simps[simp]: 
-    "\<not>is_nan x \<Longrightarrow> nanize_float x = RETURN x"
-    "is_nan x \<Longrightarrow> nanize_float x = (SPEC is_nan)"
-    unfolding nanize_float_def
-    by auto
-
-  definition op_lift_farith2_rm_f :: "(roundmode \<Rightarrow> ('a::len, 'b::len) IEEE.float \<Rightarrow> ('a, 'b) IEEE.float \<Rightarrow> ('a, 'b) IEEE.float) \<Rightarrow> roundmode \<Rightarrow> ('a, 'b) IEEE.float \<Rightarrow> ('a, 'b) IEEE.float \<Rightarrow> ('a, 'b) IEEE.float nres" 
-    where "op_lift_farith2_rm_f f rm a b \<equiv> nanize_float (f rm a b)"
-
-  lemma is_nan_float_of_double: "is_nan_double x \<longleftrightarrow> is_nan (float_of_double x)"
-    apply transfer by simp
-
-  lemma float_of_double_dradd: "float_of_double (dradd rm a b) = fadd rm (float_of_double a) (float_of_double b)"
-    apply transfer by simp
-
-  lemma is_nan_double_neq_bot: "is_nan_double \<noteq> bot"
-    using is_nan_double.abs_eq by fastforce
-
-  definition "mop_fadd_rup = op_lift_farith2_rm_f fadd To_pinfinity"
-  sepref_register mop_fadd_rup
-
-  lemma mop_fadd_rup_hnr[sepref_fr_rules]: "(uncurry (ll_x86_avx512_add_sd_round AVX512_FROUND_TO_POS_INF_NO_EXC), uncurry (mop_fadd_rup)) \<in> dfloat_assn\<^sup>k *\<^sub>a dfloat_assn\<^sup>k \<rightarrow>\<^sub>a dfloat_assn"
-    apply(sepref_to_hoare)
-    unfolding op_lift_farith2_rm_d_def xlate_rounding_mode_def nanize_double_def ndet_nan_double_def mop_fadd_rup_def ll_x86_avx512_add_sd_round_def
-    unfolding op_lift_farith2_rm_f_def nanize_float_def dfloat_rel_def br_def 
-    supply [simp] = is_nan_float_of_double float_of_double_dradd is_nan_double_neq_bot
-    supply [split] = if_split_asm
-    by vcg' 
-    
-
-  definition add_floats :: "float64 \<Rightarrow> _" where "add_floats a b c = do{
-    d \<leftarrow> mop_fadd_rup a b;
-    mop_fadd_rup c d
-  }"
-
-  sepref_def add_floats_ll is "uncurry2 add_floats" :: "dfloat_assn\<^sup>k *\<^sub>a dfloat_assn\<^sup>k *\<^sub>a dfloat_assn\<^sup>k \<rightarrow>\<^sub>a dfloat_assn"
-    unfolding add_floats_def
-    apply sepref
-    done
-
-  declare [[llc_compile_avx512f=true]]
-
-  export_llvm add_floats_ll 
-
-
-apply fri_keep
-    
-
-  thm sepref_fr_rules(1)[to_hfref]
 
   definition external_fun :: "8 word ptr \<Rightarrow> 64 word \<Rightarrow> 64 word llM" where "external_fun _ _ \<equiv> Mreturn 0"
 

@@ -194,7 +194,7 @@ begin
     
   lemma fmul_ub_pos: 
     fixes f\<^sub>1 f\<^sub>2 :: "('e::len2,'f) float"
-    shows "\<lbrakk> \<not>is_infinity f\<^sub>1; 0<x\<^sub>1; 0<x\<^sub>2; ub x\<^sub>1 f\<^sub>1; ub x\<^sub>2 f\<^sub>2 \<rbrakk> 
+    shows "\<lbrakk> \<not>is_infinity f\<^sub>1; 0<x\<^sub>1; 0\<le>x\<^sub>2; ub x\<^sub>1 f\<^sub>1; ub x\<^sub>2 f\<^sub>2 \<rbrakk> 
       \<Longrightarrow> ub (x\<^sub>1*x\<^sub>2) (fmul To_pinfinity f\<^sub>1 f\<^sub>2)"
     unfolding ub_def
     apply (cases f\<^sub>1 rule: float_cases_eqs; cases f\<^sub>2 rule: float_cases_eqs; simp)
