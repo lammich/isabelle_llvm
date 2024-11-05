@@ -370,7 +370,7 @@ subsection \<open>Preprocessor\<close>
       val _ = check_valid_fname c
       val _ = is_Const c orelse raise TERM("check_external_fun: expected simple constant",[c])
       
-      val _ = Symbol.is_ascii_identifier name orelse raise TERM("check_external_fun: expected ascii id, but got '"^name^"'",[c])
+      val _ = LLC_Lib.is_llvm_identifier name orelse raise TERM("check_external_fun: expected llvm identifier, but got '"^name^"'",[c])
     in
       (c,name)
     end

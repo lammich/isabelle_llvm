@@ -199,6 +199,22 @@ begin
         | name_of_head (Abs (_,_,t)) = name_of_head t
         | name_of_head (Bound _) = "__"
       
+      (* LLVM identifier: [-a-zA-Z$._][-a-zA-Z$._0-9]* *)
+      local open Symbol in
+        fun is_llvm_quasi "-" = true
+          | is_llvm_quasi "$" = true
+          | is_llvm_quasi "." = true
+          | is_llvm_quasi "_" = true
+          | is_llvm_quasi _ = false
+          
+        fun is_llvm_id_start s = is_ascii_letter s orelse is_llvm_quasi s;
+        fun is_llvm_id_ctd s = is_ascii_letter s orelse is_ascii_digit s orelse is_llvm_quasi s;
+          
+        fun is_llvm_identifier s =
+          size s > 0 andalso is_llvm_id_start (String.substring (s, 0, 1)) andalso
+          forall_string is_llvm_id_ctd s;
+          
+      end
               
       val llc_compile_while = Attrib.setup_config_bool @{binding llc_compile_while} (K true)
       
