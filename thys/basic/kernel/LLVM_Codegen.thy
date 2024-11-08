@@ -984,11 +984,13 @@ begin
         
         val ctxt = fold add_named_type_override nt_ovr ctxt
         
+        val ctxt = build_named_type_tables ctxt
+        
         (* Parse external function declarations *)
         val (ext_eqns, ctxt) = fold_map llc_parse_extfun extfuns ctxt
         
         (* Parse code theorems *)
-        val (eqns,ctxt) = parse_cthms_aux thms (build_named_type_tables ctxt)
+        val (eqns,ctxt) = parse_cthms_aux thms ctxt
         
         val named_tys = Identified_Structures.get ctxt |> Symtab.dest |> map Named_Type
       in 

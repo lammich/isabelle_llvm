@@ -435,6 +435,14 @@ lemma my_pair_id_struct[ll_identified_structures]: "ll_is_identified_structure '
   apply (simp add: )
   done
 
+definition [llvm_code]: "my_pair_sum (p::(64 word,64 word)my_pair ptr) \<equiv> doM {
+  s\<leftarrow>ll_load p;
+  a\<leftarrow>my_fst s;
+  b\<leftarrow>my_snd s;
+  c\<leftarrow>ll_add a b;
+  Mreturn c
+}"
+  
 thm ll_identified_structures
 
 
@@ -443,9 +451,17 @@ thm ll_identified_structures
   unfolding ll_is_pair_type_def
   by auto
 *)  
+                                                
+export_llvm (debug) 
+  test_named is test_named
+  my_pair_sum  is my_pair_sum
+  file "code/test_named.ll"
 
-export_llvm (debug) test_named file "code/test_named.ll"
-
+export_llvm (debug) 
+  (*test_named is test_named*)
+  my_pair_sum  is my_pair_sum
+  
+  
 definition test_foo :: "(64 word \<times> 64 word ptr) ptr \<Rightarrow> 64 word \<Rightarrow> 64 word llM" 
   where [llvm_code]:
   "test_foo a b \<equiv> Mreturn 0"
@@ -459,6 +475,55 @@ definition test_foo :: "(64 word \<times> 64 word ptr) ptr \<Rightarrow> 64 word
     } larray_t;
   \<close>
 
+  
+  
+  datatype gmp_mpz_struct =
+    GMP_MPZ_STRUCT 
+      (gmp_mpz_alloc: "32 word")
+      (gmp_mpz_size: "32 word")
+      (gmp_mpz_d: "64 word ptr")
+      
+  term struct_of
+  
+  instantiation gmp_mpz_struct :: llvm_rep
+  begin
+    definition "from_val \<equiv> (\<lambda>LL_STRUCT [a,b,c] \<Rightarrow> GMP_MPZ_STRUCT (from_val a) (from_val b) (from_val c))"
+    definition "to_val \<equiv> (\<lambda>s. LL_STRUCT [
+      to_val (gmp_mpz_alloc s), to_val (gmp_mpz_size s), to_val (gmp_mpz_d s)])"
+      
+    definition [simp]: "struct_of (_:: gmp_mpz_struct itself) 
+      \<equiv> VS_STRUCT [struct_of TYPE(32 word), struct_of TYPE(32 word), struct_of TYPE(64 word ptr)]"
+    definition "init_gmp_mpz_struct \<equiv> GMP_MPZ_STRUCT init init init"
+  
+    instance
+      apply standard
+      unfolding from_val_gmp_mpz_struct_def to_val_gmp_mpz_struct_def struct_of_gmp_mpz_struct_def init_gmp_mpz_struct_def
+      apply (simp_all add: fun_eq_iff split: prod.splits)
+      subgoal for v by (cases v; auto)
+      subgoal by (auto simp: to_val_word_def to_val_ptr_def null_def)
+      done
+  
+  end
+
+  lemma gmp_mpz_id_struct[ll_identified_structures]: "ll_is_identified_structure ''gmp_mpz_struct'' TYPE(gmp_mpz_struct)"
+    unfolding ll_is_identified_structure_def
+    apply (simp add: )
+    done
+    
+  lemma [ll_struct_of]: "struct_of TYPE(gmp_mpz_struct) 
+      = VS_STRUCT [struct_of TYPE(32 word), struct_of TYPE(32 word), struct_of TYPE(64 word ptr)]"
+    by simp    
+  
+  definition [llvm_code]: "testgmp x \<equiv> (Mreturn x)::gmp_mpz_struct llM"
+    
+  export_llvm testgmp
+  
+  
+  
+  
+  
+  
+  
 
 subsubsection \<open>Linked List\<close>
 
