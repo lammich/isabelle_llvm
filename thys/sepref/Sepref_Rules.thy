@@ -180,6 +180,7 @@ begin
   abbreviation hfrefpt ("[_]\<^sub>c _ \<rightarrow>\<^sub>d _ [_]\<^sub>c" [0,60,60,0] 60) where "[C]\<^sub>c RS \<rightarrow>\<^sub>d T [CP]\<^sub>c \<equiv> ([\<lambda>_. True]\<^sub>a [C]\<^sub>c RS \<rightarrow>\<^sub>d T [CP]\<^sub>c)"
   abbreviation hfreftt ("_ \<rightarrow>\<^sub>a\<^sub>d _" [60,60] 60) where "RS \<rightarrow>\<^sub>a\<^sub>d T \<equiv> ([\<lambda>_. True]\<^sub>a RS \<rightarrow>\<^sub>d T)"
 
+  abbreviation hfrefnd ("[_]\<^sub>a [_]\<^sub>c _ \<rightarrow> _ [_]\<^sub>c" [0,0,60,60,0] 60) where "[P]\<^sub>a [C]\<^sub>c RS \<rightarrow> T [CP]\<^sub>c \<equiv> [P]\<^sub>a [C]\<^sub>c RS \<rightarrow>\<^sub>d (\<lambda>_. T) [CP]\<^sub>c"
   abbreviation hfrefcptnd ("[_]\<^sub>a _ \<rightarrow> _" [0,60,60] 60) where "[P]\<^sub>a RS \<rightarrow> T \<equiv> [P]\<^sub>a RS \<rightarrow>\<^sub>d (\<lambda>_. T)"
   abbreviation hfrefptnd ("[_]\<^sub>c _ \<rightarrow> _ [_]\<^sub>c" [0,60,60,0] 60) where "[C]\<^sub>c RS \<rightarrow> T [CP]\<^sub>c \<equiv> [C]\<^sub>c RS \<rightarrow>\<^sub>d (\<lambda>_. T) [CP]\<^sub>c"
   abbreviation hfrefttnd ("_ \<rightarrow>\<^sub>a _" [60,60] 60) where "RS \<rightarrow>\<^sub>a T \<equiv> RS \<rightarrow>\<^sub>a\<^sub>d (\<lambda>_. T)"

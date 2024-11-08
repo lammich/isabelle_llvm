@@ -3,6 +3,7 @@ target datalayout = "e-m:e-p:64:64:64-a:0:64-n8:16:32:64-i1:8:8-i8:8:8-i16:16:16
 target triple = "x86_64-pc-linux-gnu"
 
 %my_pair_i32_i64 = type { i32, i64 }
+%my_pair_i64_i64 = type { i64, i64 }
 
 
 
@@ -24,7 +25,7 @@ define i32 @LLVM_Examples_add_add1(i32 %a) #0 {
     ret i32 %x1
 }
 
-define i64 @LLVM_Examples_test_named(i32 %a, i64 %b) #0 {
+define i64 @test_named(i32 %a, i64 %b) #0 {
 
   start:
     %a1 = call i32 @LLVM_Examples_add_add1 (i32 %a)
@@ -34,4 +35,14 @@ define i64 @LLVM_Examples_test_named(i32 %a, i64 %b) #0 {
     %n = insertvalue %my_pair_i32_i64 zeroinitializer, i32 zeroinitializer, 0
     %na = insertvalue %my_pair_i32_i64 %n, i64 zeroinitializer, 1
     ret i64 %ba
+}
+
+define i64 @my_pair_sum(%my_pair_i64_i64* %p) #0 {
+
+  start:
+    %s = load %my_pair_i64_i64, %my_pair_i64_i64* %p
+    %a = extractvalue %my_pair_i64_i64 %s, 0
+    %x = extractvalue %my_pair_i64_i64 %s, 1
+    %x1 = add i64 %a, %x
+    ret i64 %x1
 }
