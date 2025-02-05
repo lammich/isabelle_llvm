@@ -164,13 +164,13 @@ sepref_def word_log2_impl is
 
 export_llvm "word_log2_impl :: 64 word \<Rightarrow> _"
 
-subsection \<open>Connection with \<^const>\<open>Discrete.log\<close>\<close>
+subsection \<open>Connection with \<^const>\<open>floor_log\<close>\<close>
 
 lemma discrete_log_ltI: (* TODO: Check how precise this bound is! *)
   assumes "n\<noteq>0" "N\<noteq>0" "n<2^N"
-  shows "Discrete.log n < N"
+  shows "floor_log n < N"
   using assms
-  by (metis Discrete.log_le_iff leD linorder_neqE_nat log_exp log_exp2_le order_less_le zero_order(3))
+  by (metis floor_log_exp2_le floor_log_le_iff floor_log_power gr0I le_eq_less_or_eq verit_comp_simplify1(3))
 
 
 lemma unat_x_div_2_conv:
@@ -232,14 +232,14 @@ lemma word_log2_rec:
 
 lemma word_log2_is_discrete_log:
   fixes x :: "'a::len2 word"
-  shows "word_log2 x = Discrete.log (unat x)"
+  shows "word_log2 x = floor_log (unat x)"
   apply (cases "x=0")
   apply simp
   subgoal proof -
     assume "x \<noteq> 0"
     hence "unat x > 0" by (simp add: unat_gt_0)
     then show ?thesis
-    proof (induction "unat x" arbitrary: x rule: log_induct)
+    proof (induction "unat x" arbitrary: x rule: floor_log_induct)
       case one
       hence "x=1" using word_unat_Rep_inject1 by auto
       then show ?case 
@@ -249,11 +249,11 @@ lemma word_log2_is_discrete_log:
     next
       case double
       
-      from double.hyps(2) have "Discrete.log (unat x div 2) = word_log2 (x div 2)"
+      from double.hyps(2) have "floor_log (unat x div 2) = word_log2 (x div 2)"
         by (metis unat_x_div_2_conv)
       
       then show ?case  
-        apply (subst log_rec, simp add: \<open>2 \<le> unat x\<close>)
+        apply (subst floor_log_rec, simp add: \<open>2 \<le> unat x\<close>)
         apply simp
         apply (subst word_log2_rec)
         apply auto
@@ -263,17 +263,17 @@ lemma word_log2_is_discrete_log:
   qed
   done      
 
-lemma word_log2_refine_unat: "(word_log2, Discrete.log) \<in> unat_rel' TYPE('a::len2) \<rightarrow> nat_rel"
+lemma word_log2_refine_unat: "(word_log2, floor_log) \<in> unat_rel' TYPE('a::len2) \<rightarrow> nat_rel"
   using word_log2_is_discrete_log
   by (fastforce simp: unat_rel_def unat.rel_def in_br_conv)
   
-lemma word_log2_refine_snat: "(word_log2, Discrete.log) \<in> snat_rel' TYPE('a::len2) \<rightarrow> nat_rel"
+lemma word_log2_refine_snat: "(word_log2, floor_log) \<in> snat_rel' TYPE('a::len2) \<rightarrow> nat_rel"
   using word_log2_is_discrete_log
   by (fastforce simp: snat_rel_def snat.rel_def in_br_conv snat_eq_unat)
 
-sepref_register Discrete.log
+sepref_register floor_log
 
-lemmas discrete_log_unat_hnr[sepref_fr_rules] = word_log2_impl.refine[FCOMP word_log2_refine_unat]
-lemmas discrete_log_snat_hnr[sepref_fr_rules] = word_log2_impl.refine[FCOMP word_log2_refine_snat]
+lemmas floor_log_unat_hnr[sepref_fr_rules] = word_log2_impl.refine[FCOMP word_log2_refine_unat]
+lemmas floor_log_snat_hnr[sepref_fr_rules] = word_log2_impl.refine[FCOMP word_log2_refine_snat]
 
 end

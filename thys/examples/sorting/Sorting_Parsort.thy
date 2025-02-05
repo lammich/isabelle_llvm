@@ -242,7 +242,7 @@ context weak_ordering begin
   text \<open>Initializing depth bound\<close>
   definition "par_sort xs n \<equiv> doN {
     if n>1 then doN {
-      par_sort_aux3 xs n (Discrete.log n * 2)
+      par_sort_aux3 xs n (floor_log n * 2)
     } else RETURN xs
   }"
   
@@ -254,7 +254,7 @@ context weak_ordering begin
     
   definition "ppar_sort xs n \<equiv> doN {
     if n>1 then doN {
-      ppar_sort_aux3 xs n (Discrete.log n * 2)
+      ppar_sort_aux3 xs n (floor_log n * 2)
     } else RETURN xs
   }"
   

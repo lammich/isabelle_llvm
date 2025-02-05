@@ -1,5 +1,5 @@
 theory Sorting_Misc
-imports "Isabelle_LLVM.IICF" "HOL-Library.Discrete"
+imports "Isabelle_LLVM.IICF" "HOL-Library.Discrete_Functions"
 begin
   hide_const (open) pi Word.slice
 

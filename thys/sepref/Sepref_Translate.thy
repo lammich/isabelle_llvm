@@ -316,7 +316,7 @@ structure Sepref_Translate = struct
       
       val t_fallback = MK side_fallback_tac
     in
-      WITH_concl 
+      WITH_concl ctxt
         (fn @{mpat "Trueprop ?t"} => (case t of
               @{mpat "MERGE _ _ _ _ _"} => t_merge
             | @{mpat "MK_FREE _ _"} => t_free

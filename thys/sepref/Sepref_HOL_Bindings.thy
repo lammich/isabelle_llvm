@@ -800,7 +800,7 @@ lemma hn_sint_minus_numeral[sepref_fr_rules]:
   apply sepref_to_hoare unfolding sint_rel_def sint.rel_def in_br_conv 
   apply vcg'
   apply (auto simp: sbintrunc_mod2p min_sint_def max_sint_def ll_const_signed_aux)
-  by (smt diff_Suc_less int_mod_eq' len_gt_0 neg_numeral_le_numeral power_strict_increasing_iff)
+  by (smt diff_Suc_less int_mod_eq len_gt_0 neg_numeral_le_numeral power_strict_increasing_iff)
 
   
 sepref_register 

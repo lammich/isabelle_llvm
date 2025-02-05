@@ -138,7 +138,7 @@ ML \<open>
 
       val monadify_simproc = 
         Simplifier.make_simproc @{context} 
-         {name = "monadify_simproc", lhss =
+         {name = "monadify_simproc", kind=Simproc, lhss =
           [Logic.varify_global @{term "EVAL$a"}],
           proc = K (try o monadify_conv_aux),
           identifier = []};

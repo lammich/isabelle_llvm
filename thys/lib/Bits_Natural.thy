@@ -13,24 +13,6 @@ lemma bin_trunc_xor':
 (*lemma uint_xor: "uint (x XOR y) = uint x XOR uint y"
   by (transfer, simp add: bin_trunc_xor')*)
 
-(*instance nat :: semiring_bit_syntax ..*)
-
-(*instantiation nat :: set_bit begin
-  definition set_bit_nat :: "nat \<Rightarrow> nat \<Rightarrow> bool \<Rightarrow> nat" where
-    "set_bit i n b = nat (bin_sc n b (int i))"
-
-instance 
-  apply standard
-  apply (simp_all add: set_bit_nat_def)
-  by (metis bin_nth_sc_gen bin_sign_sc bit_nat_iff bit_of_nat_iff_bit of_nat_0_le_iff sign_Pls_ge_0)
-end  
-*)
-
-definition set_bit_nat :: "nat \<Rightarrow> nat \<Rightarrow> bool \<Rightarrow> nat" where
-  "set_bit_nat i n b = nat (bin_sc n b (int i))"
-
-lift_definition set_bit :: "nat \<Rightarrow> nat \<Rightarrow> bool \<Rightarrow> nat" is set_bit_nat .
-
 instantiation nat :: msb
 begin
   definition msb_nat :: "nat \<Rightarrow> bool" where
@@ -38,52 +20,6 @@ begin
 
 instance ..
 end
-
-
-(*
-instantiation nat :: semiring_bit_shifts
-begin
-
-definition set_bits_nat :: "(nat \<Rightarrow> bool) \<Rightarrow> nat" where
-  "set_bits f =
-  (if \<exists>n. \<forall>n'\<ge>n. \<not> f n' then
-     let n = LEAST n. \<forall>n'\<ge>n. \<not> f n'
-     in nat (bl_to_bin (rev (map f [0..<n])))
-   else if \<exists>n. \<forall>n'\<ge>n. f n' then
-     let n = LEAST n. \<forall>n'\<ge>n. f n'
-     in nat (sbintrunc n (bl_to_bin (True # rev (map f [0..<n]))))
-   else 0 :: nat)"
-
-
-definition not_nat :: "nat \<Rightarrow> nat" where
-  "NOT i = nat (NOT (int i))"
-
-(*
-definition shiftl_nat where
-  "shiftl x n = nat ((int x) * 2 ^ n)"
-
-definition shiftr_nat where
-  "shiftr x n = nat (int x div 2 ^ n)"
-
-definition bitNOT_nat :: "nat \<Rightarrow> nat" where
-  "bitNOT i = nat (bitNOT (int i))"
-
-definition bitAND_nat :: "nat \<Rightarrow> nat \<Rightarrow> nat" where
-  "bitAND i j = nat (bitAND (int i) (int j))"
-
-definition bitOR_nat :: "nat \<Rightarrow> nat \<Rightarrow> nat" where
-  "bitOR i j = nat (bitOR (int i) (int j))"
-
-definition bitXOR_nat :: "nat \<Rightarrow> nat \<Rightarrow> nat" where
-  "bitXOR i j = nat (bitXOR (int i) (int j))"
-
-definition msb_nat :: "nat \<Rightarrow> bool" where
-  "msb i = msb (int i)"
-*)
-instance . .
-
-end
-*)
 
 lemma nat_shiftr[simp]:
   "m >> 0 = m"
@@ -112,49 +48,6 @@ definition shiftl1 :: \<open>nat \<Rightarrow> nat\<close> where
 definition shiftr1 :: \<open>nat \<Rightarrow> nat\<close> where
   \<open>shiftr1 n = n >> 1\<close>
 
-(*
-instantiation natural :: bit_comprehension
-begin
-
-context includes natural.lifting begin
-
-lift_definition test_bit_natural :: \<open>natural \<Rightarrow> nat \<Rightarrow> bool\<close> is test_bit .
-
-lift_definition lsb_natural :: \<open>natural \<Rightarrow> bool\<close> is lsb .
-
-lift_definition set_bit_natural :: "natural \<Rightarrow> nat \<Rightarrow> bool \<Rightarrow> natural" is
-  set_bit .
-
-lift_definition set_bits_natural :: \<open>(nat \<Rightarrow> bool) \<Rightarrow> natural\<close>
-  is \<open>set_bits :: (nat \<Rightarrow> bool) \<Rightarrow> nat\<close> .
-
-lift_definition shiftl_natural :: \<open>natural \<Rightarrow> nat \<Rightarrow> natural\<close>
-  is \<open>shiftl :: nat \<Rightarrow> nat \<Rightarrow> nat\<close> .
-
-lift_definition shiftr_natural :: \<open>natural \<Rightarrow> nat \<Rightarrow> natural\<close>
-  is \<open>shiftr :: nat \<Rightarrow> nat \<Rightarrow> nat\<close> .
-
-lift_definition bitNOT_natural :: \<open>natural \<Rightarrow> natural\<close>
-  is \<open>bitNOT :: nat \<Rightarrow> nat\<close> .
-
-lift_definition bitAND_natural :: \<open>natural \<Rightarrow> natural \<Rightarrow> natural\<close>
-  is \<open>bitAND :: nat \<Rightarrow> nat \<Rightarrow> nat\<close> .
-
-lift_definition bitOR_natural :: \<open>natural \<Rightarrow> natural \<Rightarrow> natural\<close>
-  is \<open>bitOR :: nat \<Rightarrow> nat \<Rightarrow> nat\<close> .
-
-lift_definition bitXOR_natural :: \<open>natural \<Rightarrow> natural \<Rightarrow> natural\<close>
-  is \<open>bitXOR :: nat \<Rightarrow> nat \<Rightarrow> nat\<close> .
-
-lift_definition msb_natural :: \<open>natural \<Rightarrow> bool\<close>
-  is \<open>msb :: nat \<Rightarrow> bool\<close> .
-
-end
-
-instance ..
-end
-*)
-
 lemma bitXOR_1_if_mod_2: \<open> L XOR 1 = (if L mod 2 = 0 then L + 1 else L - 1)\<close> for L :: nat
   apply transfer
   apply (subst int_int_eq[symmetric])
@@ -165,10 +58,6 @@ lemma bitXOR_1_if_mod_2: \<open> L XOR 1 = (if L mod 2 = 0 then L + 1 else L - 1
   done
 
 lemma bitAND_1_mod_2: \<open>L AND 1 = L mod 2\<close> for L :: nat by auto
-
-(*lemma nat_set_bit_0: \<open>set_bit x 0 b = nat ((bin_rest (int x)) BIT b)\<close> for x :: nat
-  by (auto simp: set_bit_nat_def Bit_def) 
-*)  
 
 lemma nat_test_bit0_iff: \<open>n !! 0 \<longleftrightarrow> n mod 2 = 1\<close> for n :: nat
 proof -
@@ -240,19 +129,7 @@ lemma nat_bin_nth_bl':
   by (metis Nat.size_nat_def bit_nat_def div_less even_zero n_less_equal_power_2 nat_bin_nth_bl not_less_iff_gr_or_eq test_bit_nat_outside)
 
 lemma nat_set_bit_test_bit: \<open>set_bit w n x !! m = (if m = n then x else w !! m)\<close> for w n :: nat
-  unfolding nat_bin_nth_bl' apply transfer unfolding set_bit_nat_def
-  apply (auto simp: bin_sc_ge0 bin_nth_simps) 
-        apply (metis bin_nth_bl bin_nth_sc bin_to_bl_def)
-       apply (metis bin_nth_ge_size bin_nth_sc bin_sc_ge0 leI of_nat_less_0_iff)
-      apply (metis bin_nth_bl bin_nth_ge_size bin_nth_sc bin_sc_ge0 bin_to_bl_def int_nat_eq leI
-      of_nat_less_0_iff)
-    apply (metis Nat.size_nat_def bin_nth_bl bin_nth_sc_gen bin_to_bl_def nat_bin_nth_bl nat_bin_nth_bl' )
-  apply (metis Generic_set_bit.bit_set_bit_iff bin_nth_bl bin_to_bl_def bit_of_nat_iff_bit
-    nat_bin_nth_bl' size_nat)
-    apply (metis (full_types) bin_nth_bl bin_nth_ge_size bin_nth_sc_gen bin_sc_ge0 bin_to_bl_def leI of_nat_less_0_iff set_bit_nat_def)
-  by (metis bin_nth_bl bin_nth_ge_size bin_nth_sc_gen bin_sc_ge0 bin_to_bl_def int_nat_eq leI of_nat_less_0_iff set_bit_nat_def)
-
-  
+  by (simp add: Generic_set_bit.bit_set_bit_iff)
   
 lemma unat_or: "unat (x OR y) = unat x OR unat y" by (rule unsigned_or_eq)
 

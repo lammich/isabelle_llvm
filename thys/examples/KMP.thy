@@ -920,6 +920,7 @@ abbreviation "tab_assn \<equiv> larray_assn' TYPE(size_t) size_t_assn"
   
 subsection \<open>Refinement of Lookup Table Computation\<close>
 
+(* FIXME: unused?
   ML \<open>
     structure Cond_Iterate = struct
       fun goal_params' gi =
@@ -956,7 +957,7 @@ subsection \<open>Refinement of Lookup Table Computation\<close>
       fun iterate_while P tac = REPEAT_trace ((fn st => if P st then all_tac st else no_tac st) THEN tac) 0
     end    
   \<close>
-
+*)
 
 sepref_def compute_butlast_\<ff>s_impl is compute_butlast_\<ff>s 
   :: "[\<lambda>s. length s < max_snat LENGTH(size_t)]\<^sub>a (string_assn)\<^sup>k \<rightarrow> tab_assn"

@@ -42,7 +42,7 @@ context weak_ordering begin
   definition "introsort4 xs l h \<equiv> doN {
     ASSERT(l\<le>h);
     if h-l>1 then doN {
-      xs \<leftarrow> introsort_aux4 xs l h (Discrete.log (h-l)*2);
+      xs \<leftarrow> introsort_aux4 xs l h (floor_log (h-l)*2);
       xs \<leftarrow> final_insertion_sort2 xs l h;
       RETURN xs
     } else RETURN xs
@@ -59,15 +59,15 @@ context weak_ordering begin
 end
 
 lemma introsort_depth_limit_in_bounds_aux: (* TODO: Move depth-computation into own (inline) function *)
-  assumes "n < max_snat N" "1<N" shows "Discrete.log (n) * 2 < max_snat N"
+  assumes "n < max_snat N" "1<N" shows "floor_log (n) * 2 < max_snat N"
 proof (cases "n=0")
   case True thus ?thesis using assms by auto
 next
   case [simp]: False  
-  have ?thesis if "Discrete.log (n) < max_snat (N-1)"
+  have ?thesis if "floor_log (n) < max_snat (N-1)"
     using that \<open>1<N\<close> unfolding max_snat_def
     by (metis nat_mult_power_less_eq pos2 semiring_normalization_rules(33))
-  moreover have "Discrete.log (n) < max_snat (N-1)"
+  moreover have "floor_log (n) < max_snat (N-1)"
     apply (rule discrete_log_ltI)
     using assms apply (auto simp: max_snat_def)
     by (smt Suc_diff_Suc leI le_less_trans n_less_equal_power_2 nat_power_less_imp_less not_less_eq numeral_2_eq_2 numeral_2_eq_2 zero_order(3))
@@ -146,7 +146,7 @@ context parameterized_weak_ordering begin
   definition "introsort_param cparam xs l h \<equiv> doN {
     ASSERT(l\<le>h);
     if h-l>1 then doN {
-      xs \<leftarrow> introsort_aux_param cparam xs l h (Discrete.log (h-l)*2);
+      xs \<leftarrow> introsort_aux_param cparam xs l h (floor_log (h-l)*2);
       xs \<leftarrow> final_insertion_sort_param cparam xs l h;
       RETURN xs
     } else RETURN xs

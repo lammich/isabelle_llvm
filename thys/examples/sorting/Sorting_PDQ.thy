@@ -435,14 +435,14 @@ begin
     definition "pdqsort xs l h \<equiv> doN {
       ASSERT (l\<le>h);
       let size = h-l;
-      if (size>1) then pdqsort_aux True xs l h (Discrete.log size)
+      if (size>1) then pdqsort_aux True xs l h (floor_log size)
       else RETURN xs
     }"  
       
     lemma pdqsort_correct: "pdqsort xs l h \<le> slice_sort_spec (\<^bold><) xs l h"
     proof -
-      have log_pos_aux: "1<x \<Longrightarrow> 0 < Discrete.log x" for x
-        apply (subst log_rec) by auto 
+      have log_pos_aux: "1<x \<Longrightarrow> 0 < floor_log x" for x
+        apply (subst floor_log_rec) by auto 
         
       {
         assume "l\<le>h" "h\<le>length xs"

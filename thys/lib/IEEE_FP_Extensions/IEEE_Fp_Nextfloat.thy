@@ -299,12 +299,10 @@ begin
       apply (simp_all add: divide_less_eq)
       done
     subgoal
-      apply (cases "fraction f = 0"; simp add: )
-      apply (intro conjI impI)
-      apply (simp_all add: divide_less_eq fp_pred_exp_less) 
-      done
-      sorry
-    sorry
+      apply (cases "fraction f = 0"; simp add: field_simps divide_less_eq)
+      by (metis (no_types, opaque_lifting) add_Suc_right diff_Suc_1' gr0_implies_Suc less_add_same_cancel2 mult.commute
+          power_Suc power_add zero_less_numeral zero_less_power)
+    done
     
   lemma next_float_mzero[simp]: "next_float (-0) = 0"  
     by (auto simp add: float_eq_conv valof_eq next_float_defs)

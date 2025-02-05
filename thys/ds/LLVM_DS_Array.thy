@@ -45,7 +45,7 @@ context begin
     
 
   lemma pos_sint_to_uint: "0 \<le> sint i \<Longrightarrow> sint i = uint i"  
-    by (smt Suc_n_not_le_n Suc_pred bintrunc_mod2p int_mod_eq' len_gt_0 power_increasing_iff sint_range' uint_sint)
+    by (smt Suc_n_not_le_n Suc_pred bintrunc_mod2p int_mod_eq len_gt_0 power_increasing_iff sint_range' uint_sint)
     
   lemma array_new_rule_sint[vcg_rules]: "llvm_htriple 
     (\<upharpoonleft>sint.assn n ni ** \<up>\<^sub>d(n>0)) 

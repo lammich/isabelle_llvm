@@ -424,17 +424,20 @@ interpretation sep_folding: folding "\<lambda>i Q. P i ** Q" \<box> for P
   done
   
 definition "sep_set_img S P \<equiv> \<up>(finite S) ** sep_folding.F P S"
-  
+
+term "\<Union>x\<in>A. B x"
+
 syntax
   "_SEP_SET_IMG"      :: "pttrn => 'a set => ('b \<Rightarrow> bool) => ('b \<Rightarrow> bool)"  ("(3\<Union>*_\<in>_./ _)" [0, 0, 10] 10)
 
 translations 
   "\<Union>*x\<in>A. B"   \<rightleftharpoons> "CONST sep_set_img A (\<lambda>x. B)"
-  
-print_translation \<open>
-  [Syntax_Trans.preserve_binder_abs2_tr' @{const_syntax sep_set_img} @{syntax_const "_SEP_SET_IMG"}]
+
+typed_print_translation \<open>
+  [(\<^const_syntax>\<open>sep_set_img\<close>, Syntax_Trans.preserve_binder_abs2_tr' \<^syntax_const>\<open>_SEP_SET_IMG\<close>)]
 \<close> \<comment> \<open>to avoid eta-contraction of body\<close>
-  
+
+
 lemma sep_set_img_infinite[simp]: "infinite I \<Longrightarrow> sep_set_img I P = sep_false"
   unfolding sep_set_img_def by auto
 

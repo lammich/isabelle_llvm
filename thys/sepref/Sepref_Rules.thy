@@ -1482,7 +1482,7 @@ begin
           val rr = map (Logic.dest_equals o Thm.prop_of) @{thms uncurry_def uncurry0_def}
           val thy = Proof_Context.theory_of ctxt
         in 
-          Pattern.rewrite_term_top thy rr [] t 
+          Pattern.rewrite_term_topdown thy rr [] t 
         end  
     
         (* Shortcuts for simplification tactics *)
