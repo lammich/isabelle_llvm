@@ -265,7 +265,7 @@ proof -
 
   have "\<lbrakk>\<not>0\<le>i; x\<ge>w\<rbrakk> \<Longrightarrow> i div (2^x) = -1" for x using ran
     apply auto
-    by (smt cancel_div_mod_rules(2) int_mod_eq' linorder_not_le mod_add_self2 mult_cancel_left1 mult_minus_right power_strict_increasing_iff)
+    by (smt cancel_div_mod_rules(2) int_mod_eq linorder_not_le mod_add_self2 mult_cancel_left1 mult_minus_right power_strict_increasing_iff)
 
   with ran K show ?thesis
     apply (rule_tac nth_equalityI)
@@ -429,11 +429,11 @@ lemma lconst_eq_iff[simp]:
   "lconst w c = lconst w' c' \<longleftrightarrow> w'=w \<and> (c' mod 2^w = c mod 2^w)"
   apply safe
   subgoal
-    apply transfer
-    by (metis len_bin_to_bl)
+    apply transfer 
+    by (metis size_bin_to_bl)
   subgoal
     apply transfer
-    by (metis bin_bl_bin bintrunc_mod2p len_bin_to_bl)
+    by (metis bin_bl_bin bintrunc_mod2p size_bin_to_bl)
   subgoal 
     apply transfer  
     by (auto simp: max_def bintrunc_mod2p bl_to_bin_inj)
@@ -872,7 +872,7 @@ lemma word_to_lint_sdiv[word_to_lint_convs]:
   using assms
   apply (auto simp: word_to_lint_def lint_to_word_def sints_def)
   apply transfer'
-  by (smt (z3) One_nat_def bin_to_bl_trunc bintrunc_sbintruncS0 cnv_sop2_def len_bin_to_bl len_gt_0 order_refl sbin_bl_bin sbintrunc_eq_if_in_range)
+  by (smt (z3) One_nat_def bin_to_bl_trunc bintrunc_sbintruncS0 cnv_sop2_def size_bin_to_bl len_gt_0 order_refl sbin_bl_bin sbintrunc_eq_if_in_range)
 
 lemma word_to_lint_smod[word_to_lint_convs]: 
   fixes a b :: "'a::len word"
@@ -920,7 +920,7 @@ lemma word_to_lint_scast_down[word_to_lint_convs]: "is_down SCAST('a \<rightarro
 lemma zext_in_range: "\<lbrakk>w'\<noteq>0; w'\<le>w; 0\<le>a; a<2^w'\<rbrakk> \<Longrightarrow> zext w (lconst w' a) = lconst w a"  
   apply transfer'
   apply (auto simp: bl_zext_def)
-  by (metis bin_bl_bin bintrunc_mod2p bl_bin_bl_rep_drop diff_is_0_eq' diff_zero drop_bin2bl len_bin_to_bl mod_pos_pos_trivial)
+  by (metis bin_bl_bin bintrunc_mod2p bl_bin_bl_rep_drop diff_is_0_eq' diff_zero drop_bin2bl size_bin_to_bl mod_pos_pos_trivial)
   
   
 lemma word_to_lint_ucast_up[word_to_lint_convs]: 

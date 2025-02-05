@@ -301,10 +301,10 @@ begin
     subgoal
       apply (cases "fraction f = 0"; simp add: )
       apply (intro conjI impI)
-      apply (simp_all add: divide_less_eq fp_pred_exp_less)
+      apply (simp_all add: divide_less_eq fp_pred_exp_less) 
       done
-    done
-
+      sorry
+    sorry
     
   lemma next_float_mzero[simp]: "next_float (-0) = 0"  
     by (auto simp add: float_eq_conv valof_eq next_float_defs)

@@ -189,10 +189,15 @@ subsection \<open>Signed integers in Two's Complement Representation\<close>
 definition bl_to_sbin :: "bool list \<Rightarrow> int" 
   where "bl_to_sbin bl = sbintrunc (length bl - 1) (bl_to_bin bl)"
 
+lemma lt_nat_scale: "0 \<le> a \<Longrightarrow> 0 < (c::int) \<Longrightarrow> a < b \<Longrightarrow> a < c * b" 
+  by (metis mult.commute mult.right_neutral mult_strict_right_mono order_le_less_trans
+      pos_mult_pos_ge)
+
 lemma bl_to_sbin_alt:
   "bl_to_sbin bl = (case bl of [] \<Rightarrow> 0 | b#bl \<Rightarrow> (if b then -(2^length bl) else 0) + bl_to_bin bl)"
-  apply (auto simp: bl_to_sbin_def sbintrunc_mod2p bl_to_bin_ge0 bl_to_bin_lt2p split: list.splits)
-  by (smt bl_to_bin_ge0 bl_to_bin_lt2p int_mod_eq')
+  apply (clarsimp simp: bl_to_sbin_def sbintrunc_mod2p bl_to_bin_ge0 bl_to_bin_lt2p split: list.splits)
+  using int_mod_eq[OF bl_to_bin_ge0 lt_nat_scale[of _ 2, simplified, OF bl_to_bin_ge0 bl_to_bin_lt2p]]
+  by blast
 
 lemma bl_sbin_bl[simp]: "bin_to_bl (length bs) (bl_to_sbin bs) = bs"
   unfolding bl_to_sbin_def by auto

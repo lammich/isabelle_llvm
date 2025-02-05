@@ -130,9 +130,7 @@ lemma integer_of_word_bounds[simp]:
   "integer_of_word w < 2^LENGTH('l)"  for w :: "'l::len word"
   unfolding integer_of_word_def 
   apply (auto simp: integer_of_nat_eq_of_nat)
-  apply (metis Word.of_nat_unat of_nat_0_le_iff)
-  by (metis Word.of_nat_unat of_nat_less_iff of_nat_numeral semiring_1_class.of_nat_power unsigned_less)
-
+  done
 
 
 

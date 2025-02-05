@@ -15,7 +15,7 @@ lemma bin_trunc_xor':
 
 (*instance nat :: semiring_bit_syntax ..*)
 
-instantiation nat :: set_bit begin
+(*instantiation nat :: set_bit begin
   definition set_bit_nat :: "nat \<Rightarrow> nat \<Rightarrow> bool \<Rightarrow> nat" where
     "set_bit i n b = nat (bin_sc n b (int i))"
 
@@ -24,6 +24,12 @@ instance
   apply (simp_all add: set_bit_nat_def)
   by (metis bin_nth_sc_gen bin_sign_sc bit_nat_iff bit_of_nat_iff_bit of_nat_0_le_iff sign_Pls_ge_0)
 end  
+*)
+
+definition set_bit_nat :: "nat \<Rightarrow> nat \<Rightarrow> bool \<Rightarrow> nat" where
+  "set_bit_nat i n b = nat (bin_sc n b (int i))"
+
+lift_definition set_bit :: "nat \<Rightarrow> nat \<Rightarrow> bool \<Rightarrow> nat" is set_bit_nat .
 
 instantiation nat :: msb
 begin
@@ -234,16 +240,16 @@ lemma nat_bin_nth_bl':
   by (metis Nat.size_nat_def bit_nat_def div_less even_zero n_less_equal_power_2 nat_bin_nth_bl not_less_iff_gr_or_eq test_bit_nat_outside)
 
 lemma nat_set_bit_test_bit: \<open>set_bit w n x !! m = (if m = n then x else w !! m)\<close> for w n :: nat
-  unfolding nat_bin_nth_bl'
-  apply auto
-        apply (metis bin_nth_bl bin_nth_sc bin_nth_simps(3) bin_to_bl_def int_nat_eq set_bit_nat_def)
-       apply (metis bin_nth_ge_size bin_nth_sc bin_sc_ge0 leI of_nat_less_0_iff set_bit_nat_def)
+  unfolding nat_bin_nth_bl' apply transfer unfolding set_bit_nat_def
+  apply (auto simp: bin_sc_ge0 bin_nth_simps) 
+        apply (metis bin_nth_bl bin_nth_sc bin_to_bl_def)
+       apply (metis bin_nth_ge_size bin_nth_sc bin_sc_ge0 leI of_nat_less_0_iff)
       apply (metis bin_nth_bl bin_nth_ge_size bin_nth_sc bin_sc_ge0 bin_to_bl_def int_nat_eq leI
-      of_nat_less_0_iff set_bit_nat_def)
-      apply (metis Generic_set_bit.bit_set_bit_iff bin_to_bl_def nat_bin_nth_bl' size_nat)
-    apply (metis Nat.size_nat_def bin_nth_bl bin_nth_sc_gen bin_to_bl_def int_nat_eq nat_bin_nth_bl
-      nat_bin_nth_bl' of_nat_less_0_iff of_nat_less_iff set_bit_nat_def)
-   apply (metis (full_types) bin_nth_bl bin_nth_ge_size bin_nth_sc_gen bin_sc_ge0 bin_to_bl_def leI of_nat_less_0_iff set_bit_nat_def)
+      of_nat_less_0_iff)
+    apply (metis Nat.size_nat_def bin_nth_bl bin_nth_sc_gen bin_to_bl_def nat_bin_nth_bl nat_bin_nth_bl' )
+  apply (metis Generic_set_bit.bit_set_bit_iff bin_nth_bl bin_to_bl_def bit_of_nat_iff_bit
+    nat_bin_nth_bl' size_nat)
+    apply (metis (full_types) bin_nth_bl bin_nth_ge_size bin_nth_sc_gen bin_sc_ge0 bin_to_bl_def leI of_nat_less_0_iff set_bit_nat_def)
   by (metis bin_nth_bl bin_nth_ge_size bin_nth_sc_gen bin_sc_ge0 bin_to_bl_def int_nat_eq leI of_nat_less_0_iff set_bit_nat_def)
 
   
