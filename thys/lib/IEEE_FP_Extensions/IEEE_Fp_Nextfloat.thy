@@ -290,6 +290,7 @@ begin
     assumes "is_finite f" "f\<noteq>topfloat" "f\<noteq>-0" 
     shows "valof f < valof (next_float f)" 
     using assms
+    supply [simp del] = of_nat_diff
     apply (simp add: valof_eq next_float_defs)
     apply (clarsimp simp: float_defs float_eq_conv)
     
@@ -299,9 +300,10 @@ begin
       apply (simp_all add: divide_less_eq)
       done
     subgoal
-      apply (cases "fraction f = 0"; simp add: field_simps divide_less_eq)
-      by (metis (no_types, opaque_lifting) add_Suc_right diff_Suc_1' gr0_implies_Suc less_add_same_cancel2 mult.commute
-          power_Suc power_add zero_less_numeral zero_less_power)
+      apply (cases "fraction f = 0"; simp add: )
+      apply (intro conjI impI)
+      apply (simp_all add: divide_less_eq fp_pred_exp_less)
+      done
     done
     
   lemma next_float_mzero[simp]: "next_float (-0) = 0"  
