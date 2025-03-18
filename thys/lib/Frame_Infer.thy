@@ -160,7 +160,7 @@ ML \<open>
             then_conv Simplifier.rewrite (put_simpset HOL_basic_ss ctxt addsimps @{thms sep_conj_assoc})
           )) ctxt)
     
-      fun eq_rotateN_tac ctxt n = WITH_concl ctxt (fn 
+      fun eq_rotateN_tac ctxt n = WITH_concl (fn 
         @{mpat "Trueprop (?lhs = _)"} => let
           val nc = length (SepConj.break_sep_conj lhs)
           val n = n mod nc
@@ -188,7 +188,7 @@ ML \<open>
       in   
         resolve_tac ctxt cong_rls
         THEN'
-        WITH_concl ctxt (
+        WITH_concl (
           fn @{mpat \<open>Trueprop (?lhs = _)\<close>} => let 
               val n = length (SepConj.break_sep_conj lhs)
               fun tac n = eq_rotateN_tac ctxt n
