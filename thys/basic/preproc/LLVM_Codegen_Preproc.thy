@@ -75,6 +75,24 @@ subsection \<open>Preprocessor\<close>
   
   lemma LLVM_EXTERNALI: "LLVM_EXTERNAL c n" unfolding LLVM_EXTERNAL_def by simp
     
+  (* 
+    Code-theorems of the form \<open>lhs = LLVM_NO_PREPROC rhs\<close> will not be pre-processed,
+    except for final formatting.
+  *)
+  definition LLVM_NO_PREPROC :: "'a \<Rightarrow> 'a" where "LLVM_NO_PREPROC x \<equiv> x"
+
+  lemma LLVM_NO_PREPROCI: "lhs\<equiv>rhs \<Longrightarrow> lhs\<equiv>LLVM_NO_PREPROC rhs"
+    unfolding LLVM_NO_PREPROC_def by simp 
+  
+  lemma LLVM_NO_PREPROCI': "lhs=rhs \<Longrightarrow> lhs=LLVM_NO_PREPROC rhs"
+    unfolding LLVM_NO_PREPROC_def by simp 
+  
+  lemma LLVM_NO_PREPROCD: "lhs\<equiv>LLVM_NO_PREPROC rhs \<Longrightarrow> lhs\<equiv>rhs"
+    unfolding LLVM_NO_PREPROC_def by simp 
+  
+  lemma LLVM_NO_PREPROCD': "lhs=LLVM_NO_PREPROC rhs \<Longrightarrow> lhs=rhs"
+    unfolding LLVM_NO_PREPROC_def by simp 
+  
   
   ML \<open> structure LLC_Preprocessor = struct
     open LLC_Lib
@@ -473,21 +491,37 @@ subsection \<open>Preprocessor\<close>
         val _ = check_valid_fname c
         val basename = name_of_head c |> Long_Name.base_name
         
+        fun is_no_preproc teqn = case snd (dest_eqn_thm teqn) of
+          @{mpat "LLVM_NO_PREPROC _"} => true
+        | _ => false  
+        
+        val remove_LLVM_NO_PREPROC = Conv.fconv_rule (rhs_conv (Conv.rewr_conv @{thm LLVM_NO_PREPROC_def}))
+        
+        fun process_advanced_preproc teqn lthy = 
+          if is_no_preproc teqn then ([remove_LLVM_NO_PREPROC teqn], lthy)
+          else let
+            (* Monadify and inline RHS *)
+            val teqn = monadify_inline_cthm lthy teqn
+            
+            (* Extract recursion equations *)
+            val exs = default_extractions lthy
+            
+            val ((teqn,add_eqns,_),lthy) = Definition_Utils.extract_recursion_eqs exs basename teqn lthy
+            val teqns = teqn::add_eqns
+            
+            (* Monadify and inline again *)
+            val teqns = map (monadify_inline_cthm lthy) teqns
+          in (teqns,lthy) end
+        
         fun process_code_eqn teqn = let
           val _ = trace (fn () => "Processing " ^ basename)
           val startt = Time.now ()
         
-          (* Monadify and inline RHS *)
-          val teqn = monadify_inline_cthm lthy teqn
           
-          (* Extract recursion equations *)
-          val exs = default_extractions lthy
+          val (teqns,lthy) = process_advanced_preproc teqn lthy
           
-          val ((teqn,add_eqns,_),lthy) = Definition_Utils.extract_recursion_eqs exs basename teqn lthy
-          val teqns = teqn::add_eqns
-          
-          (* Inline and format again *)
-          val teqns = map (monadify_inline_cthm lthy #> cthm_format lthy) teqns
+          (* Final formatting *)
+          val teqns = map (cthm_format lthy) teqns
 
           (* Update table *)
           val ctab = fold Termtab.update_new (map dep_prep_code_thm teqns) ctab
@@ -960,6 +994,30 @@ thm exp_thms3
 export_llvm (debug) foobar: main_exp is main
 export_llvm (debug) main is main
 
+
+definition fill_table :: "64 word ptr \<Rightarrow> 64 word llM" where "fill_table p \<equiv> doM {
+  p' \<leftarrow> ll_ofs_ptr p (0::64 word); ll_store 0x42 p';
+  p' \<leftarrow> ll_ofs_ptr p (1::64 word); ll_store 0x42 p';
+  p' \<leftarrow> ll_ofs_ptr p (2::64 word); ll_store 0x42 p';
+  p' \<leftarrow> ll_ofs_ptr p (3::64 word); ll_store 0x42 p';
+  p' \<leftarrow> ll_ofs_ptr p (4::64 word); ll_store 0x42 p';
+  p' \<leftarrow> ll_ofs_ptr p (5::64 word); ll_store 0x42 p';
+  p' \<leftarrow> ll_ofs_ptr p (6::64 word); ll_store 0x42 p';
+  p' \<leftarrow> ll_ofs_ptr p (7::64 word); ll_store 0x42 p';
+
+  
+  testx 42 \<^cancel>\<open>Checks that calls are still detected inside no-preproc equations\<close>
+}"
+
+thm fill_table_def[THEN LLVM_NO_PREPROCI]
+
+declare fill_table_def[THEN LLVM_NO_PREPROCI, llvm_code]
+
+thm llvm_code_raw
+
+print_named_simpset llvm_pre_simp
+
+export_llvm fill_table
 
 
 definition [llvm_code]: 
