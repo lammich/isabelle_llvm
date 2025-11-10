@@ -1165,7 +1165,7 @@ begin
       butlast_exch_last: "butlast (exch h i (length h)) = update (butlast h) i (last h)"  
       unfolding exch_def update_def
       apply (cases h rule: rev_cases)
-      apply (auto simp: swap_def butlast_list_update)
+      apply (auto simp: swap_def butlast_list_update list_update_beyond)
       done
 
     lemma (in heapstruct) remove_op_invar: 

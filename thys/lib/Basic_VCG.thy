@@ -191,7 +191,7 @@ text \<open>
         val table = Static_Xform_Data.get (Context.Proof ctxt)
         fun pretty_xformer (name,_) = Pretty.mark_str name
       in
-        Pretty.writeln_chunks (map pretty_xformer (Name_Space.markup_table verbose ctxt table))
+        Pretty.writeln (Pretty.chunks (map pretty_xformer (Name_Space.markup_table verbose ctxt table)))
       end
       
       fun static_xform_rl ctxt = let 

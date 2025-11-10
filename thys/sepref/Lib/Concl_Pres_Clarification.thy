@@ -30,12 +30,12 @@ begin
       fun eq_assume_contr_tac ctxt = eq_assume_tac ORELSE' eq_contr_tac ctxt;
 
       fun cp_bimatch_from_nets_tac ctxt =
-        biresolution_from_nets_tac ctxt (order_list o filter (is_cp_brl o snd)) true;
+        Bires.biresolution_from_nets_tac ctxt Bires.tag_ord (SOME is_cp_brl) true;
 
 
     in
       fun cp_clarify_step_tac ctxt =
-        let val {safep_netpair, ...} = (rep_cs o claset_of) ctxt in
+        let val safep_netpair = safep_netpair_of ctxt in
           appSWrappers ctxt
            (FIRST'
              [eq_assume_contr_tac ctxt,

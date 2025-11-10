@@ -166,7 +166,7 @@ lemma slice_swap: "\<lbrakk>i\<in>{l..<h}; j\<in>{l..<h}; h\<le>length xs\<rbrak
   by (auto simp: drop_update_swap)
   
 lemma take_swap_outside[simp]: "l\<le>i \<Longrightarrow> l\<le>j \<Longrightarrow> take l (swap xs i j) = take l xs"  
-  by (simp add: LLVM_More_List.swap_def)
+  by (simp add: LLVM_More_List.swap_def list_update_beyond) 
 
 lemma drop_swap_outside[simp]: "i<h \<Longrightarrow> j<h \<Longrightarrow> drop h (swap xs i j) = drop h xs"  
   by (simp add: LLVM_More_List.swap_def)
@@ -305,12 +305,12 @@ lemma slice_nth_refine': "\<lbrakk>(xs,xs')\<in>slice_rel xs\<^sub>0 l h; (i,i')
   
 lemma slice_upd_refine: "\<lbrakk> (xs,xs')\<in>slice_rel xs\<^sub>0 l h; (i,i')\<in>idx_shift_rel l; i<h; (x,x')\<in>Id \<rbrakk> 
   \<Longrightarrow> (xs[i:=x], xs'[i':=x'])\<in>slice_rel xs\<^sub>0 l h"  
-  by (auto simp: slice_rel_def in_br_conv slice_upd idx_shift_rel_def algebra_simps)
+  by (auto simp: slice_rel_def in_br_conv slice_upd idx_shift_rel_def algebra_simps simp del: take_update) 
 
 lemma slice_upd_refine': "\<lbrakk> (xs,xs')\<in>slice_rel xs\<^sub>0 l h; (i,i')\<in>idx_shift_rel l; (x,x')\<in>Id \<rbrakk> 
   \<Longrightarrow> mop_list_set xs i x \<le>\<Down>(slice_rel xs\<^sub>0 l h) (mop_list_set xs' i' x')"  
   apply (auto simp: pw_le_iff refine_pw_simps)
-  by (auto simp: slice_rel_def in_br_conv slice_upd idx_shift_rel_def algebra_simps)
+  by (auto simp: slice_rel_def in_br_conv slice_upd idx_shift_rel_def algebra_simps simp del: take_update)
     
 lemma slice_in_slice_rel[simp]: "\<lbrakk>l\<le>h; h\<le>length xs\<rbrakk> \<Longrightarrow> (xs, Misc.slice l h xs) \<in> slice_rel xs l h"  
   unfolding slice_rel_def in_br_conv by auto
@@ -436,8 +436,8 @@ lemma slice_rel_rebase: "(xsi', xs) \<in> slice_rel xsi l h \<Longrightarrow> sl
     
   lemma eq_outside_erange_upd_inside: "\<lbrakk> i\<in>{l..<h} \<rbrakk> \<Longrightarrow> eq_outside_range xs (xs'[i:=x]) l h \<longleftrightarrow> eq_outside_range xs xs' l h"
     unfolding eq_outside_range_def
-    by auto
-  
+    by (auto simp del: take_update)
+    
     
     
 (* TODO: Unify these concepts! *)

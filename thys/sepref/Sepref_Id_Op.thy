@@ -169,7 +169,7 @@ named_theorems_rev id_rules "Operation identification rules"
 named_theorems_rev pat_rules "Operation pattern rules"
 named_theorems_rev def_pat_rules "Definite operation pattern rules (not backtracked over)"
 
-
+ML_val \<open>open Tactic\<close>
 
 ML \<open>
 
@@ -247,13 +247,13 @@ ML \<open>
       val pat_rules = Named_Theorems_Rev.get ctxt @{named_theorems_rev pat_rules}
       val def_pat_rules = Named_Theorems_Rev.get ctxt @{named_theorems_rev def_pat_rules}
 
-      val rl_net = Tactic.build_net (
+      val rl_net = Bires.build_net (
         (pat_rules |> map (fn thm => thm RS @{thm pat_rule})) 
         @ @{thms annot_rule app_rule app'_rule abs_rule} 
         @ (id_rules |> map (fn thm => thm RS @{thm id_rule}))
       )
 
-      val def_rl_net = Tactic.build_net (
+      val def_rl_net = Bires.build_net (
         (def_pat_rules |> map (fn thm => thm RS @{thm pat_rule}))
       )  
 
@@ -317,8 +317,8 @@ ML \<open>
       val step_tac = (FIRST' [
         assume_tac ctxt, 
         eresolve_tac ctxt @{thms id_rule},
-        resolve_from_net_tac ctxt def_rl_net, 
-        resolve_from_net_tac ctxt rl_net, 
+        Bires.resolve_from_net_tac ctxt def_rl_net, 
+        Bires.resolve_from_net_tac ctxt rl_net, 
         id_pr_const_rename_tac,
         do_unprotect_tac ctxt, 
         fallback_tac])

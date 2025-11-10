@@ -1020,7 +1020,8 @@ qed
 lemma valof_one[simp]: "valof (1 :: ('e, 'f) float) = of_bool (LENGTH('e) > 1)"
   apply transfer
   apply (auto simp add: bias_def unat_mask_eq simp flip: mask_eq_exp_minus_1)
-  apply (simp add: mask_eq_exp_minus_1)
+   apply (simp add: mask_eq_exp_minus_1)
+  using len_gt_0[where ?'a='e] apply linarith (*TODO: Peter*)
   done
 
 end

@@ -87,14 +87,14 @@ lemma finite_inf_linorder_ne_ex:
   fixes f :: "_ \<Rightarrow> _::{complete_lattice,linorder}"
   assumes "finite S"
   assumes "S\<noteq>{}"
-  shows "\<exists>x\<in>S. (INF x:S. f x) = f x"
+  shows "\<exists>x\<in>S. (INF x\<in>S. f x) = f x"
   using assms
   by (meson Inf_in finite_imageI imageE image_is_empty)
   
   
 
 lemma finite_linorder_eq_INF_conv: "finite S 
-  \<Longrightarrow> a = (INF x:S. f x) \<longleftrightarrow> (if S={} then a=top else \<exists>x\<in>S. a=f x \<and> (\<forall>y\<in>S. a \<le> f y))"
+  \<Longrightarrow> a = (INF x\<in>S. f x) \<longleftrightarrow> (if S={} then a=top else \<exists>x\<in>S. a=f x \<and> (\<forall>y\<in>S. a \<le> f y))"
   for a :: "_::{complete_lattice,linorder}"
   by (auto 
     simp: INF_greatest INF_lower  
@@ -1305,24 +1305,24 @@ lemma id_op_bind_const[id_rules]:
     
 lemma hn_bind_const[sepref_comb_rules]:
   assumes PRE: "vassn_tag \<Gamma> \<Longrightarrow> m \<le> RETURN c"
-  assumes D1: "hn_refine \<Gamma> m' \<Gamma>1 Rh m"
+  assumes D1: "hn_refine \<Gamma> m' \<Gamma>1 Rh CP\<^sub>1 m"
   assumes D2: 
-    "\<And>x'. m = RETURN c \<Longrightarrow> 
-      hn_refine (hn_ctxt Rh c x' ** \<Gamma>1) (f' x') (\<Gamma>2 x') R (f c)"
+    "\<And>x'. bind_ref_tag c m \<Longrightarrow> CP_assm (CP\<^sub>1 x') \<Longrightarrow>
+      hn_refine (hn_ctxt Rh c x' ** \<Gamma>1) (f' x') (\<Gamma>2 x') R (CP\<^sub>2 x') (f c)"
   assumes IMP: "\<And>x'. \<Gamma>2 x' \<turnstile> hn_ctxt Rx c x' ** \<Gamma>'"
   assumes "MK_FREE Rx fr"
-  shows "hn_refine \<Gamma> (doM {x\<leftarrow>m'; r\<leftarrow>f' x; fr x; return r}) \<Gamma>' R (PR_CONST (bind_const c)$m$(\<lambda>\<^sub>2x. f x))"
+  shows "hn_refine \<Gamma> (doM {x\<leftarrow>m'; r\<leftarrow>f' x; fr x; Mreturn r}) \<Gamma>' R (CP_SEQ CP\<^sub>1 CP\<^sub>2) (PR_CONST (bind_const c)$m$(\<lambda>\<^sub>2x. f x))"
 proof (rule hn_refine_vassn_tagI)
   assume "vassn_tag \<Gamma>"
   then have X: "m = RETURN c \<and> x=c" if "RETURN x \<le> m" for x
     using PRE that dual_order.trans by fastforce
   
   show ?thesis  
-    unfolding APP_def PROTECT2_def bind_ref_tag_def bind_const_def PR_CONST_def
+    unfolding APP_def PROTECT2_def bind_const_def PR_CONST_def CP_SEQ_def
     apply (rule hnr_bind[where ?\<Gamma>2.0="\<lambda>x x'. \<up>(x=c) ** G x'" for G])
     apply fact
-    apply (drule X) apply (clarsimp simp: sep_algebra_simps) apply fact
-    find_theorems entails pred_lift
+    apply (drule X) apply (clarsimp simp: sep_algebra_simps) apply (rule D2)
+    unfolding bind_ref_tag_def CP_assm_def apply simp apply simp
     apply (clarsimp simp: entails_lift_extract_simps sep_algebra_simps) apply fact
     by fact
     

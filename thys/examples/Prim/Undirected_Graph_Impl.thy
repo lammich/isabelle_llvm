@@ -114,10 +114,10 @@ lemma wu1_edges_aux: "wu1_invar g \<Longrightarrow> edges (graph {} (wu1_\<alpha
 lemma wu1_edges_aux2: "wu1_invar g \<Longrightarrow> edges (wu1_\<alpha>g g) = wu1_\<alpha>E g"
   unfolding wu1_\<alpha>g_def by (simp add: wu1_edges_aux)
 
-  
+term "f(a \<mapsto> b)"
 lemma wu1_\<alpha>E_ins_aux:
   assumes "wu1_invar g" "(u,v)\<notin>edges (wu1_\<alpha>g g)" "u\<noteq>v"
-  shows "wu1_\<alpha>E (g(u := g u(v \<mapsto> w), v := g v(u \<mapsto> w))) = {(u,v),(v,u)} \<union> wu1_\<alpha>E g"  
+  shows "wu1_\<alpha>E (g(u := (g u)(v \<mapsto> w), v := (g v)(u \<mapsto> w))) = {(u,v),(v,u)} \<union> wu1_\<alpha>E g"  
   using assms
   unfolding wu1_\<alpha>g_def
   apply (simp add: wu1_edges_aux)
@@ -155,7 +155,7 @@ lemma wu1_ins_edge_refine[simp]:
   subgoal
     unfolding wu1_\<alpha>w_def wu1_ins_edge_def
     apply (rule ext)
-    subgoal for e by (cases e rule: epair_cases) auto
+    subgoal for e by (cases e rule: epair_cases) (auto simp: assms(3)) 
     done
   done  
 
@@ -254,10 +254,14 @@ lemma wu2_adjs_refine:
   
 definition wu2_adjs_len :: "nat \<Rightarrow> 'w wugraph2 \<Rightarrow> nat nres" where
   "wu2_adjs_len u xss \<equiv> mop_list_list_llen xss u"
-  
+
+
+definition wu2_adjs_nth :: "nat \<Rightarrow> nat \<Rightarrow> 'w wugraph2 \<Rightarrow> (nat\<times>'w) nres" where
+  "wu2_adjs_nth u i xss \<equiv> ASSERT (wu2_invar xss) \<bind> (\<lambda>_. mop_list_list_idx xss u i)"
+(* TODO: Peter
 definition wu2_adjs_nth :: "nat \<Rightarrow> nat \<Rightarrow> 'w wugraph2 \<Rightarrow> (nat\<times>'w) nres" where
   "wu2_adjs_nth u i xss \<equiv> ASSERT (wu2_invar xss) \<then> mop_list_list_idx xss u i"
-
+*)
 
 definition "wu_rel N \<equiv> {(g2,(g,w)). let g1 = (wu2_\<alpha> g2) in g = wu1_\<alpha>g g1 \<and> w = wu1_\<alpha>w g1 \<and> wu1_invar g1 \<and> wu2_invar g2 \<and> length g2=N }"
 

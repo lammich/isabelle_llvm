@@ -29,18 +29,16 @@ lemma swap_param_fref: "(uncurry2 swap,uncurry2 swap) \<in>
 lemma param_list_null[param]: "(List.null,List.null) \<in> \<langle>A\<rangle>list_rel \<rightarrow> bool_rel"
 proof -
   have 1: "List.null = (\<lambda>[] \<Rightarrow> True | _ \<Rightarrow> False)" 
-    apply (rule ext) subgoal for l by (cases l) (auto simp: List.null_def)
+    apply (rule ext) subgoal for l by (cases l) auto
     done 
   show ?thesis unfolding 1 by parametricity
 qed
 
 subsection \<open>Operations\<close>
 
-find_theorems INTF_OF_REL
-
 
 sepref_decl_op list_empty: "[]" :: "\<langle>A\<rangle>list_rel" .
-context notes [simp] = eq_Nil_null begin
+context notes [simp] = List.null_iff[symmetric] and [simp del] = List.null_iff begin
   sepref_decl_op list_is_empty: "\<lambda>l. l=[]" :: "\<langle>A\<rangle>list_rel \<rightarrow>\<^sub>f bool_rel" .
 end
   
@@ -57,7 +55,7 @@ sepref_decl_op list_drop: drop :: "[\<lambda>(i,l). i\<le>length l]\<^sub>f nat_
 sepref_decl_op list_length: length :: "\<langle>A\<rangle>list_rel \<rightarrow> nat_rel" .
 sepref_decl_op list_get: nth :: "[\<lambda>(l,i). i<length l]\<^sub>f \<langle>A\<rangle>list_rel \<times>\<^sub>r nat_rel \<rightarrow> A" .
 sepref_decl_op list_set: list_update :: "[\<lambda>((l,i),_). i<length l]\<^sub>f (\<langle>A\<rangle>list_rel \<times>\<^sub>r nat_rel) \<times>\<^sub>r A \<rightarrow> \<langle>A\<rangle>list_rel" .
-context notes [simp] = eq_Nil_null begin
+context notes [simp] = List.null_iff[symmetric] and [simp del] = List.null_iff begin
   sepref_decl_op list_hd: hd :: "[\<lambda>l. l\<noteq>[]]\<^sub>f \<langle>A\<rangle>list_rel \<rightarrow> A" .
   sepref_decl_op list_tl: tl :: "[\<lambda>l. l\<noteq>[]]\<^sub>f \<langle>A\<rangle>list_rel \<rightarrow> \<langle>A\<rangle>list_rel" .
   sepref_decl_op list_last: last :: "[\<lambda>l. l\<noteq>[]]\<^sub>f \<langle>A\<rangle>list_rel \<rightarrow> A" .

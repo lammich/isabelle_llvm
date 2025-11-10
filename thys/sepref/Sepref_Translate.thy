@@ -353,11 +353,11 @@ structure Sepref_Translate = struct
       which must be processed in order. *)
     fun trans_comb_tac ctxt = let
       val comb_rl_net = sepref_comb_rules.get ctxt
-        |> Tactic.build_net
+        |> Bires.build_net
 
     in
       DETERM o (
-        resolve_from_net_tac ctxt comb_rl_net 
+        Bires.resolve_from_net_tac ctxt comb_rl_net 
         (*ORELSE' (
           Sepref_Frame.norm_goal_pre_tac ctxt 
           THEN' resolve_from_net_tac ctxt comb_rl_net
@@ -372,19 +372,19 @@ structure Sepref_Translate = struct
       each applicable rule.
     *)
     fun gen_trans_op_tac dbg ctxt = let
-      val fr_rl_net = sepref_fr_rules.get ctxt |> Tactic.build_net
+      val fr_rl_net = sepref_fr_rules.get ctxt |> Bires.build_net
       val fr_rl_tac = 
-        resolve_from_net_tac ctxt fr_rl_net (* Try direct match *)
+        Bires.resolve_from_net_tac ctxt fr_rl_net (* Try direct match *)
         ORELSE' (
           Sepref_Frame.norm_goal_pre_tac ctxt (* Normalize precondition *) 
           THEN' (
-            resolve_from_net_tac ctxt fr_rl_net
+            Bires.resolve_from_net_tac ctxt fr_rl_net
             ORELSE' (
               resolve_tac ctxt @{thms cons_pre_rule} (* Finally, generate a frame condition *)
               THEN_ALL_NEW_LIST [
                 SOLVED' (REPEAT_ALL_NEW_FWD (DETERM o resolve_tac ctxt @{thms CPR_TAG_rules})),
                 K all_tac,  (* Frame remains unchanged as first goal, even if fr_rl creates side-conditions *)
-                resolve_from_net_tac ctxt fr_rl_net
+                Bires.resolve_from_net_tac ctxt fr_rl_net
               ]
             )
           )  

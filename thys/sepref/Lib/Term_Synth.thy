@@ -49,9 +49,9 @@ ML \<open>
       val goal = @{mk_term "Trueprop (SYNTH_TERM ?t ?v)"} |> Thm.cterm_of ctxt
   
       val rules = thms @ Named_Theorems_Rev.get ctxt @{named_theorems_rev synth_rules}
-        |> Tactic.build_net
+        |> Bires.build_net
       fun tac ctxt = ALLGOALS (TRY_SOLVED' (
-        REPEAT_DETERM' (CHANGED o resolve_from_net_tac ctxt rules)))
+        REPEAT_DETERM' (CHANGED o Bires.resolve_from_net_tac ctxt rules)))
       
       val thm = Goal.prove_internal ctxt [] goal (fn _ => tac ctxt)
 

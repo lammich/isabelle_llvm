@@ -334,8 +334,8 @@ ML \<open>
       end
   
       fun WITH_RULE_NETS tac ctxt = let
-        val scn_net = safe_constraint_rules.get ctxt |> Tactic.build_net
-        val cn_net = constraint_rules.get ctxt |> Tactic.build_net
+        val scn_net = safe_constraint_rules.get ctxt |> Bires.build_net
+        val cn_net = constraint_rules.get ctxt |> Bires.build_net
       in
         tac (scn_net,cn_net) ctxt
       end
@@ -347,13 +347,13 @@ ML \<open>
       )
 
       fun solve_step_tac (scn_net,cn_net) ctxt = REPEAT_ALL_NEW (
-        DETERM o resolve_from_net_tac ctxt scn_net
-        ORELSE' resolve_from_net_tac ctxt cn_net
+        DETERM o Bires.resolve_from_net_tac ctxt scn_net
+        ORELSE' Bires.resolve_from_net_tac ctxt cn_net
       )
 
       fun safe_step_tac (scn_net,cn_net) ctxt = REPEAT_ALL_NEW (
-        DETERM o resolve_from_net_tac ctxt scn_net
-        ORELSE' SAFE' (resolve_from_net_tac ctxt cn_net)
+        DETERM o Bires.resolve_from_net_tac ctxt scn_net
+        ORELSE' SAFE' (Bires.resolve_from_net_tac ctxt cn_net)
       )
 
       fun solve_tac cn_nets ctxt = SOLVED' (wrap_tac (solve_step_tac cn_nets) ctxt)
