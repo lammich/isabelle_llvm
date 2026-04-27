@@ -75,7 +75,7 @@ lemma fri_extract_prod_case[fri_extract_simps]: "(case p of (a,b) \<Rightarrow> 
   done
   
 lemma norm_prod_case[vcg_normalize_simps]:
-  "wp (case p of (a,b) \<Rightarrow> f a b) Q s \<longleftrightarrow> (\<forall>a b. p=(a,b) \<longrightarrow> wp (f a b) Q s)" 
+  "wp (case p of (a,b) \<Rightarrow> f a b) E Q s \<longleftrightarrow> (\<forall>a b. p=(a,b) \<longrightarrow> wp (f a b) E Q s)" 
   by (auto split: prod.split) 
 
 

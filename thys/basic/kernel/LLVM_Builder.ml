@@ -312,6 +312,10 @@ signature LLVM_BUILDER = sig
   
   
   (* Instructions *)
+  
+  (** Abort *)
+  val mk_abort: T -> unit
+  
   (** Arithmetic *)
   val mk_arith_instr: string -> T -> regname -> value -> value -> value
   val mk_icmp_instr: string -> T -> regname -> value -> value -> value
@@ -909,6 +913,28 @@ structure LLVM_Builder : LLVM_BUILDER = struct
   
   fun mk_dst_instr b dst rty s = mk_dst_instr' b dst rty (K s)
   
+
+  fun pr_args args = separate ", " (map pr_ty_val args) |> implode
+  
+  fun mk_call b dst rty proc args = 
+    mk_dst_instr b dst rty ("call" ^# pr_ty rty ^# pr_proc proc ^# "(" ^ pr_args args ^ ")")
+  
+  fun mk_call_void b proc args = let
+    val _ = assert_open_bb b
+  in
+    "call" ^# "void" ^# pr_proc proc ^# "(" ^ pr_args args ^ ")"
+    |> writeln b
+  end
+  
+    
+  fun mk_abort b = let
+    val abort_name = "isabelle_llvm_abort"
+    val _ = decl_ext_fun b NONE abort_name []
+    val _ = mk_call_void b abort_name []
+  in
+    ()
+  end
+  
    
   fun mk_arith_instr iname b dst op1 op2 = let
     val _ = assert (ty_of_val op1 = ty_of_val op2) "arith_instr: different types"
@@ -1022,17 +1048,6 @@ structure LLVM_Builder : LLVM_BUILDER = struct
   | mk_phi' _ _ [] = raise Error "mk_phi': Empty arguments"
   
   
-  fun pr_args args = separate ", " (map pr_ty_val args) |> implode
-  
-  fun mk_call b dst rty proc args = 
-    mk_dst_instr b dst rty ("call" ^# pr_ty rty ^# pr_proc proc ^# "(" ^ pr_args args ^ ")")
-  
-  fun mk_call_void b proc args = let
-    val _ = assert_open_bb b
-  in
-    "call" ^# "void" ^# pr_proc proc ^# "(" ^ pr_args args ^ ")"
-    |> writeln b
-  end
   
   fun mk_return b NONE = (
       assert_open_bb b;

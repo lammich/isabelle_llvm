@@ -541,6 +541,7 @@ definition is_init :: "('a \<Rightarrow> 'c::llvm_rep \<Rightarrow> assn) \<Righ
 lemma is_init_id_assn[sepref_gen_algo_rules]: "GEN_ALGO init (is_init id_assn)"
   by (auto simp: GEN_ALGO_def is_init_def)
   
+
   
 subsection \<open>Arithmetics\<close>
 
@@ -633,6 +634,16 @@ lemma hn_bool_ops[sepref_fr_rules]:
   unfolding op_neq_def  
   by simp_all
 
+lemma bool1_assn_simps[simp]:
+  "bool1_assn True 0 = sep_false"  
+  "bool1_assn True 1 = \<box>"  
+  "bool1_assn False 0 = \<box>"  
+  "bool1_assn False 1 = sep_false"  
+  unfolding bool1_rel_def pure_def
+  by (auto simp: bool.rel_def in_br_conv sep_algebra_simps)
+  
+  
+  
 text \<open>We define an implies connective, using sepref\<close>
 sepref_definition ll_implies is "uncurry (RETURN oo (\<longrightarrow>))" :: "bool1_assn\<^sup>k *\<^sub>a bool1_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
   unfolding imp_conv_disj
@@ -1513,6 +1524,8 @@ lemmas [sepref_bounds_simps] = max_snat_def max_unat_def max_sint_def min_sint_d
 subsection \<open>Default Inlinings\<close>
 lemmas [llvm_inline] = id_def
 
+
+
 subsection \<open>HOL Combinators\<close>
 
 subsubsection \<open>If\<close>
@@ -2111,6 +2124,90 @@ abbreviation snat_option_assn' :: "'a itself \<Rightarrow> nat option \<Rightarr
   "snat_option_assn' _ \<equiv> snat.option_assn"
   
   
+subsection \<open>Dynamic Check\<close>
+definition [simp]: "FAIL_dynamic_check \<equiv> SUCCEED"
+sepref_register FAIL_dynamic_check
+lemma hnr_FAIL_dynamic_check[sepref_fr_rules]: "(uncurry0 ll_abort, uncurry0 FAIL_dynamic_check) \<in> unit_assn\<^sup>k \<rightarrow>\<^sub>a A"
+  apply sepref_to_hnr
+  unfolding ll_abort_def
+  by (rule hnr_Mabort)
+
+lemma pw_FAIL_dynamic_check[simp,refine_pw_simps]:
+  "nofail FAIL_dynamic_check"
+  "\<not>inres FAIL_dynamic_check x"
+  unfolding FAIL_dynamic_check_def by auto
+    
+definition "ASSUME_dynamic P \<equiv> if P then RETURN () else FAIL_dynamic_check"
+
+lemma pw_ASSUME_dynamic[refine_pw_simps]:
+  "nofail (ASSUME_dynamic P)"
+  "inres (ASSUME_dynamic P) x \<longleftrightarrow> P"
+  unfolding ASSUME_dynamic_def
+  by (auto simp: refine_pw_simps)
+
+lemma ASSUME_dynamic_refine0[refine0]:
+  "doN {ASSUME P; m} \<le> S \<Longrightarrow> doN { ASSUME_dynamic P; m } \<le> S"
+  "S \<le> doN {ASSUME P; m}  \<Longrightarrow> S \<le>  doN { ASSUME_dynamic P; m }"
+  by (auto simp: refine_pw_simps pw_le_iff)
+
+lemma ASSUME_dynamic_vcg[refine_vcg]: 
+  "\<lbrakk> P \<Longrightarrow> Q ()\<rbrakk> \<Longrightarrow> ASSUME_dynamic P \<le> SPEC Q"
+  "\<lbrakk> P \<Longrightarrow> Q ()\<rbrakk> \<Longrightarrow> ASSUME_dynamic P \<le>\<^sub>n SPEC Q"
+  by (auto simp: refine_pw_simps pw_le_iff pw_leof_iff)
+  
+(*  
+sepref_register ASSUME_dynamic
+
+sepref_definition ASSUME_dynamic_impl [llvm_inline] is "ASSUME_dynamic" :: "bool1_assn\<^sup>k \<rightarrow>\<^sub>a unit_assn"
+  unfolding ASSUME_dynamic_def 
+  apply sepref_dbg_keep
+  apply sepref_dbg_trans_keep
+  apply sepref_dbg_trans_step_keep
+*)  
+
+lemma ASSUME_dynamic_simps[simp]: 
+  "ASSUME_dynamic True = RETURN ()"  
+  "ASSUME_dynamic False = SUCCEED"
+  unfolding ASSUME_dynamic_def 
+  by auto
+  
+definition [simp]: "op_ASSUME_dynamic_bind I m \<equiv> Refine_Basic.bind (ASSUME_dynamic I) (\<lambda>_. m)"
+lemma pat_ASSUME_dynamic_bind[def_pat_rules]:
+  "Refine_Basic.bind$(ASSUME_dynamic$I)$(\<lambda>\<^sub>2_. m) \<equiv> op_ASSUME_dynamic_bind$I$m"
+  by simp
+
+lemma id_op_ASSUME_dynamic_bind[id_rules]: 
+  "op_ASSUME_dynamic_bind ::\<^sub>i TYPE(bool \<Rightarrow> 'a nres \<Rightarrow> 'a nres)"
+  by simp
+
+lemma arity_ASSUME_dynamic_bind[sepref_monadify_arity]:
+  "op_ASSUME_dynamic_bind \<equiv> \<lambda>\<^sub>2I m. SP op_ASSUME_dynamic_bind$I$m"
+  apply (rule eq_reflection)
+  by (auto simp: fun_eq_iff)
+
+lemma op_ASSUME_dynamic_bind_mcomb[sepref_monadify_comb]: "op_ASSUME_dynamic_bind$b$t \<equiv> Refine_Basic.bind$(EVAL$b)$(\<lambda>\<^sub>2b. (SP op_ASSUME_dynamic_bind$b$t))"
+  by simp
+  
+lemma hn_ASSUME_dynamic_bind[sepref_comb_rules]: 
+  assumes "\<Gamma> \<turnstile> hn_ctxt bool1_assn b bi ** F"
+  assumes "b \<Longrightarrow> hn_refine (hn_ctxt  bool1_assn b bi ** F) c \<Gamma>' R CP m"
+  shows "hn_refine \<Gamma> (llc_if bi c (doM {ll_abort; Mreturn init})) \<Gamma>' R CP (op_ASSUME_dynamic_bind$b$m)"
+proof -
+  have [vcg_normalize_simps, named_ss fri_prepare_simps]: "hn_val bool1_rel = \<upharpoonleft>bool.assn"
+    unfolding bool1_rel_def bool.assn_is_rel hn_ctxt_def ..
+
+  interpret llvm_prim_ctrl_setup .  
+    
+  show ?thesis    
+    using assms
+    by (cases b; cases bi; simp add: hn_ctxt_def llc_if_simps ll_abort_def hnr_Mabort hn_refine_cons_pre)
+    
+    
+qed
+  
+  
+
+  
 subsection \<open>Additional Operations\<close>  
 
 text \<open>Additional operations, for which we need the basic framework already set up.\<close>
@@ -2135,6 +2232,9 @@ declare snat_sub_ovf_impl.refine[sepref_fr_rules]
 
 subsection \<open>Ad-Hoc Regression Tests\<close>  
   
+experiment
+begin
+
 sepref_definition example1 is "\<lambda>x. doN {ASSERT (x\<in>{-10..10});
     RETURN (x<5 \<and> x\<noteq>2 \<longrightarrow> x-2 \<noteq> 0)}" :: "(sint_assn' TYPE(7))\<^sup>k \<rightarrow>\<^sub>a (bool1_assn)" 
   apply (annot_sint_const "TYPE(7)")
@@ -2210,6 +2310,23 @@ llvm_deps example4n
 
 export_llvm example4n
 
+
+
+(* Increment a number, dynamically check for overflow *)
+definition "incr_dyn i \<equiv> doN { ASSUME_dynamic (i<9223372036854775807); RETURN (i+1) }"
+
+sepref_def incr_dyn_impl is "incr_dyn" :: "(snat_assn' TYPE(64))\<^sup>k \<rightarrow>\<^sub>a snat_assn' TYPE(64)"
+  unfolding incr_dyn_def
+  apply (annot_snat_const "TYPE(64)")
+  by sepref
+
+  declare [[llc_compile_abort=true]]
+  export_llvm incr_dyn_impl
+  
+
+
 (* TODO: Characters as i8 *)  
+end
+
   
 end

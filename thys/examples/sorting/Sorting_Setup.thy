@@ -1251,7 +1251,7 @@ lemma ars_with_split_bind_unit[sepref_opt_simps2]: "doM {
   mm () xs
 }"
   unfolding ars_with_split_def ars_with_split_nores_def map_res_def 
-  apply pw
+  apply (pw'; safe; blast)
   done
   
 definition [llvm_inline]: "oidxs_with_idxs'_nores p m \<equiv> doM { (_,_) \<leftarrow> m p p; Mreturn p }"

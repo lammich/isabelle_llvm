@@ -224,6 +224,8 @@ begin
 
       val llc_compile_union = Attrib.setup_config_bool @{binding llc_compile_union} (K false)
       
+      val llc_compile_abort = Attrib.setup_config_bool @{binding llc_compile_abort} (K false)
+      
       val str_of_w32 = Word32.fmt StringCvt.HEX #> StringCvt.padLeft #"0" 8 #> prefix "0x";
       val str_of_w64 = Word64.fmt StringCvt.HEX #> StringCvt.padLeft #"0" 16 #> prefix "0x";
       
@@ -1050,7 +1052,17 @@ begin
         val _ = Config.get ctxt llc_compile_union orelse
                 raise Fail "Union aggregate type is experimental and disabled! declare [[llc_compile_union=true]] to enable!"
       in () end
-        
+
+      fun feature_check_abort ctxt = let
+        val _ = Config.get ctxt llc_compile_abort orelse
+                raise Fail "Dynamic checks (abort) must be explicitly activated. declare [[llc_compile_abort=true]] to enable!"
+      in () end
+      
+              
+      fun abort_builder _ _ [] ctxt b = (
+        feature_check_abort ctxt; LLVM_Builder.mk_abort b; NONE
+      ) | abort_builder _ _ _ _ _ = raise Fail "abort_builder: invalid arguments"
+      
               
       fun arith_instr_builder iname vtab dst [OOOp x1, OOOp x2] _ b = (
         LLVM_Builder.mk_arith_instr iname b dst (llc_op_to_val b vtab x1) (llc_op_to_val b vtab x2) |> SOME
@@ -1279,6 +1291,8 @@ begin
       end
 
       val builders = Symtab.empty
+        |> register_builder (abort_builder) @{const_name ll_abort}
+      
         |> fold (register_prfx_builder "ll_" arith_instr_builder) 
           [@{const_name ll_add}, @{const_name ll_sub}, @{const_name ll_mul},
            @{const_name ll_udiv}, @{const_name ll_urem}, @{const_name ll_sdiv}, @{const_name ll_srem},

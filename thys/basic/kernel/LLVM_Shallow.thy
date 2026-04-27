@@ -151,6 +151,11 @@ begin
     }" 
 
       
+  subsection \<open>Abort (partial correctness)\<close>
+  text \<open>Abort the program with a message. This is for partial correctness, i.e., an aborted program is always correct.\<close>
+    
+  definition ll_abort :: "unit llM" where "ll_abort \<equiv> Mabort"
+    
   subsection \<open>Instructions\<close>  
   
   text \<open>The instructions are arranged in the order as they are described in the 
@@ -655,7 +660,7 @@ begin
     apply (rewrite Mwhile_unfold)
     by simp
     
-      
+    
     
 end
 end

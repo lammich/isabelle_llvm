@@ -325,6 +325,10 @@ lemma hn_refine_augment_res:
   apply (auto simp: pred_lift_extract_simps pw_le_iff pw_leof_iff)
   done
 
+lemma hnr_Mabort: "hn_refine \<Gamma> (Mabort) \<Gamma>' R anycond anything"
+  apply (rule hn_refineI)
+  by vcg
+  
 subsection \<open>Product Types\<close>
 text \<open>Some notion for product types is already defined here, as it is used 
   for currying and uncurrying, which is fundamental for the sepref tool\<close>

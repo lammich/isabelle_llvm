@@ -4,8 +4,26 @@ imports Sepref_Tool
 begin
 
   text \<open>Abstractly, we define an annotation, that maps to sequnetial execution\<close>
-  definition "nres_par f g x y \<equiv> do { r1\<leftarrow>f x; r2\<leftarrow>g y; RETURN (r1,r2) }"
+  
+  definition "liftA2_nres f m\<^sub>1 m\<^sub>2 \<equiv> case (m\<^sub>1,m\<^sub>2) of (RES X, RES Y) \<Rightarrow> RES { f x y | x y. x\<in>X \<and> y\<in>Y } | _ \<Rightarrow> FAIL"
+  
+  lemma liftA2_nres_simps[simp]: 
+    "liftA2_nres f (RES X) (RES Y) = RES {f x y | x y. x\<in>X \<and> y\<in>Y}"
+    "liftA2_nres f FAIL y = FAIL"
+    "liftA2_nres f x FAIL = FAIL"
+    unfolding liftA2_nres_def by (auto split: nres.split)
+  
+  
+  lemma liftA2_nres_pw[refine_pw_simps]:
+    "nofail (liftA2_nres f a b) \<longleftrightarrow> nofail a \<and> nofail b"
+    "inres (liftA2_nres f a b) z \<longleftrightarrow> (nofail a \<and> nofail b \<longrightarrow> (\<exists>x y. inres a x \<and> inres b y \<and> z = f x y))"
+    by (cases a; cases b; auto; fail)+
+    
+  definition "nres_par f g x y \<equiv> liftA2_nres Pair (f x) (g y)"
+  
+  (* definition "nres_par f g x y \<equiv> do { r1\<leftarrow>f x; r2\<leftarrow>g y; RETURN (r1,r2) }" *)
 
+  
   subsection \<open>Setup Boilerplate\<close>
   text \<open>Boilerplate required by the IRF to set up higher-order combinator\<close>
   lemma nres_par_arity[sepref_monadify_arity]:
@@ -24,17 +42,42 @@ begin
   
     
   lemma nres_par_pw[refine_pw_simps]:
-    "nofail (nres_par f g x y) = (nofail (f x) \<and> ((\<exists>xa. inres (f x) xa) \<longrightarrow> nofail (g y)))"
-    "inres (nres_par f g x y) r \<longleftrightarrow> (nofail (f x) \<longrightarrow>
-     (\<exists>ya. inres (f x) ya \<and> (nofail (g y) \<longrightarrow> (\<exists>yb. inres (g y) yb \<and> (ya, yb) = r))))"
+    "nofail (nres_par f g x y) = (nofail (f x) \<and> nofail (g y))"
+    "inres (nres_par f g x y) r \<longleftrightarrow> (nofail (f x) \<and> nofail (g y) \<longrightarrow>
+     (\<exists>ya yb. inres (f x) ya \<and> inres (g y) yb \<and> (ya, yb) = r))"
     unfolding nres_par_def
-    by (simp_all add: refine_pw_simps)
+    by (auto simp: refine_pw_simps) 
     
-  lemma nres_par_vcg[refine_vcg]:
+  
+  lemma nres_par_seq1: "nofail (g y) \<Longrightarrow> nres_par f g x y = do { r1\<leftarrow>f x; r2\<leftarrow>g y; RETURN (r1,r2) }"
+    by (auto simp: refine_pw_simps pw_eq_iff) 
+    
+  lemma nres_par_seq2: "nofail (f x) \<Longrightarrow> nres_par f g x y = do { r2\<leftarrow>g y; r1\<leftarrow>f x; RETURN (r1,r2) }"
+    by (auto simp: refine_pw_simps pw_eq_iff) 
+  
+  lemma nres_par_sym: "nres_par f g x y = doN { (b,a)\<leftarrow>nres_par g f y x; RETURN (a,b) }"  
+    by (auto simp: refine_pw_simps pw_eq_iff) 
+    
+    
+
+  lemma nres_par_vcg:
+    assumes "f x \<le> SPEC Q\<^sub>1"
+    assumes "g y \<le> SPEC Q\<^sub>2"
+    shows "nres_par f g x y \<le> SPEC (\<lambda>(x,y). Q\<^sub>1 x \<and> Q\<^sub>2 y)"
+    using assms by (auto simp: refine_pw_simps pw_le_iff nres_par_def)
+
+  lemma nres_par_vcg_seq1:
+    assumes "g y \<le> SPEC (\<lambda>_. True)"
     assumes "f x \<le> SPEC (\<lambda>r\<^sub>1. g y \<le> SPEC (\<lambda>r\<^sub>2. \<Phi> (r\<^sub>1,r\<^sub>2)))"
     shows "nres_par f g x y \<le> SPEC \<Phi>"
     using assms by (auto simp: refine_pw_simps pw_le_iff nres_par_def)
-    
+        
+  lemma nres_par_vcg_seq2:
+    assumes "f x \<le> SPEC (\<lambda>_. True)"
+    assumes "g y \<le> SPEC (\<lambda>r\<^sub>2. f x \<le> SPEC (\<lambda>r\<^sub>1. \<Phi> (r\<^sub>1,r\<^sub>2)))"
+    shows "nres_par f g x y \<le> SPEC \<Phi>"
+    using assms by (auto simp: refine_pw_simps pw_le_iff nres_par_def)
+        
   lemma nres_par_refine[refine]:
     assumes "f x \<le> \<Down>Rx (f' x')"
     assumes "g y \<le> \<Down>Ry (g' y')"
@@ -72,8 +115,7 @@ begin
     unfolding llc_par_def
     supply [vcg_rules] = ht_par[OF assms]
     by (vcg)
-    
-    
+  
   lemma hnr_nres_par_aux:
     assumes A: "hn_refine (Ax) (fi xi) (Ax') Rx CP\<^sub>1 (f x)"
     assumes B: "hn_refine (Ay) (gi yi) (Ay') Ry CP\<^sub>2 (g y)"
@@ -81,19 +123,11 @@ begin
   proof -
     note [vcg_rules] = ht_llc_par[where m\<^sub>1=fi and m\<^sub>2=gi, OF A[THEN hn_refineD] B[THEN hn_refineD]]
 
-    from A[THEN hn_refineD] have 
-      NSUCCA: "\<exists>r. inres (f x) r" if "realizable Ax"
-      using that
-      apply (cases "f x \<noteq> SUCCEED")
-      subgoal by (auto simp: refine_pw_simps pw_eq_iff)
-      apply (clarsimp simp: htriple_false)
-      done
-    
     show ?thesis
       apply sepref_to_hoare
       apply (rule htriple_realizable_preI; drule realizable_conjD; clarify)
-      supply [simp] = refine_pw_simps NSUCCA inres_def[symmetric]
-      apply (vcg)
+      supply [simp] = refine_pw_simps pw_le_iff
+      apply vcg
       done
   qed
       

@@ -174,7 +174,7 @@ thm addr_alloc_def
 *)
 lemma "malloc vs \<mu> = do\<^sub>n\<^sub>e {
     b \<leftarrow> spec\<^sub>n\<^sub>e b. is_FRESH \<mu> b;
-    return\<^sub>n\<^sub>e (b, ACC_REPORT {} {}  {b} {}, mmap \<mu> b (\<lambda>_. ALLOC vs))
+    return\<^sub>n\<^sub>e (RESA b, ACC_REPORT {} {}  {b} {}, mmap \<mu> b (\<lambda>_. ALLOC vs))
   }"
   unfolding malloc_def addr_alloc_def by simp
 

@@ -3,6 +3,21 @@ theory MMonad
 imports NEMonad Generic_Memory
 begin
 
+    
+  (* TODO: Move *)
+  fun liftA2_option where
+    "liftA2_option f (Some a) (Some b) = Some (f a b)"
+  | "liftA2_option _ _ _ = None"  
+  
+  lemma liftA2_option_alt: "liftA2_option f oa ob = Option.bind oa (\<lambda>a. Option.bind ob (\<lambda>b. Some (f a b) ))"
+    by (cases oa; cases ob; simp)
+  
+  lemma liftA2_option_inv: 
+    "liftA2_option f oa ob = Some v \<longleftrightarrow> (\<exists>a b. oa=Some a \<and> ob=Some b \<and> v = f a b)"
+    by (cases oa; cases ob; auto)
+
+  abbreviation "pair_option \<equiv> liftA2_option Pair"
+      
   (* TODO: Move *)
   lemma fresh_freed_not_valid[simp]:
     "is_FRESH s (addr.block a) \<Longrightarrow> \<not>is_valid_addr s a"
@@ -19,6 +34,8 @@ begin
     The definition of the operations is done in two layers: first, we define the operations in the 
     ne-monad, prove that they preserve the consistency and non-emptiness invariant, and then
     lift them to the subtype for the actual M-monad.
+    
+    Here, we also add a dynamic-abort result, stacked on top of the ne-monad. 
   \<close>
 
 
@@ -156,8 +173,32 @@ begin
     by pw
   
   subsubsection \<open>Subtype Definition\<close>
+
+  (* State monad over neM, results also contain access reports. On top of that an option monad. 
+    We use our own datatype rather than option, to not get in the default simplifier setup for option, that interferes with pointwise reasoning *)
+  
+  datatype 'a abort = ABORT | RESA 'a
+  
+  definition [pw_simp]: "is_abort a \<equiv> a=ABORT"
+  definition [pw_simp]: "is_resA a x \<equiv> a=RESA x"
+
+  lemma wp_abort_case[wp_rule]: "\<lbrakk> p=ABORT \<Longrightarrow> wp fn Q; \<And>v. p=RESA v \<Longrightarrow> wp (fs v) Q \<rbrakk> \<Longrightarrow> wp (case p of ABORT \<Rightarrow> fn | RESA v \<Rightarrow> fs v) Q"
+    by (cases p) auto
     
-  typedef ('r,'v) M = "{m::'v memory \<Rightarrow> ('r\<times>acc\<times>'v memory) neM. invarM m}" 
+  lemma wlp_option_case[wp_rule]: "\<lbrakk> p=ABORT \<Longrightarrow> wlp fn Q; \<And>v. p=RESA v \<Longrightarrow> wlp (fs v) Q \<rbrakk> \<Longrightarrow> wlp (case p of ABORT \<Rightarrow> fn | RESA v \<Rightarrow> fs v) Q"
+    by (cases p) auto
+    
+  fun liftA2_abort where
+    "liftA2_abort f (RESA x) (RESA y) = RESA (f x y)"
+  | "liftA2_abort _ _ _ = ABORT"
+    
+  abbreviation "pair_abort \<equiv> liftA2_abort Pair"
+    
+    
+    
+  type_synonym ('r,'v) M_raw = "'v memory \<Rightarrow> ('r abort\<times>acc\<times>'v memory) neM"
+  
+  typedef ('r,'v) M = "{m::('r,'v) M_raw. invarM m}" 
     morphisms run Abs_M
     unfolding invarM_def consistentM_def non_emptyM_def
     by pw
@@ -178,29 +219,40 @@ begin
     declare invarM_def[invarM_lemmas]      
   
   
-    definition "preturn x s = (return (x,0::acc,s))"
+    definition preturn :: "'a \<Rightarrow> ('a,'v) M_raw"
+      where "preturn x s = (return (RESA x,0::acc,s))"
     
-    definition "pspec P s = (if P\<noteq>bot then SPEC (\<lambda>(r,i,s'). P r \<and> i=0 \<and> s'=s) else FAIL)"
+    definition pabort :: "('a,'v) M_raw"
+      where "pabort s = (return (ABORT,0::acc,s))"
+      
+    definition pspec :: "('a \<Rightarrow> bool) \<Rightarrow> ('a,'v) M_raw"
+      where "pspec P s = (if P\<noteq>bot then SPEC (\<lambda>(rv,i,s'). \<exists>r. rv=RESA r \<and> P r \<and> i=0 \<and> s'=s) else FAIL)"
     
-    definition "pbind m f s \<equiv> do {
-      (x,i\<^sub>1,s) \<leftarrow> m s;
-      (r,i\<^sub>2,s) \<leftarrow> f x s;
-      return (r,i\<^sub>1+i\<^sub>2 ::acc,s)
-    }"  
+      
+    definition pbind :: "('a,'v) M_raw \<Rightarrow> ('a \<Rightarrow> ('b,'v) M_raw) \<Rightarrow> ('b,'v) M_raw" where "pbind m f s \<equiv> do {
+      (xx,i\<^sub>1,s) \<leftarrow> m s;
+      case xx of
+        RESA x \<Rightarrow> do {
+          (r,i\<^sub>2,s) \<leftarrow> f x s;
+          return (r,i\<^sub>1+i\<^sub>2 ::acc,s) }
+      | ABORT \<Rightarrow> return (ABORT,i\<^sub>1,s)
+    }"
 
     lemma [invarM_lemmas]: "consistentM (preturn x)"
       unfolding consistentM_def preturn_def
-      apply rule
       apply wp
-      apply auto
       unfolding acc_consistent_def
-      by (auto simp: )
+      by auto
 
+    lemma [invarM_lemmas]: "consistentM pabort"
+      unfolding consistentM_def pabort_def
+      apply wp
+      unfolding acc_consistent_def
+      by auto
+      
     lemma [invarM_lemmas]: "consistentM (pspec P)"
       unfolding consistentM_def pspec_def
-      apply rule
       apply wp
-      apply auto
       unfolding acc_consistent_def
       apply (auto simp:  wlp_FAIL) (* TODO: wlp_FAIL should be applied by wp, but isn't! *)
       done
@@ -210,44 +262,65 @@ begin
       unfolding pbind_def
       apply rule
       apply wp
-      apply (clarsimp simp: acc_consistent_trans)
+      apply (clarsimp_all simp: acc_consistent_trans)
       done
       
-    
     lemma [invarM_lemmas]: "non_emptyM (preturn x)"  
       unfolding non_emptyM_def preturn_def
       by pw
-      
+
+    lemma [invarM_lemmas]: "non_emptyM pabort"  
+      unfolding non_emptyM_def pabort_def
+      by pw
+            
     lemma [invarM_lemmas]: "non_emptyM (pspec P)"  
       unfolding non_emptyM_def pspec_def
-      by pw
-              
-    lemma [invarM_lemmas]: "non_emptyM m \<Longrightarrow> (\<And>x. non_emptyM (f x)) \<Longrightarrow> non_emptyM (pbind m f)"  
-      unfolding non_emptyM_def pbind_def
-      apply pw
-      by (metis inf_sup_distrib2 acc_plus_simps(3) sup.idem)
+      by (pw; fastforce)
+      
+    lemma [invarM_lemmas]: 
+      assumes NE: "non_emptyM m" "(\<And>x. non_emptyM (f x))" 
+      shows "non_emptyM (pbind m f)"  
+      unfolding non_emptyM_def
+    proof clarsimp 
+      fix s and B::"nat set"
+      assume NF: "\<not>is_fail (pbind m f s)"
+      assume FIN: "finite B"
+
+      from NF have "\<not>is_fail (m s)" unfolding pbind_def by pw
+      with \<open>non_emptyM m\<close> FIN obtain xx s' i where "is_res (m s) (xx,i,s')" "acc.a i \<inter> B = {}"
+        unfolding non_emptyM_def by meson
+      with NE(2) FIN NF show "\<exists>x i. (\<exists>s'. is_res (pbind m f s) (x, i, s')) \<and> acc.a i \<inter> B = {}"
+        unfolding pbind_def non_emptyM_def
+        supply [split!] = abort.splits
+        apply (cases xx)
+        subgoal by (pw; blast)
+        subgoal by (pw; fastforce)
+        done
+    qed  
       
     
       
 
     lift_definition Mreturn :: "'r \<Rightarrow> ('r,'v) M" is preturn by (simp add: invarM_lemmas)
+    lift_definition Mabort :: "('r,'v) M" is pabort by (simp add: invarM_lemmas)
     lift_definition Mspec :: "('r\<Rightarrow>bool) \<Rightarrow> ('r,'v) M" is pspec by (simp add: invarM_lemmas)
     lift_definition Mbind :: "('x,'v) M \<Rightarrow> ('x \<Rightarrow> ('r,'v) M) \<Rightarrow> ('r,'v) M"
       is pbind by (auto simp add: invarM_lemmas intro!: invarM_pw[THEN iffD1])
-    
+
         
   subsection \<open>Parallel Combinator\<close>
     
-    
-    definition "ppar m\<^sub>1 m\<^sub>2 s \<equiv> do {
-      ((r\<^sub>1,i\<^sub>1,s\<^sub>1),(r\<^sub>2,i\<^sub>2,s\<^sub>2)) \<leftarrow> m\<^sub>1 s \<parallel> m\<^sub>2 s;
-      assert acc_consistent s i\<^sub>1 s\<^sub>1 \<and> acc_consistent s i\<^sub>2 s\<^sub>2; \<comment> \<open>Ensure reported ACC_REPORT is 
-        consistent with observable modifications on state. This will later be enforced by subtyping.\<close>
-      assume spar_feasible i\<^sub>1 i\<^sub>2; \<comment> \<open>Filter out impossible combinations (where malloc did not sync)\<close>
-      assert acc_norace i\<^sub>1 i\<^sub>2; \<comment> \<open>Fail on data races\<close>
-      let s = combine_states s\<^sub>1 i\<^sub>2 s\<^sub>2; \<comment> \<open>Combine states\<close>
-      return ((r\<^sub>1,r\<^sub>2),i\<^sub>1+i\<^sub>2,s) 
-    }"
+  
+    definition ppar :: "('a,'v) M_raw \<Rightarrow> ('b,'v) M_raw \<Rightarrow> ('a\<times>'b,'v) M_raw"
+      where "ppar m\<^sub>1 m\<^sub>2 s \<equiv> do {
+        ((r\<^sub>1,i\<^sub>1,s\<^sub>1),(r\<^sub>2,i\<^sub>2,s\<^sub>2)) \<leftarrow> m\<^sub>1 s \<parallel> m\<^sub>2 s;
+        assert acc_consistent s i\<^sub>1 s\<^sub>1 \<and> acc_consistent s i\<^sub>2 s\<^sub>2; \<comment> \<open>Ensure reported ACC_REPORT is 
+          consistent with observable modifications on state. This will later be enforced by subtyping.\<close>
+        assume spar_feasible i\<^sub>1 i\<^sub>2; \<comment> \<open>Filter out impossible combinations (where malloc did not sync)\<close>
+        assert acc_norace i\<^sub>1 i\<^sub>2; \<comment> \<open>Fail on data races\<close>
+        let s = combine_states s\<^sub>1 i\<^sub>2 s\<^sub>2; \<comment> \<open>Combine states\<close>
+        return (pair_abort r\<^sub>1 r\<^sub>2,i\<^sub>1+i\<^sub>2,s) 
+      }"
   
     lemma [invarM_lemmas]: "consistentM m\<^sub>1 \<Longrightarrow> consistentM m\<^sub>2 \<Longrightarrow> consistentM (ppar m\<^sub>1 m\<^sub>2)"    
       supply [wp_recursion_rule] = consistent_wlp
@@ -304,8 +377,7 @@ begin
         
         
       show ?case
-        apply (rule exI[where x=x\<^sub>1])
-        apply (rule exI[where x=x\<^sub>2])
+        apply (rule exI[where x="pair_abort x\<^sub>1 x\<^sub>2"])
         apply (rule exI[where x="i\<^sub>1+i\<^sub>2"])
         
         apply (rule conjI)
@@ -336,29 +408,30 @@ begin
     
     subsection \<open>Memory Operations\<close>
   
+    (* TODO: We could introduce a nondeterministic abort possibility, and even finite-domain addresses if we wanted *)
     definition "malloc vs s = do {
       b \<leftarrow> spec b. is_FRESH s b;
-      return (b, acc_a b, addr_alloc vs b s)
+      return (RESA b, acc_a b, addr_alloc vs b s)
     }"
     
     definition "mfree b s = do {
       assert is_ALLOC s b;
-      return ((), acc_f b, addr_free b s)
+      return (RESA (), acc_f b, addr_free b s)
     }"  
 
     definition "mvalid_addr a s = do {
       assert is_valid_addr s a;
-      return ((), acc_r a, s)
+      return (RESA (), acc_r a, s)
     }"
         
     definition "mload a s = do {
       assert is_valid_addr s a;
-      return (get_addr s a, acc_r a, s)
+      return (RESA (get_addr s a), acc_r a, s)
     }"
     
     definition "mstore a v s = do {
       assert is_valid_addr s a;
-      return ((), acc_w a, put_addr s a v)
+      return (RESA (), acc_w a, put_addr s a v)
     }"
     
       
@@ -435,67 +508,148 @@ begin
 
 subsection \<open>Pointwise Reasoning Setup\<close>    
 
+
   lemma M_eq_iff[pw_init]: "m=m' \<longleftrightarrow> (\<forall>s. run m s = run m' s)"
     apply transfer
     by auto
-    
+
+  abbreviation "is_resM m s \<equiv> is_res (run m s)"
+  abbreviation "is_failM m s \<equiv> is_fail (run m s)"
+  abbreviation "is_resMR m s x i s' \<equiv> \<exists>a. is_resM m s (a,i,s') \<and> is_resA a x"
+  abbreviation "is_resMA m s i s' \<equiv> \<exists>a. is_resM m s (a,i,s') \<and> is_abort a"
+        
   lemma pw_Mreturn[pw_simp]:
     "run (Mreturn x) s \<noteq> FAIL"  
-    "is_res (run (Mreturn x) s) r \<longleftrightarrow> r=(x,0,s)"  
-    by (transfer'; unfold preturn_def; pw)+
+    "is_resM (Mreturn x) s (y,i,s') \<longleftrightarrow> is_resA y x \<and> i=0 \<and> s'=s"
+    apply (transfer'; unfold preturn_def; pw; fail)+
+    done
 
   lemma pw_Mspec[pw_simp]:
     "run (Mspec P) s = FAIL \<longleftrightarrow> P=bot"  
-    "is_res (run (Mspec P) s) r \<longleftrightarrow> (\<exists>x. r=(x,0,s) \<and> P x)"  
-    by (transfer'; unfold pspec_def; pw)+
+    "is_resM (Mspec P) s (a,i,s') \<longleftrightarrow> (\<exists>x. is_resA a x \<and> P x \<and> i=0 \<and> s'=s)"
+    by (transfer'; unfold pspec_def; pw; fail)+
 
-  lemma pw_Mbind1[pw_simp]:
-    "run (Mbind m f) s = FAIL \<longleftrightarrow> is_fail (run m s) \<or> (\<exists>x i s'. is_res (run m s) (x,i,s') \<and> is_fail (run (f x) s'))"
-    apply transfer
-    unfolding pbind_def
-    by pw
+  lemma pw_Mabort[pw_simp]:
+    "run (Mabort) s \<noteq> FAIL"
+    "is_resM Mabort s (a,i,s') \<longleftrightarrow> is_abort a \<and> i=0 \<and> s'=s"
+    apply (transfer'; unfold pabort_def; pw; fail)+
+    done
     
-  lemma pw_Mbind2[pw_simp]:
-    "is_res (run (Mbind m f) s) ris \<longleftrightarrow> (case ris of (r,i'',s'') 
-      \<Rightarrow>  (\<forall>x i s'. is_res (run m s) (x,i,s') \<longrightarrow> \<not>is_fail (run (f x) s'))
-        \<and> (\<exists>x i i' s'. is_res (run m s) (x,i,s') \<and> is_res (run (f x) s') (r,i',s'') \<and> i''=i+i')
-      )"
+  lemma pw_Mbind1[pw_simp]:
+    "run (Mbind m f) s = FAIL \<longleftrightarrow> is_failM m s \<or> (\<exists>x i s'. is_resMR m s x i s' \<and> is_failM (f x) s')"
     apply transfer
     unfolding pbind_def
-    apply pw 
-    by blast
+    supply [split!] = abort.splits
+    apply pw
+    done
+    
+  lemma pw_Mbind2[pw_simp]: 
+    "is_resM (Mbind m f) s (a',i',s') \<longleftrightarrow> \<not>is_failM (Mbind m f) s \<and> (
+      \<exists>a\<^sub>1 i\<^sub>1 s\<^sub>1. is_resM m s (a\<^sub>1,i\<^sub>1,s\<^sub>1) \<and> (
+          is_abort a\<^sub>1 \<and> is_abort a' \<and> i'=i\<^sub>1 \<and> s'=s\<^sub>1
+        \<or> (\<exists>x\<^sub>1 i\<^sub>2. is_resA a\<^sub>1 x\<^sub>1 \<and> is_resM (f x\<^sub>1) s\<^sub>1 (a',i\<^sub>2,s') \<and> i' = i\<^sub>1+i\<^sub>2)  
+      )
+    )"
+    apply transfer'
+    subgoal for m f s a' i' s'
+      apply (rule iffI)
+      subgoal
+        apply (rule conjI)
+        subgoal by (pw)
+        unfolding pbind_def
+        apply pw
+        subgoal for a\<^sub>1 i\<^sub>1 s\<^sub>1
+          apply (intro exI conjI, assumption)
+          apply (drule spec,drule spec,drule spec, drule (1) mp)
+          apply (cases a\<^sub>1; pw) 
+          done
+        done
+      subgoal  
+        supply [split!] = abort.splits
+        unfolding pbind_def
+        apply pw
+        done
+      done
+    done
   
   lemma invarM_pw_iff: "invarM m \<longleftrightarrow> (\<forall>s. 
-      (\<forall>r i s'. is_res (m s) (r,i,s') \<longrightarrow> acc_consistent s i s')
+      (\<forall>a i s'. is_res (m s) (a,i,s') \<longrightarrow> acc_consistent s i s')
     \<and> non_emptyM_pw s (m s)
   )"  
     unfolding invarM_def consistentM_def non_emptyM_pw
-    apply pw  
+    apply pw'  
     by (metis is_res_def)
+
+  context
+    fixes m\<^sub>1 :: "('a,'c) M" and m\<^sub>2 :: "('b,'c) M" and s :: "'c memory"
+  begin
   
+    private abbreviation (input) "is_feas_res r\<^sub>1 i\<^sub>1 s\<^sub>1 r\<^sub>2 i\<^sub>2 s\<^sub>2 \<equiv> is_res (run m\<^sub>1 s) (r\<^sub>1,i\<^sub>1,s\<^sub>1) \<and> is_res (run m\<^sub>2 s) (r\<^sub>2,i\<^sub>2,s\<^sub>2) \<and> spar_feasible i\<^sub>1 i\<^sub>2"
 
-  lemma pw_Mpar1[pw_simp]:
-    "run (Mpar m\<^sub>1 m\<^sub>2) s = FAIL \<longleftrightarrow> (is_fail (run m\<^sub>1 s) \<or> is_fail (run m\<^sub>2 s) 
-      \<or> (\<exists>r\<^sub>1 i\<^sub>1 s\<^sub>1 r\<^sub>2 i\<^sub>2 s\<^sub>2. is_res (run m\<^sub>1 s) (r\<^sub>1,i\<^sub>1,s\<^sub>1) \<and> is_res (run m\<^sub>2 s) (r\<^sub>2,i\<^sub>2,s\<^sub>2) 
-          \<and> spar_feasible i\<^sub>1 i\<^sub>2 \<and> \<not>acc_norace i\<^sub>1 i\<^sub>2 ))"
-    apply transfer
-    unfolding ppar_def invarM_pw_iff
-    apply pw
-    by blast+
+    private abbreviation (input) "no_race \<equiv> \<forall>r\<^sub>1 i\<^sub>1 s\<^sub>1 r\<^sub>2 i\<^sub>2 s\<^sub>2. is_feas_res r\<^sub>1 i\<^sub>1 s\<^sub>1 r\<^sub>2 i\<^sub>2 s\<^sub>2 \<longrightarrow> acc_norace i\<^sub>1 i\<^sub>2"
+    
 
-  lemma pw_Mpar2[pw_simp]:
-    "is_res (run (Mpar m\<^sub>1 m\<^sub>2) s) ris \<longleftrightarrow> (case ris of (r,i,s') \<Rightarrow> 
-        (\<forall>r\<^sub>1 i\<^sub>1 s\<^sub>1 r\<^sub>2 i\<^sub>2 s\<^sub>2. is_res (run m\<^sub>1 s) (r\<^sub>1,i\<^sub>1,s\<^sub>1) \<and> is_res (run m\<^sub>2 s) (r\<^sub>2,i\<^sub>2,s\<^sub>2) \<and> spar_feasible i\<^sub>1 i\<^sub>2 
-          \<longrightarrow> acc_norace i\<^sub>1 i\<^sub>2)
-      \<and> (\<exists>r\<^sub>1 i\<^sub>1 s\<^sub>1 r\<^sub>2 i\<^sub>2 s\<^sub>2. is_res (run m\<^sub>1 s) (r\<^sub>1,i\<^sub>1,s\<^sub>1) \<and> is_res (run m\<^sub>2 s) (r\<^sub>2,i\<^sub>2,s\<^sub>2) 
-          \<and> spar_feasible i\<^sub>1 i\<^sub>2 \<and> r=(r\<^sub>1,r\<^sub>2) \<and> i=i\<^sub>1+i\<^sub>2 \<and> s' = combine_states s\<^sub>1 i\<^sub>2 s\<^sub>2  ))"
-    apply transfer
-    unfolding ppar_def invarM_pw_iff
-    apply pw
-    apply blast+
-    done
+    lemma pw_Mpar1[pw_simp]:
+      "run (Mpar m\<^sub>1 m\<^sub>2) s = FAIL \<longleftrightarrow> is_failM m\<^sub>1 s \<or> is_failM m\<^sub>2 s \<or> \<not>no_race"
+      apply transfer
+      subgoal for m\<^sub>1 m\<^sub>2 s
+        unfolding ppar_def
+        apply (cases "m\<^sub>1 s"; simp add: pw_simp)
+        apply (cases "m\<^sub>2 s"; simp add: pw_simp) 
+        unfolding invarM_pw_iff
+        apply pw
+        apply blast
+        apply blast
+        done
+      done
 
-  lemma no_result_is_FAIL[pw_simp]: "(\<forall>a b c. \<not>is_res (run m s) (a,b,c)) \<longleftrightarrow> run m s = FAIL"
+      
+    private abbreviation (input) "is_eq_pair_abort a a\<^sub>1 a\<^sub>2 \<equiv> (is_abort a \<and> (is_abort a\<^sub>1 \<or> is_abort a\<^sub>2)) \<or> (\<exists>x\<^sub>1 x\<^sub>2. is_resA a\<^sub>1 x\<^sub>1 \<and> is_resA a\<^sub>2 x\<^sub>2 \<and> is_resA a (x\<^sub>1,x\<^sub>2))"  
+    lemma eq_pair_abort_pw: "a = pair_abort a\<^sub>1 a\<^sub>2 \<longleftrightarrow> is_eq_pair_abort a a\<^sub>1 a\<^sub>2"
+      by (cases a\<^sub>1; cases a\<^sub>2; pw)
+
+    (*  
+    lemma abort_eq_iff[pw_init]: "a=b \<longleftrightarrow> (is_abort a = is_abort b) \<and> (\<forall>x. is_resA a x = is_resA b x)"  
+      by (cases a; cases b; pw)
+      
+    lemma pair_abort_pw[pw_simp]:
+      "pair_abort a\<^sub>1 a\<^sub>2 = ABORT \<longleftrightarrow> is_abort a\<^sub>1 \<or> is_abort a\<^sub>2"  
+      "pair_abort a\<^sub>1 a\<^sub>2 = RESA (x\<^sub>1,x\<^sub>2) \<longleftrightarrow> is_resA a\<^sub>1 x\<^sub>1 \<and> is_resA a\<^sub>2 x\<^sub>2"      
+      apply (cases a\<^sub>1; cases a\<^sub>2; simp add: pw_simp; fail)+
+      done
+    *)
+      
+    thm pw_simp  
+      
+    lemma all_neq_RESA_conv[pw_simp]: "(\<forall>x. a\<noteq>RESA x) \<longleftrightarrow> a=ABORT" by (cases a; auto)
+    lemma all_neq_RESA_conv2[pw_simp]: "(\<forall>x y. a\<noteq>RESA (x,y)) \<longleftrightarrow> a=ABORT" by (cases a; auto)
+    lemma all_neq_RESA_conv3[pw_simp]: "(\<forall>x y z. a\<noteq>RESA (x,y,z)) \<longleftrightarrow> a=ABORT" by (cases a; auto)
+      
+
+    lemma pw_Mpar2:  
+      "is_resM (Mpar m\<^sub>1 m\<^sub>2) s (a',i',s') \<longleftrightarrow> no_race \<and> (
+        \<exists>r\<^sub>1 i\<^sub>1 s\<^sub>1 r\<^sub>2 i\<^sub>2 s\<^sub>2. is_feas_res r\<^sub>1 i\<^sub>1 s\<^sub>1 r\<^sub>2 i\<^sub>2 s\<^sub>2 \<and> i'=i\<^sub>1+i\<^sub>2 \<and> s' = combine_states s\<^sub>1 i\<^sub>2 s\<^sub>2 \<and> a' = pair_abort r\<^sub>1 r\<^sub>2
+      )"
+      apply transfer
+      unfolding ppar_def invarM_pw_iff
+      (*supply [pw_simp] = eq_pair_abort_pw*)
+      apply pw
+      apply blast+
+      done
+    
+    lemma pw_Mpar2':  
+      "is_resM (Mpar m\<^sub>1 m\<^sub>2) s (a',i',s') \<longleftrightarrow> no_race \<and> (
+        \<exists>r\<^sub>1 i\<^sub>1 s\<^sub>1 r\<^sub>2 i\<^sub>2 s\<^sub>2. is_feas_res r\<^sub>1 i\<^sub>1 s\<^sub>1 r\<^sub>2 i\<^sub>2 s\<^sub>2 \<and> i'=i\<^sub>1+i\<^sub>2 \<and> s' = combine_states s\<^sub>1 i\<^sub>2 s\<^sub>2 \<and> is_eq_pair_abort a' r\<^sub>1 r\<^sub>2
+      )"
+      using pw_Mpar2
+      unfolding eq_pair_abort_pw .
+      
+  end  
+        
+
+    
+    
+  lemma no_result_is_FAIL_aux: "(\<forall>a b c. \<not>is_res (run m s) (a,b,c)) \<longleftrightarrow> run m s = FAIL"
     by (metis finite.emptyI invarM_pw_iff invarM_run is_fail_def is_res_def non_emptyM_pw_def)
         
   context    
@@ -668,15 +822,43 @@ subsection \<open>Recursion Setup\<close>
     
 subsubsection \<open>Monotonicity Prover Setup\<close>      
 
+
+    (*lemma M_raw_join_res_eq: "(
+          (\<forall>i s'. is_res (run a s) (None, i, s') \<longleftrightarrow> is_res (run b s) (None, i, s'))
+        \<and> (\<forall>r i s'. is_res (run a s) (Some r, i, s') \<longleftrightarrow> is_res (run b s) (Some r, i, s'))
+      ) \<longleftrightarrow> (\<forall>r i s'. is_res (run a s) (r, i, s') \<longleftrightarrow> is_res (run b s) (r, i, s'))"
+      by (simp add: split_option_all)
+    *)  
+      
+    qualified lemma pw_FR_le: "FR.le a b \<longleftrightarrow> a=b \<or> is_fail a"  
+      unfolding FR.le_def is_fail_def by auto
+      
+    qualified lemma Mle_alt: "Mle a b \<longleftrightarrow> (\<forall>s. FR.le (run a s) (run b s))"  
+      apply transfer
+      by (auto simp: fun_ord_def)
+
+    qualified lemma Mle_pw_iff: "Mle a b \<longleftrightarrow> (\<forall>s.
+      \<not>is_failM a s \<longrightarrow> (
+        (\<forall>r i s'. is_resM a s (r, i, s') \<longleftrightarrow> is_resM b s (r, i, s'))
+      )
+    )"
+      apply (simp add: Mle_alt pw_FR_le)
+      apply pw
+      by (metis no_result_is_FAIL_aux)
+      
+      
+
+      (*
     qualified lemma Mle_alt: "Mle a b \<longleftrightarrow> (\<forall>s. FR.le (run a s) (run b s))"  
       apply transfer
       by (auto simp: fun_ord_def)
       
     qualified lemma pw_FR_le: "FR.le a b \<longleftrightarrow> a=b \<or> is_fail a"  
       unfolding FR.le_def is_fail_def by auto
-
+    *)
+      
     context
-      notes [pw_init] = Mle_alt pw_FR_le
+      notes [pw_init] = Mle_pw_iff
     begin  
     
       (*
@@ -693,25 +875,28 @@ subsubsection \<open>Monotonicity Prover Setup\<close>
         by auto
       *)
         
+      lemma run_neq_FAIL_conv: "run m s \<noteq> FAIL \<longleftrightarrow> (\<exists>a i r. is_resM m s (a,i,r))"
+        apply pw
+        by (metis no_result_is_FAIL_aux)
+      
       lemma mono_Mbind1: "
         M_mono' (\<lambda>D. F D) \<Longrightarrow> 
         M_mono' (\<lambda>D. Mbind (F D) (G))"  
-        unfolding monotone_def fun_ord_def Mle_alt
-        apply pw' 
-        apply (safe; simp; blast)
-        done
-
+        unfolding monotone_def fun_ord_def
+        supply [pw_simp] = run_neq_FAIL_conv
+        by pw
+        
       lemma mono_Mbind2: "
         (\<And>y. M_mono' (\<lambda>D. G y D)) \<Longrightarrow> 
         M_mono' (\<lambda>D. Mbind F (\<lambda>y. G y D))"  
-        unfolding monotone_def fun_ord_def Mle_alt
+        unfolding monotone_def fun_ord_def
+        supply [pw_simp] = run_neq_FAIL_conv
         apply pw
-        apply blast
+        apply metis
         apply metis
         apply blast
-        apply blast
-        done
-                
+        by (metis (no_types, lifting))
+        
       lemma mono_Mbind[partial_function_mono]: 
         assumes "M_mono' (\<lambda>D. F D)" 
         assumes "\<And>y. M_mono' (\<lambda>D. G y D)"
@@ -724,7 +909,8 @@ subsubsection \<open>Monotonicity Prover Setup\<close>
       lemma mono_Mpar1: "
         M_mono' (\<lambda>D. F D) \<Longrightarrow> 
         M_mono' (\<lambda>D. Mpar (F D) G)"  
-        unfolding monotone_def fun_ord_def Mle_alt
+        unfolding monotone_def fun_ord_def Mle_pw_iff
+        supply [pw_simp] = pw_Mpar2
         apply pw' 
         apply (safe; simp; blast)
         done
@@ -732,7 +918,8 @@ subsubsection \<open>Monotonicity Prover Setup\<close>
       lemma mono_Mpar2: "
         M_mono' (\<lambda>D. G D) \<Longrightarrow> 
         M_mono' (\<lambda>D. Mpar F (G D))"  
-        unfolding monotone_def fun_ord_def Mle_alt
+        unfolding monotone_def fun_ord_def Mle_pw_iff
+        supply [pw_simp] = pw_Mpar2
         apply pw' 
         apply (safe; simp; blast)
         done
@@ -780,62 +967,110 @@ subsection \<open>Partial Function Setup\<close>
     
   subsection \<open>Symmetry of parallel\<close>    
       
-  definition "mswap m \<equiv> do\<^sub>n\<^sub>e { ((r\<^sub>1,r\<^sub>2),i,s)\<leftarrow>m; return\<^sub>n\<^sub>e ((r\<^sub>2,r\<^sub>1),i,s) }"  
+  definition "mswap m \<equiv> do\<^sub>n\<^sub>e { (r,i,s)\<leftarrow>m; return\<^sub>n\<^sub>e (map_abort prod.swap r,i,s) }"  
   
   lemma pw_mswap[pw_simp]:
     "mswap m = FAIL \<longleftrightarrow> is_fail m"
-    "is_res (mswap m) ab \<longleftrightarrow> (case ab of ((r\<^sub>1,r\<^sub>2),i,s) \<Rightarrow> is_res m ((r\<^sub>2,r\<^sub>1),i,s))"
+    "is_res (mswap m) (r,i,s) \<longleftrightarrow> (\<exists>a. is_res m (a,i,s) \<and> (is_abort a \<and> is_abort r \<or> (\<exists>x y. is_resA a (x,y) \<and> is_resA r (y,x)) ))"
     unfolding mswap_def 
-    apply pw
-    by (cases ab; pw)
+    subgoal by pw
+    subgoal by pw
+    done
     
+  lemma mswap_bind: "mswap (do\<^sub>n\<^sub>e {x\<leftarrow>m; f x}) = do\<^sub>n\<^sub>e {x\<leftarrow>m; mswap (f x)}"
+    by pw
+    
+  lemma mswap_return: "mswap (return\<^sub>n\<^sub>e (r,i,s)) = (return\<^sub>n\<^sub>e (map_abort prod.swap r,i,s))"
+    by pw
     
   lemmas combine_states_sym = valid_parallel_execution.combine_states_sym[OF valid_parallel_execution.intro]  
     
+  lemma nePAR_sym: "do\<^sub>n\<^sub>e { (x\<^sub>1,x\<^sub>2) \<leftarrow> m\<^sub>1 \<parallel>\<^sub>n\<^sub>e m\<^sub>2; f x\<^sub>1 x\<^sub>2 } = do\<^sub>n\<^sub>e { (x\<^sub>2,x\<^sub>1) \<leftarrow> m\<^sub>2 \<parallel>\<^sub>n\<^sub>e m\<^sub>1; f x\<^sub>1 x\<^sub>2 }"
+    by pw
+  
+  (* TODO: Move *)  
+  lemma map_option_liftA2_simp: "map_option f (liftA2_option g x y) = liftA2_option (f oo g) x y"  
+    by (cases x; cases y; simp)
+    
+  lemma liftA2_option_swap: "liftA2_option (\<lambda>a b. (b, a)) x y = pair_option y x"  
+    by (cases x; cases y; simp)
+
+  lemma map_abort_liftA2_simp: "map_abort f (liftA2_abort g x y) = liftA2_abort (f oo g) x y"  
+    by (cases x; cases y; simp)
+    
+  lemma liftA2_abort_swap: "liftA2_abort (\<lambda>a b. (b, a)) x y = pair_abort y x"  
+    by (cases x; cases y; simp)
+    
+        
+    
+  lemma ne_bind_cong:  
+    assumes "P'=P"
+    assumes "\<And>x. is_res P x \<Longrightarrow> f' x = f x"
+    shows "do\<^sub>n\<^sub>e { x\<leftarrow> P'; f' x } = do\<^sub>n\<^sub>e { x\<leftarrow> P; f x }"  
+    using assms by pw
+    
+  lemma assert_assume_ne_simps:
+    "(assert\<^sub>n\<^sub>e True) = (return\<^sub>n\<^sub>e ())"  
+    "(assert\<^sub>n\<^sub>e False) = (fail\<^sub>n\<^sub>e)"  
+    "(assume\<^sub>n\<^sub>e True) = (return\<^sub>n\<^sub>e ())"  
+    "(assume\<^sub>n\<^sub>e False) = EMPTY"  
+    by pw+
+    
+    
   lemma ppar_sym: "invarM m\<^sub>1 \<Longrightarrow> invarM m\<^sub>2 \<Longrightarrow> ppar m\<^sub>1 m\<^sub>2 s = mswap (ppar m\<^sub>2 m\<^sub>1 s)"  
     unfolding ppar_def
-    apply (cases "m\<^sub>1 s"; cases "m\<^sub>2 s"; simp)
-    defer
-    apply pw
-    apply pw
-    apply pw
-    subgoal for P\<^sub>1 P\<^sub>2
-      apply (subgoal_tac "invarM_pw s (SPEC P\<^sub>1)")
-      apply (subgoal_tac "invarM_pw s (SPEC P\<^sub>2)")
-      
-      apply (thin_tac "invarM _")+
-      apply (thin_tac "_=_")+
-      subgoal
-        apply pw
-        using spar_feasible_sym acc_norace_sym
-        apply -
-        apply blast
-        apply blast
-        apply blast
-        apply blast
-        apply blast
-        apply blast
-        apply blast
-        apply (smt (verit, best) add.commute combine_states_sym acc_consistent_loc.intro)
-        apply blast
-        by (smt (verit, best) add.commute combine_states_sym acc_consistent_loc.intro)
-      apply (metis invarM_pw)
-      apply (metis invarM_pw)
+    apply (subst nePAR_sym)
+    apply (simp add: mswap_bind prod.case_distrib[of mswap] case_prod_app mswap_return map_abort_liftA2_simp comp_def liftA2_abort_swap)
+    apply (cases "m\<^sub>2 s \<parallel>\<^sub>n\<^sub>e m\<^sub>1 s"; simp)
+    subgoal for ress
+      apply (rule ne_bind_cong; clarsimp simp: pw_simp)
+      subgoal for r1 i1 s1 r2 i2 s2
+        apply (rule ne_bind_cong, pw, clarsimp simp: pw_simp)
+        apply (subst spar_feasible_sym)
+        apply (rule ne_bind_cong, pw, simp add: pw_simp)
+        apply (subst acc_norace_sym)
+        apply (rule ne_bind_cong, pw, simp add: pw_simp)
+        apply (subst combine_states_sym)
+        apply assumption
+        apply assumption
+        apply (simp add: spar_feasible_sym)
+        apply (simp add: acc_norace_sym)
+        apply (simp add: algebra_simps)
+        done
       done
     done
+    
+  lemma ppar_sym': "invarM m\<^sub>1 \<Longrightarrow> invarM m\<^sub>2 \<Longrightarrow> ppar m\<^sub>1 m\<^sub>2 = mswap o ppar m\<^sub>2 m\<^sub>1"
+    using ppar_sym by fastforce
     
   lemma res_run_consistentI: "is_res (run m s) (x,i,s') \<Longrightarrow> acc_consistent s i s'"  
     using invarM_pw_iff invarM_run by fastforce
         
+  lemma direct_eq_ABORT[simp]: "NO_MATCH ABORT m \<Longrightarrow> ABORT=m \<longleftrightarrow> m=ABORT" by auto
+  lemma direct_eq_RES[simp]: "NO_MATCH ABORT m \<Longrightarrow> NO_MATCH (RESA XX) m \<Longrightarrow> RESA x=m \<longleftrightarrow> m=RESA x" by auto
+    
+  lemma map_abort_eq_abort_iff[simp]: "map_abort f m = ABORT \<longleftrightarrow> m=ABORT" by (cases m) auto
+  lemma map_abort_eq_res_iff[simp]: "map_abort f m = RESA y \<longleftrightarrow> (\<exists>x. m=RESA x \<and> y=f x)" by (cases m) auto
+  
+  lemma split_is_res: "NO_MATCH ABORT a \<Longrightarrow> NO_MATCH (RESA XX) a \<Longrightarrow> is_res m (a,is) = (a=ABORT \<and> is_res m (ABORT,is) \<or> (\<exists>x. a=RESA x \<and> is_res m (RESA x,is)))"
+    by (cases a; auto)
+  
+  lemma mswap_as_pbind_conv: "(\<lambda>x. mswap (m x)) = pbind m (\<lambda>(x,y). preturn (y,x))"  
+    unfolding mswap_def pbind_def preturn_def 
+    apply (intro ext)
+    supply [split!] = abort.splits
+    supply [simp] = abort.map
+    apply pw
+    by metis
+        
+  lemma mswap_idem[simp]: "mswap (mswap m) = m"  
+    supply [simp] = split_is_res
+    by pw 
     
   lemma Mpar_sym: "Mpar m\<^sub>1 m\<^sub>2 = Mbind (Mpar m\<^sub>2 m\<^sub>1) (\<lambda>(r\<^sub>1,r\<^sub>2). Mreturn (r\<^sub>2,r\<^sub>1))"  
-    apply pw
-    using spar_feasible_sym acc_norace_sym apply blast
-    using spar_feasible_sym acc_norace_sym apply blast
-    using spar_feasible_sym acc_norace_sym apply blast
-    apply (metis (no_types, opaque_lifting) add.commute combine_states_sym spar_feasible_sym res_run_consistentI)
-    using spar_feasible_sym acc_norace_sym apply blast
-    apply (metis (no_types, opaque_lifting) add.commute combine_states_sym spar_feasible_sym res_run_consistentI)
+    apply transfer
+    apply (subst (2) ppar_sym'; assumption?)
+    apply (simp add: comp_def flip: mswap_as_pbind_conv)
     done
    
   lifting_update M.lifting  
@@ -891,24 +1126,49 @@ subsection \<open>Syntax\<close>
 
 subsection \<open>Monad Laws\<close>    
   
+
+lemma all_not_none_pair_conv: "P (a,b) \<Longrightarrow> (\<forall>x. P (Some x,b) \<longrightarrow> a\<noteq>Some x) \<longleftrightarrow> a=None"
+  by (cases a) auto
+
+
 lemma M_monad_laws[simp]:
   "doM {x\<leftarrow>return\<^sub>M a; f x} = f a"
   "doM {x\<leftarrow>m; return\<^sub>M x} = m"
   "doM {y\<leftarrow>doM {x\<leftarrow>m; f x}; g y} = doM { x\<leftarrow>m; y\<leftarrow>f x; g y }"
-  apply pw
-  apply pw
+  supply [iff] = all_not_none_pair_conv 
   
-  apply pw
-  apply blast 
-  apply blast 
-  using group_cancel.add1 apply blast 
-  by (metis (no_types, opaque_lifting) add.assoc)
+  subgoal by pw
+  subgoal supply [simp] = split_is_res by pw
+    
+  subgoal
+    apply pw'
+    apply safe
+    apply simp_all
+    apply blast
+    apply blast
+    apply blast
+    apply blast
+    apply metis
+    apply metis
+    subgoal 
+      apply (intro exI conjI, assumption)
+      apply clarsimp
+      apply (rule conjI) apply blast
+      apply (intro exI conjI, assumption, blast)
+      by (simp add: algebra_simps) 
+    apply blast
+    apply blast
+    subgoal by (fastforce simp: algebra_simps)
+    done
+  done
   
   subsubsection \<open>Additional simp lemmas\<close>
   
   lemma Mreturn_inj[simp]: "(return\<^sub>M a) = (return\<^sub>M b) \<longleftrightarrow> a=b"
-    by pw
+    apply pw
+    by blast
   
+  lemma Mabort_bind_simp[simp]: "doM {Mabort; m} = Mabort" by pw
   
   
 subsection \<open>Derived Constructs\<close>  
@@ -922,20 +1182,23 @@ subsection \<open>Derived Constructs\<close>
     by pw
 
   lemma M_bind_fail[simp]:  
-    "doM {m; fail\<^sub>M} = fail\<^sub>M"
+    (*"doM {m; fail\<^sub>M} = fail\<^sub>M" does not hold, as m may abort! *)
     "doM {fail\<^sub>M; m} = fail\<^sub>M"
-    by pw+
+    by pw
 
   lemma M_par_fail[simp]:  
     "(fail\<^sub>M \<parallel>\<^sub>M m\<^sub>2) = fail\<^sub>M"
     "(m\<^sub>1 \<parallel>\<^sub>M fail\<^sub>M) = fail\<^sub>M"
-    by pw+
+    supply [pw_simp] = pw_Mpar2
+    apply pw
+    apply pw
+    done
           
   subsubsection \<open>Assert\<close>
 
   definition Massert ("assert\<^sub>m _" 20) where "Massert P \<equiv> if P then Mreturn () else Mfail"
 
-  lemma run_assert[pw_simp]: "run (Massert P) s = do\<^sub>n\<^sub>e {assert\<^sub>n\<^sub>e P; return\<^sub>n\<^sub>e ((),0,s)}"
+  lemma run_assert[pw_simp]: "run (Massert P) s = do\<^sub>n\<^sub>e {assert\<^sub>n\<^sub>e P; return\<^sub>n\<^sub>e (RESA (),0,s)}"
     unfolding Massert_def by pw
 
   lemma assert_True[simp]: "Massert True = Mreturn ()" by pw

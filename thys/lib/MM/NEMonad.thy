@@ -550,6 +550,10 @@ begin
   lemma wp_prod_case[wp_rule]: "\<lbrakk>\<And>a b. p=(a,b) \<Longrightarrow> wp (f a b) Q\<rbrakk> \<Longrightarrow> wp (case p of (a,b) \<Rightarrow> f a b) Q"
     by (cases p) auto
   
+  lemma wp_option_case[wp_rule]: "\<lbrakk> p=None \<Longrightarrow> wp fn Q; \<And>v. p=Some v \<Longrightarrow> wp (fs v) Q \<rbrakk> \<Longrightarrow> wp (case p of None \<Rightarrow> fn | Some v \<Rightarrow> fs v) Q"
+    by (cases p) auto
+    
+    
   (*
   lemma wp_REC: 
     fixes x :: 'a and V :: "'a rel"
@@ -606,6 +610,10 @@ begin
   lemma wlp_prod_case[wp_rule]: "\<lbrakk>\<And>a b. p=(a,b) \<Longrightarrow> wlp (f a b) Q\<rbrakk> \<Longrightarrow> wlp (case p of (a,b) \<Rightarrow> f a b) Q"
     by (cases p) auto
   
+  lemma wlp_option_case[wp_rule]: "\<lbrakk> p=None \<Longrightarrow> wlp fn Q; \<And>v. p=Some v \<Longrightarrow> wlp (fs v) Q \<rbrakk> \<Longrightarrow> wlp (case p of None \<Rightarrow> fn | Some v \<Rightarrow> fs v) Q"
+    by (cases p) auto
+    
+    
   (*
   lemma wlp_REC: 
     fixes x :: 'a

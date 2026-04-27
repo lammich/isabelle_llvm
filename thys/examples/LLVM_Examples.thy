@@ -211,7 +211,7 @@ context begin
   
   lemma pw_nan_double[pw_simp]:
     "run ndet_nan_double s \<noteq> fail\<^sub>n\<^sub>e"  
-    "is_res (run ndet_nan_double s) (x,i,s') \<longleftrightarrow> is_nan_double x \<and> i=0 \<and> s'=s"
+    "is_res (run ndet_nan_double s) (a,i,s') \<longleftrightarrow> (\<exists>x. is_resA a x \<and> is_nan_double x \<and> i=0 \<and> s'=s)"
     unfolding ndet_nan_double_def
     by pw+
     

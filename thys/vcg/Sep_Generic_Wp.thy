@@ -7,7 +7,7 @@ imports
 begin
 
   
-  
+ 
 (* TODO: Move *)  
 declare sep_disj_commuteI[sym]  
 
@@ -26,43 +26,48 @@ end
 subsection \<open>Weakest Precondition\<close>
 
 locale generic_wp =
-  fixes wp :: "'c \<Rightarrow> ('r \<Rightarrow> acc \<Rightarrow> 's \<Rightarrow> bool) \<Rightarrow> 's \<Rightarrow> bool"
-  assumes wp_comm_inf: "inf (wp c Q) (wp c Q') = wp c (inf Q Q')"
+  fixes wp :: "'c \<Rightarrow> (acc \<Rightarrow> 's \<Rightarrow> bool) \<Rightarrow> ('r \<Rightarrow> acc \<Rightarrow> 's \<Rightarrow> bool) \<Rightarrow> 's \<Rightarrow> bool"
+  assumes wp_comm_inf: "inf (wp c E Q) (wp c E' Q') = wp c (inf E E') (inf Q Q')"
 begin
 
-  lemma wp_comm_conj: "wp c (\<lambda>r i. Q r i and Q' r i) s \<longleftrightarrow> wp c Q s \<and> wp c Q' s"
-    using wp_comm_inf[of c Q Q']
+  lemma wp_comm_conj: "wp c (\<lambda>i. E i and E' i) (\<lambda>r i. Q r i and Q' r i) s \<longleftrightarrow> wp c E Q s \<and> wp c E' Q' s"
+    using wp_comm_inf[of c E Q E' Q']
     unfolding inf_fun_def inf_bool_def by metis
 
-  lemma wp_comm_conjI: "\<lbrakk> wp c Q s; wp c Q' s \<rbrakk> \<Longrightarrow> wp c (\<lambda>r i s. Q r i s \<and> Q' r i s) s"
-    using wp_comm_inf[of c Q Q']
+  lemma wp_comm_conjI: "\<lbrakk> wp c E Q s; wp c E' Q' s \<rbrakk> \<Longrightarrow> wp c (\<lambda>i s. E i s \<and> E' i s) (\<lambda>r i s. Q r i s \<and> Q' r i s) s"
+    using wp_comm_inf[of c E Q E' Q']
     unfolding inf_fun_def inf_bool_def by metis
 
 
-  lemma wp_mono: "Q\<le>Q' \<Longrightarrow> wp c Q \<le> wp c Q'"
-    by (metis (mono_tags) antisym_conv le_inf_iff order_refl wp_comm_inf)
+  lemma wp_mono: "E\<le>E' \<Longrightarrow> Q\<le>Q' \<Longrightarrow> wp c E Q \<le> wp c E' Q'"
+    using antisym_conv le_inf_iff order_refl wp_comm_inf
+    by (simp add: inf.absorb_iff2)
 
   lemma wp_monoI:
-    assumes "wp c Q s"
+    assumes "wp c E Q s"
+    assumes "\<And>i x. E i x \<Longrightarrow> E' i x"
     assumes "\<And>r i x. Q r i x \<Longrightarrow> Q' r i x"
-    shows "wp c Q' s"
-    using assms wp_mono[of Q Q' c]
-    by (metis le_funI predicate1D predicate1I wp_mono)
+    shows "wp c E' Q' s"
+    using assms wp_mono[of E E' Q Q' c]
+    by (metis (mono_tags, lifting) le_funI predicate1D predicate2I)
     
 end
 
 hide_const (open) NEMonad.wp
 
-definition wp where "wp c Q s \<equiv> NEMonad.wp (run c s) (\<lambda>(r,i,s). Q r i s)"
+definition wp where "wp c E Q s \<equiv> NEMonad.wp (run c s) (\<lambda>(ABORT,i,s) \<Rightarrow> E i s | (RESA r,i,s) \<Rightarrow> Q r i s)"
 
-lemma pw_wp[pw_init]: "wp c Q s \<longleftrightarrow> \<not>is_fail (run c s) \<and> (\<forall>r i s'. is_res (run c s) (r,i,s') \<longrightarrow> Q r i s')"
-  unfolding wp_def by pw
+lemma pw_wp[pw_init]: "wp c E Q s \<longleftrightarrow> \<not>is_fail (run c s) \<and> (\<forall>a i s'. is_res (run c s) (a,i,s') \<longrightarrow> (is_abort a \<longrightarrow> E i s') \<and> (\<forall>r. is_resA a r \<longrightarrow> Q r i s'))"
+  unfolding wp_def 
+  supply [split] = abort.splits
+  by pw
 
-
-lemma wp_cons: "\<lbrakk> wp c Q s; \<And>r i s'. Q r i s' \<Longrightarrow> Q' r i s' \<rbrakk> \<Longrightarrow> wp c Q' s"  
+lemma wp_cons: "\<lbrakk> wp c E Q s; \<And>i s'. E i s' \<Longrightarrow> E' i s'; \<And>r i s'. Q r i s' \<Longrightarrow> Q' r i s' \<rbrakk> \<Longrightarrow> wp c E' Q' s"  
   by pw
   
-lemma wp_false[simp]: "\<not>wp c (\<lambda>_ _ _. False) s" by pw
+lemma wp_false[simp]: "\<not>wp c (\<lambda>_ _. False) (\<lambda>_ _ _. False) s" 
+  supply [pw_simp] = no_result_is_FAIL_aux
+  by pw
 
 interpretation generic_wp wp 
   apply unfold_locales 
@@ -71,47 +76,57 @@ interpretation generic_wp wp
 
 subsubsection \<open>VCG Setup\<close>  
   
-lemma wp_return[vcg_normalize_simps]: "wp (Mreturn x) Q s \<longleftrightarrow> Q x 0 s" by pw
+lemma wp_return[vcg_normalize_simps]: "wp (Mreturn x) E Q s \<longleftrightarrow> Q x 0 s" by pw
 
-lemma wp_fail[vcg_normalize_simps]: "\<not> wp (Mfail) Q s" by pw 
+lemma wp_Mabort[vcg_normalize_simps]: "wp Mabort E Q s \<longleftrightarrow> E 0 s" by pw
 
-lemma wp_assert[vcg_normalize_simps]: "wp (Massert \<Phi>) Q s \<longleftrightarrow> \<Phi> \<and> Q () 0 s" by pw
+lemma wp_fail[vcg_normalize_simps]: "\<not> wp (Mfail) E Q s" by pw 
+
+lemma wp_assert[vcg_normalize_simps]: "wp (Massert \<Phi>) E Q s \<longleftrightarrow> \<Phi> \<and> Q () 0 s" by pw
   
-lemma wp_bind[vcg_normalize_simps]: "wp (doM {x\<leftarrow>m; f x}) Q s = wp m (\<lambda>x i. wp (f x) (\<lambda>x' i'. Q x' (i+i'))) s"  
-  by (pw; blast)
+lemma wp_bind[vcg_normalize_simps]: "wp (doM {x\<leftarrow>m; f x}) E Q s = wp m E (\<lambda>x i. wp (f x) (\<lambda>i'. E (i+i')) (\<lambda>x' i'. Q x' (i+i'))) s"
+  by (pw'; blast)
   
 lemma wp_par:  
-  assumes "wp m\<^sub>1 Q\<^sub>1 s"
-  assumes "wp m\<^sub>2 Q\<^sub>2 s"
-  assumes "\<And>r\<^sub>1 s\<^sub>1 i\<^sub>1 r\<^sub>2 s\<^sub>2 i\<^sub>2. \<lbrakk> 
-      acc_consistent s i\<^sub>1 s\<^sub>1; acc_consistent s i\<^sub>2 s\<^sub>2; spar_feasible i\<^sub>1 i\<^sub>2;
-      Q\<^sub>1 r\<^sub>1 i\<^sub>1 s\<^sub>1; Q\<^sub>2 r\<^sub>2 i\<^sub>2 s\<^sub>2 
-    \<rbrakk> 
+  assumes "wp m\<^sub>1 E\<^sub>1 Q\<^sub>1 s"
+  assumes "wp m\<^sub>2 E\<^sub>2 Q\<^sub>2 s"
+  assumes "\<And>s\<^sub>1 i\<^sub>1 s\<^sub>2 i\<^sub>2. \<lbrakk> acc_consistent s i\<^sub>1 s\<^sub>1; acc_consistent s i\<^sub>2 s\<^sub>2; spar_feasible i\<^sub>1 i\<^sub>2; E\<^sub>1 i\<^sub>1 s\<^sub>1; E\<^sub>2 i\<^sub>2 s\<^sub>2 \<rbrakk>
+    \<Longrightarrow> acc_norace i\<^sub>1 i\<^sub>2 \<and> E (i\<^sub>1+i\<^sub>2) (combine_states s\<^sub>1 i\<^sub>2 s\<^sub>2)"
+  assumes "\<And>s\<^sub>1 i\<^sub>1 r\<^sub>2 s\<^sub>2 i\<^sub>2. \<lbrakk> acc_consistent s i\<^sub>1 s\<^sub>1; acc_consistent s i\<^sub>2 s\<^sub>2; spar_feasible i\<^sub>1 i\<^sub>2; E\<^sub>1 i\<^sub>1 s\<^sub>1; Q\<^sub>2 r\<^sub>2 i\<^sub>2 s\<^sub>2 \<rbrakk> 
+    \<Longrightarrow> acc_norace i\<^sub>1 i\<^sub>2 \<and> E (i\<^sub>1+i\<^sub>2) (combine_states s\<^sub>1 i\<^sub>2 s\<^sub>2)"
+  assumes "\<And>r\<^sub>1 s\<^sub>1 i\<^sub>1 s\<^sub>2 i\<^sub>2. \<lbrakk> acc_consistent s i\<^sub>1 s\<^sub>1; acc_consistent s i\<^sub>2 s\<^sub>2; spar_feasible i\<^sub>1 i\<^sub>2; Q\<^sub>1 r\<^sub>1 i\<^sub>1 s\<^sub>1; E\<^sub>2 i\<^sub>2 s\<^sub>2 \<rbrakk> 
+    \<Longrightarrow> acc_norace i\<^sub>1 i\<^sub>2 \<and> E (i\<^sub>1+i\<^sub>2) (combine_states s\<^sub>1 i\<^sub>2 s\<^sub>2)"
+  assumes "\<And>r\<^sub>1 s\<^sub>1 i\<^sub>1 r\<^sub>2 s\<^sub>2 i\<^sub>2. \<lbrakk> acc_consistent s i\<^sub>1 s\<^sub>1; acc_consistent s i\<^sub>2 s\<^sub>2; spar_feasible i\<^sub>1 i\<^sub>2; Q\<^sub>1 r\<^sub>1 i\<^sub>1 s\<^sub>1; Q\<^sub>2 r\<^sub>2 i\<^sub>2 s\<^sub>2 \<rbrakk> 
     \<Longrightarrow> acc_norace i\<^sub>1 i\<^sub>2 \<and> Q (r\<^sub>1,r\<^sub>2) (i\<^sub>1+i\<^sub>2) (combine_states s\<^sub>1 i\<^sub>2 s\<^sub>2)"
-  shows "wp (Mpar m\<^sub>1 m\<^sub>2) Q s"
-  using assms apply -
-  apply pw 
-  apply (meson res_run_consistentI)
-  apply (meson res_run_consistentI)
-  done
+  shows "wp (Mpar m\<^sub>1 m\<^sub>2) E Q s"
+  apply -
+  using assms(1,2)
+  apply -
+  supply [pw_simp] = pw_Mpar2'
+  apply pw' 
+  apply (clarsimp_all simp: split_is_res)
+  using assms
+  apply safe
+  apply (metis res_run_consistentI)+
+  done  
   
-lemma wp_malloc[vcg_normalize_simps]: "wp (Mmalloc xs) Q s \<longleftrightarrow> (\<forall>r. is_FRESH s r \<longrightarrow> Q r (acc_a r) (addr_alloc xs r s))"  
+lemma wp_malloc[vcg_normalize_simps]: "wp (Mmalloc xs) E Q s \<longleftrightarrow> (\<forall>r. is_FRESH s r \<longrightarrow> Q r (acc_a r) (addr_alloc xs r s))"  
   supply [pw_simp] = malloc_def
   by pw
   
-lemma wp_free[vcg_normalize_simps]: "wp (Mfree b) Q s \<longleftrightarrow> is_ALLOC s b \<and> Q () (acc_f b) (addr_free b s)"  
+lemma wp_free[vcg_normalize_simps]: "wp (Mfree b) E Q s \<longleftrightarrow> is_ALLOC s b \<and> Q () (acc_f b) (addr_free b s)"  
   supply [pw_simp] = mfree_def
   by pw
   
-lemma wp_load[vcg_normalize_simps]: "wp (Mload a) Q s \<longleftrightarrow> is_valid_addr s a \<and> Q (get_addr s a) (acc_r a) s"  
+lemma wp_load[vcg_normalize_simps]: "wp (Mload a) E Q s \<longleftrightarrow> is_valid_addr s a \<and> Q (get_addr s a) (acc_r a) s"  
   supply [pw_simp] = mload_def
   by pw
 
-lemma wp_mstore[vcg_normalize_simps]: "wp (Mstore a x) Q s \<longleftrightarrow> is_valid_addr s a \<and> Q () (acc_w a) (put_addr s a x)"  
+lemma wp_mstore[vcg_normalize_simps]: "wp (Mstore a x) E Q s \<longleftrightarrow> is_valid_addr s a \<and> Q () (acc_w a) (put_addr s a x)"  
   supply [pw_simp] = mstore_def
   by pw
 
-lemma wp_valid_addr[vcg_normalize_simps]: "wp (Mvalid_addr a) Q s \<longleftrightarrow> is_valid_addr s a \<and> Q () (acc_r a) s"  
+lemma wp_valid_addr[vcg_normalize_simps]: "wp (Mvalid_addr a) E Q s \<longleftrightarrow> is_valid_addr s a \<and> Q () (acc_r a) s"  
   supply [pw_simp] = mvalid_addr_def
   by pw
   
@@ -303,8 +318,8 @@ lemma "acc_excludes i asf \<longleftrightarrow>
 \<and> (\<forall>b\<in>blocks asf. b\<notin>acc.f i)"  
   unfolding acc_excludes_def by auto
   
-text \<open>Weakest precondition for program, such that accesses are disjoint from frame\<close>  
-definition wpa where [pw_init]: "wpa asf c Q s \<equiv> wp c (\<lambda>r i s'. 
+text \<open>Weakest precondition for program, such that accesses are disjoint from frame. We also introduce partial correctness wrt abort\<close>
+definition wpa where [pw_init]: "wpa asf c Q s \<equiv> wp c (\<lambda>i s'. acc_excludes i asf) (\<lambda>r i s'. 
     Q r s' 
   \<and> acc_excludes i asf
 ) s"
@@ -319,12 +334,15 @@ lemma wpa_monoI:
 
 subsubsection \<open>VCG Setup\<close>
   
-lemma wpa_false[vcg_normalize_simps]: "\<not>wpa A m (\<lambda>_ _. False) s"  
+(*lemma wpa_false[vcg_normalize_simps]: "\<not>wpa A m (\<lambda>_ _. False) s"  
   by (simp add: wpa_def vcg_normalize_simps)
+*)  
 
 lemma wpa_spec[vcg_normalize_simps]: "wpa asf (Mspec P) Q s \<longleftrightarrow> (P\<noteq>bot) \<and> (\<forall>x. P x \<longrightarrow> Q x s)" by pw
 
 lemma wpa_return[vcg_normalize_simps]: "wpa asf (Mreturn x) Q s \<longleftrightarrow> Q x s" by pw
+
+lemma wpa_abort[vcg_normalize_simps]: "wpa asf Mabort Q s" by pw
 
 lemma wpa_fail[vcg_normalize_simps]: "\<not> wpa asf (Mfail) Q s" by pw 
 
@@ -333,11 +351,8 @@ lemma wpa_assert[vcg_normalize_simps]: "wpa asf (Massert \<Phi>) Q s \<longleftr
 lemma wpa_bindI[vcg_decomp_rules]: "wpa asf m (\<lambda>x. wpa asf (f x) Q) s \<Longrightarrow> wpa asf (doM {x\<leftarrow>m; f x}) Q s"  
   unfolding wpa_def acc_excludes_def
   apply (simp add: vcg_normalize_simps)
-  apply (erule wp_cons)
-  apply clarify
-  apply (erule wp_cons)
-  apply auto
-  done
+  apply (erule wp_cons) 
+  by auto
   
 lemma wpa_ifI[vcg_decomp_rules]: 
   assumes "b \<Longrightarrow> wpa asf c Q s"
@@ -376,14 +391,14 @@ lemma htriple_semanticsD:
   assumes "as ## asf" "\<alpha> \<mu> = as+asf" "P as" \<comment> \<open>Given memory that can be split into part that satisfies precondition, and a frame\<close>
   obtains R where 
     "run c \<mu> = SPEC R" \<comment> \<open>The program does not fail\<close>
-    "\<forall>x i \<mu>'. R (x,i,\<mu>') \<longrightarrow> \<comment> \<open>And all possible results ...\<close>
+    "\<forall>x i \<mu>'. R (RESA x,i,\<mu>') \<longrightarrow> \<comment> \<open>And all possible results ...\<close>
       (\<exists>as'. as'##asf \<and> \<alpha> \<mu>' = as'+asf \<comment> \<open>Can be split into the original frame and another part\<close>
            \<and> Q x as')" \<comment> \<open>that satisfies the postcondition\<close>
+           
   using assms
   unfolding htriple_def wpa_def STATE_def wp_def NEMonad.wp_def is_res_def the_spec_def is_fail_def
-  apply (auto split: neM.splits)
+  apply (auto split!: neM.splits abort.splits)
   by (metis neM.exhaust)
-  
   
   
 subsubsection \<open>VCG Setup\<close>
@@ -532,25 +547,20 @@ proof
   show "wpa asf (m\<^sub>1 \<parallel>\<^sub>M m\<^sub>2) (\<lambda>r. STATE asf (case r of (r\<^sub>1, r\<^sub>2) \<Rightarrow> Q\<^sub>1 r\<^sub>1 \<and>* Q\<^sub>2 r\<^sub>2)) s"
     using WPA1 WPA2
     apply (simp add: wpa_def)
-    apply (erule (1) wp_par, thin_tac "wp _ _ _"; clarsimp)
-  proof goal_cases
-    case (1 x\<^sub>1 s\<^sub>1 i\<^sub>1 x\<^sub>2 s\<^sub>2 i\<^sub>2)
-
-    \<comment> \<open>Make assumptions explicit\<close>
+    apply (erule (1) wp_par; thin_tac "wp _ _ _ _"; clarsimp?)
+  proof -
+    fix s\<^sub>1 i\<^sub>1 s\<^sub>2 i\<^sub>2
     
-    interpret feasible_parallel_execution s s\<^sub>1 i\<^sub>1 s\<^sub>2 i\<^sub>2 using 1 apply unfold_locales by simp_all
-
-    note STATE1 = \<open>STATE (as\<^sub>2 + asf) (Q\<^sub>1 x\<^sub>1) s\<^sub>1\<close>
-    note STATE2 = \<open>STATE (as\<^sub>1 + asf) (Q\<^sub>2 x\<^sub>2) s\<^sub>2\<close>
-    note IEXCL1 = \<open>acc_excludes i\<^sub>1 (as\<^sub>2 + asf)\<close>
-    note IEXCL2 = \<open>acc_excludes i\<^sub>2 (as\<^sub>1 + asf)\<close>
-
+    assume "acc_consistent s i\<^sub>1 s\<^sub>1" "acc_consistent s i\<^sub>2 s\<^sub>2" "spar_feasible i\<^sub>1 i\<^sub>2" 
+    then interpret feasible_parallel_execution s s\<^sub>1 i\<^sub>1 s\<^sub>2 i\<^sub>2
+      by unfold_locales
     
+    assume IEXCL1: "acc_excludes i\<^sub>1 (as\<^sub>2 + asf)" and IEXCL2: "acc_excludes i\<^sub>2 (as\<^sub>1 + asf)"
+
     from IEXCL1 IEXCL2 have G_EXCL: "acc_excludes (i\<^sub>1 + i\<^sub>2) asf"
       unfolding acc_excludes_def
       by auto
-        
-      
+
       
     \<comment> \<open>Prove race freedom\<close>
     have G1: "acc_norace i\<^sub>1 i\<^sub>2"
@@ -625,10 +635,25 @@ proof
         by blast
         
     qed
-        
-        
+
     \<comment> \<open>Now we have a valid parallel execution\<close>  
     interpret valid_parallel_execution s s\<^sub>1 i\<^sub>1 s\<^sub>2 i\<^sub>2 apply unfold_locales by fact+
+
+    \<comment> \<open>Show the abort cases (3x the same goal)\<close>
+    show "acc_norace i\<^sub>1 i\<^sub>2 \<and> acc_excludes (i\<^sub>1 + i\<^sub>2) asf"
+      by (rule; fact)
+    
+    show "acc_norace i\<^sub>1 i\<^sub>2 \<and> acc_excludes (i\<^sub>1 + i\<^sub>2) asf"
+      by (rule; fact)
+              
+    show "acc_norace i\<^sub>1 i\<^sub>2 \<and> acc_excludes (i\<^sub>1 + i\<^sub>2) asf"
+      by (rule; fact)
+          
+
+    \<comment> \<open>Remaining: non-abort\<close>  
+    fix x\<^sub>1 x\<^sub>2
+    assume STATE1: \<open>STATE (as\<^sub>2 + asf) (Q\<^sub>1 x\<^sub>1) s\<^sub>1\<close>
+       and STATE2: \<open>STATE (as\<^sub>1 + asf) (Q\<^sub>2 x\<^sub>2) s\<^sub>2\<close>
     
     have G2: "STATE asf (Q\<^sub>1 x\<^sub>1 \<and>* Q\<^sub>2 x\<^sub>2) s'" 
     proof -
@@ -919,7 +944,7 @@ proof
         done
     qed    
     
-    show ?case using G1 G2 G_EXCL by blast
+    show "acc_norace i\<^sub>1 i\<^sub>2 \<and> STATE asf (Q\<^sub>1 x\<^sub>1 \<and>* Q\<^sub>2 x\<^sub>2) (combine_states s\<^sub>1 i\<^sub>2 s\<^sub>2) \<and> acc_excludes (i\<^sub>1 + i\<^sub>2) asf" using G1 G2 G_EXCL by blast
   qed 
 qed        
 
@@ -960,19 +985,18 @@ subsection \<open>Realizable abstract Predicates\<close>
   lemma realizable_extract_pure[simp]: "realizable (\<up>\<phi> ** P) \<longleftrightarrow> \<phi> \<and> realizable P"  
     by (auto simp add: realizable_def sep_algebra_simps)
       
-  lemma htriple_false: "htriple P c (\<lambda>r s. False) \<longleftrightarrow> \<not>realizable P"
+  (*lemma htriple_false: "htriple P c (\<lambda>r s. False) \<longleftrightarrow> \<not>realizable P"
     unfolding htriple_def STATE_def
     by (auto simp: wpa_false realizable_def)
-    
+  *)
+
+  lemma STATE_realizableI: "STATE f P s \<Longrightarrow> realizable P"  
+    unfolding STATE_def realizable_def by auto
     
   lemma htriple_realizable_preI: 
     assumes "realizable P \<Longrightarrow> htriple P c Q"
     shows "htriple P c Q"
-    using assms
-    using cons_post_rule htriple_false by fastforce
-    
-  lemma STATE_realizableI: "STATE f P s \<Longrightarrow> realizable P"  
-    unfolding STATE_def realizable_def by auto
+    using STATE_realizableI assms htripleI by blast
     
     
 subsection \<open>VCG Setup\<close>    

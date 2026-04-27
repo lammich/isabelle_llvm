@@ -3,8 +3,10 @@ theory Sorting_Parsort
 imports Sorting_Introsort Sorting_PDQ Sorting_Par_Partition
 begin
 
-
-
+(* TODO: Move *)
+lemma seq_le_nres_par: "doN { r\<^sub>1\<leftarrow>f\<^sub>1 x\<^sub>1; r\<^sub>2\<leftarrow>f\<^sub>2 x\<^sub>2; RETURN (r\<^sub>1,r\<^sub>2) } \<le> nres_par f\<^sub>1 f\<^sub>2 x\<^sub>1 x\<^sub>2"
+  by (simp add: pw_le_iff refine_pw_simps)
+  
 context weak_ordering begin
 
   subsection \<open>Abstract Algorithm\<close>
@@ -43,11 +45,13 @@ context weak_ordering begin
           ASSERT (length xs\<^sub>2' = length xs\<^sub>2);
           RETURN (xs\<^sub>1',xs\<^sub>2')
         } else doN {
-          xs\<^sub>1' \<leftarrow> par_sort_aux (xs\<^sub>1,d-1);
+          nres_par par_sort_aux par_sort_aux (xs\<^sub>1,d-1) (xs\<^sub>2,d-1)
+          \<^cancel>\<open>
+          (xs\<^sub>1', xs\<^sub>2') \<leftarrow> nres_par par_sort_aux par_sort_aux (xs\<^sub>1,d-1) (xs\<^sub>2,d-1);
           ASSERT (length xs\<^sub>1' = length xs\<^sub>1);
-          xs\<^sub>2' \<leftarrow> par_sort_aux (xs\<^sub>2,d-1);
           ASSERT (length xs\<^sub>2' = length xs\<^sub>2);
           RETURN (xs\<^sub>1',xs\<^sub>2')
+          \<close>
         };
         RETURN ((),xs\<^sub>1',xs\<^sub>2')
       });
@@ -58,9 +62,12 @@ context weak_ordering begin
   
   lemma par_sort_aux_correct: "par_sort_aux xs d \<le> slice_sort_spec (\<^bold><) xs 0 (length xs)"
     unfolding par_sort_aux_def 
-    apply (subst if_cancel)
     apply (refine_vcg RECT_rule_arb[where V="measure (\<lambda>(_,d). d)" and pre="\<lambda>xss (xs,d). xss=xs"])
     apply simp_all [2]
+    apply (thin_tac "RECT _ = _")
+    
+    thm nres_par_vcg
+    
     unfolding slice_sort_spec_def partition3_spec_def
     apply (refine_vcg bad_partition_triv)
     apply simp_all 
@@ -76,7 +83,27 @@ context weak_ordering begin
     apply refine_vcg
     apply (clarsimp_all)
     subgoal for xs' xs\<^sub>2' xs\<^sub>1 xs\<^sub>2 xc x1b
+      unfolding sort_spec_def slice_eq_mset_def slice_LT_def
+      apply (auto simp: slice_complete' sorted_wrt_append le_by_lt slice_append1' slice_append2')
+      by (metis set_mset_mset)
       
+    apply (refine_vcg nres_par_vcg_seq1)  
+    subgoal
+      apply (rule order_trans) apply (rprems) apply simp apply simp apply simp done
+    
+    apply (rule order_trans) apply (rprems)
+    apply simp
+    apply simp
+    apply refine_vcg
+    apply (clarsimp)
+      
+    apply (rule order_trans) apply (rprems)
+    apply simp
+    apply simp
+    apply refine_vcg
+    apply (clarsimp_all)
+    
+    subgoal for xs' xs\<^sub>2' xs\<^sub>1 xs\<^sub>2 xc x1b
       unfolding sort_spec_def slice_eq_mset_def slice_LT_def
       apply (auto simp: slice_complete' sorted_wrt_append le_by_lt slice_append1' slice_append2')
       by (metis set_mset_mset)
@@ -108,15 +135,13 @@ context weak_ordering begin
 
   
   lemma par_sort_aux2_refine: "n=length xs \<Longrightarrow> par_sort_aux2 xs n d \<le> \<Down>(\<langle>Id\<rangle>list_rel) (par_sort_aux xs d)"
-    unfolding par_sort_aux2_def par_sort_aux_def nres_par_def
+    unfolding par_sort_aux2_def par_sort_aux_def
     apply (refine_rcg)
     supply [refine_dref_RELATES] = RELATESI[where R="{((xs,n,d),(xs',d')). xs'=xs \<and> d'=d \<and> length xs'=n}"]
     apply refine_dref_type
     apply (simp_all (no_asm_use)) (* TODO: This is a hack against a yet unidentified simplifier loop *)
     apply auto
     done
-
-
 
   text \<open>Fixing concrete algorithms to be used\<close>
   

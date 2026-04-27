@@ -683,6 +683,9 @@ context weak_ordering begin
     
     thm RECT_rule
     
+    thm nres_par_vcg_seq1
+    
+    
     apply refine_vcg
     
     apply (refine_vcg RECT_rule[
@@ -690,7 +693,10 @@ context weak_ordering begin
             V="measure (\<lambda>(_,xs). length xs)" 
         and pre="\<lambda>(len,xs). len=length xs" 
         and M="\<lambda>(d,xs). Refine_Basic.SPEC (\<lambda>(xs', ss, bs). ppart_spec p xs xs' ss bs)", 
-      THEN order_trans])
+      THEN order_trans]
+      
+      nres_par_vcg_seq1  
+    )
     apply (all \<open>(thin_tac "RECT _ = _")?\<close>)
     
     subgoal by simp  
@@ -699,7 +705,9 @@ context weak_ordering begin
     subgoal by clarsimp
     subgoal by simp  
     
-    apply (drule sym[of "length _" "_ - _"]) (* Turn around problematic premise for simplifier *)
+    apply (all \<open>(drule sym[of "length _" "_ - _"])?\<close>) (* Turn around problematic premise for simplifier *)
+    subgoal by simp  
+    subgoal by simp  
     
     apply (rule order_trans)
     apply rprems 
@@ -957,7 +965,7 @@ lemma par_swap_aux_correct:
         then interpret swap_opt_spec_pre_split ss bs xs ss\<^sub>1 ss\<^sub>2 bs\<^sub>1 bs\<^sub>2 .
         
         show ?thesis
-          apply (refine_vcg)
+          apply (refine_vcg nres_par_vcg_seq1)
           subgoal by (simp add: extreme)
           subgoal by (simp add: extreme)
           subgoal by (simp add: extreme)
@@ -965,8 +973,17 @@ lemma par_swap_aux_correct:
           subgoal by (simp add: extreme)
           subgoal by (rule idxs1_in_bounds)
           subgoal
+            apply (rule IH[THEN order_trans])
+            subgoal
+              using p2.swap_opt_spec_pre_axioms
+              by clarsimp 
+            subgoal by (rule decreasing)
+            apply clarsimp
+            done
+          subgoal
             using p1.swap_opt_spec_pre_axioms
             by clarsimp 
+            
           apply clarsimp  
           subgoal for xs\<^sub>1'
             apply (rule IH[THEN order_trans])
@@ -985,7 +1002,7 @@ lemma par_swap_aux_correct:
                 by simp
             qed  
             done
-          done
+          done  
       qed
       done
   qed
