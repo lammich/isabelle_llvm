@@ -100,7 +100,7 @@ begin
 
 
   definition nanize_float where "nanize_float x \<equiv> if is_nan x then SPEC is_nan else RETURN x"
-  lemma nanize_double_simps[simp]: 
+  lemma nanize_float_simps[simp]: 
     "\<not>is_nan x \<Longrightarrow> nanize_float x = RETURN x"
     "is_nan x \<Longrightarrow> nanize_float x = (SPEC is_nan)"
     unfolding nanize_float_def
@@ -258,12 +258,13 @@ begin
     apply sepref
     done
 
-  declare [[llc_compile_avx512f=true]]
+  experiment
+  begin
+    declare [[llc_compile_avx512f=true]]
+    export_llvm add_floats_dn_ll 
+  end  
 
-  export_llvm add_floats_dn_ll 
-
-
-  section \<open>Constants\<close>
+  subsection \<open>Constants\<close>
 
 
   lemma float_of_fp64_hnr[sepref_fr_rules]: "(Mreturn o double_of_word, RETURN o float_of_fp64) \<in> word_assn\<^sup>k \<rightarrow>\<^sub>a dfloat_assn"
@@ -280,15 +281,17 @@ begin
     mop_mul_rdn a b
   }"
 
-  sepref_def word_float_test_ll is "uncurry0 word_float_test" :: "unit_assn\<^sup>k \<rightarrow>\<^sub>a dfloat_assn"
-    unfolding word_float_test_def
-    apply sepref
-    done
+  experiment
+  begin
+    sepref_def word_float_test_ll is "uncurry0 word_float_test" :: "unit_assn\<^sup>k \<rightarrow>\<^sub>a dfloat_assn"
+      unfolding word_float_test_def
+      apply sepref
+      done
+  
+    export_llvm word_float_test_ll
+  end
 
-  export_llvm word_float_test_ll
-
-
-  subsection \<open>Zero\<close>
+  subsubsection \<open>Zero\<close>
 
   definition "op_fp64_0 = float_of_fp64 0x0000000000000000"
 
@@ -310,13 +313,13 @@ begin
   lemma sign_op_fp64_0[simp]: "sign op_fp64_0 = 0"
     unfolding op_fp64_0_def by simp
 
-  sepref_def op_fp64_0_ll is "uncurry0 (RETURN op_fp64_0)" :: "unit_assn\<^sup>k \<rightarrow>\<^sub>a dfloat_assn"
+  sepref_def op_fp64_0_ll [llvm_inline] is "uncurry0 (RETURN op_fp64_0)" :: "unit_assn\<^sup>k \<rightarrow>\<^sub>a dfloat_assn"
     unfolding word_float_test_def op_fp64_0_def
     apply sepref
     done
 
 
-  subsection \<open>One\<close>
+  subsubsection \<open>One\<close>
   
   definition "op_fp64_1 = float_of_fp64 0x3FF0000000000000"
   
@@ -342,33 +345,96 @@ begin
   lemma sign_op_fp64_1[simp]: "sign op_fp64_1 = 0"
     by(simp flip: float_of_fp64_1)
 
-  sepref_def op_fp64_1_ll is "uncurry0 (RETURN op_fp64_1)" :: "unit_assn\<^sup>k \<rightarrow>\<^sub>a dfloat_assn"
+  sepref_def op_fp64_1_ll [llvm_inline] is "uncurry0 (RETURN op_fp64_1)" :: "unit_assn\<^sup>k \<rightarrow>\<^sub>a dfloat_assn"
     unfolding word_float_test_def op_fp64_1_def
     apply sepref
     done
 
 
-  section \<open>Comparison Operations\<close>
+  subsection \<open>Comparison Operations\<close>
 
-  (* Since comparisons will not be of much use in our framework, we only formalize the bare minimum (\<le>)
-    e.g. for max/min operations. Other operations can be implemented with little effort similarly to this one.
-  *)
-
-  definition "op_ole_d a b = (if is_nan a \<or> is_nan b then False else a \<le> b)"
-  sepref_register op_ole_d
-
-  lemma op_ole_le: "\<not>is_nan a \<Longrightarrow> \<not>is_nan b \<Longrightarrow> op_ole_d a b \<longleftrightarrow> a \<le> b"
-    unfolding op_ole_d_def by simp
-
-  lemma op_ole_valof'_le: "\<not>is_nan a \<Longrightarrow> \<not>is_nan b \<Longrightarrow> op_ole_d a b \<longleftrightarrow> valof' a \<le> valof' b"
-    unfolding op_ole_d_def valof'_def by (auto simp: is_infinity_alt) 
-
+  (* TODO: Move *)
+  lemma float_le_not_nan:
+    "a\<le>b \<Longrightarrow> \<not>is_nan a"
+    "a\<le>b \<Longrightarrow> \<not>is_nan b"
+    by (auto simp: less_eq_float_def fle_def fcompare_def)
+    
+  lemma float_lt_not_nan:
+    "a<b \<Longrightarrow> \<not>is_nan a"
+    "a<b \<Longrightarrow> \<not>is_nan b"
+    by (auto simp: less_float_def flt_def fcompare_def)
+    
+  lemma double_lt_not_nan:
+    "a<b \<Longrightarrow> \<not>is_nan_double a"
+    "a<b \<Longrightarrow> \<not>is_nan_double b"
+    by (transfer; blast dest: float_lt_not_nan; fail)+
+  
+  lemma double_le_not_nan:
+    "a\<le>b \<Longrightarrow> \<not>is_nan_double a"
+    "a\<le>b \<Longrightarrow> \<not>is_nan_double b"
+    by (transfer; blast dest: float_le_not_nan; fail)+
+  
+  (* TODO: Move *)
+  lemma bool_to_lint_to_word_simp: "lint_to_word (bool_to_lint x) = from_bool x"
+    apply (cases x)
+    unfolding bool_to_lint_def
+    unfolding lint_to_word_def
+    by auto
+    
   lemma from_bool_bool1_rel: "(from_bool x, y) \<in> bool1_rel \<longleftrightarrow> x = y"
     unfolding bool1_rel_def bool.rel_def 
     by(auto simp: in_br_conv)
 
   lemma bool_to_lint_to_word_bool1_rel: "(lint_to_word (bool_to_lint x), y) \<in> bool1_rel \<longleftrightarrow> x = y"
     using from_bool_bool1_rel unfolding from_bool_lint_conv .
+    
+    
+  (* TODO: Move *)
+  lemma ll_fcmp_ole_d_alt: "ll_fcmp_ole_d a b = Mreturn (from_bool (a \<le> b))"
+    unfolding op_lift_fcmp_d_def ll_fcmp_ole_d_def
+    apply (simp add: bool_to_lint_to_word_simp)
+    apply (fo_rule arg_cong)
+    by (blast dest: double_le_not_nan)
+    
+  lemma ll_fcmp_olt_d_alt: "ll_fcmp_olt_d a b = Mreturn (from_bool (a < b))"
+    unfolding op_lift_fcmp_d_def ll_fcmp_olt_d_def
+    apply (simp add: bool_to_lint_to_word_simp)
+    apply (fo_rule arg_cong)
+    by (blast dest: double_lt_not_nan)
+    
+    
+  sepref_register "(\<le>) :: (_,_) float \<Rightarrow> _"  
+  sepref_register "(<) :: (_,_) float \<Rightarrow> _"  
+    
+  lemma fleq_d_hnr[sepref_fr_rules]: "(uncurry ll_fcmp_ole_d, uncurry (RETURN oo (\<le>))) \<in> dfloat_assn\<^sup>k *\<^sub>a dfloat_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
+    apply(sepref_to_hoare)
+    unfolding ll_fcmp_ole_d_alt dfloat_rel_def
+    supply [simp] = in_br_conv from_bool_bool1_rel less_eq_double.rep_eq[symmetric]
+    by vcg
+    
+  lemma flt_d_hnr[sepref_fr_rules]: "(uncurry ll_fcmp_olt_d, uncurry (RETURN oo (<))) \<in> dfloat_assn\<^sup>k *\<^sub>a dfloat_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
+    apply(sepref_to_hoare)
+    unfolding ll_fcmp_olt_d_alt dfloat_rel_def
+    supply [simp] = in_br_conv from_bool_bool1_rel less_double.rep_eq[symmetric]
+    by vcg
+    
+    
+  subsubsection \<open>Legacy \<open>op_ole_d\<close>\<close>
+
+  definition "op_ole_d a b = (if is_nan a \<or> is_nan b then False else a \<le> b)"
+  sepref_register op_ole_d
+
+  lemma op_ole_d_is_le: "op_ole_d a b \<longleftrightarrow> a\<le>b"
+    unfolding op_ole_d_def
+    by (auto dest: float_le_not_nan)
+  
+  
+  lemma op_ole_le: "\<not>is_nan a \<Longrightarrow> \<not>is_nan b \<Longrightarrow> op_ole_d a b \<longleftrightarrow> a \<le> b"
+    unfolding op_ole_d_def by simp
+
+  lemma op_ole_valof'_le: "\<not>is_nan a \<Longrightarrow> \<not>is_nan b \<Longrightarrow> op_ole_d a b \<longleftrightarrow> valof' a \<le> valof' b"
+    unfolding op_ole_d_def valof'_def by (auto simp: is_infinity_alt) 
+
 
   (*This proof could be nicer with existing setup, e.g. look at find_theorems bool1_rel "(\<le>)"*)
   lemma op_ole_d_hnr[sepref_fr_rules]: "(uncurry ll_fcmp_ole_d, uncurry (RETURN oo op_ole_d)) \<in> dfloat_assn\<^sup>k *\<^sub>a dfloat_assn\<^sup>k \<rightarrow>\<^sub>a bool1_assn"
@@ -396,11 +462,22 @@ begin
     apply sepref
     done
 
-  subsection \<open>Min/Max\<close>
+  subsubsection \<open>Min/Max\<close>
 
-  definition "op_min_double fl\<^sub>1 fl\<^sub>2 = (if op_ole_d fl\<^sub>1 fl\<^sub>2 then fl\<^sub>1 else fl\<^sub>2)"
+  sepref_def min_double_impl is "uncurry (RETURN oo min)" :: "dfloat_assn\<^sup>k *\<^sub>a dfloat_assn\<^sup>k \<rightarrow>\<^sub>a dfloat_assn"
+    unfolding min_def
+    apply sepref
+    done
 
-  definition "op_max_double fl\<^sub>1 fl\<^sub>2 = (if op_ole_d fl\<^sub>1 fl\<^sub>2 then fl\<^sub>2 else fl\<^sub>1)"
+  sepref_def max_double_impl is "uncurry (RETURN oo max)" :: "dfloat_assn\<^sup>k *\<^sub>a dfloat_assn\<^sup>k \<rightarrow>\<^sub>a dfloat_assn"
+    unfolding max_def
+    apply sepref
+    done
+  
+  subsubsection \<open>Legacy\<close>
+  definition "op_min_double fl\<^sub>1 fl\<^sub>2 = (if fl\<^sub>1 \<le> fl\<^sub>2 then fl\<^sub>1 else fl\<^sub>2)"
+
+  definition "op_max_double fl\<^sub>1 fl\<^sub>2 = (if fl\<^sub>1 \<le> fl\<^sub>2 then fl\<^sub>2 else fl\<^sub>1)"
 
   sepref_def op_min_double_ll is "uncurry (RETURN oo op_min_double)" :: "dfloat_assn\<^sup>k *\<^sub>a dfloat_assn\<^sup>k \<rightarrow>\<^sub>a dfloat_assn"
     unfolding op_min_double_def
@@ -412,8 +489,78 @@ begin
     apply sepref
     done
 
+  subsection \<open>Basic Arithmetic Operations\<close>
+    
 
-  section \<open>Auxiliary Definitions & Lemmas for the Assertion\<close>
+  definition "mop_fadd a b \<equiv> nanize_float (a+b)"
+  definition "mop_fsub a b \<equiv> nanize_float (a-b)"
+  definition "mop_fmul a b \<equiv> nanize_float (a*b)"
+  definition "mop_fdiv a b \<equiv> nanize_float (a/b)"
+  definition "mop_fsqrt a \<equiv> nanize_float (float_sqrt a)"
+  (* TODO: fma, sqrt, \<dots> *)
+    
+  lemma wpa_ndet_nan_double[vcg_normalize_simps]: "wpa asf ndet_nan_double Q s \<longleftrightarrow> (\<forall>x'. is_nan_double x' \<longrightarrow> Q x' s)"
+    unfolding ndet_nan_double_def
+    supply [simp] = is_nan_double_neq_bot
+    by (auto simp: wpa_spec) 
+    
+  
+  thm vcg_decomp_erules
+  
+  lemma wpa_nanize_double_simp[vcg_normalize_simps]: "wpa asf (nanize_double x) Q s \<longleftrightarrow> 
+      (is_nan_double x \<longrightarrow> (\<forall>x'. is_nan_double x' \<longrightarrow> Q x' s)) 
+    \<and> (\<not>is_nan_double x \<longrightarrow> Q x s)"
+    unfolding nanize_double_def ndet_nan_double_def
+    supply [simp] = is_nan_double_neq_bot
+    by (auto simp: wpa_spec wpa_return) 
+    
+  
+  context begin
+    interpretation llvm_prim_arith_setup .
+
+    lemma fadd_double_hnr[sepref_fr_rules]: "(uncurry ll_fadd_d, uncurry mop_fadd) \<in> dfloat_assn\<^sup>k *\<^sub>a dfloat_assn\<^sup>k \<rightarrow>\<^sub>a dfloat_assn"
+      apply sepref_to_hoare
+      unfolding dfloat_rel_def
+      apply (simp add: in_br_conv mop_fadd_def nanize_float_def)
+      supply [simp] = is_nan_float_of_double plus_double.rep_eq
+      by vcg
+  
+    lemma fsub_double_hnr[sepref_fr_rules]: "(uncurry ll_fsub_d, uncurry mop_fsub) \<in> dfloat_assn\<^sup>k *\<^sub>a dfloat_assn\<^sup>k \<rightarrow>\<^sub>a dfloat_assn"
+      apply sepref_to_hoare
+      unfolding dfloat_rel_def
+      apply (simp add: in_br_conv mop_fsub_def nanize_float_def)
+      supply [simp] = is_nan_float_of_double minus_double.rep_eq
+      by vcg
+  
+    lemma fmul_double_hnr[sepref_fr_rules]: "(uncurry ll_fmul_d, uncurry mop_fmul) \<in> dfloat_assn\<^sup>k *\<^sub>a dfloat_assn\<^sup>k \<rightarrow>\<^sub>a dfloat_assn"
+      apply sepref_to_hoare
+      unfolding dfloat_rel_def
+      apply (simp add: in_br_conv mop_fmul_def nanize_float_def)
+      supply [simp] = is_nan_float_of_double times_double.rep_eq
+      by vcg
+    
+    lemma fdiv_double_hnr[sepref_fr_rules]: "(uncurry ll_fdiv_d, uncurry mop_fdiv) \<in> dfloat_assn\<^sup>k *\<^sub>a dfloat_assn\<^sup>k \<rightarrow>\<^sub>a dfloat_assn"
+      apply sepref_to_hoare
+      unfolding dfloat_rel_def
+      apply (simp add: in_br_conv mop_fdiv_def nanize_float_def)
+      supply [simp] = is_nan_float_of_double divide_double.rep_eq
+      by vcg
+
+    lemma fsqrt_double_hnr[sepref_fr_rules]: "(ll_sqrt_f64, mop_fsqrt) \<in> dfloat_assn\<^sup>k \<rightarrow>\<^sub>a dfloat_assn"
+      apply sepref_to_hoare
+      unfolding dfloat_rel_def
+      apply (simp add: in_br_conv mop_fsqrt_def nanize_float_def)
+      supply [simp] = is_nan_float_of_double dsqrt_def drsqrt.rep_eq float_sqrt_def
+      by vcg
+      
+          
+  end    
+    
+    
+    
+  section \<open>Non-negative real double precision assn\<close>
+    
+  subsection \<open>Auxiliary Definitions & Lemmas for the Assertion\<close>
 
   lemma nnan_inres_op_farith1_rm: "\<not>is_nan fl\<^sub>2 \<Longrightarrow> inres (op_farith1_rm f rm fl\<^sub>1) fl\<^sub>2 \<Longrightarrow> fl\<^sub>2 = f rm fl\<^sub>1"
     unfolding op_farith1_rm_def nanize_float_def by(auto split: if_splits)
@@ -976,7 +1123,7 @@ begin
     apply (cases fl\<^sub>1 rule: float_cases_eqs; cases fl\<^sub>2 rule: float_cases_eqs)
     by(simp_all add: finite_infinity sign_zerosign_0_round_ge0)
 
-  lemma sign0_fmul: "\<not>is_nan (fmul rm fl\<^sub>1 fl\<^sub>2) \<Longrightarrow> sign fl\<^sub>1 = 0 \<Longrightarrow> sign fl\<^sub>2 = 0 \<Longrightarrow> \<not>is_zero fl\<^sub>2 \<Longrightarrow> is_finite fl\<^sub>2 \<Longrightarrow> sign (fmul rm fl\<^sub>1 (fl\<^sub>2:: ('e::len2,'f) float)) = 0"
+  lemma sign0_fmul: "\<lbrakk>\<not>is_nan (fmul rm fl\<^sub>1 fl\<^sub>2); sign fl\<^sub>1 = 0; sign fl\<^sub>2 = 0\<rbrakk> \<Longrightarrow> sign (fmul rm fl\<^sub>1 (fl\<^sub>2:: ('e::len2,'f) float)) = 0"
     unfolding fmul_def
     apply (cases fl\<^sub>1 rule: float_cases_eqs; cases fl\<^sub>2 rule: float_cases_eqs)
     apply (simp_all add: finite_infinity is_zero_closestI Collect_mono_iff sign_zerosign0 sign_zerosign1 closest_precise)[35] 
@@ -988,6 +1135,10 @@ begin
     apply (simp add: sign_zerosign_0_round_ge0 valof_nonneg)
     by presburger
 
+  (* Legacy lemma, has unnecessary assumptions *)  
+  lemma sign0_fmul_too_weak: "\<not>is_nan (fmul rm fl\<^sub>1 fl\<^sub>2) \<Longrightarrow> sign fl\<^sub>1 = 0 \<Longrightarrow> sign fl\<^sub>2 = 0 \<Longrightarrow> \<not>is_zero fl\<^sub>2 \<Longrightarrow> is_finite fl\<^sub>2 \<Longrightarrow> sign (fmul rm fl\<^sub>1 (fl\<^sub>2:: ('e::len2,'f) float)) = 0"
+    by (simp add: sign0_fmul)
+    
   lemma sign0_fmul_add: "\<not>is_nan (fmul_add rm fl\<^sub>1 fl\<^sub>2 fl\<^sub>3) \<Longrightarrow> sign fl\<^sub>1 = 0 \<Longrightarrow> sign fl\<^sub>2 = 0 \<Longrightarrow> \<not>is_zero fl\<^sub>2 \<Longrightarrow> is_finite fl\<^sub>2 \<Longrightarrow> sign fl\<^sub>3 = 0 \<Longrightarrow> sign (fmul_add rm fl\<^sub>1 fl\<^sub>2 (fl\<^sub>3:: ('e::len2,'f) float)) = 0"
     unfolding fmul_add_def
     apply (cases fl\<^sub>1 rule: float_cases_eqs; cases fl\<^sub>2 rule: float_cases_eqs)
@@ -1135,7 +1286,7 @@ begin
 
 
 
-  section \<open>Non-negative real double precision assn\<close>
+  subsection \<open>Assertion\<close>
 
 
   definition "nn_real_ub_rel = {(fl,r). ereal r \<le> valof' fl \<and> nn_real_invar fl}"
@@ -1525,8 +1676,11 @@ begin
   lemma op_max_ub_nn_refine: "(op_max_double, op_max_ub) \<in> nn_real_ub_rel \<rightarrow> nn_real_ub_rel \<rightarrow> nn_real_ub_rel"
     apply(refine_vcg )
     unfolding in_nn_real_ub_rel_conv op_max_double_def op_max_ub_def
-    by (auto simp: nn_real_invar_def op_ole_valof'_le)
-
+    apply (clarsimp simp: nn_real_invar_def op_ole_valof'_le split!: if_splits)
+    apply (meson op_ole_le op_ole_valof'_le order_transE)
+    by (meson linorder_le_cases op_ole_le op_ole_valof'_le order_transE)
+    
+    
   lemma op_0_ub_nn_refine: "(op_fp64_0, op_0_ub_nn) \<in> nn_real_ub_rel"
     unfolding nn_real_ub_rel_def op_0_ub_nn_def
     by auto
@@ -1547,7 +1701,9 @@ begin
   lemma op_min_lb_nn_refine: "(op_min_double, op_min_lb) \<in> nn_real_lb_rel \<rightarrow> nn_real_lb_rel \<rightarrow> nn_real_lb_rel"
     apply(refine_vcg )
     unfolding in_nn_real_lb_rel_conv op_min_double_def op_min_lb_def
-    by (auto simp add: nn_real_invar_def op_ole_valof'_le)
+    apply (clarsimp simp: nn_real_invar_def op_ole_valof'_le split!: if_splits)
+    apply (meson op_ole_le op_ole_valof'_le order_transE)
+    by (meson linorder_le_cases op_ole_le op_ole_valof'_le order_transE)
 
   lemma op_max_lb_nn_refine: "(op_max_double, op_max_lb) \<in> nn_real_lb_rel \<rightarrow> nn_real_lb_rel \<rightarrow> nn_real_lb_rel"
     apply(refine_vcg )
