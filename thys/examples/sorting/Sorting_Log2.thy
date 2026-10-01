@@ -170,7 +170,8 @@ lemma discrete_log_ltI: (* TODO: Check how precise this bound is! *)
   assumes "n\<noteq>0" "N\<noteq>0" "n<2^N"
   shows "floor_log n < N"
   using assms
-  by (metis floor_log_exp2_le floor_log_le_iff floor_log_power gr0I le_eq_less_or_eq verit_comp_simplify1(3))
+  by (metis floor_log_exp2_le floor_log_le_iff floor_log_power le_neq_implies_less less_Suc0
+      less_le_not_le not_less_eq)
 
 
 lemma unat_x_div_2_conv:

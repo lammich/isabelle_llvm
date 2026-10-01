@@ -20,8 +20,8 @@ sig
   val add_cong: string -> thm -> Context.generic -> Context.generic
   val del_cong: string -> thm -> Context.generic -> Context.generic
 
-  val add_procs: string -> simproc list -> Context.generic -> Context.generic
-  val del_procs: string -> simproc list -> Context.generic -> Context.generic
+  val add_proc: string -> simproc -> Context.generic -> Context.generic
+  val del_proc: string -> simproc -> Context.generic -> Context.generic
   
     
   val add_split: string -> thm -> Context.generic -> Context.generic
@@ -52,7 +52,7 @@ structure Data = Generic_Data
 (
   type T = simpset Name_Space.table;
   val empty: T = Name_Space.empty_table "named-simpset";
-  val merge : T * T -> T = Name_Space.join_tables (K merge_ss);
+  val merge : T * T -> T = Name_Space.join_tables (K Simplifier.merge_ss);
 );
 
 
@@ -68,12 +68,12 @@ fun put name ctxt = put_simpset (get ctxt name) ctxt
 fun map name f context =
   (content context name; Data.map (Name_Space.map_table_entry name f) context);
 
-fun map_ctxt name f context = map name (simpset_map (Context.proof_of context) f) context
+fun map_ctxt name f context = map name (Simplifier.simpset_map (Context.proof_of context) f) context
 
 
 (* maintain content *)
 
-fun clear name = map_ctxt name clear_simpset;
+fun clear name = map_ctxt name Simplifier.clear_simpset;
 
 fun add_simp name thm = map_ctxt name (Simplifier.add_simp thm)
 fun del_simp name thm = map_ctxt name (Simplifier.del_simp thm)
@@ -81,9 +81,8 @@ fun del_simp name thm = map_ctxt name (Simplifier.del_simp thm)
 fun add_cong name thm = map_ctxt name (Simplifier.add_cong thm)
 fun del_cong name thm = map_ctxt name (Simplifier.del_cong thm)
 
-fun add_procs name procs = map_ctxt name (fn ctxt => ctxt addsimprocs procs)
-fun del_procs name procs = map_ctxt name (fn ctxt => ctxt delsimprocs procs)
-
+fun add_proc name proc = map_ctxt name (Simplifier.add_proc proc)
+fun del_proc name proc = map_ctxt name (Simplifier.del_proc proc)
 
 fun add_split name thm = map_ctxt name (Splitter.add_split thm)
 fun del_split name thm = map_ctxt name (Splitter.del_split thm)

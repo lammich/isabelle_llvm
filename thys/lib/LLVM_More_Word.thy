@@ -59,9 +59,6 @@ lemma word1_NOT_eq: "~~(x::1 word) = x+1"
 lemma upcast_no_msb[simp]: "LENGTH('small::len) < LENGTH('big::len) \<Longrightarrow> \<not>msb (UCAST('small \<rightarrow> 'big) x)" 
   by (simp add: bit_word_ucast_iff msb_word_eq)
 
-lemma word_split_0[simp]: "word_split 0 = (0,0)"
-  by (auto simp: word_split_def)
-  
 subsection \<open>Integer Division with Rounding Towards Zero\<close>
 
 text \<open>Division with rounding towards zero\<close>
@@ -180,7 +177,7 @@ method_setup pull_mods = \<open>Scan.succeed (fn ctxt =>  SIMPLE_METHOD' (
 
 method_setup pull_push_mods = \<open>Scan.succeed (fn ctxt => SIMPLE_METHOD' (
   CONVERSION (Conv.top_conv (K (Conv.try_conv (Conv.rewrs_conv @{thms pull_mods}))) ctxt)
-  THEN' (full_simp_tac (put_simpset HOL_basic_ss ctxt addsimps @{thms mod_mod_trivial push_mods}))
+  THEN' (full_simp_tac (put_simpset HOL_basic_ss ctxt |> Simplifier.add_simps @{thms mod_mod_trivial push_mods}))
 ))\<close> \<open>Pull in, then push out modulos\<close>
 
 

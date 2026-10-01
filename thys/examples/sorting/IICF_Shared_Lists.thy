@@ -337,7 +337,7 @@ proof -
     apply (simp add: list.rel_map)
     apply (induction xs\<^sub>1 xs\<^sub>2 rule: list_all2_induct)
     apply (auto)
-    subgoal by (metis add_mset_add_single mset_le_incr_right1)
+    subgoal using subset_mset.order_trans by fastforce 
     subgoal by (meson mset_le_add_mset_decr_left1 subset_mset.dual_order.refl subset_mset.dual_order.trans)
     done
     
@@ -354,9 +354,9 @@ lemma mset_join_idxs_eq:
   subgoal for x xs y ys
     using slcompat_None_lower_bound[of xs ys]
     unfolding sl_compat_def sl_struct_def
-    apply (auto simp: sl_join_def)
-    subgoal by (metis add_mset_add_single subset_mset.add_diff_assoc2)
-    subgoal by (metis add_mset_add_single subset_mset.add_diff_assoc2)
+    apply (clarsimp simp: sl_join_def; safe; clarsimp)
+    subgoal by (metis add_single_right_eq_add_mset subset_mset.add_diff_assoc2)
+    subgoal by (metis add_single_left_eq_add_mset subset_mset.add_diff_assoc)
     done
   done
 

@@ -349,7 +349,7 @@ subsection \<open>Preprocessor\<close>
         | normalize_eq @{mpat "?a \<equiv> ?b"} = let val b = normalize b in @{mk_term "?a \<equiv> ?b"} end
         | normalize_eq t = raise TERM ("format_code_thm: normalize_eq", [t])
     
-      fun norm_tac ctxt = ALLGOALS (simp_tac (put_simpset HOL_ss ctxt addsimps @{thms M_monad_laws M_CONST_def}))
+      fun norm_tac ctxt = ALLGOALS (simp_tac (put_simpset HOL_ss ctxt |> Simplifier.add_simps @{thms M_monad_laws M_CONST_def}))
   
       fun cthm_norm_lambda ctxt thm = let
         val thm = Local_Defs.unfold ctxt @{thms pull_lambda_case} thm
@@ -370,7 +370,7 @@ subsection \<open>Preprocessor\<close>
       
     in
       thm 
-      |> (simplify (put_simpset HOL_ss ctxt addsimps @{thms M_monad_laws atomize_eq}))
+      |> (simplify (put_simpset HOL_ss ctxt |> Simplifier.add_simps @{thms M_monad_laws atomize_eq}))
       |> cthm_norm_lambda ctxt
       |> (Conv.fconv_rule (Refine_Util.f_tac_conv ctxt normalize_eq (norm_tac)))
       |> (Conv.fconv_rule (Conv.top_sweep_conv (K (Conv.rewr_conv @{thm unit_meta_eq})) ctxt))

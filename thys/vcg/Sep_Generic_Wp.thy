@@ -1097,7 +1097,7 @@ lemma DECOMP_HTRIPLEI: "\<phi> \<Longrightarrow> DECOMP_HTRIPLE \<phi>" unfoldin
     fn phi => (Basic_VCG.add_xformer (map (Morphism.thm phi) @{thms DECOMP_HTRIPLEI},@{binding decomp_htriple_xformer},
       fn ctxt => 
         (full_simp_tac (put_simpset HOL_basic_ss ctxt 
-          addsimps (Named_Theorems.get ctxt @{named_theorems vcg_tag_defs})
+          |> Simplifier.add_simps (Named_Theorems.get ctxt @{named_theorems vcg_tag_defs})
           |> fold Simplifier.add_cong (Named_Theorems.get ctxt @{named_theorems htriple_vcg_intro_congs})
         ))
         THEN' resolve_tac ctxt (Named_Theorems.get ctxt @{named_theorems htriple_vcg_intros})

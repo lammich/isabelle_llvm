@@ -176,7 +176,7 @@ structure Definition_Utils :DEFINITION_UTILS = struct
 
     (* TODO: Makarius says: Use Local_Theory.define here! *)  
     val ((lhs_t,(_,def_thm)),lthy) 
-      = Specification.definition NONE [] [] (Binding.empty_atts,def_t) lthy;
+      = Specification.definition {verbose=false} NONE [] [] (Binding.empty_atts,def_t) lthy;
 
     (*val _ = tracing "xxxx";*)
     val app_t = list_comb (lhs_t, params);
@@ -240,7 +240,7 @@ local
   
   end
 
-  fun simp_only_tac thms ctxt = simp_tac (put_simpset HOL_basic_ss ctxt addsimps thms)
+  fun simp_only_tac thms ctxt = simp_tac (put_simpset HOL_basic_ss ctxt |> Simplifier.add_simps thms)
   
 in
 
@@ -542,7 +542,7 @@ let
   val attribs_def = map (Attrib.check_src lthy) attribs_def_raw;
   val attribs_ref = map (Attrib.check_src lthy) attribs_ref_raw;
 
-  val ((_,(_,def_thm)),lthy) = Specification.definition 
+  val ((_,(_,def_thm)),lthy) = Specification.definition {verbose=false}
     (SOME (fun_name,NONE,Mixfix.NoSyn)) [] [] ((Binding.empty,attribs_def),def_term) lthy;
 
   val folded_thm = Local_Defs.fold lthy [def_thm] thm';

@@ -443,7 +443,7 @@ subsection \<open>Standard Float Sizes\<close>
       apply unfold_locales
       by simp_all
   
-    definition [code del]: "float_extend_32_64 \<equiv> conv"
+    definition [code drop]: "float_extend_32_64 \<equiv> conv"
       
     lemmas float_extend_32_64_code[code] = conv_eq_unfolded[folded float_extend_32_64_def]  
 

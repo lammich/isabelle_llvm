@@ -73,12 +73,12 @@ begin
   
   term round
 
-  definition [code del]: "closest_tn y \<equiv> closest (valof) (\<lambda>a. even (fraction a)) {a. is_finite a} y"
-  definition [code del]: "closest_tz y \<equiv> closest (valof) (\<lambda>a. True) {a. is_finite a \<and> \<bar>valof a\<bar> \<le> \<bar>y\<bar>} y"
-  definition [code del]: "closest_tpi y \<equiv> closest (valof) (\<lambda>a. True) {a. is_finite a \<and> valof a \<ge> y} y"
-  definition [code del]: "closest_tni y \<equiv> closest (valof) (\<lambda>a. True) {a. is_finite a \<and> valof a \<le> y} y"
+  definition [code drop]: "closest_tn y \<equiv> closest (valof) (\<lambda>a. even (fraction a)) {a. is_finite a} y"
+  definition [code drop]: "closest_tz y \<equiv> closest (valof) (\<lambda>a. True) {a. is_finite a \<and> \<bar>valof a\<bar> \<le> \<bar>y\<bar>} y"
+  definition [code drop]: "closest_tpi y \<equiv> closest (valof) (\<lambda>a. True) {a. is_finite a \<and> valof a \<ge> y} y"
+  definition [code drop]: "closest_tni y \<equiv> closest (valof) (\<lambda>a. True) {a. is_finite a \<and> valof a \<le> y} y"
   
-  lemmas [code del] = some_nan_def
+  lemmas [code drop] = some_nan_def
   
   
   fun roundx :: "roundmode \<Rightarrow> real \<Rightarrow> ('e ,'f) float"

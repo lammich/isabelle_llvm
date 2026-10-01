@@ -116,7 +116,7 @@ ML \<open>
       fun monadify_conv_aux ctxt ct = case Thm.term_of ct of
         @{mpat "EVAL$_"} => let
           val ctxt = put_simpset HOL_basic_ss ctxt
-          val ctxt = (ctxt addsimps @{thms monadify_simps SP_def})
+          val ctxt = (ctxt |> Simplifier.add_simps @{thms monadify_simps SP_def})
           fun tac ctxt = (simp_tac ctxt 1)
         in (*Refine_Util.monitor_conv "monadify"*) (
           Refine_Util.f_tac_conv ctxt (dest_comb #> #2 #> monadify) tac) ct
@@ -138,7 +138,7 @@ ML \<open>
 
       val monadify_simproc = 
         Simplifier.make_simproc @{context} 
-         {name = "monadify_simproc", kind=Simproc, lhss =
+         {name = "monadify_simproc", kind=Simplifier.Simproc, lhss =
           [Logic.varify_global @{term "EVAL$a"}],
           proc = K (try o monadify_conv_aux),
           identifier = []};
@@ -167,7 +167,7 @@ ML \<open>
     in  
     fun mark_params_conv ctxt = Refine_Util.f_tac_conv ctxt 
       (mark_params) 
-      (fn ctxt => simp_tac (put_simpset HOL_basic_ss ctxt addsimps @{thms PASS_def}) 1)
+      (fn ctxt => simp_tac (put_simpset HOL_basic_ss ctxt |> Simplifier.add_simps @{thms PASS_def}) 1)
 
     end  
 
@@ -201,7 +201,7 @@ ML \<open>
 
       fun dp_conv ctxt = Refine_Util.f_tac_conv ctxt 
         (#1 o dp ctxt) 
-        (fn ctxt => ALLGOALS (simp_tac (put_simpset HOL_basic_ss ctxt addsimps @{thms RET_COPY_PASS_eq}))) 
+        (fn ctxt => ALLGOALS (simp_tac (put_simpset HOL_basic_ss ctxt |> Simplifier.add_simps @{thms RET_COPY_PASS_eq}))) 
 
 
     in
@@ -211,26 +211,26 @@ ML \<open>
 
     fun arity_tac ctxt = let
       val arity1_ss = put_simpset HOL_basic_ss ctxt 
-        addsimps ((Named_Theorems_Rev.get ctxt @{named_theorems_rev sepref_monadify_arity}))
+        |> Simplifier.add_simps ((Named_Theorems_Rev.get ctxt @{named_theorems_rev sepref_monadify_arity}))
         |> Simplifier.add_cong @{thm SP_cong}
         |> Simplifier.add_cong @{thm PR_CONST_cong}
 
       val arity2_ss = put_simpset HOL_basic_ss ctxt 
-        addsimps @{thms beta SP_def}
+        |> Simplifier.add_simps @{thms beta SP_def}
     in
       simp_tac arity1_ss THEN' simp_tac arity2_ss
     end
 
     fun comb_tac ctxt = let
       val comb1_ss = put_simpset HOL_basic_ss ctxt 
-        addsimps (Named_Theorems_Rev.get ctxt @{named_theorems_rev sepref_monadify_comb})
+        |> Simplifier.add_simps (Named_Theorems_Rev.get ctxt @{named_theorems_rev sepref_monadify_comb})
         (*addsimps (Named_Theorems_Rev.get ctxt @{named_theorems_rev sepref_monadify_evalcomb})*)
-        addsimprocs [monadify_simproc]
+        |> Simplifier.add_proc monadify_simproc
         |> Simplifier.add_cong @{thm SP_cong}
         |> Simplifier.add_cong @{thm PR_CONST_cong}
 
       val comb2_ss = put_simpset HOL_basic_ss ctxt 
-        addsimps @{thms SP_def}
+        |> Simplifier.add_simps @{thms SP_def}
     in
       simp_tac comb1_ss THEN' simp_tac comb2_ss
     end
@@ -246,7 +246,7 @@ ML \<open>
     | contains_eval t = raise TERM("contains_eval",[t]);  
 
     fun remove_pass_tac ctxt = 
-      simp_tac (put_simpset HOL_basic_ss ctxt addsimps @{thms remove_pass_simps})
+      simp_tac (put_simpset HOL_basic_ss ctxt |> Simplifier.add_simps @{thms remove_pass_simps})
 
     fun monadify_tac dbg ctxt = let
       open Sepref_Basic

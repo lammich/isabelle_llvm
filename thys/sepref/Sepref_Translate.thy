@@ -251,7 +251,7 @@ structure Sepref_Translate = struct
     fun bounds_tac ctxt = let
       val ctxt = ctxt 
         addSDs Named_Theorems_Rev.get ctxt @{named_theorems_rev sepref_bounds_dest}
-        addsimps Named_Theorems_Rev.get ctxt @{named_theorems_rev sepref_bounds_simps}
+        |> Simplifier.add_simps (Named_Theorems_Rev.get ctxt @{named_theorems_rev sepref_bounds_simps})
     in
       TRADE (fn ctxt => 
         SELECT_GOAL (auto_tac ctxt)

@@ -69,10 +69,10 @@ begin
   \<close>
       
   named_simpset HOL_basic_ss_nomatch = HOL_basic_ss
-  declaration \<open>fn _ => Named_Simpsets.map_ctxt @{named_simpset HOL_basic_ss_nomatch} (fn ctxt => ctxt addsimprocs [@{simproc NO_MATCH}])\<close>
+  declaration \<open>fn _ => Named_Simpsets.add_proc @{named_simpset HOL_basic_ss_nomatch} @{simproc NO_MATCH}\<close>
   
   named_simpset HOL_ss_nomatch = HOL_ss
-  declaration \<open>fn _ => Named_Simpsets.map_ctxt @{named_simpset HOL_ss_nomatch} (fn ctxt => ctxt addsimprocs [@{simproc NO_MATCH}])\<close>
+  declaration \<open>fn _ => Named_Simpsets.add_proc @{named_simpset HOL_ss_nomatch} @{simproc NO_MATCH}\<close>
 
   subsection \<open>Examples\<close>
 

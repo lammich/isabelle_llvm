@@ -392,7 +392,7 @@ subsection \<open>ML-Level Declarations\<close>
       
           fun simp thms = Conv.fconv_rule (
                   Simplifier.asm_full_rewrite 
-                    (put_simpset HOL_basic_ss ctxt addsimps thms))
+                    (put_simpset HOL_basic_ss ctxt |> Simplifier.add_simps thms))
       
           (* Check for pure (the_pure R) - patterns *)
       
@@ -436,10 +436,10 @@ subsection \<open>ML-Level Declarations\<close>
       end  
   
       fun simp_precond_tac ctxt = let
-        fun simp_only thms = asm_full_simp_tac (put_simpset HOL_basic_ss ctxt addsimps thms)
+        fun simp_only thms = asm_full_simp_tac (put_simpset HOL_basic_ss ctxt |> Simplifier.add_simps thms)
         val rtac = resolve_tac ctxt
     
-        val cnv_ss = ctxt delsimps @{thms CNV_def}
+        val cnv_ss = ctxt |> Simplifier.del_simps @{thms CNV_def}
     
         (*val uncurry_tac = SELECT_GOAL (ALLGOALS (DETERM o SOLVED' (
           REPEAT' (rtac @{thms auto_weaken_pre_uncurry_step'}) 
@@ -916,7 +916,7 @@ subsection \<open>ML-Level Declarations\<close>
               TRY o SOLVED' (
                 TRY o resolve_tac ctxt @{thms frefI}
                 THEN' TRY o REPEAT_ALL_NEW (ematch_tac ctxt @{thms prod_relE})
-                THEN' simp_tac (put_simpset HOL_basic_ss ctxt addsimps @{thms split uncurry_apply uncurry0_apply})
+                THEN' simp_tac (put_simpset HOL_basic_ss ctxt |> Simplifier.add_simps @{thms split uncurry_apply uncurry0_apply})
                 THEN' (
                   SOLVED' (ptac THEN_ALL_NEW asm_full_simp_tac ctxt)
                   ORELSE' SOLVED' (cp_clarsimp_tac ctxt THEN_ALL_NEW_FWD ptac THEN_ALL_NEW SELECT_GOAL (auto_tac ctxt))
@@ -942,7 +942,7 @@ subsection \<open>ML-Level Declarations\<close>
 
       local
       
-        fun unfold_PR_CONST_tac ctxt = SELECT_GOAL (Local_Defs.unfold0_tac ctxt @{thms PR_CONST_def})
+        (*fun unfold_PR_CONST_tac ctxt = SELECT_GOAL (Local_Defs.unfold0_tac ctxt @{thms PR_CONST_def})*)
 
         fun transfer_precond_rl fixedTs ctxt t R = let
           (*val tfrees = Term.add_tfreesT (fastype_of t) [] 

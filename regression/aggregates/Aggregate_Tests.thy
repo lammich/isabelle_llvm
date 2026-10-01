@@ -163,7 +163,7 @@ begin
         
         val base_path = ("../../regression/aggregates/generated/" ^ name)
           |> Path.explode |> using_master_directory
-        val ll_path = Path.ext "gen.ll" base_path
+        val ll_path = Path.ext \<^verbatim>\<open>gen.ll\<close> base_path
         val c_path = Path.ext "c" base_path
           
         val b = LLVM_Builder.builder LLVM_Builder.target_x86_64_linux

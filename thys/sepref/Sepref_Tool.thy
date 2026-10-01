@@ -65,7 +65,7 @@ ML \<open>
     
     fun preproc_tac ctxt = let
       val ctxt = put_simpset HOL_basic_ss ctxt
-      val ctxt = ctxt addsimps (sepref_preproc_simps.get ctxt)  
+      val ctxt = ctxt |> Simplifier.add_simps (sepref_preproc_simps.get ctxt)  
     in
       Sepref_Rules.prepare_hfref_synth_tac ctxt THEN'
       Simplifier.simp_tac ctxt
@@ -98,16 +98,16 @@ ML \<open>
 
     fun opt_tac ctxt = let 
       val opt1_ss = put_simpset HOL_basic_ss ctxt
-        addsimps sepref_opt_simps.get ctxt
-        addsimprocs [@{simproc "HOL.let_simp"}]
-      |> Simplifier.add_cong @{thm SP_cong}
-      |> Simplifier.add_cong @{thm PR_CONST_cong}
+        |> Simplifier.add_simps (sepref_opt_simps.get ctxt)
+        |> Simplifier.add_proc @{simproc "HOL.let_simp"}
+        |> Simplifier.add_cong @{thm SP_cong}
+        |> Simplifier.add_cong @{thm PR_CONST_cong}
 
-      val unsp_ss = put_simpset HOL_basic_ss ctxt addsimps @{thms SP_def}
+      val unsp_ss = put_simpset HOL_basic_ss ctxt |> Simplifier.add_simps @{thms SP_def}
 
       val opt2_ss = put_simpset HOL_basic_ss ctxt
-        addsimps sepref_opt_simps2.get ctxt
-        addsimprocs [@{simproc "HOL.let_simp"}]
+        |> Simplifier.add_simps (sepref_opt_simps2.get ctxt)
+        |> Simplifier.add_proc @{simproc "HOL.let_simp"}
 
     in 
       simp_tac opt1_ss THEN' simp_tac unsp_ss THEN'
@@ -310,7 +310,7 @@ method_setup sepref_to_hoare = \<open>
   let
     fun sepref_to_hoare_tac ctxt = let
       val ss = put_simpset HOL_basic_ss ctxt
-        addsimps @{thms hn_ctxt_def pure_def}
+        |> Simplifier.add_simps @{thms hn_ctxt_def pure_def}
 
     in
       Sepref.preproc_tac ctxt 
@@ -389,7 +389,7 @@ lemma short_circuit_conv:
 subsubsection \<open>Eliminating higher-order\<close>
   (* TODO: Add similar rules for other cases! *)
   lemma ho_prod_move[sepref_preproc]: "case_prod (\<lambda>a b x. f x a b) = (\<lambda>p x. case_prod (f x) p)"
-    by (auto intro!: ext)
+    by (auto)
 
   declare o_apply[sepref_preproc]
 

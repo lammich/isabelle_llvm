@@ -50,17 +50,17 @@ text \<open>
     structure VCG_Lib = struct
     
       fun simp_only_tac thms ctxt = simp_tac (put_simpset HOL_basic_ss ctxt 
-        addsimps thms)
+        |> Simplifier.add_simps thms)
     
       fun simp_named_thms_tac ctxt n = simp_only_tac (Named_Theorems.get ctxt n) ctxt  
 
       fun full_simp_only_tac thms ctxt = full_simp_tac (put_simpset HOL_basic_ss ctxt 
-        addsimps thms)
+        |> Simplifier.add_simps thms)
     
       fun full_simp_named_thms_tac ctxt n = full_simp_only_tac (Named_Theorems.get ctxt n) ctxt  
 
       fun asm_simp_only_tac thms ctxt = asm_simp_tac (put_simpset HOL_basic_ss ctxt 
-        addsimps thms)
+        |> Simplifier.add_simps thms)
     
       fun asm_simp_named_thms_tac ctxt n = asm_simp_only_tac (Named_Theorems.get ctxt n) ctxt  
       
@@ -72,7 +72,7 @@ text \<open>
       
 
       fun rewrite_only_conv thms ctxt = Simplifier.rewrite (put_simpset HOL_basic_ss ctxt 
-        addsimps thms)
+        |> Simplifier.add_simps thms)
                   
           
       (* Apply conversion on given constant and its arguments *)
@@ -189,9 +189,9 @@ text \<open>
       
       fun print_rule_xformers verbose ctxt = let
         val table = Static_Xform_Data.get (Context.Proof ctxt)
-        fun pretty_xformer (name,_) = Pretty.mark_str name
+        fun pretty_xformer (name,_) = Pretty.marks_str name
       in
-        Pretty.writeln (Pretty.chunks (map pretty_xformer (Name_Space.markup_table verbose ctxt table)))
+        Pretty.writeln (Pretty.chunks (map pretty_xformer (Name_Space.markups_table verbose ctxt table)))
       end
       
       fun static_xform_rl ctxt = let 
@@ -404,7 +404,7 @@ text \<open>
 
       fun vcg_normalize_tac ctxt = let
         val ctxt = ctxt
-          addsimps Named_Theorems.get ctxt @{named_theorems vcg_normalize_simps}
+          |> Simplifier.add_simps (Named_Theorems.get ctxt @{named_theorems vcg_normalize_simps})
           |> fold Simplifier.add_cong (Named_Theorems.get ctxt @{named_theorems vcg_normalize_congs})
           |> fold Splitter.del_split (Named_Theorems.get ctxt @{named_theorems vcg_normalize_nosplits})
           
@@ -606,7 +606,7 @@ text \<open>
     
   declaration \<open>K (Basic_VCG.add_static_xformer @{binding static_rule_simplifier} (
     fn ctxt => Simplifier.full_rewrite 
-     (put_simpset HOL_basic_ss ctxt addsimps Named_Theorems.get ctxt @{named_theorems vcg_static_rl_simps})  
+     (put_simpset HOL_basic_ss ctxt |> Simplifier.add_simps (Named_Theorems.get ctxt @{named_theorems vcg_static_rl_simps}))  
   ))\<close>
   
   (*

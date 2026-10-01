@@ -1490,7 +1490,7 @@ begin
           val ss = put_simpset HOL_basic_ss ctxt |> sec
         in asm_full_simp_tac ss end
     
-        fun simp_only ctxt thms = gsimp_only ctxt (fn ctxt => ctxt addsimps thms)
+        fun simp_only ctxt thms = gsimp_only ctxt (fn ctxt => ctxt |> Simplifier.add_simps thms)
     
     
         (********************************)
@@ -1587,7 +1587,7 @@ begin
         fun tac ctxt = 
                 resolve_tac ctxt @{thms hfrefI}
           THEN' gsimp_only ctxt (fn c => c 
-            addsimps @{thms uncurry_def hn_ctxt_def uncurry0_def
+            |> Simplifier.add_simps @{thms uncurry_def hn_ctxt_def uncurry0_def
                             keep_drop_sels uc_hfprod_sel o_apply
                             APP_def}
             |> Splitter.add_split @{thm prod.split}
@@ -1648,7 +1648,7 @@ begin
           val norm2 = Local_Defs.unfold0 ctxt (unfold_rules_of ctxt)
           val norm3 = Conv.fconv_rule (
             Simplifier.asm_full_rewrite 
-              (put_simpset HOL_basic_ss ctxt addsimps simp_rules_of ctxt))
+              (put_simpset HOL_basic_ss ctxt |> Simplifier.add_simps (simp_rules_of ctxt)))
     
           val norm = changed_rule (try_rule norm1 o try_rule norm2 o try_rule norm3)
         in
@@ -1725,7 +1725,7 @@ begin
             |> Goal.init
       
           val ctxt = Context_Position.set_visible false ctxt  
-          val ctxt = ctxt addsimps (
+          val ctxt = ctxt |> Simplifier.add_simps (
               refine_pw_simps.get ctxt 
             @ Named_Theorems.get ctxt @{named_theorems fcomp_prenorm_simps}
             @ @{thms split_tupled_all cnv_conj_to_meta}  

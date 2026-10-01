@@ -205,7 +205,7 @@ begin
             orelse raise TYPE("No monad type",[Thm.typ_of_cterm ct],[Thm.term_of ct])
           
           fun tac ctxt = let
-            val ctxt = put_simpset HOL_basic_ss ctxt addsimps (@{thms M_CONST_def} @ monad_laws)
+            val ctxt = put_simpset HOL_basic_ss ctxt |> Simplifier.add_simps (@{thms M_CONST_def} @ monad_laws)
           in
             ALLGOALS (simp_tac ctxt)
           end

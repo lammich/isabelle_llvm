@@ -307,7 +307,7 @@ lemma float_le_infinity [simp]: "\<not> is_nan a \<Longrightarrow> a \<le> plus_
   by auto
 
 lemma zero_le_topfloat[simp]: "0 \<le> topfloat" "- 0 \<le> topfloat"
-  by (auto simp: float_defs field_simps power_gt1_lemma of_nat_diff mask_eq_exp_minus_1)
+  by (auto simp: float_defs field_simps power_gt1_lemma mask_eq_exp_minus_1)
 
 lemma LENGTH_contr:
   "Suc 0 < LENGTH('e) \<Longrightarrow> 2 ^ LENGTH('e::len) \<le> Suc (Suc 0) \<Longrightarrow> False"
@@ -317,7 +317,7 @@ lemma LENGTH_contr:
 lemma valof_topfloat: "valof (topfloat::('e, 'f)float) = largest TYPE(('e, 'f)float)"
   if "LENGTH('e) > 1"
   using that LENGTH_contr
-  by (auto simp add: emax_eq largest_def divide_simps float_defs of_nat_diff mask_eq_exp_minus_1)
+  by (auto simp add: emax_eq largest_def divide_simps float_defs mask_eq_exp_minus_1)
 
 lemma float_frac_le: "fraction a \<le> 2^LENGTH('f) - 1"
   for a::"('e, 'f)float"
@@ -463,7 +463,7 @@ lemma normal_exponent_bounds_int:
   for x::"('e, 'f)float"
   using that
    apply (auto simp add: normal_exponent_def is_normal_def emax_eq bias_def diff_le_eq diff_less_eq
-    mask_eq_exp_minus_1 of_nat_diff simp flip: zless_nat_eq_int_zless power_Suc)
+    mask_eq_exp_minus_1 simp flip: zless_nat_eq_int_zless power_Suc)
   apply (simp flip: power_Suc mask_eq_exp_minus_1 add: nat_mask_eq)
   apply (simp add: mask_eq_exp_minus_1)
   done
@@ -574,14 +574,14 @@ proof -
   then have "largest TYPE(('e, 'f)float) =
     (2 ^ (LENGTH('f) + 1) - 1) *
     2 powr (real (2 ^ LENGTH('e) - 2) + 1 - real (2 ^ (LENGTH('e) - 1)) - LENGTH('f))"
-    by (auto simp add: largest_def emax_eq bias_def powr_minus field_simps powr_diff powr_add of_nat_diff
+    by (auto simp add: largest_def emax_eq bias_def powr_minus field_simps powr_diff powr_add
       mask_eq_exp_minus_1 simp flip: powr_realpow)
   also
   have "2 ^ LENGTH('e) \<ge> (2::nat)"
     by (simp add: self_le_power)
   then have "(real (2 ^ LENGTH('e) - 2) + 1 - real (2 ^ (LENGTH('e) - 1)) - LENGTH('f)) =
     (real (2 ^ LENGTH('e)) - 2 ^ (LENGTH('e) - 1) - LENGTH('f)) - 1"
-    by (auto simp add: of_nat_diff)
+    by (auto)
   also have "real (2 ^ LENGTH('e)) = 2 ^ LENGTH('e)" by auto
   also have "(2 ^ LENGTH('e) - 2 ^ (LENGTH('e) - 1) - real LENGTH('f) - 1) =
     real_of_int ((2 ^ (LENGTH('e) - 1) - int (LENGTH('f)) - 1))"
@@ -640,7 +640,7 @@ next
     using bitlen_denormal_mantissa[of x]
     by (auto intro!: mult_mono real_of_int_le_2_powr_bitlenI
         simp: bitlen_normal_mantissa powr_realpow[symmetric] ge_one_powr_ge_zero mask_eq_exp_minus_1
-        denormal_exponent_def bias_def powr_mult_base of_nat_diff)
+        denormal_exponent_def bias_def powr_mult_base)
   also have "\<dots> \<le> largest TYPE(('e, 'f) IEEE.float)"
     unfolding largest_eq
     by (rule mult_mono)
@@ -906,7 +906,7 @@ proof -
   next
     case False
     then show ?thesis
-      by (metis ab add.commute eq_diff_eq' error_def zerosign_def)
+      by (metis diff_add_cancel ab add.commute error_def zerosign_def)
   qed
 qed
 
@@ -943,7 +943,7 @@ proof -
   next
     case False
     then show ?thesis
-      by (metis ab add.commute eq_diff_eq' error_def zerosign_def)
+      using ab by (metis add.commute diff_add_cancel error_def zerosign_def)
   qed
 qed
 
@@ -978,7 +978,7 @@ proof -
       by (metis True signzero_zero val_zero val_ab)
   next
     case False then show ?thesis
-      by (metis ab add.commute eq_diff_eq' error_def zerosign_def)
+      by (metis ab add.commute diff_add_cancel error_def zerosign_def)
   qed
 qed
 
@@ -1013,7 +1013,7 @@ proof -
       by (metis True signzero_zero val_zero val_ab)
   next
     case False then show ?thesis
-      by (metis ab add.commute eq_diff_eq' error_def zerosign_def)
+      by (metis ab add.commute diff_add_cancel error_def zerosign_def)
   qed
 qed
 

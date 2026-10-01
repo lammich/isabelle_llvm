@@ -1059,7 +1059,6 @@ subsection \<open>Partial Function Setup\<close>
     unfolding mswap_def pbind_def preturn_def 
     apply (intro ext)
     supply [split!] = abort.splits
-    supply [simp] = abort.map
     apply pw
     by metis
         

@@ -157,7 +157,7 @@ ML \<open>
       fun eq_rotate1_tac ctxt = CONVERSION (Refine_Util.HOL_concl_conv (
           fn ctxt => Conv.arg1_conv (
             Conv.rewr_conv @{thm sep_conj_commute[THEN eq_reflection]}
-            then_conv Simplifier.rewrite (put_simpset HOL_basic_ss ctxt addsimps @{thms sep_conj_assoc})
+            then_conv Simplifier.rewrite (put_simpset HOL_basic_ss ctxt |> Simplifier.add_simps (@{thms sep_conj_assoc}))
           )) ctxt)
     
       fun eq_rotateN_tac ctxt n = WITH_concl (fn 
@@ -396,7 +396,9 @@ ML \<open>
       Conv.first_conv (map (cong_rl_conv conv) rules)
 
     fun extract_basic_tac ctxt thms = let
-      val ctxt = Named_Simpsets.put @{named_simpset Main_ss} ctxt addsimps @{thms fri_basic_extract_simps} addsimps thms
+      val ctxt = Named_Simpsets.put @{named_simpset Main_ss} ctxt 
+        |> Simplifier.add_simps @{thms fri_basic_extract_simps} 
+        |> Simplifier.add_simps thms
       val cong_thms = Named_Theorems.get ctxt @{named_theorems fri_extract_congs}
     in
       CONVERSION (Conv.top_sweep_conv (fn ctxt => cong_rls_conv (Simplifier.rewrite ctxt) cong_thms) ctxt) 

@@ -1186,7 +1186,7 @@ begin
       fun avx512_sqrt_sd_round_intrinsic_builder vtab dst [OOCIdx rounding, OOOp x] ctxt b = let
         val _ = assert_avx512f ctxt
         
-        val iname = "llvm.x86.avx512.mask.sqrt.sd"
+        val iname = \<^verbatim>\<open>llvm.x86.avx512.mask.sqrt.sd\<close>
         val x = llc_op_to_2xdouble_sd b vtab x
         val mask = LLVM_Builder.mkc_iw 8 ~1
         val rounding = LLVM_Builder.mkc_iw 32 rounding
@@ -1206,7 +1206,7 @@ begin
       fun avx512_vfmadd_f64_builder vtab dst [OOCIdx rounding, OOOp x1, OOOp x2, OOOp x3] ctxt b = let
         val _ = assert_avx512f ctxt
 
-        val iname = "llvm.x86.avx512.vfmadd.f64"
+        val iname = \<^verbatim>\<open>llvm.x86.avx512.vfmadd.f64\<close>
 
         val cop = llc_op_to_val b vtab
         val rounding = LLVM_Builder.mkc_iw 32 rounding
@@ -1247,7 +1247,7 @@ begin
       fun avx512_sqrt_ss_round_intrinsic_builder vtab dst [OOCIdx rounding, OOOp x] ctxt b = let
         val _ = assert_avx512f ctxt
         
-        val iname = "llvm.x86.avx512.mask.sqrt.ss"
+        val iname = \<^verbatim>\<open>llvm.x86.avx512.mask.sqrt.ss\<close>
         val x = llc_op_to_4xfloat_ss b vtab x
         val mask = LLVM_Builder.mkc_iw 8 ~1
         val rounding = LLVM_Builder.mkc_iw 32 rounding
@@ -1267,7 +1267,7 @@ begin
       fun avx512_vfmadd_f32_builder vtab dst [OOCIdx rounding, OOOp x1, OOOp x2, OOOp x3] ctxt b = let
         val _ = assert_avx512f ctxt
 
-        val iname = "llvm.x86.avx512.vfmadd.f32"
+        val iname = \<^verbatim>\<open>llvm.x86.avx512.vfmadd.f32\<close>
 
         val cop = llc_op_to_val b vtab
         val rounding = LLVM_Builder.mkc_iw 32 rounding
@@ -1348,8 +1348,8 @@ begin
         |> register_builder (ofs_ptr_builder) @{const_name ll_ofs_ptr}          
         (*|> register_builder (gep_idx_builder) @{const_name ll_gep_struct}          *)
         
-        |> register_builder (intrinsic_builder LLVM_Builder.mkty_double "llvm.sqrt.f64") @{const_name ll_sqrt_f64}
-        |> register_builder (intrinsic_builder LLVM_Builder.mkty_float "llvm.sqrt.f32") @{const_name ll_sqrt_f32}
+        |> register_builder (intrinsic_builder LLVM_Builder.mkty_double \<^verbatim>\<open>llvm.sqrt.f64\<close> ) @{const_name ll_sqrt_f64}
+        |> register_builder (intrinsic_builder LLVM_Builder.mkty_float \<^verbatim>\<open>llvm.sqrt.f32\<close>) @{const_name ll_sqrt_f32}
         
         |> fold (register_prfx_builder "ll_x86_avx512_" avx512_asmd_sd_round_intrinsic_builder) [
               @{const_name ll_x86_avx512_add_sd_round},

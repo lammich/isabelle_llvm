@@ -58,11 +58,9 @@ begin
     note ISZ = is_zero_iff_valof0[OF FF]    
 
     have NTF: "-valof (topfloat::('e,'f) float) \<le>r \<Longrightarrow> r<valof (topfloat::('e,'f) float) \<Longrightarrow> ?f \<noteq> topfloat"
-      by (metis (no_types, lifting) Collect_empty_eq assms(1) bottomfloat_eq_m_largest closest_eq_in_setD finite_bottomfloat linorder_le_less_linear mem_Collect_eq order.asym valof_topfloat verit_la_disequality)
-    
-      
-    thm bprec_round_ninf  
-    
+      using LEN
+      by (metis (lifting) bottomfloat_eq_m_largest closest_in_set emptyE finite finite_bottomfloat
+          linorder_not_le mem_Collect_eq valof_topfloat)
    
     note [simp del] = round.simps valof_zero
           
@@ -1070,9 +1068,8 @@ begin
   lemma sqrt_eq_conv:
     "sqrt r = x \<longleftrightarrow> sgn r = sgn x \<and> \<bar>r\<bar> = x\<^sup>2"  
     "x = sqrt r \<longleftrightarrow> sgn r = sgn x \<and> \<bar>r\<bar> = x\<^sup>2"  
-    apply (auto simp: field_split_simps sgn_real_def power2_eq_square)
-    by (metis abs_of_nonpos linorder_le_less_linear real_sqrt_abs2 real_sqrt_minus verit_minus_simplify(4))+
-    
+     apply (all \<open>clarsimp simp: field_split_simps sgn_real_def power2_eq_square\<close>)
+     by (smt (verit, best) real_sqrt_abs2 real_sqrt_minus real_sqrt_mult_self)+
 
   (*
     TODO: We use the more complicated sqrt_diff_cmp_lt here, 

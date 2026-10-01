@@ -1,3 +1,38 @@
+
+structure Bit_Shifts : sig
+  type int = IntInf.int
+  val push : int -> int -> int
+  val drop : int -> int -> int
+end = struct
+
+open IntInf;
+
+fun fold _ [] y = y
+  | fold f (x :: xs) y = fold f xs (f x y);
+
+fun replicate n x = (if n <= 0 then [] else x :: replicate (n - 1) x);
+
+val max_index = pow (fromInt 2, Word.wordSize) - fromInt 1; (*largest possible word*)
+
+val word_of_int = Word.fromLargeInt o toLarge;
+
+val word_max_index = word_of_int max_index;
+
+fun words_of_int k = case divMod (k, max_index)
+  of (b, s) => word_of_int s :: replicate b word_max_index;
+
+fun push' i k = << (k, i);
+
+fun drop' i k = ~>> (k, i);
+
+(* The implementations are formally total, though indices >~ max_index will produce heavy computation load *)
+
+fun push i = fold push' (words_of_int (abs i));
+
+fun drop i = fold drop' (words_of_int (abs i));
+
+end;
+
 structure FP_test_base : sig
   type 'a word
   type 'a bit0
@@ -102,29 +137,6 @@ val equal = #equal : 'a equal -> 'a -> 'a -> bool;
 
 val equal_int = {equal = equal_inta} : int equal;
 
-datatype num = One | Bit0 of num | Bit1 of num;
-
-val one_inta : int = Int_of_integer (1 : IntInf.int);
-
-type 'a one = {one : 'a};
-val one = #one : 'a one -> 'a;
-
-val one_int = {one = one_inta} : int one;
-
-fun times_inta k l =
-  Int_of_integer (IntInf.* (integer_of_int k, integer_of_int l));
-
-type 'a times = {times : 'a -> 'a -> 'a};
-val times = #times : 'a times -> 'a -> 'a -> 'a;
-
-type 'a power = {one_power : 'a one, times_power : 'a times};
-val one_power = #one_power : 'a power -> 'a one;
-val times_power = #times_power : 'a power -> 'a times;
-
-val times_int = {times = times_inta} : int times;
-
-val power_int = {one_power = one_int, times_power = times_int} : int power;
-
 datatype nat = Nat of IntInf.int;
 
 fun integer_of_nat (Nat x) = x;
@@ -135,6 +147,9 @@ val equal_nat = {equal = equal_nata} : nat equal;
 
 fun times_nata m n = Nat (IntInf.* (integer_of_nat m, integer_of_nat n));
 
+type 'a times = {times : 'a -> 'a -> 'a};
+val times = #times : 'a times -> 'a -> 'a -> 'a;
+
 type 'a dvd = {times_dvd : 'a times};
 val times_dvd = #times_dvd : 'a dvd -> 'a times;
 
@@ -142,7 +157,12 @@ val times_nat = {times = times_nata} : nat times;
 
 val dvd_nat = {times_dvd = times_nat} : nat dvd;
 
+datatype num = One | Bit0 of num | Bit1 of num;
+
 val one_nata : nat = Nat (1 : IntInf.int);
+
+type 'a one = {one : 'a};
+val one = #one : 'a one -> 'a;
 
 val one_nat = {one = one_nata} : nat one;
 
@@ -174,6 +194,10 @@ val semigroup_add_nat = {plus_semigroup_add = plus_nat} : nat semigroup_add;
 val numeral_nat =
   {one_numeral = one_nat, semigroup_add_numeral = semigroup_add_nat} :
   nat numeral;
+
+type 'a power = {one_power : 'a one, times_power : 'a times};
+val one_power = #one_power : 'a power -> 'a one;
+val times_power = #times_power : 'a power -> 'a times;
 
 val power_nat = {one_power = one_nat, times_power = times_nat} : nat power;
 
@@ -693,15 +717,20 @@ val semidom_modulo_nat =
     semiring_modulo_trivial_semidom_modulo = semiring_modulo_trivial_nat}
   : nat semidom_modulo;
 
+val one_int : int = Int_of_integer (1 : IntInf.int);
+
 datatype rat = Frct of (int * int);
 
-val one_rat : rat = Frct (one_inta, one_inta);
+val one_rat : rat = Frct (one_int, one_int);
 
 datatype real = Ratreal of rat;
 
 val one_reala : real = Ratreal one_rat;
 
 val one_real = {one = one_reala} : real one;
+
+fun times_int k l =
+  Int_of_integer (IntInf.* (integer_of_int k, integer_of_int l));
 
 fun plus_int k l =
   Int_of_integer (IntInf.+ (integer_of_int k, integer_of_int l));
@@ -732,7 +761,7 @@ fun normalize p =
          in
            (divide_int (fst p) a, divide_int (snd p) a)
          end
-    else (if equal_inta (snd p) zero_int then (zero_int, one_inta)
+    else (if equal_inta (snd p) zero_int then (zero_int, one_int)
            else let
                   val a = uminus_int (gcd_int (fst p) (snd p));
                 in
@@ -744,14 +773,14 @@ fun plus_rat p q =
          val (a, c) = quotient_of p;
          val (b, d) = quotient_of q;
        in
-         normalize (plus_int (times_inta a d) (times_inta b c), times_inta c d)
+         normalize (plus_int (times_int a d) (times_int b c), times_int c d)
        end;
 
 fun plus_reala (Ratreal x) (Ratreal y) = Ratreal (plus_rat x y);
 
 val plus_real = {plus = plus_reala} : real plus;
 
-val zero_rat : rat = Frct (zero_int, one_inta);
+val zero_rat : rat = Frct (zero_int, one_int);
 
 val zero_reala : real = Ratreal zero_rat;
 
@@ -767,7 +796,7 @@ fun times_rat p q = Frct let
                            val (a, c) = quotient_of p;
                            val (b, d) = quotient_of q;
                          in
-                           normalize (times_inta a b, times_inta c d)
+                           normalize (times_int a b, times_int c d)
                          end;
 
 fun times_reala (Ratreal x) (Ratreal y) = Ratreal (times_rat x y);
@@ -841,26 +870,16 @@ fun equal_worda A_ v w = equal_inta (the_int A_ v) (the_int A_ w);
 
 fun equal_word A_ = {equal = equal_worda A_} : 'a word equal;
 
-fun one_worda A_ = Word one_inta;
+fun one_worda A_ = Word one_int;
 
 fun one_word A_ = {one = one_worda A_} : 'a word one;
 
-fun power A_ a n =
-  (if equal_nata n zero_nata then one (one_power A_)
-    else times (times_power A_) a (power A_ a (minus_nata n one_nata)));
+fun push_bit_integer n k = Bit_Shifts.push (integer_of_nat n) k;
 
-val one_integera : IntInf.int = (1 : IntInf.int);
+fun mask_integer n =
+  IntInf.- (push_bit_integer n (1 : IntInf.int), (1 : IntInf.int));
 
-val times_integer = {times = (fn a => fn b => IntInf.* (a, b))} :
-  IntInf.int times;
-
-val one_integer = {one = one_integera} : IntInf.int one;
-
-val power_integer = {one_power = one_integer, times_power = times_integer} :
-  IntInf.int power;
-
-fun take_bit_integer n k =
-  modulo_integer k (power power_integer (2 : IntInf.int) n);
+fun take_bit_integer n k = IntInf.andb (k, mask_integer n);
 
 fun take_bit_int n (Int_of_integer k) = Int_of_integer (take_bit_integer n k);
 
@@ -881,7 +900,7 @@ fun numeral_word A_ =
   {one_numeral = one_word A_, semigroup_add_numeral = semigroup_add_word A_} :
   'a word numeral;
 
-fun times_worda A_ a b = of_inta A_ (times_inta (the_int A_ a) (the_int A_ b));
+fun times_worda A_ a b = of_inta A_ (times_int (the_int A_ a) (the_int A_ b));
 
 fun times_word A_ = {times = times_worda A_} : 'a word times;
 
@@ -985,9 +1004,13 @@ datatype ('a, 'b) float = Abs_float of (num1 word * ('a word * 'b word));
 
 datatype roundmode = To_nearest | Float_To_zero | To_pinfinity | To_ninfinity;
 
-fun nat k = Nat (max ord_integer (0 : IntInf.int) (integer_of_int k));
+fun nat x = (nat_of_integer o integer_of_int) x;
 
 fun suc n = plus_nata n one_nata;
+
+fun power A_ a n =
+  (if equal_nata n zero_nata then one (one_power A_)
+    else times (times_power A_) a (power A_ a (minus_nata n one_nata)));
 
 fun bias A_ B_ x =
   minus_nata
@@ -1022,7 +1045,7 @@ fun divide_rat p q = Frct let
                             val (a, c) = quotient_of p;
                             val (b, d) = quotient_of q;
                           in
-                            normalize (times_inta a d, times_inta c b)
+                            normalize (times_int a d, times_int c b)
                           end;
 
 fun divide_real (Ratreal x) (Ratreal y) = Ratreal (divide_rat x y);
@@ -1042,21 +1065,21 @@ fun divmod_nat m n =
                else IntInf.divMod (IntInf.abs k, IntInf.abs l)))
   end;
 
-fun numeral A_ (Bit1 n) =
-  let
-    val m = numeral A_ n;
-  in
-    plus ((plus_semigroup_add o semigroup_add_numeral) A_)
-      (plus ((plus_semigroup_add o semigroup_add_numeral) A_) m m)
-      (one (one_numeral A_))
-  end
+fun numeral A_ One = one (one_numeral A_)
   | numeral A_ (Bit0 n) =
     let
       val m = numeral A_ n;
     in
       plus ((plus_semigroup_add o semigroup_add_numeral) A_) m m
     end
-  | numeral A_ One = one (one_numeral A_);
+  | numeral A_ (Bit1 n) =
+    let
+      val m = numeral A_ n;
+    in
+      plus ((plus_semigroup_add o semigroup_add_numeral) A_)
+        (plus ((plus_semigroup_add o semigroup_add_numeral) A_) m m)
+        (one (one_numeral A_))
+    end;
 
 fun of_nata A_ n =
   (if equal_nata n zero_nata
@@ -1084,7 +1107,7 @@ fun of_nata A_ n =
                               A_)))
          end);
 
-fun of_int a = Frct (a, one_inta);
+fun of_int a = Frct (a, one_int);
 
 fun valof A_ B_ (Abs_float xa) =
   let
@@ -1153,7 +1176,7 @@ fun minus_rat p q =
          val (a, c) = quotient_of p;
          val (b, d) = quotient_of q;
        in
-         normalize (minus_int (times_inta a d) (times_inta b c), times_inta c d)
+         normalize (minus_int (times_int a d) (times_int b c), times_int c d)
        end;
 
 fun minus_real (Ratreal x) (Ratreal y) = Ratreal (minus_rat x y);
@@ -1222,8 +1245,9 @@ fun threshold A_ B_ x =
         (power power_real (Ratreal (of_int (Int_of_integer (2 : IntInf.int))))
           (suc (len_of (len0_len B_) Type)))));
 
-fun drop_bit_int n k =
-  divide_int k (power power_int (Int_of_integer (2 : IntInf.int)) n);
+fun drop_bit_integer n k = Bit_Shifts.drop (integer_of_nat n) k;
+
+fun drop_bit_int n (Int_of_integer k) = Int_of_integer (drop_bit_integer n k);
 
 fun drop_bit_word A_ n w = Word (drop_bit_int n (the_int A_ w));
 
@@ -1347,7 +1371,7 @@ fun less_rat p q = let
                      val (a, c) = quotient_of p;
                      val (b, d) = quotient_of q;
                    in
-                     less_int (times_inta a d) (times_inta c b)
+                     less_int (times_int a d) (times_int c b)
                    end;
 
 fun less_real (Ratreal x) (Ratreal y) = less_rat x y;
@@ -1362,7 +1386,7 @@ fun less_eq_rat p q = let
                         val (a, c) = quotient_of p;
                         val (b, d) = quotient_of q;
                       in
-                        less_eq_int (times_inta a d) (times_inta c b)
+                        less_eq_int (times_int a d) (times_int c b)
                       end;
 
 fun less_eq_real (Ratreal x) (Ratreal y) = less_eq_rat x y;
@@ -1416,10 +1440,10 @@ fun equal_rat a b =
 
 fun equal_real (Ratreal x) (Ratreal y) = equal_rat x y;
 
-fun equal_bool p true = p
-  | equal_bool p false = not p
+fun equal_bool false p = not p
   | equal_bool true p = p
-  | equal_bool false p = not p;
+  | equal_bool p false = not p
+  | equal_bool p true = p;
 
 fun z_compat A_ B_ f s =
   (if is_zero A_ B_ f
