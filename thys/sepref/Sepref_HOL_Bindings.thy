@@ -1708,7 +1708,7 @@ lemma hn_monadic_WHILE_aux:
 lemmas [CP_simps] = APP_def[abs_def]  
   
 lemma hn_monadic_WHILE_lin[sepref_comb_rules]:
-  assumes "INDEP Rs"
+  (*assumes "INDEP Rs"*)
   assumes FR: "P \<turnstile> hn_ctxt Rs s' s ** \<Gamma>"
   assumes b_ref: "\<And>s s'. I s' \<Longrightarrow> hn_refine 
     (hn_ctxt Rs s' s ** \<Gamma>)
@@ -1737,7 +1737,7 @@ lemma hn_monadic_WHILE_lin[sepref_comb_rules]:
     (CP'$s)
     (PR_CONST (monadic_WHILEIT I)$(\<lambda>\<^sub>2s'. b' s')$(\<lambda>\<^sub>2s'. f' s')$(s'))"
   apply (rule hn_refine_cons_cp_only)  
-  using assms(2-6) free
+  using assms(1-5) free
   unfolding APP_def PROTECT2_def CONSTRAINT_def PR_CONST_def
   apply (rule hn_monadic_WHILE_aux)
   apply (assumption | rule TERMI)+

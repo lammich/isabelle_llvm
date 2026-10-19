@@ -75,7 +75,6 @@ next
 qed  
   
 
-
 context sort_impl_context begin
 
 sepref_register introsort_aux4
@@ -86,8 +85,6 @@ sepref_def introsort_aux_impl is "uncurry3 (PR_CONST introsort_aux4)"
   apply (annot_snat_const "TYPE(size_t)")
   apply (rewrite RECT_cp_annot[where CP="\<lambda>(ai,_,_,_) r. r=ai"])
   by sepref
-  
-  
   
 sepref_register introsort4
 sepref_def introsort_impl is "uncurry2 (PR_CONST introsort4)" 

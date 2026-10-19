@@ -583,7 +583,7 @@ lemma hn_RECT_cp_annot_noframe:
         
   apply (rule hn_refine_cons_post)
   apply (rule hn_refine_frame[where F=F])    
-  apply (rule hn_RECT_cp_annot[where F=\<box>, OF assms(1,2,3)])  
+  apply (rule hn_RECT_cp_annot[where F=\<box>, OF assms(1-3)])  
   applyS (rule entails_refl)
   focus apply simp apply (rule S) apply simp solved
   applyS fact

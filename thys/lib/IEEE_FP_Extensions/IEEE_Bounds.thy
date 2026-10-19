@@ -164,12 +164,6 @@ begin
   lemma valof'_round_zero[simp]:
     "valof' (round m 0) = 0"
     by (metis float_class_consts(21) valof'_simps(1) valof'_zerosign valof_zero(1) zero_ereal_def zerosign_round_z(1))
-        
-  definition ub :: "real \<Rightarrow> ('e::len2, 'f) float \<Rightarrow> bool"
-    where "ub x f \<equiv> \<not>is_nan f \<and> ereal x \<le> valof' f"
-  
-  definition lb :: "real \<Rightarrow> ('e::len2, 'f) float \<Rightarrow> bool"
-    where "lb x f \<equiv> \<not>is_nan f \<and> valof' f \<le> ereal x"
     
   lemma zerosign_eq_nan[simp]: "zerosign s f = the_nan x \<longleftrightarrow> f=the_nan x"  
     by (auto simp: zerosign_def)
@@ -180,121 +174,6 @@ begin
     
   lemma round_ninf_bound': "a\<le>b \<Longrightarrow> valof' (IEEE.round To_ninfinity a :: ('e::len2, 'f) float) \<le> b"
     using le_ereal_le round_ninf_bound by blast
-    
-  lemma fadd_ub: "\<lbrakk> ub x\<^sub>1 f\<^sub>1; ub x\<^sub>2 f\<^sub>2 \<rbrakk> \<Longrightarrow> ub (x\<^sub>1+x\<^sub>2) (fadd To_pinfinity f\<^sub>1 f\<^sub>2)"
-    unfolding ub_def
-    apply (cases f\<^sub>1 rule: float_cases_eqs; cases f\<^sub>2 rule: float_cases_eqs)
-    by (auto simp: fadd_def intro!: round_pinf_bound')
-
-  lemma fadd_lb: "\<lbrakk> lb x\<^sub>1 f\<^sub>1; lb x\<^sub>2 f\<^sub>2 \<rbrakk> \<Longrightarrow> lb (x\<^sub>1+x\<^sub>2) (fadd To_ninfinity f\<^sub>1 f\<^sub>2)"
-    unfolding lb_def
-    apply (cases f\<^sub>1 rule: float_cases_eqs; cases f\<^sub>2 rule: float_cases_eqs)
-    by (auto simp: fadd_def intro!: round_ninf_bound')
-    
-    
-  lemma fmul_ub_pos: 
-    fixes f\<^sub>1 f\<^sub>2 :: "('e::len2,'f) float"
-    shows "\<lbrakk> \<not>is_infinity f\<^sub>1; 0<x\<^sub>1; 0\<le>x\<^sub>2; ub x\<^sub>1 f\<^sub>1; ub x\<^sub>2 f\<^sub>2 \<rbrakk> 
-      \<Longrightarrow> ub (x\<^sub>1*x\<^sub>2) (fmul To_pinfinity f\<^sub>1 f\<^sub>2)"
-    unfolding ub_def
-    apply (cases f\<^sub>1 rule: float_cases_eqs; cases f\<^sub>2 rule: float_cases_eqs; simp)
-    apply (auto simp: fmul_def mult_nonneg_nonpos mult_mono' sign_pos_iff_valof intro!: round_pinf_bound')
-    done
-
-  lemma fmul_lb_pos: 
-    fixes f\<^sub>1 f\<^sub>2 :: "('e::len2,'f) float"
-    shows "\<lbrakk> \<not>is_infinity f\<^sub>1; 0\<le>valof' f\<^sub>1; 0\<le>valof' f\<^sub>2; lb x\<^sub>1 f\<^sub>1; lb x\<^sub>2 f\<^sub>2 \<rbrakk> 
-      \<Longrightarrow> lb (x\<^sub>1*x\<^sub>2) (fmul To_ninfinity f\<^sub>1 f\<^sub>2)"
-    unfolding lb_def
-    apply (cases f\<^sub>1 rule: float_cases_eqs; cases f\<^sub>2 rule: float_cases_eqs; simp)
-    apply (auto 
-      simp: fmul_def mult_nonneg_nonpos mult_mono' sign_pos_iff_valof
-      intro!: round_ninf_bound')
-    done
-
-  lemma fmul_add_ub_pos1:    
-    fixes f\<^sub>1 f\<^sub>2 f\<^sub>3 :: "('e::len2,'f) float"
-    shows "\<lbrakk> \<not>is_infinity f\<^sub>1; 0<x\<^sub>1; 0\<le>x\<^sub>2; 0\<le>x\<^sub>3; ub x\<^sub>1 f\<^sub>1; ub x\<^sub>2 f\<^sub>2; ub x\<^sub>3 f\<^sub>3 \<rbrakk> \<Longrightarrow> 
-      ub (x\<^sub>1*x\<^sub>2 + x\<^sub>3) (fmul_add To_pinfinity f\<^sub>1 f\<^sub>2 f\<^sub>3)"
-    unfolding ub_def
-    apply (subgoal_tac "sign f\<^sub>1 = 0")
-    apply (rule conjI)
-    subgoal
-      apply (cases f\<^sub>1 rule: float_cases_eqs; simp; cases f\<^sub>2 rule: float_cases_eqs; simp; cases f\<^sub>3 rule: float_cases_eqs; simp)
-      by (auto simp: fmul_add_def Let_def)
-    subgoal
-      unfolding fmul_add_def
-      apply (rewrite Let_def)
-      apply (rewrite Let_def)
-      apply (simp)
-      apply (intro impI conjI)
-      apply (auto simp: is_zero_alt is_infinity_alt)
-      subgoal
-        unfolding Let_def if_distrib[of valof']
-        apply (simp split del: if_split cong: if_cong)
-        apply (auto intro!: round_pinf_bound')
-        subgoal by (smt (verit) ereal_less_eq(3) float_cases_finite is_infinity_alt mult_mono valof'_def zero_ereal_def)
-        subgoal by (smt (verit) ereal_less_eq(3) float_cases_finite is_infinity_alt mult_mono valof'_def zero_ereal_def)
-        done
-      subgoal
-        unfolding Let_def if_distrib[of valof']
-        apply (simp split del: if_split cong: if_cong)
-        apply (auto intro!: round_pinf_bound')
-        subgoal by (smt (verit) ereal_less_eq(3) float_cases_finite is_infinity_alt mult_mono valof'_def zero_ereal_def)
-        subgoal by (smt (verit) ereal_less_eq(3) float_cases_finite is_infinity_alt mult_mono valof'_def zero_ereal_def)
-        done
-      done
-    subgoal using float_cases_finite valof_nonpos by fastforce   
-  done  
-      
-  lemma fmul_add_ub_pos2:    
-    fixes f\<^sub>1 f\<^sub>2 f\<^sub>3 :: "('e::len2,'f) float"
-    shows "\<lbrakk> \<not>is_infinity f\<^sub>1; 0<x\<^sub>1; 0<x\<^sub>2; ub x\<^sub>1 f\<^sub>1; ub x\<^sub>2 f\<^sub>2; ub x\<^sub>3 f\<^sub>3 \<rbrakk> \<Longrightarrow> 
-      ub (x\<^sub>1*x\<^sub>2 + x\<^sub>3) (fmul_add To_pinfinity f\<^sub>1 f\<^sub>2 f\<^sub>3)"
-    unfolding ub_def
-    apply (cases f\<^sub>1 rule: float_cases_eqs; simp; cases f\<^sub>2 rule: float_cases_eqs; simp; cases f\<^sub>3 rule: float_cases_eqs; simp)
-    apply (auto
-      simp: fmul_add_def Let_def mult_nonneg_nonpos mult_mono' sign_pos_iff_valof field_simps
-      simp: add_mono 
-      intro!: round_pinf_bound'
-      elim!: add_decreasing[of _ "_*_" "_*_"]
-      )
-    using mult_mono' by fastforce
-    
-    
-  lemma fmul_add_lb_nneg:    
-    fixes f\<^sub>1 f\<^sub>2 f\<^sub>3 :: "('e::len2,'f) float"
-    shows "\<lbrakk> \<not>is_infinity f\<^sub>1; 0\<le>valof' f\<^sub>1; 0\<le>valof' f\<^sub>2; lb x\<^sub>1 f\<^sub>1; lb x\<^sub>2 f\<^sub>2; lb x\<^sub>3 f\<^sub>3 \<rbrakk> \<Longrightarrow> 
-      lb (x\<^sub>1*x\<^sub>2 + x\<^sub>3) (fmul_add To_ninfinity f\<^sub>1 f\<^sub>2 f\<^sub>3)"
-    unfolding lb_def
-    apply (rule conjI)
-    subgoal
-      apply (auto simp: fmul_add_def)
-      apply (auto simp add: Let_def is_zero_alt is_infinity_alt split: if_splits)
-      done
-    subgoal
-      unfolding fmul_add_def
-      apply (rewrite Let_def)
-      apply (rewrite Let_def)
-      apply (simp)
-      apply (intro impI conjI)
-      apply (auto simp: is_zero_alt is_infinity_alt)
-      subgoal
-        unfolding Let_def if_distrib[of valof']
-        apply (simp split del: if_split cong: if_cong)
-        apply (auto intro!: round_ninf_bound')
-        subgoal by (smt (verit) ereal_less_eq(3) float_cases_finite is_infinity_alt mult_mono valof'_def zero_ereal_def)
-        subgoal by (smt (verit, ccfv_SIG) ereal_less_eq(3) ereal_less_eq(5) float_cases_finite is_infinity_alt mult_mono' valof'_simps(1))
-        done
-      subgoal
-        unfolding Let_def if_distrib[of valof']
-        apply (simp split del: if_split cong: if_cong)
-        apply (auto intro!: round_ninf_bound')
-        subgoal by (smt (verit) ereal_less_eq(3) float_cases_finite is_infinity_alt mult_mono valof'_def zero_ereal_def)
-        subgoal by (smt (verit, ccfv_SIG) ereal_less_eq(3) ereal_less_eq(5) float_cases_finite is_infinity_alt mult_mono' valof'_simps(1))
-        done
-      done
-    done
           
   lemma add_upper_bound': "\<lbrakk> \<not>is_nan x; \<not>is_nan y; x\<noteq>-\<infinity>; y\<noteq>-\<infinity> \<rbrakk> \<Longrightarrow>
     valof x + valof y \<le> valof' (fadd To_pinfinity x y)" for x y :: "('e::len2,'f) float"

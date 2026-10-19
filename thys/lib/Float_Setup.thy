@@ -1,5 +1,5 @@
 theory Float_Setup
-imports "Isabelle_LLVM.IICF" "Isabelle_LLVM.IEEE_Bounds"
+imports "Isabelle_LLVM.IICF_Set" "Isabelle_LLVM.IEEE_Bounds"
 begin
 
   lemmas[simp del] = IEEE.round.simps
