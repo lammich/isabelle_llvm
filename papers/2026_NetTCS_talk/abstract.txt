@@ -1,0 +1,9 @@
+Title: The Isabelle Refinement Framework
+
+Abstract:
+
+Formally verified software is usually either fast or easy to verify. Stepwise refinement bridges that gap by separating the algorithmic idea from its efficient implementation. This structures the overall proof and lets verification scale to realistic, optimised code.
+
+In this talk, we introduce the Isabelle Refinement Framework, its theoretical foundations, and the tools that make it practical. These are monads for shallowly embedded program semantics; a compositional refinement calculus that supports heap memory via separation logic; and syntax-driven automation for verification condition generation and for synthesising concrete programs from abstract ones.
+
+We showcase the framework with two projects. The first is an efficient, distributed algorithm to compute large Bernoulli numbers, whose verification spans the whole spectrum from deep number theory through efficient algorithms to low-level optimisations. The second is LRAT-Isa, a verified UNSAT certificate checker that is on par with state-of-the-art unverified checkers and significantly faster than other verified ones. Its correctness proof spans from the syntax of DIMACS CNF files down to the LLVM code that implements it.

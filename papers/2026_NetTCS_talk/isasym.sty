@@ -1,0 +1,512 @@
+%% isasym.sty -- typeset Isabelle Unicode symbols in text and in listings
+%%
+%% Each symbol is defined once: \newunicodechar (running text, math)
+%% plus a matching entry for the listings `literate` key.
+%% Symbol table generated from Isabelle's etc/symbols and
+%% lib/texinputs/isabellesym.sty (Isabelle mirror, master).
+%%
+%% Usage:
+%%   \usepackage{isasym}
+%%   optional extras/overrides (preamble):
+%%     \isasym[width]{⊛}{\circledast}    math symbol
+%%     \isasymtext[width]{x}{replacement} text replacement
+%%     \isalit[width]{==>}{\ensuremath{\Longrightarrow}}  listings only
+%%     \isasubs{xyz} / \isasups{xyz}     more ⇩x / ⇧x listing entries
+%%   The literate list is installed automatically at \begin{document}
+%%   (call \isaapplyliterate to do it earlier). It replaces any other
+%%   `literate=` setting, so do not set literate yourself.
+%%
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{isasym}[2026/11/25 Isabelle symbols for text and listings]
+
+\RequirePackage{iftex}
+\ifPDFTeX
+  \RequirePackage[utf8]{inputenc}
+  \RequirePackage[T1]{fontenc}   % \guilsinglleft/right (cartouches)
+\else
+  \@ifpackageloaded{fontspec}{}{\RequirePackage{fontspec}}
+\fi
+\RequirePackage{amsmath}
+\RequirePackage{amssymb}         % \mathbb, \mathfrak, \Box, \lozenge, ...
+\RequirePackage{stmaryrd}        % \llbracket, \fatsemi, \interleave, ...
+\RequirePackage{textcomp}
+\RequirePackage{pifont}          % \ding (check/cross marks)
+\RequirePackage{eurosym}         % \euro
+\RequirePackage{newunicodechar}
+\RequirePackage{listings}
+
+%% ---------------------------------------------------------------
+%% machinery
+\newcommand\isa@lits{}
+\newcommand\isa@addlit[3]{\g@addto@macro\isa@lits{{#1}{{#2}}#3}}
+\newcommand\isa@def[3][1]{%
+  \newunicodechar{#2}{#3}%
+  \isa@addlit{#2}{#3}{#1}}
+
+\newcommand\isasym[3][1]{\isa@def[#1]{#2}{\ensuremath{#3}}}
+\newcommand\isasymtext[3][1]{\isa@def[#1]{#2}{#3}}
+\newcommand\isalit[3][1]{\isa@addlit{#2}{#3}{#1}}
+
+\newcommand\isasubs[1]{\@tfor\isa@x:=#1\do{%
+  \expandafter\isa@sub\expandafter{\isa@x}}}
+\newcommand\isa@sub[1]{\isa@addlit{⇩#1}{${}_{#1}$}{1}}
+\newcommand\isasups[1]{\@tfor\isa@x:=#1\do{%
+  \expandafter\isa@sup\expandafter{\isa@x}}}
+\newcommand\isa@sup[1]{\isa@addlit{⇧#1}{${}^{#1}$}{1}}
+
+\newcommand\isaapplyliterate{%
+  \edef\isa@tmp{\noexpand\lstset{literate=\unexpanded\expandafter{\isa@lits}}}%
+  \isa@tmp}
+\AtBeginDocument{\isaapplyliterate}
+\lstset{extendedchars=true}
+
+\ifPDFTeX\def\isa@cedilla{\c\relax}\else\def\isa@cedilla{\char"00B8\relax}\fi
+
+%% Z-notation helpers (from isabellesym.sty)
+\newcommand{\isa@Zhbar}[1]{\rlap{\raise.0001ex\hbox{\ensuremath{-}}}#1}
+\newcommand{\isa@Zpvbar}[1]{\ooalign{\hfil\ensuremath{\mapstochar\mkern 5mu}\hfil\cr#1}}
+\newcommand{\isa@Zfvbar}[1]{\ooalign{\hfil\ensuremath{\mapstochar\mkern 3mu\mapstochar\mkern 5mu}\hfil\cr#1}}
+\newcommand{\isa@Zdarrow}[3]{\ooalign{\ensuremath{#1}\hfil\cr\ensuremath{\mkern#3mu\ensuremath{#2}}}}
+
+%% ---------------------------------------------------------------
+%% control symbols
+%%   ⇩x  ⇧x  : sub/superscript of the next character
+%%   ❙x      : bold next character
+%%   ⇘…⇙  ⇗…⇖ : sub/superscript blocks
+\newunicodechar{⇩}{\textsubscript}
+\newunicodechar{⇧}{\textsuperscript}
+\newunicodechar{❙}{\textbf}
+\newcommand\isa@bsub{\leavevmode\lower0.5ex\hbox\bgroup\fontsize\sf@size\z@\selectfont}
+\newcommand\isa@bsup{\leavevmode\raise1ex\hbox\bgroup\fontsize\sf@size\z@\selectfont}
+\newunicodechar{⇘}{\isa@bsub}
+\newunicodechar{⇙}{\egroup}
+\newunicodechar{⇗}{\isa@bsup}
+\newunicodechar{⇖}{\egroup}
+\isasubs{0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'*+-}
+\isasups{0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'*+-}
+
+%% ASCII notations in listings
+\isalit{=>}{\ensuremath{\Rightarrow}}
+\isalit[2]{==>}{\ensuremath{\Longrightarrow}}
+\isalit{-->}{\ensuremath{\longrightarrow}}
+
+%% non-Isabelle typography that shows up in Isabelle-adjacent text
+\isa@def{’}{'}
+\isa@def{–}{\textendash}
+
+%% ---------------------------------------------------------------
+%% standard Isabelle symbols (generated)
+\isa@def{𝟬}{\ensuremath{\mathbf{0}}}% \<zero>
+\isa@def{𝟭}{\ensuremath{\mathbf{1}}}% \<one>
+\isa@def{𝟮}{\ensuremath{\mathbf{2}}}% \<two>
+\isa@def{𝟯}{\ensuremath{\mathbf{3}}}% \<three>
+\isa@def{𝟰}{\ensuremath{\mathbf{4}}}% \<four>
+\isa@def{𝟱}{\ensuremath{\mathbf{5}}}% \<five>
+\isa@def{𝟲}{\ensuremath{\mathbf{6}}}% \<six>
+\isa@def{𝟳}{\ensuremath{\mathbf{7}}}% \<seven>
+\isa@def{𝟴}{\ensuremath{\mathbf{8}}}% \<eight>
+\isa@def{𝟵}{\ensuremath{\mathbf{9}}}% \<nine>
+\isa@def{𝒜}{\ensuremath{\mathcal{A}}}% \<A>
+\isa@def{ℬ}{\ensuremath{\mathcal{B}}}% \<B>
+\isa@def{𝒞}{\ensuremath{\mathcal{C}}}% \<C>
+\isa@def{𝒟}{\ensuremath{\mathcal{D}}}% \<D>
+\isa@def{ℰ}{\ensuremath{\mathcal{E}}}% \<E>
+\isa@def{ℱ}{\ensuremath{\mathcal{F}}}% \<F>
+\isa@def{𝒢}{\ensuremath{\mathcal{G}}}% \<G>
+\isa@def{ℋ}{\ensuremath{\mathcal{H}}}% \<H>
+\isa@def{ℐ}{\ensuremath{\mathcal{I}}}% \<I>
+\isa@def{𝒥}{\ensuremath{\mathcal{J}}}% \<J>
+\isa@def{𝒦}{\ensuremath{\mathcal{K}}}% \<K>
+\isa@def{ℒ}{\ensuremath{\mathcal{L}}}% \<L>
+\isa@def{ℳ}{\ensuremath{\mathcal{M}}}% \<M>
+\isa@def{𝒩}{\ensuremath{\mathcal{N}}}% \<N>
+\isa@def{𝒪}{\ensuremath{\mathcal{O}}}% \<O>
+\isa@def{𝒫}{\ensuremath{\mathcal{P}}}% \<P>
+\isa@def{𝒬}{\ensuremath{\mathcal{Q}}}% \<Q>
+\isa@def{ℛ}{\ensuremath{\mathcal{R}}}% \<R>
+\isa@def{𝒮}{\ensuremath{\mathcal{S}}}% \<S>
+\isa@def{𝒯}{\ensuremath{\mathcal{T}}}% \<T>
+\isa@def{𝒰}{\ensuremath{\mathcal{U}}}% \<U>
+\isa@def{𝒱}{\ensuremath{\mathcal{V}}}% \<V>
+\isa@def{𝒲}{\ensuremath{\mathcal{W}}}% \<W>
+\isa@def{𝒳}{\ensuremath{\mathcal{X}}}% \<X>
+\isa@def{𝒴}{\ensuremath{\mathcal{Y}}}% \<Y>
+\isa@def{𝒵}{\ensuremath{\mathcal{Z}}}% \<Z>
+\isa@def{𝖺}{\ensuremath{\mathrm{a}}}% \<a>
+\isa@def{𝖻}{\ensuremath{\mathrm{b}}}% \<b>
+\isa@def{𝖼}{\ensuremath{\mathrm{c}}}% \<c>
+\isa@def{𝖽}{\ensuremath{\mathrm{d}}}% \<d>
+\isa@def{𝖾}{\ensuremath{\mathrm{e}}}% \<e>
+\isa@def{𝖿}{\ensuremath{\mathrm{f}}}% \<f>
+\isa@def{𝗀}{\ensuremath{\mathrm{g}}}% \<g>
+\isa@def{𝗁}{\ensuremath{\mathrm{h}}}% \<h>
+\isa@def{𝗂}{\ensuremath{\mathrm{i}}}% \<i>
+\isa@def{𝗃}{\ensuremath{\mathrm{j}}}% \<j>
+\isa@def{𝗄}{\ensuremath{\mathrm{k}}}% \<k>
+\isa@def{𝗅}{\ensuremath{\mathrm{l}}}% \<l>
+\isa@def{𝗆}{\ensuremath{\mathrm{m}}}% \<m>
+\isa@def{𝗇}{\ensuremath{\mathrm{n}}}% \<n>
+\isa@def{𝗈}{\ensuremath{\mathrm{o}}}% \<o>
+\isa@def{𝗉}{\ensuremath{\mathrm{p}}}% \<p>
+\isa@def{𝗊}{\ensuremath{\mathrm{q}}}% \<q>
+\isa@def{𝗋}{\ensuremath{\mathrm{r}}}% \<r>
+\isa@def{𝗌}{\ensuremath{\mathrm{s}}}% \<s>
+\isa@def{𝗍}{\ensuremath{\mathrm{t}}}% \<t>
+\isa@def{𝗎}{\ensuremath{\mathrm{u}}}% \<u>
+\isa@def{𝗏}{\ensuremath{\mathrm{v}}}% \<v>
+\isa@def{𝗐}{\ensuremath{\mathrm{w}}}% \<w>
+\isa@def{𝗑}{\ensuremath{\mathrm{x}}}% \<x>
+\isa@def{𝗒}{\ensuremath{\mathrm{y}}}% \<y>
+\isa@def{𝗓}{\ensuremath{\mathrm{z}}}% \<z>
+\isa@def{𝔄}{\ensuremath{\mathfrak{A}}}% \<AA>
+\isa@def{𝔅}{\ensuremath{\mathfrak{B}}}% \<BB>
+\isa@def{ℭ}{\ensuremath{\mathfrak{C}}}% \<CC>
+\isa@def{𝔇}{\ensuremath{\mathfrak{D}}}% \<DD>
+\isa@def{𝔈}{\ensuremath{\mathfrak{E}}}% \<EE>
+\isa@def{𝔉}{\ensuremath{\mathfrak{F}}}% \<FF>
+\isa@def{𝔊}{\ensuremath{\mathfrak{G}}}% \<GG>
+\isa@def{ℌ}{\ensuremath{\mathfrak{H}}}% \<HH>
+\isa@def{ℑ}{\ensuremath{\mathfrak{I}}}% \<II>
+\isa@def{𝔍}{\ensuremath{\mathfrak{J}}}% \<JJ>
+\isa@def{𝔎}{\ensuremath{\mathfrak{K}}}% \<KK>
+\isa@def{𝔏}{\ensuremath{\mathfrak{L}}}% \<LL>
+\isa@def{𝔐}{\ensuremath{\mathfrak{M}}}% \<MM>
+\isa@def{𝔑}{\ensuremath{\mathfrak{N}}}% \<NN>
+\isa@def{𝔒}{\ensuremath{\mathfrak{O}}}% \<OO>
+\isa@def{𝔓}{\ensuremath{\mathfrak{P}}}% \<PP>
+\isa@def{𝔔}{\ensuremath{\mathfrak{Q}}}% \<QQ>
+\isa@def{ℜ}{\ensuremath{\mathfrak{R}}}% \<RR>
+\isa@def{𝔖}{\ensuremath{\mathfrak{S}}}% \<SS>
+\isa@def{𝔗}{\ensuremath{\mathfrak{T}}}% \<TT>
+\isa@def{𝔘}{\ensuremath{\mathfrak{U}}}% \<UU>
+\isa@def{𝔙}{\ensuremath{\mathfrak{V}}}% \<VV>
+\isa@def{𝔚}{\ensuremath{\mathfrak{W}}}% \<WW>
+\isa@def{𝔛}{\ensuremath{\mathfrak{X}}}% \<XX>
+\isa@def{𝔜}{\ensuremath{\mathfrak{Y}}}% \<YY>
+\isa@def{ℨ}{\ensuremath{\mathfrak{Z}}}% \<ZZ>
+\isa@def{𝔞}{\ensuremath{\mathfrak{a}}}% \<aa>
+\isa@def{𝔟}{\ensuremath{\mathfrak{b}}}% \<bb>
+\isa@def{𝔠}{\ensuremath{\mathfrak{c}}}% \<cc>
+\isa@def{𝔡}{\ensuremath{\mathfrak{d}}}% \<dd>
+\isa@def{𝔢}{\ensuremath{\mathfrak{e}}}% \<ee>
+\isa@def{𝔣}{\ensuremath{\mathfrak{f}}}% \<ff>
+\isa@def{𝔤}{\ensuremath{\mathfrak{g}}}% \<gg>
+\isa@def{𝔥}{\ensuremath{\mathfrak{h}}}% \<hh>
+\isa@def{𝔦}{\ensuremath{\mathfrak{i}}}% \<ii>
+\isa@def{𝔧}{\ensuremath{\mathfrak{j}}}% \<jj>
+\isa@def{𝔨}{\ensuremath{\mathfrak{k}}}% \<kk>
+\isa@def{𝔩}{\ensuremath{\mathfrak{l}}}% \<ll>
+\isa@def{𝔪}{\ensuremath{\mathfrak{m}}}% \<mm>
+\isa@def{𝔫}{\ensuremath{\mathfrak{n}}}% \<nn>
+\isa@def{𝔬}{\ensuremath{\mathfrak{o}}}% \<oo>
+\isa@def{𝔭}{\ensuremath{\mathfrak{p}}}% \<pp>
+\isa@def{𝔮}{\ensuremath{\mathfrak{q}}}% \<qq>
+\isa@def{𝔯}{\ensuremath{\mathfrak{r}}}% \<rr>
+\isa@def{𝔰}{\ensuremath{\mathfrak{s}}}% \<ss>
+\isa@def{𝔱}{\ensuremath{\mathfrak{t}}}% \<tt>
+\isa@def{𝔲}{\ensuremath{\mathfrak{u}}}% \<uu>
+\isa@def{𝔳}{\ensuremath{\mathfrak{v}}}% \<vv>
+\isa@def{𝔴}{\ensuremath{\mathfrak{w}}}% \<ww>
+\isa@def{𝔵}{\ensuremath{\mathfrak{x}}}% \<xx>
+\isa@def{𝔶}{\ensuremath{\mathfrak{y}}}% \<yy>
+\isa@def{𝔷}{\ensuremath{\mathfrak{z}}}% \<zz>
+\isa@def{α}{\ensuremath{\alpha}}% \<alpha>
+\isa@def{β}{\ensuremath{\beta}}% \<beta>
+\isa@def{γ}{\ensuremath{\gamma}}% \<gamma>
+\isa@def{δ}{\ensuremath{\delta}}% \<delta>
+\isa@def{ε}{\ensuremath{\varepsilon}}% \<epsilon>
+\isa@def{ζ}{\ensuremath{\zeta}}% \<zeta>
+\isa@def{η}{\ensuremath{\eta}}% \<eta>
+\isa@def{θ}{\ensuremath{\vartheta}}% \<theta>
+\isa@def{ι}{\ensuremath{\iota}}% \<iota>
+\isa@def{κ}{\ensuremath{\kappa}}% \<kappa>
+\isa@def{λ}{\ensuremath{\lambda}}% \<lambda>
+\isa@def{μ}{\ensuremath{\mu}}% \<mu>
+\isa@def{ν}{\ensuremath{\nu}}% \<nu>
+\isa@def{ξ}{\ensuremath{\xi}}% \<xi>
+\isa@def{π}{\ensuremath{\pi}}% \<pi>
+\isa@def{ρ}{\ensuremath{\varrho}}% \<rho>
+\isa@def{σ}{\ensuremath{\sigma}}% \<sigma>
+\isa@def{τ}{\ensuremath{\tau}}% \<tau>
+\isa@def{υ}{\ensuremath{\upsilon}}% \<upsilon>
+\isa@def{φ}{\ensuremath{\varphi}}% \<phi>
+\isa@def{χ}{\ensuremath{\chi}}% \<chi>
+\isa@def{ψ}{\ensuremath{\psi}}% \<psi>
+\isa@def{ω}{\ensuremath{\omega}}% \<omega>
+\isa@def{Γ}{\ensuremath{\Gamma}}% \<Gamma>
+\isa@def{Δ}{\ensuremath{\Delta}}% \<Delta>
+\isa@def{Θ}{\ensuremath{\Theta}}% \<Theta>
+\isa@def{Λ}{\ensuremath{\Lambda}}% \<Lambda>
+\isa@def{Ξ}{\ensuremath{\Xi}}% \<Xi>
+\isa@def{Π}{\ensuremath{\Pi}}% \<Pi>
+\isa@def{Σ}{\ensuremath{\Sigma}}% \<Sigma>
+\isa@def{Υ}{\ensuremath{\Upsilon}}% \<Upsilon>
+\isa@def{Φ}{\ensuremath{\Phi}}% \<Phi>
+\isa@def{Ψ}{\ensuremath{\Psi}}% \<Psi>
+\isa@def{Ω}{\ensuremath{\Omega}}% \<Omega>
+\isa@def{𝔸}{\ensuremath{\mathbb{A}}}% \<bbbA>
+\isa@def{𝔹}{\ensuremath{\mathbb{B}}}% \<bool>
+\isa@def{ℂ}{\ensuremath{\mathbb{C}}}% \<complex>
+\isa@def{𝔻}{\ensuremath{\mathbb{D}}}% \<bbbD>
+\isa@def{𝔼}{\ensuremath{\mathbb{E}}}% \<bbbE>
+\isa@def{𝔽}{\ensuremath{\mathbb{F}}}% \<bbbF>
+\isa@def{𝔾}{\ensuremath{\mathbb{G}}}% \<bbbG>
+\isa@def{ℍ}{\ensuremath{\mathbb{H}}}% \<bbbH>
+\isa@def{𝕀}{\ensuremath{\mathbb{I}}}% \<bbbI>
+\isa@def{𝕁}{\ensuremath{\mathbb{J}}}% \<bbbJ>
+\isa@def{𝕂}{\ensuremath{\mathbb{K}}}% \<bbbK>
+\isa@def{𝕃}{\ensuremath{\mathbb{L}}}% \<bbbL>
+\isa@def{𝕄}{\ensuremath{\mathbb{M}}}% \<bbbM>
+\isa@def{ℕ}{\ensuremath{\mathbb{N}}}% \<nat>
+\isa@def{𝕆}{\ensuremath{\mathbb{O}}}% \<bbbO>
+\isa@def{ℙ}{\ensuremath{\mathbb{P}}}% \<bbbP>
+\isa@def{ℚ}{\ensuremath{\mathbb{Q}}}% \<rat>
+\isa@def{ℝ}{\ensuremath{\mathbb{R}}}% \<real>
+\isa@def{𝕊}{\ensuremath{\mathbb{S}}}% \<bbbS>
+\isa@def{𝕋}{\ensuremath{\mathbb{T}}}% \<bbbT>
+\isa@def{𝕌}{\ensuremath{\mathbb{U}}}% \<bbbU>
+\isa@def{𝕍}{\ensuremath{\mathbb{V}}}% \<bbbV>
+\isa@def{𝕎}{\ensuremath{\mathbb{W}}}% \<bbbW>
+\isa@def{𝕏}{\ensuremath{\mathbb{X}}}% \<bbbX>
+\isa@def{𝕐}{\ensuremath{\mathbb{Y}}}% \<bbbY>
+\isa@def{ℤ}{\ensuremath{\mathbb{Z}}}% \<int>
+\isa@def{←}{\ensuremath{\leftarrow}}% \<leftarrow>
+\isa@def[2]{⟵}{\ensuremath{\longleftarrow}}% \<longleftarrow>
+\isa@def[2]{⤎}{\ensuremath{\xleftarrow{\hphantom{AAA}}}}% \<longlongleftarrow>
+\isa@def[2]{⇠}{\ensuremath{\xleftarrow{\hphantom{AAAA}}}}% \<longlonglongleftarrow>
+\isa@def{→}{\ensuremath{\rightarrow}}% \<rightarrow>
+\isa@def[2]{⟶}{\ensuremath{\longrightarrow}}% \<longrightarrow>
+\isa@def[2]{⤏}{\ensuremath{\xrightarrow{\hphantom{AAA}}}}% \<longlongrightarrow>
+\isa@def[2]{⇢}{\ensuremath{\xrightarrow{\hphantom{AAAA}}}}% \<longlonglongrightarrow>
+\isa@def{⇐}{\ensuremath{\Leftarrow}}% \<Leftarrow>
+\isa@def[2]{⟸}{\ensuremath{\Longleftarrow}}% \<Longleftarrow>
+\isa@def{⇚}{\ensuremath{\Lleftarrow}}% \<Lleftarrow>
+\isa@def{⇒}{\ensuremath{\Rightarrow}}% \<Rightarrow>
+\isa@def[2]{⟹}{\ensuremath{\Longrightarrow}}% \<Longrightarrow>
+\isa@def{⇛}{\ensuremath{\Rrightarrow}}% \<Rrightarrow>
+\isa@def{↔}{\ensuremath{\leftrightarrow}}% \<leftrightarrow>
+\isa@def[2]{⟷}{\ensuremath{\longleftrightarrow}}% \<longleftrightarrow>
+\isa@def{⇔}{\ensuremath{\Leftrightarrow}}% \<Leftrightarrow>
+\isa@def[2]{⟺}{\ensuremath{\Longleftrightarrow}}% \<Longleftrightarrow>
+\isa@def{↦}{\ensuremath{\mapsto}}% \<mapsto>
+\isa@def[2]{⟼}{\ensuremath{\longmapsto}}% \<longmapsto>
+\isa@def{─}{\ensuremath{\relbar}}% \<midarrow>
+\isa@def{═}{\ensuremath{\Relbar}}% \<Midarrow>
+\isa@def{↩}{\ensuremath{\hookleftarrow}}% \<hookleftarrow>
+\isa@def{↪}{\ensuremath{\hookrightarrow}}% \<hookrightarrow>
+\isa@def{↽}{\ensuremath{\leftharpoondown}}% \<leftharpoondown>
+\isa@def{⇁}{\ensuremath{\rightharpoondown}}% \<rightharpoondown>
+\isa@def{↼}{\ensuremath{\leftharpoonup}}% \<leftharpoonup>
+\isa@def{⇀}{\ensuremath{\rightharpoonup}}% \<rightharpoonup>
+\isa@def{⇌}{\ensuremath{\rightleftharpoons}}% \<rightleftharpoons>
+\isa@def{↝}{\ensuremath{\leadsto}}% \<leadsto>
+\isa@def{⇃}{\ensuremath{\downharpoonleft}}% \<downharpoonleft>
+\isa@def{⇂}{\ensuremath{\downharpoonright}}% \<downharpoonright>
+\isa@def{↿}{\ensuremath{\upharpoonleft}}% \<upharpoonleft>
+\isa@def{↾}{\ensuremath{\restriction}}% \<restriction>
+\isa@def{∷}{\ensuremath{\mathrel{::}}}% \<Colon>
+\isa@def{↑}{\ensuremath{\uparrow}}% \<up>
+\isa@def{⇑}{\ensuremath{\Uparrow}}% \<Up>
+\isa@def{↓}{\ensuremath{\downarrow}}% \<down>
+\isa@def{⇓}{\ensuremath{\Downarrow}}% \<Down>
+\isa@def{↕}{\ensuremath{\updownarrow}}% \<updown>
+\isa@def{⇕}{\ensuremath{\Updownarrow}}% \<Updown>
+\isa@def{⟨}{\ensuremath{\langle}}% \<langle>
+\isa@def{⟩}{\ensuremath{\rangle}}% \<rangle>
+\isa@def{⟪}{\ensuremath{\langle\mskip-5mu\langle}}% \<llangle>
+\isa@def{⟫}{\ensuremath{\rangle\mskip-5mu\rangle}}% \<rrangle>
+\isa@def{⌈}{\ensuremath{\lceil}}% \<lceil>
+\isa@def{⌉}{\ensuremath{\rceil}}% \<rceil>
+\isa@def{⌊}{\ensuremath{\lfloor}}% \<lfloor>
+\isa@def{⌋}{\ensuremath{\rfloor}}% \<rfloor>
+\isa@def{⦇}{\ensuremath{\mathopen{(\mkern-3.3mu\mid}}}% \<lparr>
+\isa@def{⦈}{\ensuremath{\mathclose{\mid\mkern-3.3mu)}}}% \<rparr>
+\isa@def{⟦}{\ensuremath{\mathopen{\lbrack\mkern-3mu\lbrack}}}% \<lbrakk>
+\isa@def{⟧}{\ensuremath{\mathclose{\rbrack\mkern-3mu\rbrack}}}% \<rbrakk>
+\isa@def{⦃}{\ensuremath{\mathopen{\lbrace\mkern-4.3mu\mid}}}% \<lbrace>
+\isa@def{⦄}{\ensuremath{\mathclose{\mid\mkern-4.3mu\rbrace}}}% \<rbrace>
+\isa@def{⦉}{\ensuremath{{\langle}\mkern -3.5mu{|}}}% \<lblot>
+\isa@def{⦊}{\ensuremath{{|}\mkern -3.5mu{\rangle}}}% \<rblot>
+\isa@def{«}{{\guillemotleft}}% \<guillemotleft>
+\isa@def{»}{{\guillemotright}}% \<guillemotright>
+\isa@def{⊥}{\ensuremath{\bot}}% \<bottom>
+\isa@def{⊤}{\ensuremath{\top}}% \<top>
+\isa@def{∧}{\ensuremath{\wedge}}% \<and>
+\isa@def{⋀}{\ensuremath{\bigwedge}}% \<And>
+\isa@def{∨}{\ensuremath{\vee}}% \<or>
+\isa@def{⋁}{\ensuremath{\bigvee}}% \<Or>
+\isa@def{∀}{\ensuremath{\forall\,}}% \<forall>
+\isa@def{∃}{\ensuremath{\exists\,}}% \<exists>
+\isa@def{∄}{\ensuremath{\nexists\,}}% \<nexists>
+\isa@def{¬}{\ensuremath{\neg}}% \<not>
+\isa@def{○}{\ensuremath{\bigcirc}}% \<circle>
+\isa@def{□}{\ensuremath{\Box}}% \<box>
+\isa@def{◇}{\ensuremath{\Diamond}}% \<diamond>
+\isa@def{⋄}{\ensuremath{\diamond}}% \<diamondop>
+\isa@def{⊢}{\ensuremath{\vdash}}% \<turnstile>
+\isa@def{⊨}{\ensuremath{\models}}% \<Turnstile>
+\isa@def{⊩}{\ensuremath{\vdash\!\!\!\vdash}}% \<tturnstile>
+\isa@def{⊫}{\ensuremath{\mid\!\models}}% \<TTurnstile>
+\isa@def{⊣}{\ensuremath{\dashv}}% \<stileturn>
+\isa@def{√}{\ensuremath{\surd}}% \<surd>
+\isa@def{≤}{\ensuremath{\le}}% \<le>
+\isa@def{≥}{\ensuremath{\ge}}% \<ge>
+\isa@def{≪}{\ensuremath{\ll}}% \<lless>
+\isa@def{≫}{\ensuremath{\gg}}% \<ggreater>
+\isa@def{≲}{\ensuremath{\lesssim}}% \<lesssim>
+\isa@def{≳}{\ensuremath{\gtrsim}}% \<greatersim>
+\isa@def{⪅}{\ensuremath{\lessapprox}}% \<lessapprox>
+\isa@def{⪆}{\ensuremath{\gtrapprox}}% \<greaterapprox>
+\isa@def{∈}{\ensuremath{\in}}% \<in>
+\isa@def{∉}{\ensuremath{\notin}}% \<notin>
+\isa@def{⊂}{\ensuremath{\subset}}% \<subset>
+\isa@def{⊃}{\ensuremath{\supset}}% \<supset>
+\isa@def{⊆}{\ensuremath{\subseteq}}% \<subseteq>
+\isa@def{⊇}{\ensuremath{\supseteq}}% \<supseteq>
+\isa@def{⊏}{\ensuremath{\sqsubset}}% \<sqsubset>
+\isa@def{⊐}{\ensuremath{\sqsupset}}% \<sqsupset>
+\isa@def{⊑}{\ensuremath{\sqsubseteq}}% \<sqsubseteq>
+\isa@def{⊒}{\ensuremath{\sqsupseteq}}% \<sqsupseteq>
+\isa@def{∩}{\ensuremath{\cap}}% \<inter>
+\isa@def{⋂}{\ensuremath{\bigcap\,}}% \<Inter>
+\isa@def{∪}{\ensuremath{\cup}}% \<union>
+\isa@def{⋃}{\ensuremath{\bigcup\,}}% \<Union>
+\isa@def{⊔}{\ensuremath{\sqcup}}% \<squnion>
+\isa@def{⨆}{\ensuremath{\bigsqcup\,}}% \<Squnion>
+\isa@def{⊓}{\ensuremath{\sqcap}}% \<sqinter>
+\isa@def{⨅}{\ensuremath{\bigsqcap\,}}% \<Sqinter>
+\isa@def{∖}{\ensuremath{\setminus}}% \<setminus>
+\isa@def{∝}{\ensuremath{\propto}}% \<propto>
+\isa@def{⊎}{\ensuremath{\uplus}}% \<uplus>
+\isa@def{⨄}{\ensuremath{\biguplus\,}}% \<Uplus>
+\isa@def{≠}{\ensuremath{\not=}}% \<noteq>
+\isa@def{∼}{\ensuremath{\sim}}% \<sim>
+\isa@def{≐}{\ensuremath{\doteq}}% \<doteq>
+\isa@def{≃}{\ensuremath{\simeq}}% \<simeq>
+\isa@def{≈}{\ensuremath{\approx}}% \<approx>
+\isa@def{≍}{\ensuremath{\asymp}}% \<asymp>
+\isa@def{≅}{\ensuremath{\cong}}% \<cong>
+\isa@def{⌣}{\ensuremath{\smile}}% \<smile>
+\isa@def{≡}{\ensuremath{\equiv}}% \<equiv>
+\isa@def{⌢}{\ensuremath{\frown}}% \<frown>
+\isa@def{⋈}{\ensuremath{\Join}}% \<Join>
+\isa@def{⨝}{\ensuremath{\bowtie}}% \<bowtie>
+\isa@def{≺}{\ensuremath{\prec}}% \<prec>
+\isa@def{≻}{\ensuremath{\succ}}% \<succ>
+\isa@def{≼}{\ensuremath{\preceq}}% \<preceq>
+\isa@def{≽}{\ensuremath{\succeq}}% \<succeq>
+\isa@def{∥}{\ensuremath{\parallel}}% \<parallel>
+\isa@def{‖}{\ensuremath{\bigparallel}}% \<Parallel>
+\isa@def{⫴}{\ensuremath{\interleave}}% \<interleave>
+\isa@def{⫽}{\ensuremath{\sslash}}% \<sslash>
+\isa@def{¦}{\ensuremath{\mid}}% \<bar>
+\isa@def{⫿}{\ensuremath{[\mskip-1.5mu]}}% \<bbar>
+\isa@def{±}{\ensuremath{\pm}}% \<plusminus>
+\isa@def{∓}{\ensuremath{\mp}}% \<minusplus>
+\isa@def{×}{\ensuremath{\times}}% \<times>
+\isa@def{÷}{\ensuremath{\div}}% \<div>
+\isa@def{⋅}{\ensuremath{\cdot}}% \<cdot>
+\isa@def{⋆}{\ensuremath{\star}}% \<star>
+\isa@def{∙}{\ensuremath{\boldsymbol{\cdot}}}% \<bullet>
+\isa@def{∘}{\ensuremath{\circ}}% \<circ>
+\isa@def{†}{\ensuremath{\dagger}}% \<dagger>
+\isa@def{‡}{\ensuremath{\ddagger}}% \<ddagger>
+\isa@def{⊲}{\ensuremath{\lhd}}% \<lhd>
+\isa@def{⊳}{\ensuremath{\rhd}}% \<rhd>
+\isa@def{⊴}{\ensuremath{\unlhd}}% \<unlhd>
+\isa@def{⊵}{\ensuremath{\unrhd}}% \<unrhd>
+\isa@def{◃}{\ensuremath{\triangleleft}}% \<triangleleft>
+\isa@def{▹}{\ensuremath{\triangleright}}% \<triangleright>
+\isa@def{△}{\ensuremath{\triangle}}% \<triangle>
+\isa@def{≜}{\ensuremath{\triangleq}}% \<triangleq>
+\isa@def{⊕}{\ensuremath{\oplus}}% \<oplus>
+\isa@def{⨁}{\ensuremath{\bigoplus\,}}% \<Oplus>
+\isa@def{⊗}{\ensuremath{\otimes}}% \<otimes>
+\isa@def{⨂}{\ensuremath{\bigotimes\,}}% \<Otimes>
+\isa@def{⊙}{\ensuremath{\odot}}% \<odot>
+\isa@def{⨀}{\ensuremath{\bigodot\,}}% \<Odot>
+\isa@def{⊖}{\ensuremath{\ominus}}% \<ominus>
+\isa@def{⊘}{\ensuremath{\oslash}}% \<oslash>
+\isa@def[2]{…}{\ensuremath{\dots}}% \<dots>
+\isa@def[2]{⋯}{\ensuremath{\cdots}}% \<cdots>
+\isa@def{∑}{\ensuremath{\sum\,}}% \<Sum>
+\isa@def{∏}{\ensuremath{\prod\,}}% \<Prod>
+\isa@def{∐}{\ensuremath{\coprod\,}}% \<Coprod>
+\isa@def{∞}{\ensuremath{\infty}}% \<infinity>
+\isa@def{∫}{\ensuremath{\int\,}}% \<integral>
+\isa@def{∮}{\ensuremath{\oint\,}}% \<ointegral>
+\isa@def{♣}{\ensuremath{\clubsuit}}% \<clubsuit>
+\isa@def{♢}{\ensuremath{\diamondsuit}}% \<diamondsuit>
+\isa@def{♡}{\ensuremath{\heartsuit}}% \<heartsuit>
+\isa@def{♠}{\ensuremath{\spadesuit}}% \<spadesuit>
+\isa@def{ℵ}{\ensuremath{\aleph}}% \<aleph>
+\isa@def{∅}{\ensuremath{\emptyset}}% \<emptyset>
+\isa@def{∇}{\ensuremath{\nabla}}% \<nabla>
+\isa@def{∂}{\ensuremath{\partial}}% \<partial>
+\isa@def{♭}{\ensuremath{\flat}}% \<flat>
+\isa@def{♮}{\ensuremath{\natural}}% \<natural>
+\isa@def{♯}{\ensuremath{\sharp}}% \<sharp>
+\isa@def{∠}{\ensuremath{\angle}}% \<angle>
+\isa@def{©}{{\normalfont\rmfamily\copyright}}% \<copyright>
+\isa@def{®}{{\normalfont\rmfamily\textregistered}}% \<registered>
+\isa@def{‐}{{\normalfont\rmfamily-}}% \<hyphen>
+\isa@def{¯}{\ensuremath{{}^{-1}}}% \<inverse>
+\isa@def{·}{\ensuremath{\sbox\z@{$\centerdot$}\ht\z@=.33333\ht\z@\vcenter{\box\z@}}}% \<sqdot>
+\isa@def{¼}{{\normalfont\rmfamily\textonequarter}}% \<onequarter>
+\isa@def{½}{{\normalfont\rmfamily\textonehalf}}% \<onehalf>
+\isa@def{¾}{{\normalfont\rmfamily\textthreequarters}}% \<threequarters>
+\isa@def{ª}{{\normalfont\rmfamily\textordfeminine}}% \<ordfeminine>
+\isa@def{º}{{\normalfont\rmfamily\textordmasculine}}% \<ordmasculine>
+\isa@def{§}{{\normalfont\rmfamily\S}}% \<section>
+\isa@def{¶}{{\normalfont\rmfamily\P}}% \<paragraph>
+\isa@def{¡}{{\normalfont\rmfamily\textexclamdown}}% \<exclamdown>
+\isa@def{¿}{{\normalfont\rmfamily\textquestiondown}}% \<questiondown>
+\isa@def{€}{{\euro}}% \<euro>
+\isa@def{£}{\ensuremath{\pounds}}% \<pounds>
+\isa@def{¥}{{\yen}}% \<yen>
+\isa@def{¢}{{\textcent}}% \<cent>
+\isa@def{¤}{{\textcurrency}}% \<currency>
+\isa@def{°}{{\normalfont\rmfamily\textdegree}}% \<degree>
+\isa@def{⨿}{\ensuremath{\amalg}}% \<amalg>
+\isa@def{℧}{\ensuremath{\mho}}% \<mho>
+\isa@def{◊}{\ensuremath{\lozenge}}% \<lozenge>
+\isa@def{℘}{\ensuremath{\wp}}% \<wp>
+\isa@def{≀}{\ensuremath{\wr}}% \<wrong>
+\isa@def{´}{{\'\relax}}% \<acute>
+\isa@def{ı}{{\i}}% \<index>
+\isa@def{¨}{{\"\relax}}% \<dieresis>
+\isa@def{¸}{{\isa@cedilla}}% \<cedilla>
+\isa@def{˝}{{\H\relax}}% \<hungarumlaut>
+\isa@def{⤜}{\ensuremath{\mathbin{>\!\!\!>\mkern-6.7mu=}}}% \<bind>
+\isa@def{⪢}{\ensuremath{\mathbin{>\!\!\!>}}}% \<then>
+\isa@def{ϵ}{\ensuremath{\epsilon\,}}% \<some>
+\isa@def{⨾}{\ensuremath{\fatsemi}}% \<Zcomp>
+\isa@def{↣}{\ensuremath{\rightarrowtail}}% \<Zinj>
+\isa@def{⤔}{\ensuremath{\mathrel{\text{\isa@Zpvbar{\ensuremath{\rightarrowtail}}}}}}% \<Zpinj>
+\isa@def{⤕}{\ensuremath{\mathrel{\text{\isa@Zfvbar{{\ensuremath{\rightarrowtail}}}}}}}% \<Zfinj>
+\isa@def{↠}{\ensuremath{\mathrel{\text{\isa@Zdarrow{\rightarrow}{\rightarrow}{4}}}}}% \<Zsurj>
+\isa@def{⤀}{\ensuremath{\mathrel{\text{\isa@Zpvbar{{\isa@Zdarrow{\rightarrow}{\rightarrow}{4}}}}}}}% \<Zpsurj>
+\isa@def{⤖}{\ensuremath{\mathrel{\text{\isa@Zdarrow{\rightarrowtail}{\rightarrow}{5}}}}}% \<Zbij>
+\isa@def{⇸}{\ensuremath{\mathrel{\text{\isa@Zpvbar{\ensuremath{\rightarrow}}}}}}% \<Zpfun>
+\isa@def{⇻}{\ensuremath{\mathrel{\text{\isa@Zfvbar{\ensuremath{\rightarrow}}}}}}% \<Zffun>
+\isa@def{◁}{\ensuremath{\lhd}}% \<Zdres>
+\isa@def{⩤}{\ensuremath{\mathrel{\text{\isa@Zhbar{\ensuremath{\lhd}}}}}}% \<Zndres>
+\isa@def{▷}{\ensuremath{\rhd}}% \<Zrres>
+\isa@def{⩥}{\ensuremath{\mathrel{\text{\isa@Zhbar{\ensuremath{\rhd}}}}}}% \<Znrres>
+\isa@def{⦁}{\ensuremath{\bullet}}% \<Zspot>
+\isa@def{⨟}{{\raise 0.66ex\hbox{\oalign{\hfil\ensuremath{\scriptscriptstyle\mathrm{o}}\hfil\cr\hfil\ensuremath{\scriptscriptstyle\mathrm{9}}\hfil}}}}% \<Zsemi>
+\isa@def{⨡}{\ensuremath{\upharpoonright}}% \<Zproject>
+\isa@def{⦂}{{\raise 0.6ex\hbox{\oalign{\hfil\ensuremath{\scriptscriptstyle\mathrm{o}}\hfil\cr\hfil\ensuremath{\scriptscriptstyle\mathrm{o}}\hfil}}}}% \<Ztypecolon>
+\isa@def{⧹}{\ensuremath{\backslash}}% \<Zhide>
+\isa@def{⁀}{{\raise 0.8ex\hbox{\ensuremath{\mathchar\frown}}}}% \<Zcat>
+\isa@def{⋿}{{\ooalign{\ensuremath{\sqsubset\mkern-1mu}\cr\ensuremath{-\mkern-1mu}\cr}}}% \<Zinbag>
+\isa@def{′}{\ensuremath{{}^{\prime}}}% \<Zprime>
+\isa@def{⌑}{\ensuremath{\lozenge}}% \<hole>
+\isa@def{⏎}{{\fbox{$\hookleftarrow$}}}% \<newline>
+\isa@def{―}{{\textemdash}}% \<comment>
+\isa@def{✓}{{\ding{51}}}% \<checkmark>
+\isa@def{✗}{{\ding{55}}}% \<crossmark>
+\isa@def{‹}{{\guilsinglleft}}% \<open>
+\isa@def{›}{{\guilsinglright}}% \<close>
+
+\endinput

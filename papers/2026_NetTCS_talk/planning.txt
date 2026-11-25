@@ -1,0 +1,58 @@
+Title: The Isabelle Refinement Framework
+
+
+Practical motivation for refinement:
+  separation of concerns
+  structuring
+  scalability
+  [show pick-2 slides]
+  [show network flow slides with "proof explosion"]
+
+
+Theoretical Background
+  Nres monad and refinement
+  [one slide with nres, refinement]
+  [data refinement, relator notation]
+  Syntax driven automation
+  pw-reasoning
+  [one slide with RCG and VCG rules, mention automation]
+
+  llM monad and separation logic
+  [Show stepwise transformation of nres-monad to llM monad: add state, access report, dynamic error, non-empty invariant]
+
+  Semantics of (fragment of) LLVM on top.
+  [Show normalized Isabelle-LLVM example]
+
+  [Show def of wp and hn_refine (no details about sep-logic)]
+
+  refinement assertions
+  [Relator notation, examples]
+
+  syntax driven automation: sepref
+  [Show a few rules, sepref example]
+
+Application showcases:
+  Bernoulli numbers:
+    from deep math to efficient implementations (parallel, distributed)
+    [Show diagram of formalized components: number theory, efficient algorithms (Montg, CRT, ...), Harvey's core (low-level tuned), Assembled algorithm (parallel or distributed), thin CLI wrapper ]
+    [Show correctness thm, and export_llvm statement]
+    randomized checker, down to parsing
+    [Show correctness thm of randomized checker, error rate estimation]
+
+  Lrat-Isa
+    UNSAT Verification from syntax of CNF down to efficient LLVM Impl
+    [Slide with SAT-solver/certifier architecture diagram. Mention drat/lrat, elaboration. Some SAT-solvers can output elaborated proofs, so processing as you go is possible]
+    [Show architecture and correctness guarantee of Isa-Lrat]
+
+Future work:
+  Parallel -> Concurrent
+    allow for wider class of efficient algorithms. Examples: ???
+
+  Top-Down -> Bottom-Up
+    get testable+tunable code first, then prove
+
+
+
+
+
+
