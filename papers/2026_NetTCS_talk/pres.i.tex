@@ -157,11 +157,16 @@
 
 
 
+\definecolor{formal}{RGB}{0,90,160}   % pick any color
+
+% all math: $...$, \[...\], and math inside listings (mathescape)
+\setbeamercolor{math text}{fg=formal}
 
 
 
 \lstset{
     language=isabelle,
+    basicstyle=\color{formal},
     mathescape=true,
     escapeinside={--"}{"},
     keywordstyle=\rm\bfseries,
@@ -180,7 +185,7 @@
 
 % \newcommand{\is}{\lstinline[language=isabelle,basicstyle=\normalsize\ttfamily\slshape]}
 \newcommand{\is}{\lstinline[language=isabelle]}
-\newcommand{\cs}{\lstinline[language=C++]}
+\newcommand{\cs}{\lstinline[language=C++,basicstyle=\color{black}]}
 \newcommand{\q}[1]{\mbox{\guilsinglleft{#1}\hspace{-.0pt}\guilsinglright}}
 % \newcommand{\isai}[1]{\q{\lstinline[language=isabelle,basicstyle=\normalsize\ttfamily\slshape]{#1}}}
 \cMakeRobust\q
@@ -354,7 +359,7 @@
 #! Implementation
   \begin{minipage}{.5\textwidth}
   \small
-  \begin{lstlisting}[language=C++]
+  \begin{lstlisting}[language=C++,basicstyle=\color{black}]
     int edmonds_karp(int s, int t) {
         int flow = 0;
         vector<int> parent(n);
@@ -553,7 +558,7 @@
   \end{lstlisting}
   }
 
-  * Refinement calculus with demonic ndet
+  * Refinement calculus with demonic nondeterminism
   * Complete lattice (\is{⊥ = Spec (λ_. False)})
   * Bind is monotone, recursion ``for free'' via fixed points
   * Hoare triple: \is{P x ⟹ f x ≤ Spec (λr. Q r)}
@@ -562,7 +567,7 @@
   Refinement relation \is{R} relates concrete and abstract type
     * e.g., \is$ls_rel ≡ { (xs,set xs) | xs. distinct xs }$
 
-  Extension to nres: \is{⇓R m} all concrete results that refine an abstract result in \is{m}
+  \is{⇓R m}: all concrete results that refine an abstract result in \is{m}
   \begin{lstlisting}
     ⇓R Fail = Fail
     ⇓R (Spec P) = Spec (λc. ∃a. (c,a)∈R ∧ P a)
@@ -603,13 +608,13 @@
   }
 
 #! Automation
-  * wp rules, e.g.
+  * Wp rules, e.g.
     \begin{lstlisting}
       P x ⟹ return x ≤ Spec P
       m ≤ Spec (λx. f x ≤ Spec Q) ⟹ bind m f ≤ Spec Q
     \end{lstlisting}
 
-  * refinement rules, e.g.
+  * Refinement rules, e.g.
     \begin{lstlisting}
       (return,return) ∈ R → ⟨R⟩nres_rel
       (bind,bind) ∈ ⟨R⇩1⟩nres_rel → (R⇩1→⟨R⇩2⟩nres_rel) → ⟨R⇩2⟩nres_rel
