@@ -542,70 +542,102 @@
 %     * easy integration with (unverified) components
 
 #! The Nres-Monad
-  Programs via nondeterminism-error monad
-  {\small
-  \begin{lstlisting}
-    α nres  =  Fail  |  Spec (α ⇒ bool)
+  \small
+  *<+-> Programs via nondeterminism-error monad
+    \begin{lstlisting}
+      α nres  =  Fail  |  Spec (α ⇒ bool)
 
-    return x        =  Spec (λr. r = x)
+      return x        =  Spec (λr. r = x)
 
-    bind Fail f     =  Fail
-    bind (Spec P) f =  ⨆ { f x | P x }
+      bind Fail f     =  Fail
+      bind (Spec P) f =  ⨆ { f x | P x }
+    \end{lstlisting}
 
-    Spec P ≤ Spec Q  ⟷  ∀x. P x ⟶ Q x        m ≤ Fail
-    ⨆S  =  if Fail ∈ S then Fail
-           else Spec (λx. ∃P. Spec P ∈ S ∧ P x)
-  \end{lstlisting}
-  }
+  *<+-> Ordering: lifted $\subseteq$. Intuition: less possible results
+    \begin{lstlisting}
+      Spec P ≤ Spec Q  ⟷  ∀x. P x ⟶ Q x
+      m ≤ Fail
 
-  * Refinement calculus with demonic nondeterminism
-  * Complete lattice (\is{⊥ = Spec (λ_. False)})
-  * Bind is monotone, recursion ``for free'' via fixed points
-  * Hoare triple: \is{P x ⟹ f x ≤ Spec (λr. Q r)}
+      ⨆S  =  if Fail ∈ S then Fail
+            else Spec (λx. ∃P. Spec P ∈ S ∧ P x)
+    \end{lstlisting}
 
-#! Data Refinement
-  Refinement relation \is{R} relates concrete and abstract type
+  *<+-> Refinement calculus with demonic nondeterminism
+    * Complete lattice (\is{⊥ = Spec (λ_. False)})
+    * Bind is monotone, recursion ``for free'' via fixed points
+    * Hoare triple: \is{P x ⟹ f x ≤ Spec (λr. Q r)}
+
+#![t] Data Refinement
+  \small
+  *<+-> Refinement relation \is{R} relates concrete and abstract type
     * e.g., \is$ls_rel ≡ { (xs,set xs) | xs. distinct xs }$
 
-  \is{⇓R m}: all concrete results that refine an abstract result in \is{m}
-  \begin{lstlisting}
-    ⇓R Fail = Fail
-    ⇓R (Spec P) = Spec (λc. ∃a. (c,a)∈R ∧ P a)
-  \end{lstlisting}
+  *<+-> Lifted to nres:
+    * \is{⇓R m}: all concrete results that refine an abstract result in \is{m}
+      \begin{lstlisting}
+        ⇓R Fail = Fail
+        ⇓R (Spec P) = Spec (λc. ∃a. (c,a)∈R ∧ P a)
+      \end{lstlisting}
 
-  Refinement statement:
-  \begin{lstlisting}
-    ⟦(c⇩1,a⇩1)∈R⇩1; …; (c⇩n,a⇩n)∈R⇩n⟧ ⟹ f c⇩1 … c⇩n ≤ ⇓R (g a⇩1 … a⇩n)
-  \end{lstlisting}
-  * concise functor notation: \is{(f,g) ∈ R⇩1 → … → R⇩n → ⟨R⟩nres_rel}
+  *<+-> Refinement statement:
+    \begin{lstlisting}
+      ⟦(c⇩1,a⇩1)∈R⇩1; …; (c⇩n,a⇩n)∈R⇩n⟧ ⟹ f c⇩1 … c⇩n ≤⇓R (g a⇩1 … a⇩n)
+      (f,g) ∈ R⇩1 → … → R⇩n → ⟨R⟩nres_rel --"\rc{Concise functor notation}"
+    \end{lstlisting}
+    * where \is$⟨R⟩nres_rel = { (m,m') | m ≤⇓R m' }$
 
-  Examples:
-  \begin{lstlisting}
-    (ls_lookup, (∈)) ∈ Id → ls_rel → Id
-    (ls_insert, Set.insert) ∈ Id → ls_rel → ls_rel
-  \end{lstlisting}
+
+  *<+-> Examples:
+    \begin{lstlisting}
+      (ls_lookup, (∈)) ∈ Id → ls_rel → Id
+      (ls_insert, Set.insert) ∈ Id → ls_rel → ls_rel
+    \end{lstlisting}
+
+    \begin{onlyenv}<+>
+    \begin{lstlisting}
+    (return o hd, λS. do {assert S≠{}; Spec x. x∈S}) ls_rel → ⟨Id⟩nres_rel
+    \end{lstlisting}
+    \end{onlyenv}
+
+    \begin{uncoverenv}<+>
+    \begin{lstlisting}
+    (ls_pick, mop_pick) ls_rel → ⟨Id⟩nres_rel
+    \end{lstlisting}
+    \vspace*{2mm}
+    \end{uncoverenv}
+
+
 
 #![t] Parametricity
   Used to handle nested data structures
   {\small
   \begin{lstlisting}
     ls_aux_rel ≡ { (xs,set xs) | xs. distinct xs }
-    ⟨R⟩list_rel = { (cs,as). |cs|=|as| ∧ ∀i<|as|. (cs!i,as!i)∈R } --"\rc{natural relator}"
-
     ls_lookup eq x xs ≡ any (eq x) xs --"\rc{abstract over $=$}"
-
-    (ls_lookup (=), (∈)) ∈ Id → ls_aux_rel → Id
-    (ls_lookup, ls_lookup) ∈ (R→R→Id) → R → ⟨R⟩list_rel → Id --"\rc{free thm}"
   \end{lstlisting}
   \onslide<2->
+  \begin{lstlisting}
+    ⟨R⟩list_rel = { (cs,as). |cs|=|as| ∧ ∀i<|as|. (cs!i,as!i)∈R } --"\rc{natural relator}"
+
+    (ls_lookup, ls_lookup) ∈ (R→R→Id) → R → ⟨R⟩list_rel → Id --"\rc{free thm}"
+    (ls_lookup (=), (∈)) ∈ Id → ls_aux_rel → Id --"\rc{no elem. refinement}"
+  \end{lstlisting}
+  \onslide<3->
   Combination yields: \\
     \is{(eq,(=))∈R→R→Id} \\ \is{⟹ (ls_lookup eq, (∈)) ∈ }
-    \only<2>{\is{(R → ⟨R⟩list_rel → Id) O (Id → ls_aux_rel → Id)}}
-    \only<3>{\is{R O Id → ⟨R⟩list_rel O ls_aux_rel → Id O Id}}
-    \only<4->{\is{R → ⟨R⟩ls_rel → Id}}
+    \only<3>{\is{(R → ⟨R⟩list_rel → Id) O (Id → ls_aux_rel → Id)}}
+    \only<4>{\is{R O Id → ⟨R⟩list_rel O ls_aux_rel → Id O Id}}
+    \only<5->{\is{R → ⟨R⟩ls_rel → Id}}
 
-  \onslide<4-> ~~~where \is{⟨R⟩ls_rel ≡ ⟨R⟩list_rel O ls_aux_rel}
+  \onslide<6-> ~~~where \is{⟨R⟩ls_rel ≡ ⟨R⟩list_rel O ls_aux_rel}
   }
+  \onslide<7->
+  \bigskip
+
+  \centering
+  Nested DS from (simple) non-nested DS + free theorems
+
+
 
 #! Automation
   * Wp rules, e.g.
@@ -662,7 +694,7 @@
 
   % --- Number theory
   \node[layer] (nt) {%
-    {\bfseries Number theory} {\footnotesize(Isabelle/HOL)}\\[-1pt]
+    {\bfseries Number theory} \\[-1pt]
     {\footnotesize Voronoi, Kummer, von Staudt--Clausen, bound on $|B_k|$}};
 
   % --- Efficient algorithms
@@ -916,6 +948,7 @@
   }
 
   \small
+  * integration of verified + unverified components
   * within ~2× of Storm/mcsta, ~3× faster than Prism
   * found bugs in mcsta, Prism and Storm, in algorithms Humble verifies
 
